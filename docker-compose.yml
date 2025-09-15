@@ -1,0 +1,80 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend:/usr/share/nginx/html
+    depends_on:
+      - auth-service
+      - game-service
+      - tournament-service
+      - user-service
+    networks:
+      - transcendence-network
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+    networks:
+      - transcendence-network
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./auth-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=auth-service
+    networks:
+      - transcendence-network
+
+  game-service:
+    build: ./game-service
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./game-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=game-service
+    networks:
+      - transcendence-network
+
+  tournament-service:
+    build: ./tournament-service
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./tournament-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=tournament-service
+    networks:
+      - transcendence-network
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./user-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=user-service
+    networks:
+      - transcendence-network
+
+networks:
+  transcendence-network:
+    driver: bridge
+
+volumes:
+  auth-db:
+  games-db:
+  tournaments-db:
+  users-db:

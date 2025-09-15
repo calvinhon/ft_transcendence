@@ -1,0 +1,11 @@
+{
+  "name": "tournament-service",
+  "version": "1.0.0",
+  "description": "Tournament microservice for Transcendence",
+  "main": "server.js",
+  "dependencies": {
+    "fastify": "^4.24.3",
+    "@fastify/cors": "^8.4.0",
+    "sqlite3": "^5.1.6"
+  }
+}
