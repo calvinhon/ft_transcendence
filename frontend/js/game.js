@@ -96,15 +96,25 @@ class GameManager {
 
     startGame(data) {
         console.log('Game started:', data);
-        
         // Hide waiting UI and show game canvas
         document.getElementById('game-status').classList.add('hidden');
         document.getElementById('game-canvas-container').classList.remove('hidden');
-        
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.isPlaying = true;
-        
+        // Show stop button
+        let stopBtn = document.getElementById('stop-game-btn');
+        if (!stopBtn) {
+            stopBtn = document.createElement('button');
+            stopBtn.id = 'stop-game-btn';
+            stopBtn.className = 'btn btn-danger';
+            stopBtn.textContent = 'Stop Game';
+            stopBtn.style.margin = '16px auto';
+            stopBtn.onclick = () => this.haltGame();
+            document.getElementById('game-canvas-container').appendChild(stopBtn);
+        } else {
+            stopBtn.style.display = 'block';
+        }
         // Start input handling
         this.startInputLoop();
     }
@@ -189,14 +199,26 @@ class GameManager {
     endGame(data) {
         console.log('Game ended:', data);
         this.isPlaying = false;
-        
         const user = window.authManager.getCurrentUser();
         const isWinner = data.winner === user.userId;
-        
         // Show game result
         alert(isWinner ? 'You won!' : 'You lost!');
-        
         this.resetGame();
+    }
+
+    haltGame() {
+        this.isPlaying = false;
+        if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+        }
+        // Hide stop button
+        const stopBtn = document.getElementById('stop-game-btn');
+        if (stopBtn) stopBtn.style.display = 'none';
+        // Reset UI
+        document.getElementById('game-status').classList.remove('hidden');
+        document.getElementById('game-canvas-container').classList.add('hidden');
+        this.resetFindMatch();
     }
 
     resetGame() {

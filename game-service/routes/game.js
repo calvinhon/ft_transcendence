@@ -61,9 +61,30 @@ class PongGame {
 
   startGameLoop() {
     this.gameInterval = setInterval(() => {
+      if (this.gameState === 'finished') {
+        clearInterval(this.gameInterval);
+        return;
+      }
+      // If player2 is bot, move bot paddle
+      if (this.player2.userId === 0) {
+        this.moveBotPaddle();
+      }
       this.updateBall();
       this.broadcastGameState();
     }, 1000 / 60); // 60 FPS
+  }
+
+  moveBotPaddle() {
+    // Simple AI: move bot paddle towards ball
+    const botPaddle = this.paddles.player2;
+    const ballY = this.ball.y;
+    // Center of paddle
+    const paddleCenter = botPaddle.y + 50;
+    if (paddleCenter < ballY - 10 && botPaddle.y < 500) {
+      botPaddle.y += 8; // Move down
+    } else if (paddleCenter > ballY + 10 && botPaddle.y > 0) {
+      botPaddle.y -= 8; // Move up
+    }
   }
 
   updateBall() {
@@ -235,6 +256,44 @@ async function routes(fastify, options) {
         type: 'waiting',
         message: 'Waiting for opponent...'
       }));
+
+      // If no opponent joins after 2 seconds, start with dummy opponent
+      setTimeout(() => {
+        // If still waiting and only one player
+        if (waitingPlayers.length === 1 && waitingPlayers[0].socket === socket) {
+          const player1 = waitingPlayers.shift();
+          // Create dummy opponent
+          const dummySocket = {
+            readyState: 1,
+            send: () => {} // No-op
+          };
+          const player2 = {
+            userId: 0,
+            username: 'Bot',
+            socket: dummySocket
+          };
+          db.run(
+            'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
+            [player1.userId, player2.userId],
+            function(err) {
+              if (!err) {
+                const game = new PongGame(player1, player2, this.lastID);
+                activeGames.set(this.lastID, game);
+                // Notify real player game started
+                const startMessage = {
+                  type: 'gameStart',
+                  gameId: this.lastID,
+                  players: {
+                    player1: { userId: player1.userId, username: player1.username },
+                    player2: { userId: player2.userId, username: player2.username }
+                  }
+                };
+                player1.socket.send(JSON.stringify(startMessage));
+              }
+            }
+          );
+        }
+      }, 2000);
     }
   }
 
