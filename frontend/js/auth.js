@@ -49,7 +49,11 @@ class AuthManager {
                 this.currentUser = { userId: data.userId, username: data.username };
                 return { success: true, data };
             } else {
-                return { success: false, error: data.error };
+                // Clear any existing auth data on failed login
+                this.token = null;
+                this.currentUser = null;
+                localStorage.removeItem('token');
+                return { success: false, error: data.error || 'Login failed' };
             }
         } catch (error) {
             return { success: false, error: 'Network error' };
