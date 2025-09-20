@@ -7,6 +7,7 @@ const dbPath = path.join(__dirname, '../database/games.db');
 // Game state management
 const activeGames = new Map();
 const waitingPlayers = [];
+const matchTimers = new Map(); // Track timeout timers for each socket
 
 // Initialize database
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -189,9 +190,13 @@ class PongGame {
 async function routes(fastify, options) {
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection, req) => {
-    connection.socket.on('message', async (message) => {
+    console.log('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
+    console.log('Connection from:', req.socket.remoteAddress);
+      
+      connection.socket.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
+        console.log('Received WebSocket message:', data);
         
         switch (data.type) {
           case 'joinGame':
@@ -215,6 +220,7 @@ async function routes(fastify, options) {
   });
 
   function handleJoinGame(socket, data) {
+    console.log('handleJoinGame called with:', data);
     const player = {
       userId: data.userId,
       username: data.username,
@@ -222,10 +228,21 @@ async function routes(fastify, options) {
     };
 
     waitingPlayers.push(player);
+    console.log('Current waiting players:', waitingPlayers.length);
 
     if (waitingPlayers.length >= 2) {
       const player1 = waitingPlayers.shift();
       const player2 = waitingPlayers.shift();
+      
+      // Clear any existing timers for these players
+      if (matchTimers.has(player1.socket)) {
+        clearTimeout(matchTimers.get(player1.socket));
+        matchTimers.delete(player1.socket);
+      }
+      if (matchTimers.has(player2.socket)) {
+        clearTimeout(matchTimers.get(player2.socket));
+        matchTimers.delete(player2.socket);
+      }
 
       // Create game in database
       db.run(
@@ -257,11 +274,14 @@ async function routes(fastify, options) {
         message: 'Waiting for opponent...'
       }));
 
-      // If no opponent joins after 2 seconds, start with dummy opponent
-      setTimeout(() => {
+      // If no opponent joins after 10 seconds, start with dummy opponent
+      const timer = setTimeout(() => {
+        console.log('Timer triggered after 10 seconds. Current waiting players:', waitingPlayers.length);
         // If still waiting and only one player
         if (waitingPlayers.length === 1 && waitingPlayers[0].socket === socket) {
+          console.log('Starting bot match for player:', waitingPlayers[0].username);
           const player1 = waitingPlayers.shift();
+          matchTimers.delete(socket); // Clean up timer reference
           // Create dummy opponent
           const dummySocket = {
             readyState: 1,
@@ -293,7 +313,10 @@ async function routes(fastify, options) {
             }
           );
         }
-      }, 2000);
+      }, 10000);
+      
+      // Store the timer reference
+      matchTimers.set(socket, timer);
     }
   }
 
@@ -314,6 +337,12 @@ async function routes(fastify, options) {
     const waitingIndex = waitingPlayers.findIndex(p => p.socket === socket);
     if (waitingIndex > -1) {
       waitingPlayers.splice(waitingIndex, 1);
+    }
+    
+    // Clear any pending match timer for this socket
+    if (matchTimers.has(socket)) {
+      clearTimeout(matchTimers.get(socket));
+      matchTimers.delete(socket);
     }
 
     // Handle active games
