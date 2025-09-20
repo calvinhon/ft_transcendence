@@ -82,9 +82,9 @@ class PongGame {
     // Center of paddle
     const paddleCenter = botPaddle.y + 50;
     if (paddleCenter < ballY - 10 && botPaddle.y < 500) {
-      botPaddle.y += 8; // Move down
+      botPaddle.y += 10; // Move down
     } else if (paddleCenter > ballY + 10 && botPaddle.y > 0) {
-      botPaddle.y -= 8; // Move up
+      botPaddle.y -= 10; // Move up
     }
   }
 
@@ -132,9 +132,9 @@ class PongGame {
   movePaddle(playerId, direction) {
     const paddle = playerId === this.player1.userId ? 'player1' : 'player2';
     if (direction === 'up' && this.paddles[paddle].y > 0) {
-      this.paddles[paddle].y -= 20;
+      this.paddles[paddle].y -= 5;
     } else if (direction === 'down' && this.paddles[paddle].y < 500) {
-      this.paddles[paddle].y += 20;
+      this.paddles[paddle].y += 5;
     }
   }
 
@@ -274,7 +274,7 @@ async function routes(fastify, options) {
         message: 'Waiting for opponent...'
       }));
 
-      // If no opponent joins after 2 seconds, start with dummy opponent
+      // If no opponent joins after 1 seconds, start with dummy opponent
       const timer = setTimeout(() => {
         console.log('Timer triggered after 2 seconds. Current waiting players:', waitingPlayers.length);
         // If still waiting and only one player
@@ -313,7 +313,7 @@ async function routes(fastify, options) {
             }
           );
         }
-      }, 2000);
+      }, 1000);
       
       // Store the timer reference
       matchTimers.set(socket, timer);
