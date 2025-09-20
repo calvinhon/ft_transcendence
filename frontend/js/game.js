@@ -27,6 +27,16 @@ class GameManager {
     }
 
     async findMatch() {
+        // Check if user is logged in before attempting to find match
+        const user = window.authManager.getCurrentUser();
+        if (!user || !user.userId) {
+            alert('You must be logged in to play. Redirecting to login page.');
+            // Redirect to login page
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            return;
+        }
+        
         const findBtn = document.getElementById('find-match-btn');
         const waitingMsg = document.getElementById('waiting-message');
         
@@ -51,6 +61,21 @@ class GameManager {
         this.websocket.onopen = () => {
             console.log('Connected to game server');
             const user = window.authManager.getCurrentUser();
+            console.log('Current user:', user);
+            if (!user || !user.userId) {
+                console.error('No valid user logged in!');
+                alert('You must be logged in to play. Redirecting to login page.');
+                this.resetFindMatch();
+                // Redirect to login page
+                document.getElementById('game-screen').classList.remove('active');
+                document.getElementById('login-screen').classList.add('active');
+                return;
+            }
+            console.log('Sending joinGame message:', {
+                type: 'joinGame',
+                userId: user.userId,
+                username: user.username
+            });
             this.websocket.send(JSON.stringify({
                 type: 'joinGame',
                 userId: user.userId,

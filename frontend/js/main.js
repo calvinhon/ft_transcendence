@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoutBtn = document.getElementById('logout-btn');
 
     // Handle registration form submission
-    registerForm.addEventListener('submit', function(e) {
+    registerForm.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default form submission
         
         // Get form data
@@ -24,22 +24,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Here you would typically send data to your backend
-        // For now, we'll simulate a successful registration
-        console.log('Registration data:', { username, email, password });
+        console.log('Attempting registration:', { username, email });
         
-        // Simulate API call delay
-        setTimeout(() => {
-            // Registration successful - switch to game screen
-            switchToGameScreen(username);
+        try {
+            const result = await window.authManager.register(username, email, password);
             
-            // Clear the form
-            registerForm.reset();
-        }, 500);
+            if (result.success) {
+                // Registration successful - switch to game screen
+                switchToGameScreen(username);
+                registerForm.reset();
+                console.log('Registration successful');
+            } else {
+                alert('Registration failed: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('Registration failed: Network error');
+        }
     });
 
     // Handle login form submission
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const username = document.getElementById('login-username').value;
@@ -50,28 +55,49 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Simulate login process
-        console.log('Login data:', { username, password });
+        console.log('Attempting login:', { username });
         
-        setTimeout(() => {
-            switchToGameScreen(username);
-            loginForm.reset();
-        }, 500);
+        try {
+            const result = await window.authManager.login(username, password);
+            console.log('Login result:', result);
+            
+            if (result.success) {
+                // Login successful - switch to game screen
+                console.log('Login successful, user data:', result.data);
+                switchToGameScreen(username);
+                loginForm.reset();
+                console.log('Login successful');
+            } else {
+                console.log('Login failed:', result.error);
+                alert('Login failed: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Login failed: Network error');
+        }
     });
 
     // Handle logout
     logoutBtn.addEventListener('click', function() {
+        window.authManager.logout();
         switchToLoginScreen();
     });
 
     // Function to switch to game screen
     function switchToGameScreen(username) {
+        // Verify we have a valid user before switching screens
+        const user = window.authManager.getCurrentUser();
+        if (!user || !user.userId) {
+            console.error('Cannot switch to game screen: No valid user found');
+            alert('Authentication error. Please log in again.');
+            switchToLoginScreen();
+            return;
+        }
+        
         loginScreen.classList.remove('active');
         gameScreen.classList.add('active');
         userDisplay.textContent = `Welcome, ${username}!`;
-        
-        // Store username for later use
-        sessionStorage.setItem('currentUser', username);
+        console.log('Switched to game screen for user:', user);
     }
 
     // Function to switch back to login screen
@@ -79,16 +105,35 @@ document.addEventListener('DOMContentLoaded', function() {
         gameScreen.classList.remove('active');
         loginScreen.classList.add('active');
         userDisplay.textContent = 'Welcome!';
-        
-        // Clear stored user
-        sessionStorage.removeItem('currentUser');
     }
 
     // Check if user is already logged in (page refresh)
-    const currentUser = sessionStorage.getItem('currentUser');
-    if (currentUser) {
-        switchToGameScreen(currentUser);
+    async function checkExistingLogin() {
+        const isValid = await window.authManager.verifyToken();
+        if (isValid) {
+            const user = window.authManager.getCurrentUser();
+            if (user) {
+                switchToGameScreen(user.username);
+            }
+        }
     }
+    
+    // Periodic authentication check (every 30 seconds when on game page)
+    function startAuthCheck() {
+        setInterval(async () => {
+            if (gameScreen.classList.contains('active')) {
+                const isValid = await window.authManager.verifyToken();
+                if (!isValid) {
+                    console.log('Authentication expired, redirecting to login');
+                    alert('Your session has expired. Please log in again.');
+                    switchToLoginScreen();
+                }
+            }
+        }, 30000); // Check every 30 seconds
+    }
+    
+    checkExistingLogin();
+    startAuthCheck();
 });
 
 // Additional functions for game navigation

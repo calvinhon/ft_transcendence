@@ -274,9 +274,9 @@ async function routes(fastify, options) {
         message: 'Waiting for opponent...'
       }));
 
-      // If no opponent joins after 10 seconds, start with dummy opponent
+      // If no opponent joins after 2 seconds, start with dummy opponent
       const timer = setTimeout(() => {
-        console.log('Timer triggered after 10 seconds. Current waiting players:', waitingPlayers.length);
+        console.log('Timer triggered after 2 seconds. Current waiting players:', waitingPlayers.length);
         // If still waiting and only one player
         if (waitingPlayers.length === 1 && waitingPlayers[0].socket === socket) {
           console.log('Starting bot match for player:', waitingPlayers[0].username);
@@ -313,7 +313,7 @@ async function routes(fastify, options) {
             }
           );
         }
-      }, 10000);
+      }, 2000);
       
       // Store the timer reference
       matchTimers.set(socket, timer);
