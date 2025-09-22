@@ -1,8 +1,8 @@
-const canvas = document.createElement("canvas");
+const canvas = document.querySelector("#renderCanvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-const BOARD_HEIGHT = innerHeight;
-const BOARD_WIDTH = innerWidth;
+const BOARD_HEIGHT = 720;
+const BOARD_WIDTH = 1280;
 const PADDLE_HEIGHT = 100;
 const PADDLE_WIDTH = 25;
 const BALL_HEIGHT = 25;
@@ -11,8 +11,6 @@ const BALL_WIDTH = 25;
 canvas.height = BOARD_HEIGHT;
 canvas.width = BOARD_WIDTH;
 canvas.style.backgroundColor = "black";
-
-// document.body.appendChild(canvas);
 
 requestAnimationFrame(update);
 
@@ -59,18 +57,33 @@ function detectCollision(a: Coordinate, b: Coordinate) {
 function update() {
   ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
   ctx.fillStyle = "white";
-  ctx.fillRect(
-    paddle1.x,
-    (paddle1.y += paddle1.velocityY),
-    paddle1.width,
-    paddle1.height
-  );
-  ctx.fillRect(
-    paddle2.x,
-    (paddle2.y += paddle2.velocityY),
-    paddle2.width,
-    paddle2.height
-  );
+  ctx.fillRect(0, 0, canvas.width, 1);
+  ctx.fillRect(0, canvas.height - 1, canvas.width, 1);
+
+  let p1NewPos = {
+    x: paddle1.x,
+    y: paddle1.y + paddle1.velocityY,
+  };
+  let p2NewPos = {
+    x: paddle2.x,
+    y: paddle2.y + paddle2.velocityY,
+  };
+  if (p1NewPos.y >= 0 && p1NewPos.y <= canvas.height - paddle1.height)
+    ctx.fillRect(
+      paddle1.x,
+      (paddle1.y += paddle1.velocityY),
+      paddle1.width,
+      paddle1.height
+    );
+  else ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
+  if (p2NewPos.y >= 0 && p2NewPos.y <= canvas.height - paddle2.height)
+    ctx.fillRect(
+      paddle2.x,
+      (paddle2.y += paddle2.velocityY),
+      paddle2.width,
+      paddle2.height
+    );
+  else ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
   ball.x += ball.velocity.x;
   ball.y += ball.velocity.y;
   if (ball.y <= 0 || ball.y + ball.height >= canvas.height) {
