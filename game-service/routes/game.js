@@ -1,3 +1,22 @@
+// --- Global Chat WebSocket ---
+const chatClients = new Set();
+
+async function chatRoutes(fastify, options) {
+  fastify.get('/ws/chat', { websocket: true }, (connection, req) => {
+    chatClients.add(connection.socket);
+    connection.socket.on('message', (message) => {
+      // Broadcast received message to all clients
+      for (const client of chatClients) {
+        if (client.readyState === 1) {
+          client.send(message.toString());
+        }
+      }
+    });
+    connection.socket.on('close', () => {
+      chatClients.delete(connection.socket);
+    });
+  });
+}
 // game-service/routes/game.js
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -188,6 +207,7 @@ class PongGame {
 }
 
 async function routes(fastify, options) {
+  await chatRoutes(fastify, options);
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection, req) => {
     console.log('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
