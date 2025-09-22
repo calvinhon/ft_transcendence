@@ -1,3 +1,22 @@
+// --- Global Chat WebSocket ---
+const chatClients = new Set();
+
+async function chatRoutes(fastify, options) {
+  fastify.get('/ws/chat', { websocket: true }, (connection, req) => {
+    chatClients.add(connection.socket);
+    connection.socket.on('message', (message) => {
+      // Broadcast received message to all clients
+      for (const client of chatClients) {
+        if (client.readyState === 1) {
+          client.send(message.toString());
+        }
+      }
+    });
+    connection.socket.on('close', () => {
+      chatClients.delete(connection.socket);
+    });
+  });
+}
 // game-service/routes/game.js
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -7,6 +26,7 @@ const dbPath = path.join(__dirname, '../database/games.db');
 // Game state management
 const activeGames = new Map();
 const waitingPlayers = [];
+const matchTimers = new Map(); // Track timeout timers for each socket
 
 // Initialize database
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -61,9 +81,30 @@ class PongGame {
 
   startGameLoop() {
     this.gameInterval = setInterval(() => {
+      if (this.gameState === 'finished') {
+        clearInterval(this.gameInterval);
+        return;
+      }
+      // If player2 is bot, move bot paddle
+      if (this.player2.userId === 0) {
+        this.moveBotPaddle();
+      }
       this.updateBall();
       this.broadcastGameState();
     }, 1000 / 60); // 60 FPS
+  }
+
+  moveBotPaddle() {
+    // Simple AI: move bot paddle towards ball
+    const botPaddle = this.paddles.player2;
+    const ballY = this.ball.y;
+    // Center of paddle
+    const paddleCenter = botPaddle.y + 50;
+    if (paddleCenter < ballY - 10 && botPaddle.y < 500) {
+      botPaddle.y += 10; // Move down
+    } else if (paddleCenter > ballY + 10 && botPaddle.y > 0) {
+      botPaddle.y -= 10; // Move up
+    }
   }
 
   updateBall() {
@@ -110,9 +151,9 @@ class PongGame {
   movePaddle(playerId, direction) {
     const paddle = playerId === this.player1.userId ? 'player1' : 'player2';
     if (direction === 'up' && this.paddles[paddle].y > 0) {
-      this.paddles[paddle].y -= 20;
+      this.paddles[paddle].y -= 5;
     } else if (direction === 'down' && this.paddles[paddle].y < 500) {
-      this.paddles[paddle].y += 20;
+      this.paddles[paddle].y += 5;
     }
   }
 
@@ -166,15 +207,23 @@ class PongGame {
 }
 
 async function routes(fastify, options) {
+  await chatRoutes(fastify, options);
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection, req) => {
-    connection.socket.on('message', async (message) => {
+    console.log('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
+    console.log('Connection from:', req.socket.remoteAddress);
+      
+      connection.socket.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
+        console.log('Received WebSocket message:', data);
         
         switch (data.type) {
           case 'joinGame':
             handleJoinGame(connection.socket, data);
+            break;
+          case 'joinBotGame':
+            handleJoinBotGame(connection.socket, data);
             break;
           case 'movePaddle':
             handleMovePaddle(connection.socket, data);
@@ -194,6 +243,7 @@ async function routes(fastify, options) {
   });
 
   function handleJoinGame(socket, data) {
+    console.log('handleJoinGame called with:', data);
     const player = {
       userId: data.userId,
       username: data.username,
@@ -201,10 +251,21 @@ async function routes(fastify, options) {
     };
 
     waitingPlayers.push(player);
+    console.log('Current waiting players:', waitingPlayers.length);
 
     if (waitingPlayers.length >= 2) {
       const player1 = waitingPlayers.shift();
       const player2 = waitingPlayers.shift();
+      
+      // Clear any existing timers for these players
+      if (matchTimers.has(player1.socket)) {
+        clearTimeout(matchTimers.get(player1.socket));
+        matchTimers.delete(player1.socket);
+      }
+      if (matchTimers.has(player2.socket)) {
+        clearTimeout(matchTimers.get(player2.socket));
+        matchTimers.delete(player2.socket);
+      }
 
       // Create game in database
       db.run(
@@ -235,7 +296,99 @@ async function routes(fastify, options) {
         type: 'waiting',
         message: 'Waiting for opponent...'
       }));
+
+      // If no opponent joins after 5 seconds, start with dummy opponent
+      const timer = setTimeout(() => {
+        console.log('Timer triggered after 5 seconds. Current waiting players:', waitingPlayers.length);
+        // If still waiting and only one player
+        if (waitingPlayers.length === 1 && waitingPlayers[0].socket === socket) {
+          console.log('Starting bot match for player:', waitingPlayers[0].username);
+          const player1 = waitingPlayers.shift();
+          matchTimers.delete(socket); // Clean up timer reference
+          // Create dummy opponent
+          const dummySocket = {
+            readyState: 1,
+            send: () => {} // No-op
+          };
+          const player2 = {
+            userId: 0,
+            username: 'Bot',
+            socket: dummySocket
+          };
+          db.run(
+            'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
+            [player1.userId, player2.userId],
+            function(err) {
+              if (!err) {
+                const game = new PongGame(player1, player2, this.lastID);
+                activeGames.set(this.lastID, game);
+                // Notify real player game started
+                const startMessage = {
+                  type: 'gameStart',
+                  gameId: this.lastID,
+                  players: {
+                    player1: { userId: player1.userId, username: player1.username },
+                    player2: { userId: player2.userId, username: player2.username }
+                  }
+                };
+                player1.socket.send(JSON.stringify(startMessage));
+              }
+            }
+          );
+        }
+      }, 5000);
+      
+      // Store the timer reference
+      matchTimers.set(socket, timer);
     }
+  }
+
+  function handleJoinBotGame(socket, data) {
+    console.log('handleJoinBotGame called with:', data);
+    
+    const player1 = {
+      userId: data.userId,
+      username: data.username,
+      socket: socket
+    };
+
+    // Create immediate bot match without waiting
+    const dummySocket = {
+      readyState: 1,
+      send: () => {} // No-op
+    };
+    
+    const player2 = {
+      userId: 0,
+      username: 'Bot',
+      socket: dummySocket
+    };
+
+    // Create game in database
+    db.run(
+      'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
+      [player1.userId, player2.userId],
+      function(err) {
+        if (!err) {
+          const game = new PongGame(player1, player2, this.lastID);
+          activeGames.set(this.lastID, game);
+          
+          // Notify player game started
+          const startMessage = {
+            type: 'gameStart',
+            gameId: this.lastID,
+            players: {
+              player1: { userId: player1.userId, username: player1.username },
+              player2: { userId: player2.userId, username: player2.username }
+            }
+          };
+          player1.socket.send(JSON.stringify(startMessage));
+          console.log('Bot game started immediately for:', player1.username);
+        } else {
+          console.error('Failed to create bot game:', err);
+        }
+      }
+    );
   }
 
   function handleMovePaddle(socket, data) {
@@ -255,6 +408,12 @@ async function routes(fastify, options) {
     const waitingIndex = waitingPlayers.findIndex(p => p.socket === socket);
     if (waitingIndex > -1) {
       waitingPlayers.splice(waitingIndex, 1);
+    }
+    
+    // Clear any pending match timer for this socket
+    if (matchTimers.has(socket)) {
+      clearTimeout(matchTimers.get(socket));
+      matchTimers.delete(socket);
     }
 
     // Handle active games

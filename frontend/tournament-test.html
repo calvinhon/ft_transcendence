@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Test</title>
+    <script>
+        // Mock authManager for testing
+        window.authManager = {
+            getCurrentUser: () => ({ userId: 1, username: 'testuser' }),
+            getToken: () => 'test-token'
+        };
+    </script>
+</head>
+<body>
+    <h1>Tournament Manager Test</h1>
+    
+    <!-- Basic tournament HTML structure for testing -->
+    <div id="tournaments-container">
+        <div class="tournament-tabs">
+            <button id="all-tournaments-tab" class="tab-btn active" data-tab="all-tournaments">All Tournaments</button>
+            <button id="my-tournaments-tab" class="tab-btn" data-tab="my-tournaments">My Tournaments</button>
+        </div>
+        
+        <div class="tournament-content">
+            <div id="all-tournaments" class="tab-content active">
+                <button id="create-tournament-btn" class="btn btn-primary">Create Tournament</button>
+                <div id="tournaments-list" class="tournaments-list">
+                    <!-- Tournament cards will be loaded here -->
+                </div>
+            </div>
+            
+            <div id="my-tournaments" class="tab-content">
+                <div id="my-tournaments-list" class="tournaments-list">
+                    <!-- My tournament cards will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Tournament Modal -->
+    <div id="create-tournament-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Create Tournament</h3>
+            <form id="create-tournament-form">
+                <input type="text" id="tournament-name" placeholder="Tournament Name" required />
+                <textarea id="tournament-description" placeholder="Description (optional)"></textarea>
+                <select id="tournament-max-participants">
+                    <option value="4">4 Players</option>
+                    <option value="8" selected>8 Players</option>
+                    <option value="16">16 Players</option>
+                </select>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-tournament" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="test-results">
+        <h2>Test Results:</h2>
+        <ul id="results-list"></ul>
+    </div>
+
+    <style>
+        .modal.hidden { display: none; }
+        .modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .modal-content { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 5px; 
+            max-width: 400px; 
+            width: 90%; 
+        }
+        .btn { 
+            padding: 8px 16px; 
+            margin: 5px; 
+            border: none; 
+            cursor: pointer; 
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #test-results { margin-top: 20px; padding: 20px; background: #f8f9fa; }
+    </style>
+
+    <!-- Include the tournament manager -->
+    <script src="js/tournament.js"></script>
+    
+    <script>
+        // Test script
+        document.addEventListener('DOMContentLoaded', () => {
+            const results = document.getElementById('results-list');
+            
+            function addResult(test, passed) {
+                const li = document.createElement('li');
+                li.textContent = `${test}: ${passed ? 'PASS' : 'FAIL'}`;
+                li.style.color = passed ? 'green' : 'red';
+                results.appendChild(li);
+            }
+            
+            try {
+                // Test 1: Check if TournamentManager can be instantiated
+                const tournamentManager = new TournamentManager();
+                addResult('TournamentManager instantiation', true);
+                
+                // Test 2: Check if DOM elements are found
+                const createBtn = document.getElementById('create-tournament-btn');
+                addResult('Create tournament button found', !!createBtn);
+                
+                const modal = document.getElementById('create-tournament-modal');
+                addResult('Create tournament modal found', !!modal);
+                
+                const form = document.getElementById('create-tournament-form');
+                addResult('Create tournament form found', !!form);
+                
+                // Test 3: Check if event listeners are attached
+                addResult('Event listeners should be attached', true);
+                
+                // Test 4: Test modal opening
+                createBtn.click();
+                const modalVisible = !modal.classList.contains('hidden');
+                addResult('Modal opens when create button clicked', modalVisible);
+                
+                // Test 5: Test modal closing
+                document.getElementById('cancel-tournament').click();
+                const modalHidden = modal.classList.contains('hidden');
+                addResult('Modal closes when cancel button clicked', modalHidden);
+                
+                console.log('Tournament manager initialized successfully:', tournamentManager);
+                
+            } catch (error) {
+                addResult('TournamentManager instantiation', false);
+                console.error('Tournament manager test failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>

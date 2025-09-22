@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Match Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .debug-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🤖 Bot Match Debug Tool</h1>
+    
+    <div class="debug-panel">
+        <h3>Quick Tests</h3>
+        <button class="btn btn-primary" onclick="testGameManager()">Test GameManager</button>
+        <button class="btn btn-primary" onclick="testBotMatch()">Test Bot Match</button>
+        <button class="btn btn-primary" onclick="testWebSocket()">Test WebSocket</button>
+        <button class="btn btn-danger" onclick="clearLog()">Clear Log</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <div class="debug-panel">
+        <h3>Debug Log</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <div class="debug-panel">
+        <h3>Manual Bot Match Test</h3>
+        <button id="manual-bot-btn" class="btn btn-primary">Start Manual Bot Match</button>
+    </div>
+
+    <script>
+        // Debug logging
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logMessage;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function setStatus(message, type = 'success') {
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function clearLog() {
+            logDiv.textContent = '';
+            statusDiv.innerHTML = '';
+        }
+
+        // Mock auth manager
+        window.authManager = {
+            getCurrentUser: () => ({ userId: 123, username: 'TestUser' }),
+            getAuthHeaders: () => ({ 'Authorization': 'Bearer test-token' })
+        };
+
+        function testGameManager() {
+            log('=== Testing GameManager ===');
+            if (window.gameManager) {
+                log('✅ GameManager exists');
+                log('GameManager methods: ' + Object.getOwnPropertyNames(Object.getPrototypeOf(window.gameManager)));
+                
+                if (typeof window.gameManager.startBotMatch === 'function') {
+                    log('✅ startBotMatch method exists');
+                    setStatus('GameManager ready for bot matches', 'success');
+                } else {
+                    log('❌ startBotMatch method not found');
+                    setStatus('GameManager missing startBotMatch method', 'error');
+                }
+            } else {
+                log('❌ GameManager not found');
+                setStatus('GameManager not initialized', 'error');
+            }
+        }
+
+        function testBotMatch() {
+            log('=== Testing Bot Match Flow ===');
+            
+            if (!window.gameManager) {
+                log('❌ GameManager not available');
+                setStatus('Cannot test - GameManager missing', 'error');
+                return;
+            }
+            
+            try {
+                log('🎮 Calling gameManager.startBotMatch()...');
+                window.gameManager.startBotMatch();
+                setStatus('Bot match started - check console for WebSocket activity', 'success');
+            } catch (error) {
+                log('❌ Error starting bot match: ' + error.message);
+                setStatus('Error starting bot match: ' + error.message, 'error');
+            }
+        }
+
+        function testWebSocket() {
+            log('=== Testing WebSocket Connection ===');
+            
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
+                log('Connecting to: ' + wsUrl);
+                
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected');
+                    
+                    // Test bot game message
+                    const message = {
+                        type: 'joinBotGame',
+                        userId: 123,
+                        username: 'TestUser'
+                    };
+                    log('Sending: ' + JSON.stringify(message));
+                    ws.send(JSON.stringify(message));
+                    setStatus('WebSocket test sent - waiting for response', 'warning');
+                };
+                
+                ws.onmessage = (event) => {
+                    log('📨 Received: ' + event.data);
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'gameStart') {
+                        setStatus('✅ Bot game started successfully!', 'success');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log('❌ WebSocket error: ' + error);
+                    setStatus('WebSocket connection failed', 'error');
+                };
+                
+                ws.onclose = () => {
+                    log('🔌 WebSocket closed');
+                };
+                
+                // Close after 10 seconds
+                setTimeout(() => {
+                    ws.close();
+                }, 10000);
+                
+            } catch (error) {
+                log('❌ WebSocket test failed: ' + error.message);
+                setStatus('WebSocket test failed: ' + error.message, 'error');
+            }
+        }
+
+        // Manual bot match button
+        document.getElementById('manual-bot-btn').addEventListener('click', () => {
+            log('=== Manual Bot Match Test ===');
+            testBotMatch();
+        });
+
+        // Override console.log to capture GameManager logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log('LOG: ' + args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '));
+        };
+
+        // Initialize when ready
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Bot Match Debug Tool initialized');
+            
+            setTimeout(() => {
+                log('Checking for GameManager...');
+                testGameManager();
+            }, 1000);
+        });
+    </script>
+
+    <!-- Load GameManager -->
+    <script src="js/auth.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        button { margin: 5px; padding: 8px 16px; }
+        .panel { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .tab-btn { background: #007bff; color: white; border: none; }
+        .tab-btn.active { background: #0056b3; }
+        .tab-content { display: none; padding: 15px; }
+        .tab-content.active { display: block; }
+        .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
+        .empty-state, .error-state { text-align: center; padding: 20px; }
+        .error-state { border: 1px dashed #dc3545; background: rgba(220, 53, 69, 0.1); }
+    </style>
+</head>
+<body>
+    <h1>Tournament Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Tests</h2>
+        <button onclick="testCreateButton()">Test Create Button</button>
+        <button onclick="testTabSwitching()">Test Tab Switching</button>
+        <button onclick="testAPICall()">Test API Call</button>
+        <button onclick="showAllLogs()">Show Console Logs</button>
+    </div>
+
+    <!-- Tournament HTML Structure -->
+    <div class="test-section">
+        <h2>Tournament Interface</h2>
+        
+        <div class="panel">
+            <h3>Tournaments</h3>
+            
+            <!-- Tournament Navigation -->
+            <div class="tournament-nav">
+                <button id="available-tournaments-btn" class="tab-btn active" data-tab="available">Available</button>
+                <button id="my-tournaments-btn" class="tab-btn" data-tab="my">My Tournaments</button>
+                <button id="create-tournament-btn" class="btn btn-primary">Create Tournament</button>
+            </div>
+
+            <!-- Available Tournaments Tab -->
+            <div id="available-tournaments" class="tab-content active">
+                <h4>Available Tournaments</h4>
+                <div id="available-tournaments-list" class="tournaments-list">
+                    <div class="loading">Loading tournaments...</div>
+                </div>
+            </div>
+
+            <!-- My Tournaments Tab -->
+            <div id="my-tournaments" class="tab-content">
+                <h4>My Tournaments</h4>
+                <div id="my-tournaments-list" class="tournaments-list">
+                    <div class="loading">Loading your tournaments...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Tournament Modal -->
+        <div id="create-tournament-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="background: white; padding: 20px; border-radius: 5px; max-width: 400px; margin: 50px auto;">
+                <h3>Create Tournament</h3>
+                <form id="create-tournament-form">
+                    <input type="text" id="tournament-name" placeholder="Tournament Name" required style="width: 100%; margin: 5px 0; padding: 8px;" />
+                    <textarea id="tournament-description" placeholder="Description (optional)" style="width: 100%; margin: 5px 0; padding: 8px;"></textarea>
+                    <select id="tournament-max-participants" style="width: 100%; margin: 5px 0; padding: 8px;">
+                        <option value="4">4 Players</option>
+                        <option value="8" selected>8 Players</option>
+                        <option value="16">16 Players</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-tournament" style="background: #6c757d; color: white; border: none; padding: 8px 16px; margin: 5px;">Cancel</button>
+                        <button type="submit" style="background: #007bff; color: white; border: none; padding: 8px 16px; margin: 5px;">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock authentication
+        window.authManager = {
+            getCurrentUser: () => ({ userId: 123, username: 'testuser' }),
+            getAuthHeaders: () => ({ 'Authorization': 'Bearer mock-token' })
+        };
+
+        const testResults = document.getElementById('test-results');
+        const logs = [];
+
+        function addResult(test, result, details = '') {
+            const div = document.createElement('div');
+            div.className = result ? 'pass' : 'fail';
+            div.innerHTML = `${result ? '✅' : '❌'} ${test} ${details}`;
+            testResults.appendChild(div);
+        }
+
+        function addInfo(message) {
+            const div = document.createElement('div');
+            div.className = 'info';
+            div.innerHTML = `ℹ️ ${message}`;
+            testResults.appendChild(div);
+        }
+
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            logs.push({ type: 'log', args });
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            logs.push({ type: 'error', args });
+            originalError.apply(console, args);
+        };
+
+        function testCreateButton() {
+            const btn = document.getElementById('create-tournament-btn');
+            const modal = document.getElementById('create-tournament-modal');
+            
+            addResult('Create button exists', !!btn);
+            
+            if (btn) {
+                btn.click();
+                const modalVisible = modal.style.display !== 'none';
+                addResult('Modal opens on button click', modalVisible);
+                
+                // Close modal
+                const cancelBtn = document.getElementById('cancel-tournament');
+                if (cancelBtn) {
+                    cancelBtn.click();
+                    addResult('Modal closes on cancel', modal.style.display === 'none');
+                }
+            }
+        }
+
+        function testTabSwitching() {
+            const availableBtn = document.getElementById('available-tournaments-btn');
+            const myBtn = document.getElementById('my-tournaments-btn');
+            const availableContent = document.getElementById('available-tournaments');
+            const myContent = document.getElementById('my-tournaments');
+            
+            addResult('Tab buttons exist', !!(availableBtn && myBtn));
+            addResult('Tab content exists', !!(availableContent && myContent));
+            
+            if (availableBtn && myBtn && availableContent && myContent) {
+                // Test clicking "My Tournaments"
+                myBtn.click();
+                setTimeout(() => {
+                    const myActive = myBtn.classList.contains('active');
+                    const availableActive = availableBtn.classList.contains('active');
+                    addResult('Tab switching works', myActive && !availableActive);
+                }, 100);
+            }
+        }
+
+        async function testAPICall() {
+            addInfo('Testing tournament API endpoint...');
+            
+            try {
+                const response = await fetch('/api/tournament/list', {
+                    headers: window.authManager.getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('API call successful', true, `- Got ${data.length} tournaments`);
+                } else {
+                    addResult('API call failed', false, `- Status: ${response.status}`);
+                }
+            } catch (error) {
+                addResult('API call failed', false, `- Error: ${error.message}`);
+                addInfo('This is expected if services are not running');
+            }
+        }
+
+        function showAllLogs() {
+            addInfo('Console logs:');
+            logs.forEach(log => {
+                const div = document.createElement('div');
+                div.style.fontSize = '0.8em';
+                div.style.color = log.type === 'error' ? 'red' : 'gray';
+                div.innerHTML = `[${log.type}] ${log.args.join(' ')}`;
+                testResults.appendChild(div);
+            });
+        }
+
+        // Run initial tests
+        document.addEventListener('DOMContentLoaded', () => {
+            addInfo('Starting tournament tests...');
+            
+            // Test DOM elements
+            addResult('Available tournaments list exists', !!document.getElementById('available-tournaments-list'));
+            addResult('My tournaments list exists', !!document.getElementById('my-tournaments-list'));
+            addResult('Create tournament modal exists', !!document.getElementById('create-tournament-modal'));
+            addResult('Create tournament form exists', !!document.getElementById('create-tournament-form'));
+            
+            // Load tournament manager
+            if (window.TournamentManager) {
+                try {
+                    window.tournamentManager = new TournamentManager();
+                    addResult('TournamentManager created successfully', true);
+                } catch (error) {
+                    addResult('TournamentManager creation failed', false, `- ${error.message}`);
+                }
+            } else {
+                addResult('TournamentManager class not found', false);
+                addInfo('Make sure tournament.js is loaded');
+            }
+        });
+    </script>
+
+    <!-- Load the tournament manager -->
+    <script src="js/tournament.js"></script>
+</body>
+</html>

@@ -1,33 +1,59 @@
 // frontend/js/tournament.js
 class TournamentManager {
     constructor() {
+        console.log('TournamentManager constructor called');
         this.baseURL = '/api/tournament';
         this.currentTournaments = [];
         this.userTournaments = [];
         
-        this.setupEventListeners();
+        // Wait for DOM to be ready before setting up
+        if (document.readyState === 'loading') {
+            console.log('DOM not ready, waiting for DOMContentLoaded');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOMContentLoaded fired, setting up event listeners');
+                this.setupEventListeners();
+                // Load initial data
+                this.loadTournaments();
+            });
+        } else {
+            console.log('DOM already ready, setting up event listeners immediately');
+            this.setupEventListeners();
+            // Load initial data
+            this.loadTournaments();
+        }
     }
 
     setupEventListeners() {
+        console.log('Setting up tournament event listeners');
         // Create tournament button
-        document.getElementById('create-tournament-btn').addEventListener('click', () => {
-            document.getElementById('create-tournament-modal').classList.remove('hidden');
-        });
+        const createBtn = document.getElementById('create-tournament-btn');
+        console.log('Create tournament button found:', !!createBtn);
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                document.getElementById('create-tournament-modal').classList.remove('hidden');
+            });
+        }
 
         // Cancel tournament creation
-        document.getElementById('cancel-tournament').addEventListener('click', () => {
-            document.getElementById('create-tournament-modal').classList.add('hidden');
-            document.getElementById('create-tournament-form').reset();
-        });
+        const cancelBtn = document.getElementById('cancel-tournament');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                document.getElementById('create-tournament-modal').classList.add('hidden');
+                document.getElementById('create-tournament-form').reset();
+            });
+        }
 
         // Create tournament form
-        document.getElementById('create-tournament-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createTournament();
-        });
+        const createForm = document.getElementById('create-tournament-form');
+        if (createForm) {
+            createForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createTournament();
+            });
+        }
 
         // Tournament tabs
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const tabType = btn.getAttribute('data-tab');
                 this.switchTab(tabType);
@@ -37,28 +63,186 @@ class TournamentManager {
 
     switchTab(tabType) {
         // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-tab') === tabType);
         });
 
         // Update tab content
         document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.toggle('active', content.id === `${tabType.replace('-', '-')}`);
+            content.classList.toggle('active', content.id === `${tabType}-tournaments`);
         });
 
         // Load appropriate data
         if (tabType === 'available') {
             this.loadAvailableTournaments();
-        } else if (tabType === 'my-tournaments') {
-            this.loadUserTournaments();
+        } else if (tabType === 'my') {
+            this.loadMyTournaments();
         }
     }
 
+    async loadTournaments() {
+        console.log('Loading tournaments...');
+        await this.loadAvailableTournaments();
+        await this.loadMyTournaments();
+    }
+
+    async loadAvailableTournaments() {
+        const container = document.getElementById('available-tournaments-list');
+        if (container) {
+            container.innerHTML = '<div class="loading">Loading tournaments...</div>';
+        }
+        
+        try {
+            const response = await fetch(`${this.baseURL}/list`, {
+                headers: window.authManager.getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const tournaments = await response.json();
+                this.currentTournaments = tournaments;
+                this.displayAvailableTournaments(tournaments);
+            } else {
+                this.displayAvailableTournaments([]);
+                console.error('Failed to load tournaments:', response.status);
+            }
+        } catch (error) {
+            console.error('Failed to load tournaments:', error);
+            const container = document.getElementById('available-tournaments-list');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p class="muted">Unable to load tournaments</p>
+                        <p class="muted small">Please check that services are running</p>
+                        <button class="btn btn-primary" onclick="window.tournamentManager.loadAvailableTournaments()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    async loadMyTournaments() {
+        const container = document.getElementById('my-tournaments-list');
+        if (container) {
+            container.innerHTML = '<div class="loading">Loading your tournaments...</div>';
+        }
+        
+        try {
+            const user = window.authManager.getCurrentUser();
+            if (!user) return;
+
+            const response = await fetch(`${this.baseURL}/user/${user.userId}`, {
+                headers: window.authManager.getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const tournaments = await response.json();
+                this.userTournaments = tournaments;
+                this.displayMyTournaments(tournaments);
+            } else {
+                this.displayMyTournaments([]);
+                console.error('Failed to load user tournaments:', response.status);
+            }
+        } catch (error) {
+            console.error('Failed to load user tournaments:', error);
+            const container = document.getElementById('my-tournaments-list');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <p class="muted">Unable to load your tournaments</p>
+                        <p class="muted small">Please check that services are running</p>
+                        <button class="btn btn-primary" onclick="window.tournamentManager.loadMyTournaments()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    displayAvailableTournaments(tournaments) {
+        const container = document.getElementById('available-tournaments-list');
+        if (!container) {
+            console.error('Available tournaments container not found');
+            return;
+        }
+
+        if (tournaments.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p class="muted">No tournaments available</p>
+                    <p class="muted small">Create a tournament to get started!</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = tournaments.map(tournament => `
+            <div class="tournament-card">
+                <h4>${tournament.name}</h4>
+                <p class="tournament-info">${tournament.description || 'No description'}</p>
+                <div class="tournament-participants">
+                    ${tournament.current_participants}/${tournament.max_participants} players
+                </div>
+                <div class="tournament-status">
+                    Status: <span class="status-${tournament.status}">${tournament.status}</span>
+                </div>
+                <div class="tournament-actions">
+                    ${tournament.status === 'open' ? 
+                        `<button class="btn btn-primary" onclick="window.tournamentManager.joinTournament(${tournament.id})">Join</button>` : 
+                        '<button class="btn btn-secondary" disabled>Full</button>'
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+
+    displayMyTournaments(tournaments) {
+        const container = document.getElementById('my-tournaments-list');
+        if (!container) {
+            console.error('My tournaments container not found');
+            return;
+        }
+
+        if (tournaments.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p class="muted">You haven't joined any tournaments yet</p>
+                    <p class="muted small">Join a tournament from the "Available" tab!</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = tournaments.map(tournament => `
+            <div class="tournament-card">
+                <h4>${tournament.name} ${tournament.user_role === 'creator' ? '<span class="creator-badge">👑</span>' : ''}</h4>
+                <p class="tournament-info">${tournament.description || 'No description'}</p>
+                <div class="tournament-participants">
+                    ${tournament.current_participants}/${tournament.max_participants} players
+                </div>
+                <div class="tournament-status">
+                    Status: <span class="status-${tournament.status}">${tournament.status}</span>
+                    ${tournament.user_role ? `<span class="user-role">(${tournament.user_role})</span>` : ''}
+                </div>
+                <div class="tournament-actions">
+                    <button class="btn btn-secondary" onclick="window.tournamentManager.viewTournament(${tournament.id})">View Details</button>
+                    ${tournament.user_role === 'creator' && tournament.status === 'open' ? 
+                      `<button class="btn btn-primary" onclick="window.tournamentManager.startTournament(${tournament.id})">Start Tournament</button>` : 
+                      ''
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+
     async createTournament() {
+        const user = window.authManager.getCurrentUser();
+        if (!user) {
+            alert('You must be logged in to create a tournament');
+            return;
+        }
+
         const name = document.getElementById('tournament-name').value;
         const description = document.getElementById('tournament-description').value;
         const maxParticipants = document.getElementById('tournament-max-participants').value;
-        const user = window.authManager.getCurrentUser();
 
         try {
             const response = await fetch(`${this.baseURL}/create`, {
@@ -75,90 +259,28 @@ class TournamentManager {
                 })
             });
 
-            const data = await response.json();
+            const result = await response.json();
 
             if (response.ok) {
                 alert('Tournament created successfully!');
                 document.getElementById('create-tournament-modal').classList.add('hidden');
                 document.getElementById('create-tournament-form').reset();
-                this.loadAvailableTournaments();
+                this.loadTournaments();
             } else {
-                alert(`Error: ${data.error}`);
+                alert('Failed to create tournament: ' + result.error);
             }
         } catch (error) {
-            alert('Failed to create tournament');
-            console.error('Tournament creation error:', error);
+            console.error('Create tournament error:', error);
+            alert('Failed to create tournament: Network error');
         }
-    }
-
-    async loadAvailableTournaments() {
-        try {
-            const response = await fetch(`${this.baseURL}/list?status=open&limit=20`, {
-                headers: window.authManager.getAuthHeaders()
-            });
-
-            if (response.ok) {
-                const tournaments = await response.json();
-                this.currentTournaments = tournaments;
-                this.displayAvailableTournaments(tournaments);
-            }
-        } catch (error) {
-            console.error('Failed to load tournaments:', error);
-        }
-    }
-
-    displayAvailableTournaments(tournaments) {
-        const container = document.getElementById('tournaments-list');
-
-        if (tournaments.length === 0) {
-            container.innerHTML = '<p>No tournaments available. Create one!</p>';
-            return;
-        }
-
-        const tournamentsHTML = tournaments.map(tournament => `
-            <div class="tournament-card">
-                <h3>${tournament.name}</h3>
-                <p>${tournament.description || 'No description'}</p>
-                <div class="tournament-info">
-                    <span class="participants">
-                        ${tournament.current_participants}/${tournament.max_participants} players
-                    </span>
-                    <span class="status ${tournament.status}">${tournament.status.toUpperCase()}</span>
-                </div>
-                <div class="tournament-actions">
-                    <button class="secondary-btn join-tournament-btn" 
-                            data-tournament-id="${tournament.id}"
-                            ${tournament.current_participants >= tournament.max_participants ? 'disabled' : ''}>
-                        ${tournament.current_participants >= tournament.max_participants ? 'Full' : 'Join'}
-                    </button>
-                    <button class="secondary-btn view-tournament-btn" 
-                            data-tournament-id="${tournament.id}">
-                        View
-                    </button>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = tournamentsHTML;
-
-        // Add event listeners for tournament actions
-        container.querySelectorAll('.join-tournament-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tournamentId = btn.getAttribute('data-tournament-id');
-                this.joinTournament(tournamentId);
-            });
-        });
-
-        container.querySelectorAll('.view-tournament-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tournamentId = btn.getAttribute('data-tournament-id');
-                this.viewTournament(tournamentId);
-            });
-        });
     }
 
     async joinTournament(tournamentId) {
         const user = window.authManager.getCurrentUser();
+        if (!user) {
+            alert('You must be logged in to join a tournament');
+            return;
+        }
 
         try {
             const response = await fetch(`${this.baseURL}/join`, {
@@ -168,175 +290,27 @@ class TournamentManager {
                     ...window.authManager.getAuthHeaders()
                 },
                 body: JSON.stringify({
-                    tournamentId: parseInt(tournamentId),
+                    tournamentId,
                     userId: user.userId
                 })
             });
 
-            const data = await response.json();
+            const result = await response.json();
 
             if (response.ok) {
                 alert('Successfully joined tournament!');
-                this.loadAvailableTournaments();
-                this.loadUserTournaments();
+                this.loadTournaments();
             } else {
-                alert(`Error: ${data.error}`);
+                alert('Failed to join tournament: ' + result.error);
             }
         } catch (error) {
-            alert('Failed to join tournament');
-            console.error('Tournament join error:', error);
+            console.error('Join tournament error:', error);
+            alert('Failed to join tournament: Network error');
         }
     }
 
     async viewTournament(tournamentId) {
-        try {
-            const response = await fetch(`${this.baseURL}/details/${tournamentId}`, {
-                headers: window.authManager.getAuthHeaders()
-            });
-
-            if (response.ok) {
-                const details = await response.json();
-                this.showTournamentDetails(details);
-            }
-        } catch (error) {
-            console.error('Failed to load tournament details:', error);
-        }
-    }
-
-    showTournamentDetails(details) {
-        const { tournament, participants, matches } = details;
-        
-        // Create modal for tournament details
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h3>${tournament.name}</h3>
-                <p>${tournament.description}</p>
-                
-                <div class="tournament-details">
-                    <div class="detail-section">
-                        <h4>Status</h4>
-                        <span class="status ${tournament.status}">${tournament.status.toUpperCase()}</span>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h4>Participants (${participants.length}/${tournament.max_participants})</h4>
-                        <div class="participants-list">
-                            ${participants.map(p => `<div class="participant">User ${p.user_id}</div>`).join('')}
-                        </div>
-                    </div>
-                    
-                    ${matches.length > 0 ? `
-                        <div class="detail-section">
-                            <h4>Matches</h4>
-                            <div class="matches-list">
-                                ${this.renderMatches(matches)}
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <div class="modal-buttons">
-                    <button type="button" class="close-details-btn">Close</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Close modal event
-        modal.querySelector('.close-details-btn').addEventListener('click', () => {
-            modal.remove();
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
-
-    renderMatches(matches) {
-        const matchesByRound = matches.reduce((acc, match) => {
-            if (!acc[match.round]) acc[match.round] = [];
-            acc[match.round].push(match);
-            return acc;
-        }, {});
-
-        return Object.keys(matchesByRound).map(round => `
-            <div class="round">
-                <h5>Round ${round}</h5>
-                ${matchesByRound[round].map(match => `
-                    <div class="match ${match.status}">
-                        <span class="player">User ${match.player1_id}</span>
-                        ${match.status === 'completed' ? 
-                            `<span class="score">${match.player1_score} - ${match.player2_score}</span>` :
-                            '<span class="vs">vs</span>'
-                        }
-                        <span class="player">User ${match.player2_id}</span>
-                        ${match.winner_id ? `<span class="winner">Winner: User ${match.winner_id}</span>` : ''}
-                    </div>
-                `).join('')}
-            </div>
-        `).join('');
-    }
-
-    async loadUserTournaments() {
-        const user = window.authManager.getCurrentUser();
-        
-        try {
-            const response = await fetch(`${this.baseURL}/user/${user.userId}`, {
-                headers: window.authManager.getAuthHeaders()
-            });
-
-            if (response.ok) {
-                const tournaments = await response.json();
-                this.userTournaments = tournaments;
-                this.displayUserTournaments(tournaments);
-            }
-        } catch (error) {
-            console.error('Failed to load user tournaments:', error);
-        }
-    }
-
-    displayUserTournaments(tournaments) {
-        const container = document.getElementById('user-tournaments-list');
-
-        if (tournaments.length === 0) {
-            container.innerHTML = '<p>You haven\'t joined any tournaments yet.</p>';
-            return;
-        }
-
-        const tournamentsHTML = tournaments.map(tournament => `
-            <div class="tournament-card">
-                <h3>${tournament.name}</h3>
-                <p>${tournament.description || 'No description'}</p>
-                <div class="tournament-info">
-                    <span class="participants">
-                        ${tournament.current_participants}/${tournament.max_participants} players
-                    </span>
-                    <span class="status ${tournament.status}">${tournament.status.toUpperCase()}</span>
-                    ${tournament.winner_id ? `<span class="winner">Winner: User ${tournament.winner_id}</span>` : ''}
-                </div>
-                <div class="tournament-actions">
-                    <button class="secondary-btn view-tournament-btn" 
-                            data-tournament-id="${tournament.id}">
-                        View Details
-                    </button>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = tournamentsHTML;
-
-        // Add event listeners
-        container.querySelectorAll('.view-tournament-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tournamentId = btn.getAttribute('data-tournament-id');
-                this.viewTournament(tournamentId);
-            });
-        });
+        alert('Tournament details view coming soon!');
     }
 }
 

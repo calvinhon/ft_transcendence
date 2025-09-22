@@ -7,26 +7,121 @@ class GameManager {
         this.gameState = null;
         this.isPlaying = false;
         this.keys = {};
-        
+        this.chatSocket = null;
         this.setupEventListeners();
+        this.setupChat();
+    }
+    setupChat() {
+        // Create chat UI if not present
+        let chatContainer = document.getElementById('chat-container');
+        if (!chatContainer) {
+            chatContainer = document.createElement('div');
+            chatContainer.id = 'chat-container';
+            chatContainer.style.position = 'fixed';
+            chatContainer.style.right = '24px';
+            chatContainer.style.bottom = '24px';
+            chatContainer.style.width = '320px';
+            chatContainer.style.background = '#111927cc';
+            chatContainer.style.borderRadius = '10px';
+            chatContainer.style.boxShadow = '0 2px 12px rgba(0,0,0,.25)';
+            chatContainer.style.zIndex = '1000';
+            chatContainer.style.padding = '12px';
+            chatContainer.innerHTML = `
+                <div id="chat-messages" style="height:180px;overflow-y:auto;background:#222;padding:8px;border-radius:8px;margin-bottom:8px;color:#fff;font-size:15px;"></div>
+                <form id="chat-form" style="display:flex;gap:8px;">
+                    <input id="chat-input" type="text" placeholder="Type a message..." style="flex:1;padding:8px;border-radius:6px;border:1px solid #333;background:#181c24;color:#fff;" />
+                    <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Send</button>
+                </form>
+            `;
+            document.body.appendChild(chatContainer);
+        }
+
+        // Connect to chat WebSocket
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const chatUrl = `${protocol}//${window.location.host}/api/game/ws/chat`;
+        this.chatSocket = new WebSocket(chatUrl);
+
+        this.chatSocket.onmessage = (event) => {
+            const msg = event.data;
+            this.addChatMessage(msg);
+        };
+
+        // Handle chat form submit
+        const chatForm = document.getElementById('chat-form');
+        chatForm.onsubmit = (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const user = window.authManager.getCurrentUser();
+            const text = input.value.trim();
+            if (text) {
+                const chatMsg = `${user.username || 'User'}: ${text}`;
+                this.chatSocket.send(chatMsg);
+                input.value = '';
+            }
+        };
+
+        // Add focus/blur handlers to chat input to prevent game control conflicts
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('focus', () => {
+            // Clear game keys when chat is focused
+            this.keys = {};
+        });
+        
+        chatInput.addEventListener('keydown', (e) => {
+            // Prevent game controls from being triggered while typing
+            e.stopPropagation();
+        });
+    }
+
+    addChatMessage(msg) {
+        const chatMessages = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.textContent = msg;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     setupEventListeners() {
         document.addEventListener('keydown', (e) => {
-            this.keys[e.key.toLowerCase()] = true;
+            // Only handle game controls if game canvas is focused or no input is focused
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+            
+            if (!isInputFocused && this.isPlaying) {
+                this.keys[e.key.toLowerCase()] = true;
+            }
         });
 
         document.addEventListener('keyup', (e) => {
-            this.keys[e.key.toLowerCase()] = false;
+            // Only handle game controls if no input is focused
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+            
+            if (!isInputFocused && this.isPlaying) {
+                this.keys[e.key.toLowerCase()] = false;
+            }
         });
 
-        // Find match button
-        document.getElementById('find-match-btn').addEventListener('click', () => {
-            this.findMatch();
-        });
+        // Find match button (legacy support)
+        const findMatchBtn = document.getElementById('find-match-btn');
+        if (findMatchBtn) {
+            findMatchBtn.addEventListener('click', () => {
+                this.findMatch();
+            });
+        }
     }
 
     async findMatch() {
+        // Check if user is logged in before attempting to find match
+        const user = window.authManager.getCurrentUser();
+        if (!user || !user.userId) {
+            alert('You must be logged in to play. Redirecting to login page.');
+            // Redirect to login page
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            return;
+        }
+        
         const findBtn = document.getElementById('find-match-btn');
         const waitingMsg = document.getElementById('waiting-message');
         
@@ -51,6 +146,21 @@ class GameManager {
         this.websocket.onopen = () => {
             console.log('Connected to game server');
             const user = window.authManager.getCurrentUser();
+            console.log('Current user:', user);
+            if (!user || !user.userId) {
+                console.error('No valid user logged in!');
+                alert('You must be logged in to play. Redirecting to login page.');
+                this.resetFindMatch();
+                // Redirect to login page
+                document.getElementById('game-screen').classList.remove('active');
+                document.getElementById('login-screen').classList.add('active');
+                return;
+            }
+            console.log('Sending joinGame message:', {
+                type: 'joinGame',
+                userId: user.userId,
+                username: user.username
+            });
             this.websocket.send(JSON.stringify({
                 type: 'joinGame',
                 userId: user.userId,
@@ -74,20 +184,55 @@ class GameManager {
         };
     }
 
+    async startBotMatch() {
+        // Check if user is logged in
+        const user = window.authManager.getCurrentUser();
+        if (!user || !user.userId) {
+            alert('You must be logged in to play. Redirecting to login page.');
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            return;
+        }
+
+        try {
+            await this.connectToGameServer();
+            // Send direct bot match request
+            setTimeout(() => {
+                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                    this.websocket.send(JSON.stringify({
+                        type: 'joinBotGame',
+                        userId: user.userId,
+                        username: user.username
+                    }));
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Failed to start bot match:', error);
+            this.resetFindMatch();
+        }
+    }
+
     handleGameMessage(data) {
         switch (data.type) {
             case 'waiting':
-                // Already handled by UI
+                // Show waiting message
+                const waitingMsg = document.getElementById('waiting-message');
+                if (waitingMsg) waitingMsg.classList.remove('hidden');
                 break;
-            
+
             case 'gameStart':
+                // Always hide waiting and show game canvas
+                const waitingMsg2 = document.getElementById('waiting-message');
+                if (waitingMsg2) waitingMsg2.classList.add('hidden');
+                document.getElementById('game-status').classList.add('hidden');
+                document.getElementById('game-canvas-container').classList.remove('hidden');
                 this.startGame(data);
                 break;
-            
+
             case 'gameState':
                 this.updateGameState(data);
                 break;
-            
+
             case 'gameEnd':
                 this.endGame(data);
                 break;
@@ -96,15 +241,29 @@ class GameManager {
 
     startGame(data) {
         console.log('Game started:', data);
-        
+        // Notify match manager
+        if (window.matchManager) {
+            window.matchManager.onGameStart();
+        }
         // Hide waiting UI and show game canvas
         document.getElementById('game-status').classList.add('hidden');
         document.getElementById('game-canvas-container').classList.remove('hidden');
-        
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
         this.isPlaying = true;
-        
+        // Show stop button
+        let stopBtn = document.getElementById('stop-game-btn');
+        if (!stopBtn) {
+            stopBtn = document.createElement('button');
+            stopBtn.id = 'stop-game-btn';
+            stopBtn.className = 'btn btn-danger';
+            stopBtn.textContent = 'Stop Game';
+            stopBtn.style.margin = '16px auto';
+            stopBtn.onclick = () => this.haltGame();
+            document.getElementById('game-canvas-container').appendChild(stopBtn);
+        } else {
+            stopBtn.style.display = 'block';
+        }
         // Start input handling
         this.startInputLoop();
     }
@@ -189,14 +348,30 @@ class GameManager {
     endGame(data) {
         console.log('Game ended:', data);
         this.isPlaying = false;
-        
         const user = window.authManager.getCurrentUser();
         const isWinner = data.winner === user.userId;
-        
         // Show game result
         alert(isWinner ? 'You won!' : 'You lost!');
-        
         this.resetGame();
+        // Notify match manager
+        if (window.matchManager) {
+            window.matchManager.onGameEnd();
+        }
+    }
+
+    haltGame() {
+        this.isPlaying = false;
+        if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+        }
+        // Hide stop button
+        const stopBtn = document.getElementById('stop-game-btn');
+        if (stopBtn) stopBtn.style.display = 'none';
+        // Reset UI
+        document.getElementById('game-status').classList.remove('hidden');
+        document.getElementById('game-canvas-container').classList.add('hidden');
+        this.resetFindMatch();
     }
 
     resetGame() {
@@ -217,9 +392,18 @@ class GameManager {
         const findBtn = document.getElementById('find-match-btn');
         const waitingMsg = document.getElementById('waiting-message');
         
-        findBtn.disabled = false;
-        findBtn.textContent = 'Find Match';
-        waitingMsg.classList.add('hidden');
+        if (findBtn) {
+            findBtn.disabled = false;
+            findBtn.textContent = 'Find Match';
+        }
+        if (waitingMsg) {
+            waitingMsg.classList.add('hidden');
+        }
+        
+        // Also notify match manager to reset
+        if (window.matchManager && typeof window.matchManager.showModeSelection === 'function') {
+            window.matchManager.showModeSelection();
+        }
     }
 
     async loadGameHistory(userId) {

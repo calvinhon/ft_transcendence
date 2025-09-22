@@ -1,4 +1,4 @@
-// frontend/js/app.js
+// frontend/js/app.js - Unified Application Controller
 class TranscendenceApp {
     constructor() {
         this.currentSection = 'play';
@@ -6,34 +6,45 @@ class TranscendenceApp {
     }
 
     async init() {
-        // Check authentication
-        const isAuthenticated = await window.authManager.verifyToken();
-        
-        if (isAuthenticated) {
-            this.showGameScreen();
-        } else {
-            this.showLoginScreen();
-        }
+        // Get form elements
+        this.loginForm = document.getElementById('login-form');
+        this.registerForm = document.getElementById('register-form');
+        this.loginScreen = document.getElementById('login-screen');
+        this.gameScreen = document.getElementById('game-screen');
+        this.userDisplay = document.getElementById('user-display');
+        this.logoutBtn = document.getElementById('logout-btn');
 
+        // Check authentication first
+        await this.checkExistingLogin();
+        
+        // Setup all event listeners
         this.setupEventListeners();
+        
+        // Start periodic auth check
+        this.startAuthCheck();
     }
 
     setupEventListeners() {
-        // Auth forms
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        // Authentication form listeners
+        this.loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleLogin();
         });
 
-        document.getElementById('register-form').addEventListener('submit', (e) => {
+        this.registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleRegister();
+        });
+
+        // Logout button
+        this.logoutBtn.addEventListener('click', () => {
+            this.handleLogout();
         });
 
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const section = btn.id.replace('-btn', '').replace('-', '');
+                const section = btn.id.replace('-btn', '');
                 this.showSection(section);
             });
         });
@@ -62,12 +73,29 @@ class TranscendenceApp {
             return;
         }
 
-        const result = await window.authManager.login(username, password);
-
-        if (result.success) {
-            this.showGameScreen();
-        } else {
-            alert(`Login failed: ${result.error}`);
+        console.log('Attempting login:', { username });
+        
+        try {
+            const result = await window.authManager.login(username, password);
+            console.log('Login result:', result);
+            console.log('Current user after login attempt:', window.authManager.getCurrentUser());
+            
+            if (result.success) {
+                // Login successful - switch to game screen
+                console.log('Login successful, user data:', result.data);
+                this.showGameScreen();
+                this.loginForm.reset();
+            } else {
+                console.log('Login failed:', result.error);
+                // Ensure no user is set on failed login
+                window.authManager.currentUser = null;
+                localStorage.removeItem('token');
+                alert('Login failed: ' + result.error);
+                // Stay on login screen - do NOT call showGameScreen
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Login failed: Network error');
         }
     }
 
@@ -75,23 +103,34 @@ class TranscendenceApp {
         const username = document.getElementById('register-username').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
-
+        
+        // Basic validation
         if (!username || !email || !password) {
             alert('Please fill in all fields');
             return;
         }
-
+        
         if (password.length < 6) {
             alert('Password must be at least 6 characters long');
             return;
         }
-
-        const result = await window.authManager.register(username, email, password);
-
-        if (result.success) {
-            this.showGameScreen();
-        } else {
-            alert(`Registration failed: ${result.error}`);
+        
+        console.log('Attempting registration:', { username, email });
+        
+        try {
+            const result = await window.authManager.register(username, email, password);
+            
+            if (result.success) {
+                // Registration successful - switch to game screen
+                this.showGameScreen();
+                this.registerForm.reset();
+                console.log('Registration successful');
+            } else {
+                alert('Registration failed: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('Registration failed: Network error');
         }
     }
 
@@ -100,22 +139,77 @@ class TranscendenceApp {
         this.showLoginScreen();
     }
 
+    // Check if user is already logged in (page refresh)
+    async checkExistingLogin() {
+        const isValid = await window.authManager.verifyToken();
+        if (isValid) {
+            const user = window.authManager.getCurrentUser();
+            if (user) {
+                this.showGameScreen();
+            }
+        }
+    }
+    
+    // Periodic authentication check (every 5 minutes when on game page)
+    startAuthCheck() {
+        setInterval(async () => {
+            if (this.gameScreen.classList.contains('active')) {
+                console.log('Running periodic auth check...');
+                const isValid = await window.authManager.verifyToken();
+                if (!isValid) {
+                    console.log('Authentication expired, redirecting to login');
+                    alert('Your session has expired. Please log in again.');
+                    this.showLoginScreen();
+                }
+            }
+        }, 300000); // Check every 5 minutes instead of 30 seconds
+    }
+
     showLoginScreen() {
-        document.getElementById('login-screen').classList.add('active');
-        document.getElementById('game-screen').classList.remove('active');
+        this.gameScreen.classList.remove('active');
+        this.loginScreen.classList.add('active');
+        this.userDisplay.textContent = 'Welcome!';
         
         // Clear forms
-        document.getElementById('login-form').reset();
-        document.getElementById('register-form').reset();
+        this.loginForm.reset();
+        this.registerForm.reset();
     }
 
     showGameScreen() {
-        document.getElementById('login-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
+        console.log('showGameScreen called');
+        
+        // Verify authentication before showing game screen
+        const user = window.authManager.getCurrentUser();
+        const token = localStorage.getItem('token');
+        
+        console.log('showGameScreen validation - user:', user, 'token exists:', !!token);
+        
+        if (!user || !user.userId || !token) {
+            console.error('showGameScreen: Invalid authentication, redirecting to login');
+            this.showLoginScreen();
+            return;
+        }
+        
+        console.log('showGameScreen: Validation passed, showing game screen');
+        this.loginScreen.classList.remove('active');
+        this.gameScreen.classList.add('active');
         
         // Update user display
-        const user = window.authManager.getCurrentUser();
-        document.getElementById('user-display').textContent = `Welcome, ${user.username}!`;
+        this.userDisplay.textContent = `Welcome, ${user.username}!`;
+        
+        // Initialize managers
+        if (!window.matchManager) {
+            window.matchManager = new MatchManager();
+        }
+        if (!window.tournamentManager) {
+            window.tournamentManager = new TournamentManager();
+        }
+        if (!window.profileManager) {
+            window.profileManager = new ProfileManager();
+        }
+        if (!window.leaderboardManager) {
+            window.leaderboardManager = new LeaderboardManager();
+        }
         
         // Load initial data
         this.showSection('play');
@@ -139,15 +233,25 @@ class TranscendenceApp {
         switch (sectionName) {
             case 'play':
                 // Game section is handled by GameManager
+                if (window.gameManager) {
+                    window.gameManager.loadGameHistory(window.authManager.getCurrentUser().userId);
+                    window.gameManager.loadGameStats(window.authManager.getCurrentUser().userId);
+                }
                 break;
             case 'tournaments':
-                window.tournamentManager.loadAvailableTournaments();
+                if (window.tournamentManager) {
+                    window.tournamentManager.loadTournaments();
+                }
                 break;
             case 'profile':
-                this.loadProfileData();
+                if (window.profileManager) {
+                    window.profileManager.loadProfile();
+                }
                 break;
             case 'leaderboard':
-                this.loadLeaderboard('wins');
+                if (window.leaderboardManager) {
+                    window.leaderboardManager.loadLeaderboard('wins');
+                }
                 break;
         }
     }

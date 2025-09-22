@@ -7,6 +7,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.4",
-    "@fastify/multipart": "^8.0.0"
+    "@fastify/multipart": "^8.0.0",
+	"@fastify/cors": "^9.0.0"
   }
 }
