@@ -1,0 +1,26 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@babylonjs/addons": "^8.27.2",
+    "@babylonjs/core": "^8.27.2",
+    "@babylonjs/gui": "^8.27.2",
+    "@babylonjs/loaders": "^8.27.2",
+    "babylonjs": "^8.27.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  }
+}
