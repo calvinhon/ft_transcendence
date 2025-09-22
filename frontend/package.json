@@ -17,7 +17,9 @@
     "@babylonjs/core": "^8.27.2",
     "@babylonjs/gui": "^8.27.2",
     "@babylonjs/loaders": "^8.27.2",
-    "babylonjs": "^8.27.2"
+    "@tailwindcss/vite": "^4.1.13",
+    "babylonjs": "^8.27.2",
+    "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
