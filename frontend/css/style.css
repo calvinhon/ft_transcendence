@@ -231,9 +231,423 @@ body{
   50%{ opacity: 1; }
 }
 
+/* ---------- Match Selection Styles ---------- */
+.match-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.match-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.match-option-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-secondary);
+  transform: translateY(-2px);
+}
+
+.match-option-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-dark);
+  color: white;
+}
+
+.option-icon {
+  font-size: 2rem;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.option-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.option-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Online Players */
+.players-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 1rem 0;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background: var(--panel-bg);
+  transition: background 0.2s ease;
+}
+
+.player-item:hover {
+  background: var(--bg-secondary);
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.player-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.player-name {
+  font-weight: 500;
+}
+
+.player-stats {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.challenge-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+/* Game Status Updates */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#waiting-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-style: italic;
+}
+
+/* ---------- Tournament Styles ---------- */
+.tournament-nav, .leaderboard-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.tournaments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.tournament-card {
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.tournament-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--primary);
+}
+
+.tournament-info {
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.tournament-participants {
+  margin: 0.5rem 0;
+  color: var(--accent);
+}
+
+/* Tournament States */
+.loading, .empty-state, .error-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.loading {
+  font-style: italic;
+}
+
+.empty-state p.small, .error-state p.small {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.error-state {
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: rgba(220, 53, 69, 0.1);
+}
+
+/* ---------- Profile Styles ---------- */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.profile-details h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--primary);
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.stat-label {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.profile-section {
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.profile-section h4 {
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.recent-games {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recent-game {
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius-xs);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recent-game.win {
+  border-left: 4px solid var(--accent);
+}
+
+.recent-game.loss {
+  border-left: 4px solid var(--primary);
+}
+
+/* ---------- Leaderboard Styles ---------- */
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 60px 1fr repeat(3, 80px);
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--panel);
+  border-radius: var(--radius-xs);
+  font-weight: bold;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.leaderboard-entry {
+  display: grid;
+  grid-template-columns: 60px 1fr repeat(3, 80px);
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius-xs);
+  align-items: center;
+}
+
+.leaderboard-rank {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--accent);
+  text-align: center;
+}
+
+.leaderboard-rank.gold { color: #ffd700; }
+.leaderboard-rank.silver { color: #c0c0c0; }
+.leaderboard-rank.bronze { color: #cd7f32; }
+
+/* ---------- Modal Styles ---------- */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal-content h3 {
+  margin: 0 0 1.5rem 0;
+  color: var(--primary);
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+}
+
+.modal-content textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
 /* ---------- Responsive tweaks ---------- */
 @media (max-width: 720px){
   .nav{ grid-template-columns: 1fr; }
   .nav-left, .nav-right{ justify-self: center; }
   .nav-brand{ text-align: center; }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .tournament-nav, .leaderboard-nav {
+    flex-wrap: wrap;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-entry {
+    grid-template-columns: 50px 1fr 60px 60px 70px;
+    font-size: 0.9rem;
+  }
 }

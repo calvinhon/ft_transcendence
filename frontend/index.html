@@ -58,11 +58,53 @@
         <!-- Play Section -->
         <section id="play-section" class="content-section active">
           <div class="game-container">
-            <div id="game-status" class="panel">
-              <h2>Quick Match</h2>
-              <p class="muted">Find an opponent and start playing!</p>
-              <button id="find-match-btn" class="btn btn-primary">Find Match</button>
-              <div id="waiting-message" class="hidden pulse">Waiting for opponent...</div>
+            <!-- Match Type Selection -->
+            <div id="match-selection" class="panel">
+              <h2>Select Game Mode</h2>
+              <div class="match-options">
+                <button id="quick-match-btn" class="match-option-btn active">
+                  <div class="option-icon">⚡</div>
+                  <div class="option-content">
+                    <h3>Quick Match</h3>
+                    <p>Find any available opponent</p>
+                  </div>
+                </button>
+                <button id="bot-match-btn" class="match-option-btn">
+                  <div class="option-icon">🤖</div>
+                  <div class="option-content">
+                    <h3>Play vs Bot</h3>
+                    <p>Practice against AI opponent</p>
+                  </div>
+                </button>
+                <button id="online-players-btn" class="match-option-btn">
+                  <div class="option-icon">👥</div>
+                  <div class="option-content">
+                    <h3>Online Players</h3>
+                    <p>Choose specific opponent</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Online Players List -->
+            <div id="online-players-panel" class="panel hidden">
+              <h3>Choose Your Opponent</h3>
+              <div id="online-players-list" class="players-list">
+                <div class="loading">Loading online players...</div>
+              </div>
+              <button id="back-to-modes-btn" class="btn btn-secondary">Back to Game Modes</button>
+            </div>
+
+            <!-- Game Status Panel -->
+            <div id="game-status" class="panel hidden">
+              <h2 id="game-mode-title">Quick Match</h2>
+              <p id="game-mode-description" class="muted">Finding an opponent...</p>
+              <button id="find-match-btn" class="btn btn-primary hidden">Find Match</button>
+              <button id="cancel-search-btn" class="btn btn-danger">Cancel Search</button>
+              <div id="waiting-message" class="pulse">
+                <div class="spinner"></div>
+                <span id="waiting-text">Searching for opponent...</span>
+              </div>
             </div>
 
             <div id="game-canvas-container" class="hidden canvas-wrap">
@@ -84,7 +126,47 @@
           <div class="game-container">
             <div class="panel">
               <h2>Tournaments</h2>
-              <p class="muted">Tournament feature coming soon!</p>
+              
+              <!-- Tournament Navigation -->
+              <div class="tournament-nav">
+                <button id="available-tournaments-btn" class="tab-btn active" data-tab="available">Available</button>
+                <button id="my-tournaments-btn" class="tab-btn" data-tab="my">My Tournaments</button>
+                <button id="create-tournament-btn" class="btn btn-primary">Create Tournament</button>
+              </div>
+
+              <!-- Available Tournaments Tab -->
+              <div id="available-tournaments" class="tab-content active">
+                <div id="available-tournaments-list" class="tournaments-list">
+                  <!-- Dynamic tournament cards will be inserted here -->
+                </div>
+              </div>
+
+              <!-- My Tournaments Tab -->
+              <div id="my-tournaments" class="tab-content">
+                <div id="my-tournaments-list" class="tournaments-list">
+                  <!-- Dynamic tournament cards will be inserted here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Tournament Modal -->
+          <div id="create-tournament-modal" class="modal hidden">
+            <div class="modal-content">
+              <h3>Create Tournament</h3>
+              <form id="create-tournament-form">
+                <input type="text" id="tournament-name" placeholder="Tournament Name" required />
+                <textarea id="tournament-description" placeholder="Description (optional)"></textarea>
+                <select id="tournament-max-participants">
+                  <option value="4">4 Players</option>
+                  <option value="8" selected>8 Players</option>
+                  <option value="16">16 Players</option>
+                </select>
+                <div class="modal-actions">
+                  <button type="button" id="cancel-tournament" class="btn btn-secondary">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+              </form>
             </div>
           </div>
         </section>
@@ -93,8 +175,49 @@
         <section id="profile-section" class="content-section">
           <div class="game-container">
             <div class="panel">
-              <h2>Profile</h2>
-              <p class="muted">Profile feature coming soon!</p>
+              <h2>My Profile</h2>
+              
+              <!-- Profile Info -->
+              <div class="profile-info">
+                <div class="profile-header">
+                  <div class="profile-avatar">
+                    <div class="avatar-placeholder" id="profile-avatar">👤</div>
+                  </div>
+                  <div class="profile-details">
+                    <h3 id="profile-username">Loading...</h3>
+                    <p id="profile-email" class="muted">Loading...</p>
+                    <p id="profile-joined" class="muted">Member since: Loading...</p>
+                  </div>
+                </div>
+                
+                <!-- Profile Stats -->
+                <div class="profile-stats">
+                  <div class="stat-card">
+                    <div class="stat-value" id="profile-total-games">-</div>
+                    <div class="stat-label">Total Games</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="profile-wins">-</div>
+                    <div class="stat-label">Wins</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="profile-win-rate">-%</div>
+                    <div class="stat-label">Win Rate</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-value" id="profile-tournaments">-</div>
+                    <div class="stat-label">Tournaments</div>
+                  </div>
+                </div>
+
+                <!-- Recent Games -->
+                <div class="profile-section">
+                  <h4>Recent Games</h4>
+                  <div id="profile-recent-games" class="recent-games">
+                    <!-- Dynamic game history will be inserted here -->
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -104,7 +227,27 @@
           <div class="game-container">
             <div class="panel">
               <h2>Leaderboard</h2>
-              <p class="muted">Leaderboard feature coming soon!</p>
+              
+              <!-- Leaderboard Navigation -->
+              <div class="leaderboard-nav">
+                <button class="tab-btn active" data-leaderboard="wins">Most Wins</button>
+                <button class="tab-btn" data-leaderboard="games">Most Games</button>
+                <button class="tab-btn" data-leaderboard="winrate">Best Win Rate</button>
+              </div>
+
+              <!-- Leaderboard Content -->
+              <div id="leaderboard-content" class="leaderboard-content">
+                <div class="leaderboard-header">
+                  <div class="rank">Rank</div>
+                  <div class="player">Player</div>
+                  <div class="stat">Wins</div>
+                  <div class="stat">Games</div>
+                  <div class="stat">Win Rate</div>
+                </div>
+                <div id="leaderboard-list" class="leaderboard-list">
+                  <!-- Dynamic leaderboard entries will be inserted here -->
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -114,9 +257,12 @@
 
   <!-- Scripts -->
   <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
   <script src="js/game.js"></script>
+  <script src="js/match.js"></script>
+  <script src="js/app.js"></script>
   <script src="js/tournament.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/leaderboard.js"></script>
   <script src="js/chat.js"></script>
 </body>
 </html>

@@ -222,6 +222,9 @@ async function routes(fastify, options) {
           case 'joinGame':
             handleJoinGame(connection.socket, data);
             break;
+          case 'joinBotGame':
+            handleJoinBotGame(connection.socket, data);
+            break;
           case 'movePaddle':
             handleMovePaddle(connection.socket, data);
             break;
@@ -294,9 +297,9 @@ async function routes(fastify, options) {
         message: 'Waiting for opponent...'
       }));
 
-      // If no opponent joins after 1 seconds, start with dummy opponent
+      // If no opponent joins after 5 seconds, start with dummy opponent
       const timer = setTimeout(() => {
-        console.log('Timer triggered after 2 seconds. Current waiting players:', waitingPlayers.length);
+        console.log('Timer triggered after 5 seconds. Current waiting players:', waitingPlayers.length);
         // If still waiting and only one player
         if (waitingPlayers.length === 1 && waitingPlayers[0].socket === socket) {
           console.log('Starting bot match for player:', waitingPlayers[0].username);
@@ -333,11 +336,59 @@ async function routes(fastify, options) {
             }
           );
         }
-      }, 1000);
+      }, 5000);
       
       // Store the timer reference
       matchTimers.set(socket, timer);
     }
+  }
+
+  function handleJoinBotGame(socket, data) {
+    console.log('handleJoinBotGame called with:', data);
+    
+    const player1 = {
+      userId: data.userId,
+      username: data.username,
+      socket: socket
+    };
+
+    // Create immediate bot match without waiting
+    const dummySocket = {
+      readyState: 1,
+      send: () => {} // No-op
+    };
+    
+    const player2 = {
+      userId: 0,
+      username: 'Bot',
+      socket: dummySocket
+    };
+
+    // Create game in database
+    db.run(
+      'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
+      [player1.userId, player2.userId],
+      function(err) {
+        if (!err) {
+          const game = new PongGame(player1, player2, this.lastID);
+          activeGames.set(this.lastID, game);
+          
+          // Notify player game started
+          const startMessage = {
+            type: 'gameStart',
+            gameId: this.lastID,
+            players: {
+              player1: { userId: player1.userId, username: player1.username },
+              player2: { userId: player2.userId, username: player2.username }
+            }
+          };
+          player1.socket.send(JSON.stringify(startMessage));
+          console.log('Bot game started immediately for:', player1.username);
+        } else {
+          console.error('Failed to create bot game:', err);
+        }
+      }
+    );
   }
 
   function handleMovePaddle(socket, data) {

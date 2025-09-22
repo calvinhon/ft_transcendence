@@ -286,32 +286,112 @@ async function routes(fastify, options) {
     });
   });
 
-  // Get all tournaments
+  // Get all tournaments (with mock data for testing)
   fastify.get('/list', async (request, reply) => {
     const { status, limit = 50 } = request.query;
 
-    let query = 'SELECT * FROM tournaments';
-    let params = [];
+    // For now, return mock tournaments for testing
+    // In a real system, this would query the actual database
+    const mockTournaments = [
+      {
+        id: 1,
+        name: 'Weekly Championship',
+        description: 'Join our weekly championship tournament! Winner takes glory and bragging rights.',
+        max_participants: 8,
+        current_participants: 3,
+        status: 'open',
+        created_by: 1,
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 2,
+        name: 'Speed Pong Masters',
+        description: 'Fast-paced tournament for skilled players. Quick matches, intense competition!',
+        max_participants: 16,
+        current_participants: 7,
+        status: 'open',
+        created_by: 2,
+        created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 3,
+        name: 'Beginner Friendly Cup',
+        description: 'Perfect for newcomers! Learn the ropes in a friendly competitive environment.',
+        max_participants: 8,
+        current_participants: 2,
+        status: 'open',
+        created_by: 3,
+        created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 4,
+        name: 'Elite Tournament',
+        description: 'For the most skilled players only. High stakes, ultimate bragging rights.',
+        max_participants: 4,
+        current_participants: 4,
+        status: 'full',
+        created_by: 4,
+        created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      }
+    ];
 
+    // Filter by status if specified
+    let filteredTournaments = mockTournaments;
     if (status) {
-      query += ' WHERE status = ?';
-      params.push(status);
+      filteredTournaments = mockTournaments.filter(t => t.status === status);
     }
 
-    query += ' ORDER BY created_at DESC LIMIT ?';
-    params.push(parseInt(limit));
+    // Apply limit
+    const limitedTournaments = filteredTournaments.slice(0, parseInt(limit));
 
-    return new Promise((resolve, reject) => {
-      db.all(query, params, (err, tournaments) => {
-        if (err) {
-          reply.status(500).send({ error: 'Database error' });
-          reject(err);
-        } else {
-          reply.send(tournaments);
-          resolve();
-        }
-      });
-    });
+    reply.send(limitedTournaments);
+  });
+
+  // Get user's tournaments (mock data for testing)
+  fastify.get('/user/:userId', async (request, reply) => {
+    const { userId } = request.params;
+
+    // Mock user tournaments - tournaments the user has joined or created
+    const mockUserTournaments = [
+      {
+        id: 1,
+        name: 'Weekly Championship',
+        description: 'Join our weekly championship tournament! Winner takes glory and bragging rights.',
+        max_participants: 8,
+        current_participants: 3,
+        status: 'open',
+        created_by: 1,
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        user_role: 'participant', // participant or creator
+        joined_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 5,
+        name: 'My Custom Tournament',
+        description: 'A tournament I created for my friends.',
+        max_participants: 4,
+        current_participants: 2,
+        status: 'open',
+        created_by: parseInt(userId), // User is the creator
+        created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        user_role: 'creator',
+        joined_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+
+    reply.send(mockUserTournaments);
   });
 
   // Update match result

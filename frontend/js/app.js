@@ -44,7 +44,7 @@ class TranscendenceApp {
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const section = btn.id.replace('-btn', '').replace('-', '');
+                const section = btn.id.replace('-btn', '');
                 this.showSection(section);
             });
         });
@@ -150,10 +150,11 @@ class TranscendenceApp {
         }
     }
     
-    // Periodic authentication check (every 30 seconds when on game page)
+    // Periodic authentication check (every 5 minutes when on game page)
     startAuthCheck() {
         setInterval(async () => {
             if (this.gameScreen.classList.contains('active')) {
+                console.log('Running periodic auth check...');
                 const isValid = await window.authManager.verifyToken();
                 if (!isValid) {
                     console.log('Authentication expired, redirecting to login');
@@ -161,7 +162,7 @@ class TranscendenceApp {
                     this.showLoginScreen();
                 }
             }
-        }, 30000); // Check every 30 seconds
+        }, 300000); // Check every 5 minutes instead of 30 seconds
     }
 
     showLoginScreen() {
@@ -196,6 +197,20 @@ class TranscendenceApp {
         // Update user display
         this.userDisplay.textContent = `Welcome, ${user.username}!`;
         
+        // Initialize managers
+        if (!window.matchManager) {
+            window.matchManager = new MatchManager();
+        }
+        if (!window.tournamentManager) {
+            window.tournamentManager = new TournamentManager();
+        }
+        if (!window.profileManager) {
+            window.profileManager = new ProfileManager();
+        }
+        if (!window.leaderboardManager) {
+            window.leaderboardManager = new LeaderboardManager();
+        }
+        
         // Load initial data
         this.showSection('play');
         this.loadUserProfile();
@@ -218,15 +233,25 @@ class TranscendenceApp {
         switch (sectionName) {
             case 'play':
                 // Game section is handled by GameManager
+                if (window.gameManager) {
+                    window.gameManager.loadGameHistory(window.authManager.getCurrentUser().userId);
+                    window.gameManager.loadGameStats(window.authManager.getCurrentUser().userId);
+                }
                 break;
             case 'tournaments':
-                window.tournamentManager.loadAvailableTournaments();
+                if (window.tournamentManager) {
+                    window.tournamentManager.loadTournaments();
+                }
                 break;
             case 'profile':
-                this.loadProfileData();
+                if (window.profileManager) {
+                    window.profileManager.loadProfile();
+                }
                 break;
             case 'leaderboard':
-                this.loadLeaderboard('wins');
+                if (window.leaderboardManager) {
+                    window.leaderboardManager.loadLeaderboard('wins');
+                }
                 break;
         }
     }

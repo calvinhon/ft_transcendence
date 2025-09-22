@@ -53,7 +53,7 @@ async function routes(fastify, options) {
               const token = fastify.jwt.sign({ 
                 userId: this.lastID, 
                 username: username 
-              });
+              }, { expiresIn: '24h' });
               reply.send({ 
                 message: 'User registered successfully',
                 userId: this.lastID,
@@ -100,7 +100,7 @@ async function routes(fastify, options) {
               const token = fastify.jwt.sign({ 
                 userId: user.id, 
                 username: user.username 
-              });
+              }, { expiresIn: '24h' });
               
               reply.send({
                 message: 'Login successful',
@@ -123,12 +123,19 @@ async function routes(fastify, options) {
     try {
       const token = request.headers.authorization?.replace('Bearer ', '');
       if (!token) {
+        console.log('No token provided in authorization header');
         return reply.status(401).send({ error: 'No token provided' });
       }
 
+      console.log('Verifying token:', token.substring(0, 20) + '...');
       const decoded = fastify.jwt.verify(token);
+      console.log('Token verified successfully for user:', decoded.username);
       reply.send({ valid: true, user: decoded });
     } catch (error) {
+      console.log('Token verification failed:', error.message);
+      if (error.message.includes('expired')) {
+        return reply.status(401).send({ error: 'Token expired', expired: true });
+      }
       reply.status(401).send({ error: 'Invalid token' });
     }
   });

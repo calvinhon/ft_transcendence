@@ -54,6 +54,20 @@ class ChatManager {
                 input.value = '';
             }
         };
+
+        // Add focus/blur handlers to chat input to prevent game control conflicts
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('focus', () => {
+            // Clear any game keys when chat is focused
+            if (window.gameManager) {
+                window.gameManager.keys = {};
+            }
+        });
+        
+        chatInput.addEventListener('keydown', (e) => {
+            // Prevent game controls from being triggered while typing
+            e.stopPropagation();
+        });
     }
 
     connectChatSocket() {

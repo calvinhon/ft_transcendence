@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Selection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test-container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Copy relevant CSS from main styles */
+        .panel { background: #2a2a2a; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .match-options { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 1rem; 
+            margin: 1.5rem 0; 
+        }
+        .match-option-btn {
+            display: flex; align-items: center; gap: 1rem; padding: 1.5rem;
+            border: 2px solid #555; border-radius: 12px; background: #333;
+            color: white; cursor: pointer; transition: all 0.3s ease; text-align: left;
+        }
+        .match-option-btn:hover { border-color: #0088ff; background: #404040; transform: translateY(-2px); }
+        .match-option-btn.active { border-color: #0088ff; background: #004080; }
+        .option-icon { font-size: 2rem; min-width: 3rem; text-align: center; }
+        .option-content h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; }
+        .option-content p { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+        
+        .players-list { max-height: 300px; overflow-y: auto; margin: 1rem 0; }
+        .player-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem; border: 1px solid #555; border-radius: 8px;
+            margin-bottom: 0.5rem; background: #333; transition: background 0.2s ease;
+        }
+        .player-item:hover { background: #404040; }
+        .player-info { display: flex; align-items: center; gap: 0.75rem; }
+        .player-status { width: 8px; height: 8px; border-radius: 50%; background: #10b981; }
+        .player-name { font-weight: 500; }
+        .player-stats { font-size: 0.8rem; color: #aaa; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin: 5px; }
+        .btn-primary { background: #0088ff; color: white; }
+        .btn-secondary { background: #666; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        
+        .hidden { display: none !important; }
+        .loading, .empty-state, .error-state { text-align: center; padding: 2rem; color: #aaa; }
+        .error-state { border: 1px dashed #dc3545; background: rgba(220, 53, 69, 0.1); }
+        
+        .spinner { 
+            display: inline-block; width: 20px; height: 20px; border: 2px solid #555;
+            border-radius: 50%; border-top-color: #0088ff; animation: spin 1s linear infinite;
+            margin-right: 0.5rem; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .test-results { background: #333; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        .pass { color: #10b981; }
+        .fail { color: #dc3545; }
+        .info { color: #0088ff; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 Enhanced Match Selection Test</h1>
+        
+        <div class="test-results">
+            <h3>Test Results</h3>
+            <div id="test-output"></div>
+            <button onclick="runTests()" class="btn btn-primary">Run Tests</button>
+            <button onclick="clearTests()" class="btn btn-secondary">Clear</button>
+        </div>
+
+        <!-- Match Selection Panel -->
+        <div id="match-selection" class="panel">
+            <h2>Select Game Mode</h2>
+            <div class="match-options">
+                <button id="quick-match-btn" class="match-option-btn active">
+                    <div class="option-icon">⚡</div>
+                    <div class="option-content">
+                        <h3>Quick Match</h3>
+                        <p>Find any available opponent</p>
+                    </div>
+                </button>
+                <button id="bot-match-btn" class="match-option-btn">
+                    <div class="option-icon">🤖</div>
+                    <div class="option-content">
+                        <h3>Play vs Bot</h3>
+                        <p>Practice against AI opponent</p>
+                    </div>
+                </button>
+                <button id="online-players-btn" class="match-option-btn">
+                    <div class="option-icon">👥</div>
+                    <div class="option-content">
+                        <h3>Online Players</h3>
+                        <p>Choose specific opponent</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Online Players Panel -->
+        <div id="online-players-panel" class="panel hidden">
+            <h3>Choose Your Opponent</h3>
+            <div id="online-players-list" class="players-list">
+                <div class="loading">Loading online players...</div>
+            </div>
+            <button id="back-to-modes-btn" class="btn btn-secondary">Back to Game Modes</button>
+        </div>
+
+        <!-- Game Status Panel -->
+        <div id="game-status" class="panel hidden">
+            <h2 id="game-mode-title">Quick Match</h2>
+            <p id="game-mode-description">Finding an opponent...</p>
+            <button id="cancel-search-btn" class="btn btn-danger">Cancel Search</button>
+            <div id="waiting-message">
+                <div class="spinner"></div>
+                <span id="waiting-text">Searching for opponent...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock auth manager
+        window.authManager = {
+            getCurrentUser: () => ({ userId: 123, username: 'TestUser' }),
+            getAuthHeaders: () => ({ 'Authorization': 'Bearer test-token' })
+        };
+
+        // Mock game manager
+        window.gameManager = {
+            findMatch: () => addResult('GameManager.findMatch() called', true),
+            startBotMatch: () => addResult('GameManager.startBotMatch() called', true)
+        };
+
+        const testOutput = document.getElementById('test-output');
+
+        function addResult(test, passed, details = '') {
+            const div = document.createElement('div');
+            div.className = passed ? 'pass' : 'fail';
+            div.innerHTML = `${passed ? '✅' : '❌'} ${test} ${details}`;
+            testOutput.appendChild(div);
+        }
+
+        function addInfo(message) {
+            const div = document.createElement('div');
+            div.className = 'info';
+            div.innerHTML = `ℹ️ ${message}`;
+            testOutput.appendChild(div);
+        }
+
+        function clearTests() {
+            testOutput.innerHTML = '';
+        }
+
+        function runTests() {
+            clearTests();
+            addInfo('Testing enhanced match selection system...');
+
+            // Test DOM elements
+            addResult('Match selection panel exists', !!document.getElementById('match-selection'));
+            addResult('Online players panel exists', !!document.getElementById('online-players-panel'));
+            addResult('Game status panel exists', !!document.getElementById('game-status'));
+            
+            // Test buttons
+            addResult('Quick match button exists', !!document.getElementById('quick-match-btn'));
+            addResult('Bot match button exists', !!document.getElementById('bot-match-btn'));
+            addResult('Online players button exists', !!document.getElementById('online-players-btn'));
+            
+            // Test match manager
+            if (window.MatchManager) {
+                try {
+                    const matchManager = new MatchManager();
+                    addResult('MatchManager instantiation', true);
+                    
+                    // Test mode selection
+                    matchManager.selectMode('bot');
+                    addResult('Bot mode selection', document.getElementById('bot-match-btn').classList.contains('active'));
+                    
+                    matchManager.selectMode('online');
+                    addResult('Online mode selection', !document.getElementById('match-selection').classList.contains('hidden') || !document.getElementById('online-players-panel').classList.contains('hidden'));
+                    
+                } catch (error) {
+                    addResult('MatchManager functionality', false, `Error: ${error.message}`);
+                }
+            } else {
+                addResult('MatchManager class available', false);
+            }
+
+            addInfo('Manual tests: Click the game mode buttons to test functionality');
+        }
+
+        // Load match manager
+        document.addEventListener('DOMContentLoaded', () => {
+            // Run initial test when page loads
+            setTimeout(runTests, 500);
+        });
+    </script>
+
+    <!-- Load the match manager -->
+    <script src="js/match.js"></script>
+</body>
+</html>

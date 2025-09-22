@@ -59,6 +59,18 @@ class GameManager {
                 input.value = '';
             }
         };
+
+        // Add focus/blur handlers to chat input to prevent game control conflicts
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('focus', () => {
+            // Clear game keys when chat is focused
+            this.keys = {};
+        });
+        
+        chatInput.addEventListener('keydown', (e) => {
+            // Prevent game controls from being triggered while typing
+            e.stopPropagation();
+        });
     }
 
     addChatMessage(msg) {
@@ -71,17 +83,32 @@ class GameManager {
 
     setupEventListeners() {
         document.addEventListener('keydown', (e) => {
-            this.keys[e.key.toLowerCase()] = true;
+            // Only handle game controls if game canvas is focused or no input is focused
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+            
+            if (!isInputFocused && this.isPlaying) {
+                this.keys[e.key.toLowerCase()] = true;
+            }
         });
 
         document.addEventListener('keyup', (e) => {
-            this.keys[e.key.toLowerCase()] = false;
+            // Only handle game controls if no input is focused
+            const activeElement = document.activeElement;
+            const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+            
+            if (!isInputFocused && this.isPlaying) {
+                this.keys[e.key.toLowerCase()] = false;
+            }
         });
 
-        // Find match button
-        document.getElementById('find-match-btn').addEventListener('click', () => {
-            this.findMatch();
-        });
+        // Find match button (legacy support)
+        const findMatchBtn = document.getElementById('find-match-btn');
+        if (findMatchBtn) {
+            findMatchBtn.addEventListener('click', () => {
+                this.findMatch();
+            });
+        }
     }
 
     async findMatch() {
@@ -157,20 +184,55 @@ class GameManager {
         };
     }
 
+    async startBotMatch() {
+        // Check if user is logged in
+        const user = window.authManager.getCurrentUser();
+        if (!user || !user.userId) {
+            alert('You must be logged in to play. Redirecting to login page.');
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            return;
+        }
+
+        try {
+            await this.connectToGameServer();
+            // Send direct bot match request
+            setTimeout(() => {
+                if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+                    this.websocket.send(JSON.stringify({
+                        type: 'joinBotGame',
+                        userId: user.userId,
+                        username: user.username
+                    }));
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Failed to start bot match:', error);
+            this.resetFindMatch();
+        }
+    }
+
     handleGameMessage(data) {
         switch (data.type) {
             case 'waiting':
-                // Already handled by UI
+                // Show waiting message
+                const waitingMsg = document.getElementById('waiting-message');
+                if (waitingMsg) waitingMsg.classList.remove('hidden');
                 break;
-            
+
             case 'gameStart':
+                // Always hide waiting and show game canvas
+                const waitingMsg2 = document.getElementById('waiting-message');
+                if (waitingMsg2) waitingMsg2.classList.add('hidden');
+                document.getElementById('game-status').classList.add('hidden');
+                document.getElementById('game-canvas-container').classList.remove('hidden');
                 this.startGame(data);
                 break;
-            
+
             case 'gameState':
                 this.updateGameState(data);
                 break;
-            
+
             case 'gameEnd':
                 this.endGame(data);
                 break;
@@ -179,6 +241,10 @@ class GameManager {
 
     startGame(data) {
         console.log('Game started:', data);
+        // Notify match manager
+        if (window.matchManager) {
+            window.matchManager.onGameStart();
+        }
         // Hide waiting UI and show game canvas
         document.getElementById('game-status').classList.add('hidden');
         document.getElementById('game-canvas-container').classList.remove('hidden');
@@ -287,6 +353,10 @@ class GameManager {
         // Show game result
         alert(isWinner ? 'You won!' : 'You lost!');
         this.resetGame();
+        // Notify match manager
+        if (window.matchManager) {
+            window.matchManager.onGameEnd();
+        }
     }
 
     haltGame() {
@@ -322,9 +392,18 @@ class GameManager {
         const findBtn = document.getElementById('find-match-btn');
         const waitingMsg = document.getElementById('waiting-message');
         
-        findBtn.disabled = false;
-        findBtn.textContent = 'Find Match';
-        waitingMsg.classList.add('hidden');
+        if (findBtn) {
+            findBtn.disabled = false;
+            findBtn.textContent = 'Find Match';
+        }
+        if (waitingMsg) {
+            waitingMsg.classList.add('hidden');
+        }
+        
+        // Also notify match manager to reset
+        if (window.matchManager && typeof window.matchManager.showModeSelection === 'function') {
+            window.matchManager.showModeSelection();
+        }
     }
 
     async loadGameHistory(userId) {
