@@ -359,41 +359,6 @@ async function routes(fastify, options) {
     reply.send(limitedTournaments);
   });
 
-  // Get user's tournaments (mock data for testing)
-  fastify.get('/user/:userId', async (request, reply) => {
-    const { userId } = request.params;
-
-    // Mock user tournaments - tournaments the user has joined or created
-    const mockUserTournaments = [
-      {
-        id: 1,
-        name: 'Weekly Championship',
-        description: 'Join our weekly championship tournament! Winner takes glory and bragging rights.',
-        max_participants: 8,
-        current_participants: 3,
-        status: 'open',
-        created_by: 1,
-        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        user_role: 'participant', // participant or creator
-        joined_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 5,
-        name: 'My Custom Tournament',
-        description: 'A tournament I created for my friends.',
-        max_participants: 4,
-        current_participants: 2,
-        status: 'open',
-        created_by: parseInt(userId), // User is the creator
-        created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        user_role: 'creator',
-        joined_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-
-    reply.send(mockUserTournaments);
-  });
-
   // Update match result
   fastify.post('/match/result', async (request, reply) => {
     const { matchId, winnerId, player1Score, player2Score } = request.body;

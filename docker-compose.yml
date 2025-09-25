@@ -5,8 +5,9 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend:/usr/share/nginx/html
+      - frontend-dist:/usr/share/nginx/html
     depends_on:
+      - frontend-build
       - auth-service
       - game-service
       - tournament-service
@@ -33,6 +34,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - frontend-dist:/app/dist
     environment:
       - NODE_ENV=production
     networks:
@@ -45,7 +47,7 @@ services:
     depends_on:
       - frontend-build
     volumes:
-      - ./frontend/dist:/usr/share/nginx/html:ro
+      - frontend-dist:/usr/share/nginx/html:ro
     networks:
       - transcendence-network
 
@@ -105,4 +107,5 @@ volumes:
   auth-db:
   games-db:
   tournaments-db:
+  frontend-dist:
   users-db:
