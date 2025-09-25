@@ -197,10 +197,7 @@ class TranscendenceApp {
         // Update user display
         this.userDisplay.textContent = `Welcome, ${user.username}!`;
         
-        // Initialize online tracking connection
-        this.establishOnlineTracking(user);
-        
-        // Initialize managers
+        // Initialize managers first
         if (!window.matchManager) {
             window.matchManager = new MatchManager();
         }
@@ -217,6 +214,8 @@ class TranscendenceApp {
         if (!window.leaderboardManager) {
             window.leaderboardManager = new LeaderboardManager();
         }
+        
+        // Online tracking is handled by GameManager's WebSocket connections
         
         // Load initial data
         this.showSection('play');

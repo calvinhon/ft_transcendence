@@ -2,24 +2,39 @@
 const chatClients = new Set();
 
 // --- Online Users Tracking ---
-const onlineUsers = new Map(); // userId -> {username, socket, lastSeen}
+const onlineUsers = new Map(); // userId -> {username, sockets: Set(), lastSeen}
 
 // Add user to online tracking when they connect
 function addOnlineUser(userId, username, socket) {
-  onlineUsers.set(userId, {
-    username: username,
-    socket: socket,
-    lastSeen: new Date()
-  });
-  console.log(`User ${username} (${userId}) is now online. Total online: ${onlineUsers.size}`);
+  if (onlineUsers.has(userId)) {
+    // User already tracked, just add this socket
+    const userData = onlineUsers.get(userId);
+    userData.sockets.add(socket);
+    userData.lastSeen = new Date();
+    console.log(`User ${username} (${userId}) added socket. Total sockets: ${userData.sockets.size}`);
+  } else {
+    // New user
+    onlineUsers.set(userId, {
+      username: username,
+      sockets: new Set([socket]),
+      lastSeen: new Date()
+    });
+    console.log(`User ${username} (${userId}) is now online. Total online: ${onlineUsers.size}`);
+  }
 }
 
 // Remove user from online tracking
 function removeOnlineUser(socket) {
   for (const [userId, userData] of onlineUsers) {
-    if (userData.socket === socket) {
-      console.log(`User ${userData.username} (${userId}) went offline. Total online: ${onlineUsers.size - 1}`);
-      onlineUsers.delete(userId);
+    if (userData.sockets.has(socket)) {
+      userData.sockets.delete(socket);
+      console.log(`User ${userData.username} (${userId}) removed socket. Remaining sockets: ${userData.sockets.size}`);
+      
+      // Only remove user if they have no more sockets
+      if (userData.sockets.size === 0) {
+        console.log(`User ${userData.username} (${userId}) went offline. Total online: ${onlineUsers.size - 1}`);
+        onlineUsers.delete(userId);
+      }
       break;
     }
   }
