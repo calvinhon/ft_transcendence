@@ -50,6 +50,9 @@ class ChatManager {
             const text = input.value.trim();
             if (text && this.chatSocket && this.chatSocket.readyState === 1) {
                 const chatMsg = `${user.username || 'User'}: ${text}`;
+                // Display own message immediately
+                this.addChatMessage(chatMsg);
+                // Send to server (which will broadcast to others, but not back to us)
                 this.chatSocket.send(chatMsg);
                 input.value = '';
             }

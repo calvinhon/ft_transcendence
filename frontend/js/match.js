@@ -7,7 +7,7 @@ class MatchManager {
         this.selectedOpponent = null;
         
         this.setupEventListeners();
-        this.loadOnlinePlayers();
+        // Don't load online players immediately - wait for user interaction
     }
 
     setupEventListeners() {
@@ -110,25 +110,35 @@ class MatchManager {
     }
 
     async loadOnlinePlayers() {
+        console.log('MatchManager: Loading online players...');
         const container = document.getElementById('online-players-list');
-        if (!container) return;
+        if (!container) {
+            console.error('MatchManager: online-players-list container not found');
+            return;
+        }
 
         container.innerHTML = '<div class="loading">Loading online players...</div>';
 
         try {
+            const headers = window.authManager ? window.authManager.getAuthHeaders() : {};
+            console.log('MatchManager: Using headers:', headers);
+            
             // Get online players from user service
-            const response = await fetch('/api/user/online', {
-                headers: window.authManager.getAuthHeaders()
-            });
+            const response = await fetch('/api/user/online', { headers });
+            console.log('MatchManager: Response status:', response.status);
 
             if (response.ok) {
                 const players = await response.json();
+                console.log('MatchManager: Received players:', players);
                 this.onlinePlayers = players;
                 this.displayOnlinePlayers(players);
             } else {
+                console.error('MatchManager: Failed to load players, status:', response.status);
+                const errorText = await response.text();
+                console.error('MatchManager: Error response:', errorText);
                 container.innerHTML = `
                     <div class="empty-state">
-                        <p class="muted">Unable to load online players</p>
+                        <p class="muted">Unable to load online players (Status: ${response.status})</p>
                         <button class="btn btn-primary" onclick="window.matchManager.loadOnlinePlayers()">Retry</button>
                     </div>
                 `;
@@ -137,8 +147,9 @@ class MatchManager {
             console.error('Failed to load online players:', error);
             container.innerHTML = `
                 <div class="error-state">
-                    <p class="muted">No online players available</p>
-                    <p class="muted small">Try Quick Match or Bot Match instead</p>
+                    <p class="muted">Network error loading players</p>
+                    <p class="muted small">Check console for details</p>
+                    <button class="btn btn-primary" onclick="window.matchManager.loadOnlinePlayers()">Retry</button>
                 </div>
             `;
         }
@@ -146,10 +157,17 @@ class MatchManager {
 
     displayOnlinePlayers(players) {
         const container = document.getElementById('online-players-list');
-        const currentUser = window.authManager.getCurrentUser();
+        const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
         
-        // Filter out current user
-        const availablePlayers = players.filter(p => p.user_id !== currentUser?.userId);
+        console.log('MatchManager: Displaying players:', players);
+        console.log('MatchManager: Current user:', currentUser);
+        
+        // Filter out current user if we have user data
+        const availablePlayers = currentUser ? 
+            players.filter(p => p.user_id !== currentUser.userId) : 
+            players; // If no current user info, show all players
+
+        console.log('MatchManager: Available players after filtering:', availablePlayers);
 
         if (availablePlayers.length === 0) {
             container.innerHTML = `

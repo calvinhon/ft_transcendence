@@ -5,9 +5,9 @@ async function chatRoutes(fastify, options) {
   fastify.get('/ws/chat', { websocket: true }, (connection, req) => {
     chatClients.add(connection.socket);
     connection.socket.on('message', (message) => {
-      // Broadcast received message to all clients
+      // Broadcast received message to all clients EXCEPT the sender
       for (const client of chatClients) {
-        if (client.readyState === 1) {
+        if (client.readyState === 1 && client !== connection.socket) {
           client.send(message.toString());
         }
       }
