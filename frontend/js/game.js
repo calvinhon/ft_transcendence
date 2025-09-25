@@ -43,20 +43,7 @@ class GameManager {
 
         this.chatSocket.onopen = () => {
             console.log('Connected to chat WebSocket');
-            const user = window.authManager.getCurrentUser();
-            if (user && user.userId) {
-                // Authenticate user for online tracking
-                console.log('Sending userConnect to chat for online tracking:', {
-                    type: 'userConnect',
-                    userId: user.userId,
-                    username: user.username
-                });
-                this.chatSocket.send(JSON.stringify({
-                    type: 'userConnect',
-                    userId: user.userId,
-                    username: user.username
-                }));
-            }
+            this.authenticateChatSocket();
         };
 
         this.chatSocket.onmessage = (event) => {
@@ -511,6 +498,51 @@ class GameManager {
         if (totalGamesEl) totalGamesEl.textContent = stats.totalGames || 0;
         if (totalWinsEl) totalWinsEl.textContent = stats.wins || 0;
         if (winRateEl) winRateEl.textContent = `${stats.winRate || 0}%`;
+    }
+
+    // Method to authenticate chat socket
+    authenticateChatSocket() {
+        if (!this.chatSocket || this.chatSocket.readyState !== WebSocket.OPEN) {
+            console.log('Chat socket not ready for authentication');
+            return;
+        }
+        
+        const user = window.authManager && window.authManager.getCurrentUser();
+        if (user && user.userId) {
+            console.log('Authenticating chat socket for user:', user.username);
+            this.chatSocket.send(JSON.stringify({
+                type: 'userConnect',
+                userId: user.userId,
+                username: user.username
+            }));
+        } else {
+            console.log('No authenticated user found for chat socket');
+        }
+    }
+
+    // Method to re-authenticate when user logs in
+    onUserAuthenticated(user) {
+        console.log('GameManager: User authenticated, establishing connections:', user);
+        
+        // Authenticate existing chat socket if connected
+        if (this.chatSocket && this.chatSocket.readyState === WebSocket.OPEN) {
+            console.log('Authenticating existing chat socket');
+            this.chatSocket.send(JSON.stringify({
+                type: 'userConnect',
+                userId: user.userId,
+                username: user.username
+            }));
+        }
+        
+        // If game websocket is connected, authenticate it too
+        if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+            console.log('Authenticating existing game socket');
+            this.websocket.send(JSON.stringify({
+                type: 'userConnect',
+                userId: user.userId,
+                username: user.username
+            }));
+        }
     }
 }
 

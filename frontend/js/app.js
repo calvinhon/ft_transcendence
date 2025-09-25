@@ -215,7 +215,13 @@ class TranscendenceApp {
             window.leaderboardManager = new LeaderboardManager();
         }
         
-        // Online tracking is handled by GameManager's WebSocket connections
+        // Authenticate user with GameManager for online tracking
+        if (window.gameManager && typeof window.gameManager.onUserAuthenticated === 'function') {
+            console.log('AppManager: Authenticating user with GameManager');
+            window.gameManager.onUserAuthenticated(user);
+        } else {
+            console.log('AppManager: GameManager not ready for authentication');
+        }
         
         // Load initial data
         this.showSection('play');
