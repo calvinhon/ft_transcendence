@@ -82,7 +82,6 @@ class AuthManager {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
                 }
             });
 

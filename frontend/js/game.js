@@ -422,7 +422,12 @@ class GameManager {
     }
 
     displayGameHistory(games) {
-        const historyContainer = document.getElementById('game-history');
+        const historyContainer = document.getElementById('profile-recent-games');
+        
+        if (!historyContainer) {
+            console.error('Game history container not found');
+            return;
+        }
         
         if (games.length === 0) {
             historyContainer.innerHTML = '<p>No games played yet.</p>';
@@ -468,9 +473,13 @@ class GameManager {
     }
 
     displayGameStats(stats) {
-        document.getElementById('total-games').textContent = stats.totalGames;
-        document.getElementById('total-wins').textContent = stats.wins;
-        document.getElementById('win-rate').textContent = `${stats.winRate}%`;
+        const totalGamesEl = document.getElementById('profile-total-games');
+        const totalWinsEl = document.getElementById('profile-wins');
+        const winRateEl = document.getElementById('profile-win-rate');
+        
+        if (totalGamesEl) totalGamesEl.textContent = stats.totalGames || 0;
+        if (totalWinsEl) totalWinsEl.textContent = stats.wins || 0;
+        if (winRateEl) winRateEl.textContent = `${stats.winRate || 0}%`;
     }
 }
 

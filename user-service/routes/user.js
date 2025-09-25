@@ -361,44 +361,75 @@ async function routes(fastify, options) {
   fastify.get('/leaderboard', async (request, reply) => {
     const { type = 'wins', limit = 50 } = request.query;
 
-    let query = `
+    // First get all user profiles
+    const query = `
       SELECT 
-        up.user_id,
-        up.display_name,
-        up.avatar_url,
-        up.country,
-        COUNT(CASE WHEN g.winner_id = up.user_id THEN 1 END) as wins,
-        COUNT(CASE WHEN (g.player1_id = up.user_id OR g.player2_id = up.user_id) AND g.status = 'finished' THEN 1 END) as total_games
-      FROM user_profiles up
-      LEFT JOIN games g ON (g.player1_id = up.user_id OR g.player2_id = up.user_id)
-      GROUP BY up.user_id
-      HAVING total_games > 0
+        user_id,
+        display_name,
+        avatar_url,
+        country
+      FROM user_profiles
+      ORDER BY user_id
+      LIMIT ?
     `;
 
-    if (type === 'wins') {
-      query += ' ORDER BY wins DESC, total_games DESC';
-    } else if (type === 'games') {
-      query += ' ORDER BY total_games DESC, wins DESC';
-    } else if (type === 'winrate') {
-      query += ' ORDER BY (CAST(wins AS FLOAT) / total_games) DESC, wins DESC';
-    }
-
-    query += ` LIMIT ?`;
-
     return new Promise((resolve, reject) => {
-      db.all(query, [parseInt(limit)], (err, leaderboard) => {
+      db.all(query, [parseInt(limit)], async (err, users) => {
         if (err) {
           reply.status(500).send({ error: 'Database error' });
           reject(err);
-        } else {
-          // Calculate win rate for each user
-          const enrichedLeaderboard = leaderboard.map(user => ({
-            ...user,
-            winRate: user.total_games > 0 ? ((user.wins / user.total_games) * 100).toFixed(2) : 0
-          }));
+          return;
+        }
+
+        try {
+          // Get game stats for each user from game service
+          const leaderboard = [];
           
-          reply.send(enrichedLeaderboard);
+          for (const user of users) {
+            try {
+              // Call game service to get user stats
+              const statsResponse = await fetch(`http://game-service:3000/stats/${user.user_id}`);
+              let stats = { wins: 0, losses: 0, total_games: 0, winRate: 0 };
+              
+              if (statsResponse.ok) {
+                stats = await statsResponse.json();
+              }
+              
+              leaderboard.push({
+                ...user,
+                wins: stats.wins || 0,
+                losses: stats.losses || 0,
+                total_games: stats.total_games || 0,
+                winRate: stats.winRate || 0
+              });
+            } catch (fetchError) {
+              // If game service is unavailable, use default stats
+              console.log('Could not fetch stats for user', user.user_id, ':', fetchError.message);
+              leaderboard.push({
+                ...user,
+                wins: 0,
+                losses: 0,
+                total_games: 0,
+                winRate: 0
+              });
+            }
+          }
+
+          // Sort based on type
+          if (type === 'wins') {
+            leaderboard.sort((a, b) => b.wins - a.wins || b.total_games - a.total_games);
+          } else if (type === 'games') {
+            leaderboard.sort((a, b) => b.total_games - a.total_games || b.wins - a.wins);
+          } else if (type === 'winrate') {
+            leaderboard.sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
+          }
+
+          reply.send(leaderboard);
           resolve();
+        } catch (error) {
+          console.error('Error building leaderboard:', error);
+          reply.status(500).send({ error: 'Error fetching leaderboard data' });
+          reject(error);
         }
       });
     });

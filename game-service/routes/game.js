@@ -431,23 +431,61 @@ async function routes(fastify, options) {
 
     return new Promise((resolve, reject) => {
       db.all(
-        `SELECT g.*, 
-         u1.username as player1_name, 
-         u2.username as player2_name
+        `SELECT g.*
          FROM games g
-         LEFT JOIN users u1 ON g.player1_id = u1.id
-         LEFT JOIN users u2 ON g.player2_id = u2.id
          WHERE g.player1_id = ? OR g.player2_id = ?
          ORDER BY g.started_at DESC
          LIMIT 50`,
         [userId, userId],
-        (err, games) => {
+        async (err, games) => {
           if (err) {
             reply.status(500).send({ error: 'Database error' });
             reject(err);
           } else {
-            reply.send(games);
-            resolve();
+            try {
+              // Enrich games with player names from user service
+              const enrichedGames = [];
+              
+              for (const game of games) {
+                const enrichedGame = { ...game };
+                
+                // Fetch player names from user service
+                try {
+                  if (game.player1_id) {
+                    const player1Response = await fetch(`http://user-service:3000/profile/${game.player1_id}`);
+                    if (player1Response.ok) {
+                      const player1Data = await player1Response.json();
+                      enrichedGame.player1_name = player1Data.display_name || `User${game.player1_id}`;
+                    } else {
+                      enrichedGame.player1_name = `User${game.player1_id}`;
+                    }
+                  }
+                  
+                  if (game.player2_id) {
+                    const player2Response = await fetch(`http://user-service:3000/profile/${game.player2_id}`);
+                    if (player2Response.ok) {
+                      const player2Data = await player2Response.json();
+                      enrichedGame.player2_name = player2Data.display_name || `User${game.player2_id}`;
+                    } else {
+                      enrichedGame.player2_name = `User${game.player2_id}`;
+                    }
+                  }
+                } catch (fetchError) {
+                  console.log('Could not fetch player names:', fetchError.message);
+                  enrichedGame.player1_name = `User${game.player1_id}`;
+                  enrichedGame.player2_name = `User${game.player2_id}`;
+                }
+                
+                enrichedGames.push(enrichedGame);
+              }
+              
+              reply.send(enrichedGames);
+              resolve();
+            } catch (error) {
+              console.error('Error enriching games:', error);
+              reply.status(500).send({ error: 'Error fetching game history' });
+              reject(error);
+            }
           }
         }
       );

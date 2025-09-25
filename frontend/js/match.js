@@ -1,6 +1,27 @@
 // frontend/js/match.js - Enhanced Matchmaking System
+
+// Global test function for debugging
+window.testOnlinePlayersClick = function() {
+    console.log('Testing online players click...');
+    const btn = document.getElementById('online-players-btn');
+    console.log('Button found:', !!btn);
+    if (btn) {
+        btn.click();
+    }
+};
+
+window.testShowOnlinePlayers = function() {
+    console.log('Testing show online players directly...');
+    if (window.matchManager) {
+        window.matchManager.showOnlinePlayers();
+    } else {
+        console.log('No matchManager found');
+    }
+};
+
 class MatchManager {
     constructor() {
+        console.log('MatchManager: Constructor called');
         this.currentMode = 'quick';
         this.onlinePlayers = [];
         this.searchInterval = null;
@@ -8,6 +29,7 @@ class MatchManager {
         
         this.setupEventListeners();
         // Don't load online players immediately - wait for user interaction
+        console.log('MatchManager: Constructor completed');
     }
 
     setupEventListeners() {
@@ -36,6 +58,7 @@ class MatchManager {
 
         onlineBtn?.addEventListener('click', () => {
             console.log('MatchManager: Online players button clicked');
+            alert('Online players button clicked!'); // Temporary test alert
             this.selectMode('online');
         });
 
@@ -58,7 +81,19 @@ class MatchManager {
         document.querySelectorAll('.match-option-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.getElementById(`${mode}-match-btn`).classList.add('active');
+        
+        // Handle different button ID patterns
+        let buttonId;
+        if (mode === 'online') {
+            buttonId = 'online-players-btn';
+        } else {
+            buttonId = `${mode}-match-btn`;
+        }
+        
+        const targetBtn = document.getElementById(buttonId);
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+        }
 
         // Handle different modes
         switch (mode) {
@@ -102,9 +137,26 @@ class MatchManager {
     }
 
     showOnlinePlayers() {
+        console.log('MatchManager: showOnlinePlayers called');
+        
         // Hide mode selection and show players list
-        document.getElementById('match-selection').classList.add('hidden');
-        document.getElementById('online-players-panel').classList.remove('hidden');
+        const matchSelection = document.getElementById('match-selection');
+        const onlinePlayersPanel = document.getElementById('online-players-panel');
+        
+        console.log('MatchManager: Found elements:', {
+            matchSelection: !!matchSelection,
+            onlinePlayersPanel: !!onlinePlayersPanel
+        });
+        
+        if (matchSelection) {
+            matchSelection.classList.add('hidden');
+            console.log('MatchManager: Hidden match-selection');
+        }
+        
+        if (onlinePlayersPanel) {
+            onlinePlayersPanel.classList.remove('hidden');
+            console.log('MatchManager: Shown online-players-panel');
+        }
         
         this.loadOnlinePlayers();
     }

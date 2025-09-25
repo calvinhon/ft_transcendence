@@ -1,4 +1,33 @@
 // frontend/js/tournament.js
+
+// Global test function for debugging
+window.testTournamentsClick = function() {
+    console.log('Testing tournaments click...');
+    const btn = document.getElementById('tournaments-btn');
+    console.log('Tournaments button found:', !!btn);
+    if (btn) {
+        btn.click();
+    }
+};
+
+window.testShowTournaments = function() {
+    console.log('Testing show tournaments directly...');
+    if (window.appManager) {
+        window.appManager.showSection('tournaments');
+    } else {
+        console.log('No appManager found');
+    }
+};
+
+window.debugTournamentElements = function() {
+    console.log('=== Tournament Elements Debug ===');
+    console.log('tournaments-btn:', !!document.getElementById('tournaments-btn'));
+    console.log('tournament-section:', !!document.getElementById('tournament-section'));
+    console.log('tournament-section classes:', document.getElementById('tournament-section')?.className);
+    console.log('window.tournamentManager:', !!window.tournamentManager);
+    console.log('window.appManager:', !!window.appManager);
+};
+
 class TournamentManager {
     constructor() {
         console.log('TournamentManager constructor called');

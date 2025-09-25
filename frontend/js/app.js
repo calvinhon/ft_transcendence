@@ -202,7 +202,11 @@ class TranscendenceApp {
             window.matchManager = new MatchManager();
         }
         if (!window.tournamentManager) {
+            console.log('AppManager: Creating new TournamentManager');
             window.tournamentManager = new TournamentManager();
+            console.log('AppManager: TournamentManager created:', !!window.tournamentManager);
+        } else {
+            console.log('AppManager: TournamentManager already exists');
         }
         if (!window.profileManager) {
             window.profileManager = new ProfileManager();
@@ -217,6 +221,8 @@ class TranscendenceApp {
     }
 
     showSection(sectionName) {
+        console.log('AppManager: showSection called with:', sectionName);
+        
         // Update navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.toggle('active', btn.id === `${sectionName}-btn`);
@@ -228,25 +234,31 @@ class TranscendenceApp {
         });
 
         this.currentSection = sectionName;
+        console.log('AppManager: Section updated, current section:', this.currentSection);
 
         // Load section-specific data
         switch (sectionName) {
             case 'play':
-                // Game section is handled by GameManager
-                if (window.gameManager) {
-                    window.gameManager.loadGameHistory(window.authManager.getCurrentUser().userId);
-                    window.gameManager.loadGameStats(window.authManager.getCurrentUser().userId);
-                }
+                // Play section doesn't need game stats/history - those are for profile
+                // Game functionality is handled by GameManager and MatchManager
                 break;
             case 'tournaments':
+                console.log('AppManager: Tournaments section, tournamentManager exists:', !!window.tournamentManager);
                 if (window.tournamentManager) {
+                    console.log('AppManager: Calling tournamentManager.loadTournaments()');
                     window.tournamentManager.loadTournaments();
+                } else {
+                    console.error('AppManager: tournamentManager not found!');
                 }
                 break;
             case 'profile':
-                if (window.profileManager) {
-                    window.profileManager.loadProfile();
+                const user = window.authManager.getCurrentUser();
+                if (user && window.gameManager) {
+                    window.gameManager.loadGameHistory(user.userId);
+                    window.gameManager.loadGameStats(user.userId);
                 }
+                this.loadUserProfile();
+                break;
                 break;
             case 'leaderboard':
                 if (window.leaderboardManager) {
@@ -281,8 +293,10 @@ class TranscendenceApp {
         document.getElementById('profile-email').textContent = user.email || 'Not provided';
         
         // Update avatar
-        const avatar = document.getElementById('user-avatar');
-        avatar.textContent = (profile.display_name || user.username).charAt(0).toUpperCase();
+        const avatar = document.getElementById('profile-avatar');
+        if (avatar) {
+            avatar.textContent = (profile.display_name || user.username).charAt(0).toUpperCase();
+        }
     }
 
     async loadProfileData() {
@@ -319,6 +333,11 @@ class TranscendenceApp {
     displayFriends(friends) {
         const container = document.getElementById('friends-list');
         
+        if (!container) {
+            console.log('Friends list container not found - feature not implemented yet');
+            return;
+        }
+        
         if (friends.length === 0) {
             container.innerHTML = '<p>No friends yet. Add some friends to play with!</p>';
             return;
@@ -354,6 +373,11 @@ class TranscendenceApp {
 
     displayAchievements(achievements) {
         const container = document.getElementById('achievements-list');
+        
+        if (!container) {
+            console.log('Achievements list container not found - feature not implemented yet');
+            return;
+        }
         
         if (achievements.length === 0) {
             container.innerHTML = '<p>No achievements unlocked yet. Keep playing to earn achievements!</p>';
