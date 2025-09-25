@@ -41,7 +41,36 @@ class GameManager {
         const chatUrl = `${protocol}//${window.location.host}/api/game/ws/chat`;
         this.chatSocket = new WebSocket(chatUrl);
 
+        this.chatSocket.onopen = () => {
+            console.log('Connected to chat WebSocket');
+            const user = window.authManager.getCurrentUser();
+            if (user && user.userId) {
+                // Authenticate user for online tracking
+                console.log('Sending userConnect to chat for online tracking:', {
+                    type: 'userConnect',
+                    userId: user.userId,
+                    username: user.username
+                });
+                this.chatSocket.send(JSON.stringify({
+                    type: 'userConnect',
+                    userId: user.userId,
+                    username: user.username
+                }));
+            }
+        };
+
         this.chatSocket.onmessage = (event) => {
+            try {
+                // Try to parse as JSON first (for system messages)
+                const data = JSON.parse(event.data);
+                if (data.type === 'connectionAck') {
+                    console.log('Chat connection acknowledged:', data.message);
+                    return;
+                }
+            } catch (e) {
+                // Not JSON, treat as regular chat message
+            }
+            
             const msg = event.data;
             this.addChatMessage(msg);
         };
@@ -156,13 +185,15 @@ class GameManager {
                 document.getElementById('login-screen').classList.add('active');
                 return;
             }
-            console.log('Sending joinGame message:', {
-                type: 'joinGame',
+            
+            // First, authenticate user and track as online
+            console.log('Sending userConnect message for online tracking:', {
+                type: 'userConnect',
                 userId: user.userId,
                 username: user.username
             });
             this.websocket.send(JSON.stringify({
-                type: 'joinGame',
+                type: 'userConnect',
                 userId: user.userId,
                 username: user.username
             }));

@@ -197,6 +197,9 @@ class TranscendenceApp {
         // Update user display
         this.userDisplay.textContent = `Welcome, ${user.username}!`;
         
+        // Initialize online tracking connection
+        this.establishOnlineTracking(user);
+        
         // Initialize managers
         if (!window.matchManager) {
             window.matchManager = new MatchManager();
@@ -452,6 +455,55 @@ class TranscendenceApp {
         }).join('');
 
         container.innerHTML = leaderboardHTML;
+    }
+
+    establishOnlineTracking(user) {
+        // Don't establish duplicate connections
+        if (this.onlineTrackingSocket) {
+            return;
+        }
+        
+        console.log('Establishing online tracking connection for user:', user);
+        
+        try {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/game/ws/chat`;
+            
+            this.onlineTrackingSocket = new WebSocket(wsUrl);
+            
+            this.onlineTrackingSocket.onopen = () => {
+                console.log('Online tracking WebSocket connected');
+                // Send user authentication for online tracking
+                this.onlineTrackingSocket.send(JSON.stringify({
+                    type: 'userConnect',
+                    userId: user.userId,
+                    username: user.username
+                }));
+            };
+            
+            this.onlineTrackingSocket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'connectionAck') {
+                        console.log('Online tracking acknowledged:', data.message);
+                    }
+                } catch (e) {
+                    // Not JSON, ignore
+                }
+            };
+            
+            this.onlineTrackingSocket.onclose = () => {
+                console.log('Online tracking WebSocket disconnected');
+                this.onlineTrackingSocket = null;
+            };
+            
+            this.onlineTrackingSocket.onerror = (error) => {
+                console.error('Online tracking WebSocket error:', error);
+            };
+            
+        } catch (error) {
+            console.error('Failed to establish online tracking:', error);
+        }
     }
 }
 

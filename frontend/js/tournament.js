@@ -116,18 +116,26 @@ class TournamentManager {
     }
 
     async loadAvailableTournaments() {
+        console.log('TournamentManager: loadAvailableTournaments called');
         const container = document.getElementById('available-tournaments-list');
+        console.log('TournamentManager: Container found:', !!container);
         if (container) {
             container.innerHTML = '<div class="loading">Loading tournaments...</div>';
         }
         
         try {
+            console.log('TournamentManager: Fetching from:', `${this.baseURL}/list`);
             const response = await fetch(`${this.baseURL}/list`, {
                 headers: window.authManager.getAuthHeaders()
             });
+            
+            console.log('TournamentManager: Response status:', response.status);
+            console.log('TournamentManager: Response ok:', response.ok);
 
             if (response.ok) {
                 const tournaments = await response.json();
+                console.log('TournamentManager: Received tournaments:', tournaments);
+                console.log('TournamentManager: Number of tournaments:', tournaments.length);
                 this.currentTournaments = tournaments;
                 this.displayAvailableTournaments(tournaments);
             } else {
@@ -187,7 +195,9 @@ class TournamentManager {
     }
 
     displayAvailableTournaments(tournaments) {
+        console.log('TournamentManager: displayAvailableTournaments called with:', tournaments);
         const container = document.getElementById('available-tournaments-list');
+        console.log('TournamentManager: Display container found:', !!container);
         if (!container) {
             console.error('Available tournaments container not found');
             return;
@@ -203,7 +213,7 @@ class TournamentManager {
             return;
         }
 
-        container.innerHTML = tournaments.map(tournament => `
+        const tournamentHTML = tournaments.map(tournament => `
             <div class="tournament-card">
                 <h4>${tournament.name}</h4>
                 <p class="tournament-info">${tournament.description || 'No description'}</p>
@@ -221,6 +231,11 @@ class TournamentManager {
                 </div>
             </div>
         `).join('');
+        
+        console.log('TournamentManager: Generated HTML length:', tournamentHTML.length);
+        console.log('TournamentManager: Setting innerHTML...');
+        container.innerHTML = tournamentHTML;
+        console.log('TournamentManager: HTML set successfully');
     }
 
     displayMyTournaments(tournaments) {

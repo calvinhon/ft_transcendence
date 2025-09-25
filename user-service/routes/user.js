@@ -435,62 +435,60 @@ async function routes(fastify, options) {
     });
   });
 
-  // Get online players (mock data for testing)
+  // Get online players (from game service WebSocket tracking)
   fastify.get('/online', async (request, reply) => {
-    // For now, return mock online players for testing
-    // In a real system, this would track actual WebSocket connections
-    
-    const mockPlayers = [
-      {
-        user_id: 101,
-        username: 'alice_pong',
-        display_name: 'Alice',
-        country: 'US',
-        wins: 15,
-        total_games: 23,
-        win_rate: 65.2,
-        status: 'online',
-        last_seen: new Date().toISOString()
-      },
-      {
-        user_id: 102,
-        username: 'bob_player',
-        display_name: 'Bob',
-        country: 'UK',
-        wins: 8,
-        total_games: 12,
-        win_rate: 66.7,
-        status: 'online',  
-        last_seen: new Date().toISOString()
-      },
-      {
-        user_id: 103,
-        username: 'charlie_gamer',
-        display_name: 'Charlie',
-        country: 'CA',
-        wins: 22,
-        total_games: 30,
-        win_rate: 73.3,
-        status: 'online',
-        last_seen: new Date().toISOString()
-      },
-      {
-        user_id: 104,
-        username: 'diana_ace',
-        display_name: 'Diana',
-        country: 'FR',
-        wins: 31,
-        total_games: 35,
-        win_rate: 88.6,
-        status: 'online',
-        last_seen: new Date().toISOString()
+    try {
+      // Get real online users from game service
+      const gameServiceResponse = await fetch('http://game-service:3000/online');
+      
+      if (gameServiceResponse.ok) {
+        const onlineUsers = await gameServiceResponse.json();
+        console.log(`User service: Retrieved ${onlineUsers.length} online users from game service`);
+        reply.send(onlineUsers);
+      } else {
+        console.error('Failed to get online users from game service:', gameServiceResponse.status);
+        // Fallback to bot players only
+        reply.send([
+          {
+            user_id: 'bot_easy',
+            username: 'EasyBot',
+            display_name: 'Easy Bot ⚡',
+            status: 'online',
+            is_bot: true,
+            last_seen: new Date().toISOString()
+          },
+          {
+            user_id: 'bot_medium',
+            username: 'MediumBot',
+            display_name: 'Medium Bot ⚔️',
+            status: 'online',
+            is_bot: true,
+            last_seen: new Date().toISOString()
+          },
+          {
+            user_id: 'bot_hard',
+            username: 'HardBot',
+            display_name: 'Hard Bot 🔥',
+            status: 'online',
+            is_bot: true,
+            last_seen: new Date().toISOString()
+          }
+        ]);
       }
-    ];
-
-    // Add some randomization to make it feel more realistic
-    const availablePlayers = mockPlayers.filter(() => Math.random() > 0.3);
-    
-    reply.send(availablePlayers);
+    } catch (error) {
+      console.error('Error getting online players:', error);
+      // Fallback to bot players only
+      reply.send([
+        {
+          user_id: 'bot_easy',
+          username: 'EasyBot',
+          display_name: 'Easy Bot ⚡',
+          status: 'online',
+          is_bot: true,
+          last_seen: new Date().toISOString()
+        }
+      ]);
+    }
   });
 
   // Health check

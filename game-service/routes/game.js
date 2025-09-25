@@ -1,19 +1,68 @@
 // --- Global Chat WebSocket ---
 const chatClients = new Set();
 
+// --- Online Users Tracking ---
+const onlineUsers = new Map(); // userId -> {username, socket, lastSeen}
+
+// Add user to online tracking when they connect
+function addOnlineUser(userId, username, socket) {
+  onlineUsers.set(userId, {
+    username: username,
+    socket: socket,
+    lastSeen: new Date()
+  });
+  console.log(`User ${username} (${userId}) is now online. Total online: ${onlineUsers.size}`);
+}
+
+// Remove user from online tracking
+function removeOnlineUser(socket) {
+  for (const [userId, userData] of onlineUsers) {
+    if (userData.socket === socket) {
+      console.log(`User ${userData.username} (${userId}) went offline. Total online: ${onlineUsers.size - 1}`);
+      onlineUsers.delete(userId);
+      break;
+    }
+  }
+}
+
 async function chatRoutes(fastify, options) {
   fastify.get('/ws/chat', { websocket: true }, (connection, req) => {
     chatClients.add(connection.socket);
+    
     connection.socket.on('message', (message) => {
-      // Broadcast received message to all clients EXCEPT the sender
-      for (const client of chatClients) {
-        if (client.readyState === 1 && client !== connection.socket) {
-          client.send(message.toString());
+      try {
+        const messageStr = message.toString();
+        
+        // Check if this is a JSON message with user authentication
+        try {
+          const data = JSON.parse(messageStr);
+          if (data.type === 'userConnect') {
+            // Track user as online when they connect to chat
+            addOnlineUser(data.userId, data.username, connection.socket);
+            connection.socket.send(JSON.stringify({
+              type: 'connectionAck',
+              message: 'Connected to chat and tracked as online'
+            }));
+            return;
+          }
+        } catch (e) {
+          // Not JSON, treat as regular chat message
         }
+        
+        // Broadcast received message to all clients EXCEPT the sender
+        for (const client of chatClients) {
+          if (client.readyState === 1 && client !== connection.socket) {
+            client.send(messageStr);
+          }
+        }
+      } catch (error) {
+        console.error('Chat WebSocket message error:', error);
       }
     });
+    
     connection.socket.on('close', () => {
       chatClients.delete(connection.socket);
+      removeOnlineUser(connection.socket);
     });
   });
 }
@@ -219,6 +268,14 @@ async function routes(fastify, options) {
         console.log('Received WebSocket message:', data);
         
         switch (data.type) {
+          case 'userConnect':
+            // Track user as online when they connect with authentication
+            addOnlineUser(data.userId, data.username, connection.socket);
+            connection.socket.send(JSON.stringify({
+              type: 'connectionAck',
+              message: 'You are now tracked as online'
+            }));
+            break;
           case 'joinGame':
             handleJoinGame(connection.socket, data);
             break;
@@ -244,6 +301,10 @@ async function routes(fastify, options) {
 
   function handleJoinGame(socket, data) {
     console.log('handleJoinGame called with:', data);
+    
+    // Track this user as online
+    addOnlineUser(data.userId, data.username, socket);
+    
     const player = {
       userId: data.userId,
       username: data.username,
@@ -404,6 +465,9 @@ async function routes(fastify, options) {
   }
 
   function handleDisconnect(socket) {
+    // Remove from online users tracking
+    removeOnlineUser(socket);
+    
     // Remove from waiting players
     const waitingIndex = waitingPlayers.findIndex(p => p.socket === socket);
     if (waitingIndex > -1) {
@@ -521,6 +585,55 @@ async function routes(fastify, options) {
         }
       );
     });
+  });
+
+  // Get currently online users
+  fastify.get('/online', async (request, reply) => {
+    try {
+      const onlineUsersList = Array.from(onlineUsers.entries()).map(([userId, userData]) => ({
+        user_id: parseInt(userId),
+        username: userData.username,
+        display_name: userData.username,
+        status: 'online',
+        last_seen: userData.lastSeen.toISOString(),
+        is_bot: false
+      }));
+
+      // Always include bot players as "online"
+      const botPlayers = [
+        {
+          user_id: 'bot_easy',
+          username: 'EasyBot',
+          display_name: 'Easy Bot ⚡',
+          status: 'online',
+          last_seen: new Date().toISOString(),
+          is_bot: true
+        },
+        {
+          user_id: 'bot_medium',
+          username: 'MediumBot', 
+          display_name: 'Medium Bot ⚔️',
+          status: 'online',
+          last_seen: new Date().toISOString(),
+          is_bot: true
+        },
+        {
+          user_id: 'bot_hard',
+          username: 'HardBot',
+          display_name: 'Hard Bot 🔥',
+          status: 'online', 
+          last_seen: new Date().toISOString(),
+          is_bot: true
+        }
+      ];
+
+      const allOnlineUsers = [...onlineUsersList, ...botPlayers];
+      console.log(`Returning ${allOnlineUsers.length} online users (${onlineUsersList.length} real, ${botPlayers.length} bots)`);
+      reply.send(allOnlineUsers);
+    } catch (error) {
+      console.error('Error getting online users:', error);
+      reply.status(500).send({ error: 'Error fetching online users' });
+    }
   });
 }
 
