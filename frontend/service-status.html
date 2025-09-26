@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status Check</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 20px 0; }
+        .service-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+        .status-ok { border-color: #28a745; background: #f8fff9; }
+        .status-error { border-color: #dc3545; background: #fff8f8; }
+        .status-checking { border-color: #ffc107; background: #fffdf5; }
+        .service-name { font-weight: bold; margin-bottom: 8px; }
+        .service-url { font-family: monospace; font-size: 12px; color: #666; }
+        .status { font-weight: bold; }
+        .ok { color: #28a745; }
+        .error { color: #dc3545; }
+        .checking { color: #ffc107; }
+        button { margin: 10px 5px; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .instructions { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Transcendence Service Status Check</h1>
+    
+    <div class="instructions">
+        <h3>📋 Service Status Check</h3>
+        <p>This page checks if all required services are running and accessible.</p>
+        <p><strong>If services show as ❌ Error:</strong></p>
+        <ol>
+            <li>Make sure Docker Desktop is running</li>
+            <li>Navigate to project directory in terminal</li>
+            <li>Run: <code>docker-compose up -d</code></li>
+            <li>Wait 30 seconds and refresh this page</li>
+        </ol>
+    </div>
+
+    <button class="btn-primary" onclick="checkAllServices()">🔄 Check All Services</button>
+    <button class="btn-success" onclick="testTournamentJoin()">🎯 Test Tournament Join</button>
+
+    <div class="status-grid" id="status-grid">
+        <!-- Service status cards will be populated here -->
+    </div>
+
+    <div id="test-results" style="margin-top: 20px;"></div>
+
+    <script>
+        const services = [
+            { name: 'Frontend (Nginx)', url: 'http://localhost/', testPath: '' },
+            { name: 'Auth Service', url: 'http://localhost:3001/', testPath: 'health' },
+            { name: 'Game Service', url: 'http://localhost:3002/', testPath: 'health' },
+            { name: 'Tournament Service', url: 'http://localhost:3003/', testPath: 'list' },
+            { name: 'User Service', url: 'http://localhost:3004/', testPath: 'health' },
+            { name: 'Tournament API (via Nginx)', url: 'http://localhost/api/tournament/', testPath: 'list' }
+        ];
+
+        function createServiceCard(service, status = 'checking') {
+            const statusClass = status === 'ok' ? 'status-ok' : status === 'error' ? 'status-error' : 'status-checking';
+            const statusText = status === 'ok' ? '✅ Online' : status === 'error' ? '❌ Offline' : '🔄 Checking...';
+            const statusColor = status === 'ok' ? 'ok' : status === 'error' ? 'error' : 'checking';
+
+            return `
+                <div class="service-card ${statusClass}">
+                    <div class="service-name">${service.name}</div>
+                    <div class="service-url">${service.url}${service.testPath}</div>
+                    <div class="status ${statusColor}">${statusText}</div>
+                </div>
+            `;
+        }
+
+        async function checkService(service) {
+            try {
+                const testUrl = service.url + service.testPath;
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                return response.ok ? 'ok' : 'error';
+            } catch (error) {
+                console.log(`Service ${service.name} check failed:`, error);
+                return 'error';
+            }
+        }
+
+        async function checkAllServices() {
+            const grid = document.getElementById('status-grid');
+            
+            // Show checking status
+            grid.innerHTML = services.map(service => createServiceCard(service, 'checking')).join('');
+            
+            // Check each service
+            for (let i = 0; i < services.length; i++) {
+                const service = services[i];
+                const status = await checkService(service);
+                
+                // Update just this service card
+                const cards = grid.children;
+                if (cards[i]) {
+                    cards[i].outerHTML = createServiceCard(service, status);
+                }
+            }
+        }
+
+        async function testTournamentJoin() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '<h3>🎯 Testing Tournament Join Functionality</h3><div id="join-test-output"></div>';
+            const output = document.getElementById('join-test-output');
+            
+            function log(message, type = 'info') {
+                const div = document.createElement('div');
+                div.style.padding = '5px';
+                div.style.margin = '2px 0';
+                div.style.borderLeft = `3px solid ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff'}`;
+                div.style.paddingLeft = '10px';
+                div.textContent = message;
+                output.appendChild(div);
+            }
+
+            try {
+                log('Testing tournament list endpoint...');
+                const listResponse = await fetch('/api/tournament/list');
+                
+                if (listResponse.ok) {
+                    const tournaments = await listResponse.json();
+                    log(`✅ Tournament list loaded: ${tournaments.length} tournaments found`, 'success');
+                    
+                    if (tournaments.length > 0) {
+                        log('Testing join tournament endpoint...');
+                        const joinResponse = await fetch('/api/tournament/join', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                tournamentId: tournaments[0].id,
+                                userId: 999 // Test user ID
+                            })
+                        });
+                        
+                        if (joinResponse.status === 401) {
+                            log('⚠️ Join requires authentication (expected)', 'info');
+                        } else if (joinResponse.ok) {
+                            log('✅ Join endpoint is working', 'success');
+                        } else {
+                            log(`❌ Join failed with status: ${joinResponse.status}`, 'error');
+                        }
+                    } else {
+                        log('⚠️ No tournaments available to test join', 'info');
+                    }
+                } else {
+                    log(`❌ Tournament list failed: ${listResponse.status} ${listResponse.statusText}`, 'error');
+                    log('💡 Make sure services are running: docker-compose up -d', 'info');
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, 'error');
+                log('💡 Check if services are running and accessible', 'info');
+            }
+        }
+
+        // Auto-check services on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAllServices();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Join Fix Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+        .console-log { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin: 5px 0; }
+        .tournament-demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>Tournament Join Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>🔧 Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎯 Mock Tournament Join Test</h2>
+        <p>This simulates the join tournament functionality without requiring backend services.</p>
+        <div class="tournament-demo">
+            <div class="tournament-card">
+                <h4>Test Tournament 1</h4>
+                <p class="tournament-info">Weekly Championship - Join now!</p>
+                <div class="tournament-participants">4/8 players</div>
+                <div class="tournament-status">
+                    Status: <span class="status-open">open</span>
+                </div>
+                <div class="tournament-actions">
+                    <button class="btn btn-primary" onclick="testJoinTournament(1, 'Test Tournament 1')">Join Tournament</button>
+                </div>
+            </div>
+            
+            <div class="tournament-card">
+                <h4>Test Tournament 2</h4>
+                <p class="tournament-info">Advanced Players Only</p>
+                <div class="tournament-participants">7/8 players</div>
+                <div class="tournament-status">
+                    Status: <span class="status-open">open</span>
+                </div>
+                <div class="tournament-actions">
+                    <button class="btn btn-primary" onclick="testJoinTournament(2, 'Test Tournament 2')">Join Tournament</button>
+                </div>
+            </div>
+            
+            <div class="tournament-card">
+                <h4>Full Tournament</h4>
+                <p class="tournament-info">This tournament is full</p>
+                <div class="tournament-participants">8/8 players</div>
+                <div class="tournament-status">
+                    Status: <span class="status-closed">full</span>
+                </div>
+                <div class="tournament-actions">
+                    <button class="btn btn-secondary" disabled>Full</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 Console Output</h2>
+        <div id="console-output"></div>
+    </div>
+
+    <script>
+        // Mock auth manager for testing
+        window.authManager = {
+            getCurrentUser: () => ({ userId: 123, username: 'testuser' }),
+            getAuthHeaders: () => ({ 'Authorization': 'Bearer mock-token' })
+        };
+
+        // Mock tournament manager with improved error handling
+        class MockTournamentManager {
+            constructor() {
+                this.baseURL = '/api/tournament';
+                
+                // Check if running in development mode
+                if (window.location.hostname === 'localhost' && window.location.port !== '80') {
+                    this.baseURL = 'http://localhost:3003';
+                    this.logToConsole('Using direct service URL for development: ' + this.baseURL);
+                }
+            }
+
+            logToConsole(message) {
+                console.log(message);
+                const output = document.getElementById('console-output');
+                const div = document.createElement('div');
+                div.className = 'console-log';
+                div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+                output.appendChild(div);
+            }
+
+            async joinTournament(tournamentId, tournamentName = '') {
+                const user = window.authManager.getCurrentUser();
+                if (!user) {
+                    alert('You must be logged in to join a tournament');
+                    return;
+                }
+
+                this.logToConsole('=== JOIN TOURNAMENT ATTEMPT ===');
+                this.logToConsole('Tournament ID: ' + tournamentId);
+                this.logToConsole('Tournament Name: ' + tournamentName);
+                this.logToConsole('User: ' + JSON.stringify(user));
+                this.logToConsole('Base URL: ' + this.baseURL);
+
+                try {
+                    const joinURL = `${this.baseURL}/join`;
+                    this.logToConsole('Join URL: ' + joinURL);
+                    
+                    const requestData = {
+                        tournamentId: parseInt(tournamentId),
+                        userId: parseInt(user.userId)
+                    };
+                    this.logToConsole('Request data: ' + JSON.stringify(requestData));
+
+                    // Simulate the actual fetch request
+                    this.logToConsole('Making fetch request...');
+                    
+                    try {
+                        const response = await fetch(joinURL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...window.authManager.getAuthHeaders()
+                            },
+                            body: JSON.stringify(requestData)
+                        });
+
+                        this.logToConsole('Response status: ' + response.status);
+                        this.logToConsole('Response ok: ' + response.ok);
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.logToConsole('Join success: ' + JSON.stringify(result));
+                            alert('Successfully joined tournament: ' + tournamentName);
+                        } else {
+                            let errorMessage = 'Unknown error';
+                            try {
+                                const result = await response.json();
+                                errorMessage = result.error || result.message || 'Server error';
+                            } catch (e) {
+                                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                            }
+                            this.logToConsole('Join failed: ' + errorMessage);
+                            
+                            // Provide specific error messages based on status
+                            if (response.status === 404) {
+                                alert('❌ Tournament service not found!\n\nThis means:\n• Services are not running\n• Check docker-compose services\n• Try: docker-compose up -d');
+                            } else if (response.status === 409) {
+                                alert('⚠️ Cannot join tournament: ' + errorMessage);
+                            } else {
+                                alert('❌ Failed to join tournament: ' + errorMessage);
+                            }
+                        }
+                    } catch (networkError) {
+                        this.logToConsole('Network error: ' + networkError.message);
+                        
+                        // Check if it's a CORS or connection error
+                        if (networkError.message.includes('Failed to fetch')) {
+                            alert('🔌 Connection Error!\n\nCannot reach tournament service.\n\nSolutions:\n1. Start services: docker-compose up -d\n2. Check if ports 3003 or 80 are accessible\n3. Verify nginx routing configuration');
+                        } else {
+                            alert('❌ Network error: ' + networkError.message);
+                        }
+                    }
+                } catch (error) {
+                    this.logToConsole('Unexpected error: ' + error.message);
+                    alert('❌ Unexpected error: ' + error.message);
+                }
+            }
+        }
+
+        // Initialize mock tournament manager
+        window.mockTournamentManager = new MockTournamentManager();
+
+        // Test function
+        function testJoinTournament(tournamentId, tournamentName) {
+            window.mockTournamentManager.joinTournament(tournamentId, tournamentName);
+        }
+
+        // Run tests on page load
+        function runTests() {
+            const results = document.getElementById('test-results');
+            let html = '<ul>';
+            
+            // Test 1: Check if required elements exist
+            const tests = [
+                { name: 'Mock AuthManager', test: () => !!window.authManager },
+                { name: 'Mock Tournament Manager', test: () => !!window.mockTournamentManager },
+                { name: 'Tournament Cards', test: () => document.querySelectorAll('.tournament-card').length === 3 },
+                { name: 'Join Buttons', test: () => document.querySelectorAll('.tournament-actions button').length === 3 },
+                { name: 'CSS Styles Loaded', test: () => {
+                    const style = getComputedStyle(document.querySelector('.status-open'));
+                    return style.color === 'rgb(40, 167, 69)'; // #28a745
+                }}
+            ];
+            
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    html += `<li class="${result ? 'success' : 'error'}">${test.name}: ${result ? '✅ Pass' : '❌ Fail'}</li>`;
+                } catch (e) {
+                    html += `<li class="error">${test.name}: ❌ Error - ${e.message}</li>`;
+                }
+            });
+            
+            html += '</ul>';
+            html += '<div class="info">📝 Click "Join Tournament" buttons above to test the functionality!</div>';
+            results.innerHTML = html;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

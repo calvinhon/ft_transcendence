@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Fix Test</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>Tournament Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>1. HTML Structure Test</h2>
+        <div id="html-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Tournament Section (Should be visible when "Show Tournament" is clicked)</h2>
+        <button onclick="showTournamentSection()" class="btn btn-primary">Show Tournament Section</button>
+        <button onclick="hideTournamentSection()" class="btn btn-secondary">Hide Tournament Section</button>
+    </div>
+    
+    <!-- Tournament Section (copied from main index.html) -->
+    <section id="tournaments-section" class="content-section">
+        <div class="game-container">
+            <div class="panel">
+                <h2>Tournaments</h2>
+                
+                <!-- Tournament Navigation -->
+                <div class="tournament-nav">
+                    <button id="available-tournaments-btn" class="tab-btn active" data-tab="available">Available</button>
+                    <button id="my-tournaments-btn" class="tab-btn" data-tab="my">My Tournaments</button>
+                    <button id="create-tournament-btn" class="btn btn-primary">Create Tournament</button>
+                </div>
+
+                <!-- Available Tournaments Tab -->
+                <div id="available-tournaments" class="tab-content active">
+                    <div id="available-tournaments-list" class="tournaments-list">
+                        <!-- Test tournament cards -->
+                        <div class="tournament-card">
+                            <h4>Test Tournament 1</h4>
+                            <p class="tournament-info">This is a test tournament description</p>
+                            <div class="tournament-participants">4/8 players</div>
+                            <div class="tournament-status">
+                                Status: <span class="status-open">open</span>
+                            </div>
+                            <div class="tournament-actions">
+                                <button class="btn btn-primary">Join</button>
+                            </div>
+                        </div>
+                        
+                        <div class="tournament-card">
+                            <h4>Test Tournament 2</h4>
+                            <p class="tournament-info">Another test tournament</p>
+                            <div class="tournament-participants">8/8 players</div>
+                            <div class="tournament-status">
+                                Status: <span class="status-closed">closed</span>
+                            </div>
+                            <div class="tournament-actions">
+                                <button class="btn btn-secondary" disabled>Full</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Tournaments Tab -->
+                <div id="my-tournaments" class="tab-content">
+                    <div id="my-tournaments-list" class="tournaments-list">
+                        <div class="empty-state">
+                            <p class="muted">You haven't joined any tournaments yet</p>
+                            <p class="muted small">Join a tournament from the "Available" tab!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Tournament Modal -->
+        <div id="create-tournament-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Create Tournament</h3>
+                <form id="create-tournament-form">
+                    <input type="text" id="tournament-name" placeholder="Tournament Name" required />
+                    <textarea id="tournament-description" placeholder="Description (optional)"></textarea>
+                    <select id="tournament-max-participants">
+                        <option value="4">4 Players</option>
+                        <option value="8" selected>8 Players</option>
+                        <option value="16">16 Players</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-tournament" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Test functions
+        function showTournamentSection() {
+            const section = document.getElementById('tournaments-section');
+            section.classList.add('active');
+            console.log('Tournament section shown');
+        }
+        
+        function hideTournamentSection() {
+            const section = document.getElementById('tournaments-section');
+            section.classList.remove('active');
+            console.log('Tournament section hidden');
+        }
+        
+        // Test HTML structure
+        function testHtmlStructure() {
+            const results = document.getElementById('html-test-results');
+            let html = '<ul>';
+            
+            const tests = [
+                {name: 'tournaments-section', id: 'tournaments-section'},
+                {name: 'available-tournaments-list', id: 'available-tournaments-list'},
+                {name: 'my-tournaments-list', id: 'my-tournaments-list'},
+                {name: 'create-tournament-btn', id: 'create-tournament-btn'},
+                {name: 'create-tournament-modal', id: 'create-tournament-modal'}
+            ];
+            
+            tests.forEach(test => {
+                const element = document.getElementById(test.id);
+                const exists = !!element;
+                html += `<li class="${exists ? 'success' : 'error'}">${test.name}: ${exists ? '✓ Found' : '✗ Missing'}</li>`;
+            });
+            
+            html += '</ul>';
+            results.innerHTML = html;
+        }
+        
+        // Test tab functionality
+        function setupTabTests() {
+            document.querySelectorAll('[data-tab]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabType = btn.getAttribute('data-tab');
+                    
+                    // Update tab buttons
+                    document.querySelectorAll('[data-tab]').forEach(b => {
+                        b.classList.toggle('active', b.getAttribute('data-tab') === tabType);
+                    });
+
+                    // Update tab content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.toggle('active', content.id === `${tabType}-tournaments`);
+                    });
+                    
+                    console.log('Switched to tab:', tabType);
+                });
+            });
+            
+            // Create tournament modal
+            document.getElementById('create-tournament-btn').addEventListener('click', () => {
+                document.getElementById('create-tournament-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('cancel-tournament').addEventListener('click', () => {
+                document.getElementById('create-tournament-modal').classList.add('hidden');
+            });
+        }
+        
+        // Initialize tests
+        document.addEventListener('DOMContentLoaded', () => {
+            testHtmlStructure();
+            setupTabTests();
+            showTournamentSection(); // Show by default for testing
+            console.log('Tournament test page loaded');
+        });
+    </script>
+</body>
+</html>

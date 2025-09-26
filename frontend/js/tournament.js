@@ -22,8 +22,8 @@ window.testShowTournaments = function() {
 window.debugTournamentElements = function() {
     console.log('=== Tournament Elements Debug ===');
     console.log('tournaments-btn:', !!document.getElementById('tournaments-btn'));
-    console.log('tournament-section:', !!document.getElementById('tournament-section'));
-    console.log('tournament-section classes:', document.getElementById('tournament-section')?.className);
+    console.log('tournaments-section:', !!document.getElementById('tournaments-section'));
+    console.log('tournaments-section classes:', document.getElementById('tournaments-section')?.className);
     console.log('window.tournamentManager:', !!window.tournamentManager);
     console.log('window.appManager:', !!window.appManager);
 };
@@ -34,6 +34,13 @@ class TournamentManager {
         this.baseURL = '/api/tournament';
         this.currentTournaments = [];
         this.userTournaments = [];
+        
+        // Check if running in development mode
+        if (window.location.hostname === 'localhost' && window.location.port !== '80') {
+            // Direct service access for development
+            this.baseURL = 'http://localhost:3003';
+            console.log('TournamentManager: Using direct service URL for development');
+        }
         
         // Wait for DOM to be ready before setting up
         if (document.readyState === 'loading') {
@@ -109,10 +116,67 @@ class TournamentManager {
         }
     }
 
+    async checkServiceAvailability() {
+        try {
+            console.log('Checking tournament service availability...');
+            const response = await fetch(`${this.baseURL}/list`, {
+                method: 'GET',
+                headers: window.authManager.getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                console.log('✅ Tournament service is available');
+                return true;
+            } else {
+                console.log('❌ Tournament service returned error:', response.status);
+                return false;
+            }
+        } catch (error) {
+            console.log('❌ Tournament service is not accessible:', error.message);
+            return false;
+        }
+    }
+
     async loadTournaments() {
         console.log('Loading tournaments...');
+        
+        // Check service availability first
+        const serviceAvailable = await this.checkServiceAvailability();
+        if (!serviceAvailable) {
+            this.displayServiceUnavailable();
+            return;
+        }
+        
         await this.loadAvailableTournaments();
         await this.loadMyTournaments();
+    }
+
+    displayServiceUnavailable() {
+        const containers = [
+            document.getElementById('available-tournaments-list'),
+            document.getElementById('my-tournaments-list')
+        ];
+        
+        containers.forEach(container => {
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <h3>🔌 Tournament Service Unavailable</h3>
+                        <p class="muted">Cannot connect to tournament service</p>
+                        <p class="muted small">Please make sure all services are running:</p>
+                        <div style="text-align: left; margin: 1rem 0;">
+                            <code style="background: #f1f1f1; padding: 0.5rem; border-radius: 4px; display: block;">
+                                docker-compose up -d
+                            </code>
+                        </div>
+                        <button class="btn btn-primary" onclick="window.tournamentManager.loadTournaments()">🔄 Retry</button>
+                        <p class="muted small" style="margin-top: 1rem;">
+                            Expected service URL: <strong>${this.baseURL}</strong>
+                        </p>
+                    </div>
+                `;
+            }
+        });
     }
 
     async loadAvailableTournaments() {
@@ -326,30 +390,51 @@ class TournamentManager {
             return;
         }
 
+        console.log('Attempting to join tournament:', tournamentId);
+        console.log('User:', user);
+        console.log('Base URL:', this.baseURL);
+
         try {
-            const response = await fetch(`${this.baseURL}/join`, {
+            const joinURL = `${this.baseURL}/join`;
+            console.log('Join URL:', joinURL);
+            
+            const requestData = {
+                tournamentId: parseInt(tournamentId),
+                userId: parseInt(user.userId)
+            };
+            console.log('Request data:', requestData);
+
+            const response = await fetch(joinURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     ...window.authManager.getAuthHeaders()
                 },
-                body: JSON.stringify({
-                    tournamentId,
-                    userId: user.userId
-                })
+                body: JSON.stringify(requestData)
             });
 
-            const result = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
 
             if (response.ok) {
+                const result = await response.json();
+                console.log('Join success:', result);
                 alert('Successfully joined tournament!');
                 this.loadTournaments();
             } else {
-                alert('Failed to join tournament: ' + result.error);
+                let errorMessage = 'Unknown error';
+                try {
+                    const result = await response.json();
+                    errorMessage = result.error || result.message || 'Server error';
+                } catch (e) {
+                    errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                }
+                console.error('Join failed:', errorMessage);
+                alert('Failed to join tournament: ' + errorMessage);
             }
         } catch (error) {
-            console.error('Join tournament error:', error);
-            alert('Failed to join tournament: Network error');
+            console.error('Join tournament network error:', error);
+            alert('Failed to join tournament: Network error - ' + error.message);
         }
     }
 

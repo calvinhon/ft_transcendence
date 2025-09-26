@@ -51,6 +51,8 @@ open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
 		open http://localhost:80; \
+	elif command -v wslview >/dev/null 2>&1; then \
+		wslview http://localhost:80; \
 	elif command -v xdg-open >/dev/null 2>&1; then \
 		xdg-open http://localhost:80; \
 	else \
