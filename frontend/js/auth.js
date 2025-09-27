@@ -5,6 +5,12 @@ class AuthManager {
         this.currentUser = null;
         this.token = localStorage.getItem('token');
         
+        // Configure for PHP backend in development
+        if (window.location.hostname === 'localhost') {
+            this.baseURL = 'http://localhost:8000/auth';
+            console.log('AuthManager: Using PHP backend at localhost:8000');
+        }
+        
         // If we have a token, verify it on startup
         if (this.token) {
             this.verifyToken().then(isValid => {

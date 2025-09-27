@@ -35,11 +35,17 @@ class TournamentManager {
         this.currentTournaments = [];
         this.userTournaments = [];
         
-        // Check if running in development mode
-        if (window.location.hostname === 'localhost' && window.location.port !== '80') {
-            // Direct service access for development
-            this.baseURL = 'http://localhost:3003';
-            console.log('TournamentManager: Using direct service URL for development');
+        // Check if running in development mode or with PHP backend
+        if (window.location.hostname === 'localhost') {
+            // Use PHP backend by default for local development
+            this.baseURL = 'http://localhost:8000/tournament';
+            console.log('TournamentManager: Using PHP backend at localhost:8000');
+            
+            // Fallback to Node.js service if specified
+            if (window.location.port === '3000' || window.USE_NODE_BACKEND) {
+                this.baseURL = 'http://localhost:3003';
+                console.log('TournamentManager: Using Node.js service for development');
+            }
         }
         
         // Wait for DOM to be ready before setting up
