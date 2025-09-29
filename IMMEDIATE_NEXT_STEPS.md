@@ -6,7 +6,7 @@ Since we don't have Node.js or PHP installed yet, here are the immediate next st
 
 Your SSH public key (copy this exactly):
 ```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA73NG7bf65fe4G7cqsSYxMOHSrjJ9hO8kPCMP9RHg0L nthoach@gmail.com
+
 ```
 
 **Add to GitHub now:**

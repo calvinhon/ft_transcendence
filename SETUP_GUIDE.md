@@ -22,7 +22,7 @@
 Your SSH key has been generated. Add this public key to your GitHub account:
 
 ```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA73NG7bf65fe4G7cqsSYxMOHSrjJ9hO8kPCMP9RHg0L nthoach@gmail.com
+
 ```
 
 **Steps:**
