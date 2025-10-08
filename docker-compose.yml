@@ -33,6 +33,16 @@ services:
     networks:
       - transcendence-network
 
+  blockchain-service:
+    build: ./blockchain-service
+    ports:
+      - "8545:8545"
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=blockchain-service
+    networks:
+      - transcendence-network
+
   game-service:
     build: ./game-service
     ports:
