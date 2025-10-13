@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   nginx:
     image: nginx:alpine
@@ -11,6 +13,7 @@ services:
       - game-service
       - tournament-service
       - user-service
+      - blockchain-service
     networks:
       - transcendence-network
 
@@ -33,13 +36,42 @@ services:
     networks:
       - transcendence-network
 
-  blockchain-service:
-    build: ./blockchain-service
+  hardhat-node:
+    build:
+      context: ./blockchain
+      dockerfile: Dockerfile
+    container_name: hardhat-node
     ports:
       - "8545:8545"
+    volumes:
+      - hardhat-data:/app/data
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  blockchain-service:
+    build: ./blockchain-service
+    container_name: blockchain-service
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./blockchain/artifacts:/app/blockchain-artifacts:ro
     environment:
       - PORT=3000
       - SERVICE_NAME=blockchain-service
+      - BLOCKCHAIN_RPC_URL=http://hardhat-node:8545
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    depends_on:
+      hardhat-node:
+        condition: service_healthy
     networks:
       - transcendence-network
 
@@ -64,6 +96,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=tournament-service
+      - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3000
     networks:
       - transcendence-network
 
@@ -88,3 +121,4 @@ volumes:
   games-db:
   tournaments-db:
   users-db:
+  hardhat-data:

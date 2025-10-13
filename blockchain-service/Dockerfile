@@ -1,12 +1,16 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
+# Copy application code
 COPY . .
 
-EXPOSE 8545
+EXPOSE 3000
 
-CMD ["npx", "hardhat", "node", "--hostname", "0.0.0.0"]
+CMD ["node", "server.js"]

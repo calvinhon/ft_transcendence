@@ -3,8 +3,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install npm explicitly (usually included, but for Alpine, ensure latest)
-RUN apk add --no-cache npm
+# Install Python and build dependencies for native modules
+RUN apk add --no-cache python3 make g++ npm
 
 COPY package*.json ./
 RUN npm install
