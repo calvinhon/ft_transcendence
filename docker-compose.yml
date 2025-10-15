@@ -1,0 +1,100 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - game-service
+      - tournament-service
+      - user-service
+      - blockchain-service
+    networks:
+      - transcendence-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./auth-service/database:/app/database
+      - auth-db:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=auth-service
+      - NODE_ENV=development
+    networks:
+      - transcendence-network
+
+  game-service:
+    build:
+      context: .
+      dockerfile: game-service/Dockerfile
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./game-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=game-service
+    networks:
+      - transcendence-network
+
+  tournament-service:
+    build:
+      context: .
+      dockerfile: tournament-service/Dockerfile
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./tournament-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=tournament-service
+    networks:
+      - transcendence-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./user-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=user-service
+    networks:
+      - transcendence-network
+
+  blockchain-service:
+    build: ./blockchain-service
+    ports:
+      - "8545:8545"
+      - "3005:3001"
+    environment:
+      - BLOCKCHAIN_PORT=8545
+      - API_PORT=3001
+      - NODE_ENV=development
+    networks:
+      - transcendence-network
+    volumes:
+      - blockchain-data:/app/data
+
+networks:
+  transcendence-network:
+    driver: bridge
+
+volumes:
+  auth-db:
+  games-db:
+  tournaments-db:
+  users-db:
+  blockchain-data:
