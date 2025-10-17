@@ -12,7 +12,7 @@ COPY package*.json ./
 RUN npm install
 
 # Copy blockchain development files
-COPY hardhat.config.js ./
+COPY hardhat.config.cjs ./
 COPY contracts ./contracts
 COPY scripts ./scripts
 COPY test ./test
