@@ -27,6 +27,8 @@ interface LocalPlayer {
   id: string;
   username: string;
   isCurrentUser: boolean;
+  userId: number;
+  token: string;
 }
 
 interface Route {
@@ -130,6 +132,47 @@ class Router {
 }
 
 class SpiritualAscensionApp {
+  /**
+   * Submit game results for all selected players (host and local)
+   * @param results Array of { userId, stats } for each player
+   */
+  async submitGameResults(results: Array<{ userId: number, stats: any }>): Promise<void> {
+    // Host player
+    const authManager = (window as any).authManager;
+    const hostUser = authManager?.getCurrentUser();
+    const hostToken = localStorage.getItem('token');
+    if (hostUser && hostToken) {
+      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
+    }
+
+    // Local players
+    for (const player of this.localPlayers) {
+      if (player.token && player.userId) {
+        await this.submitResultForUser(player.userId, results.find(r => r.userId === player.userId)?.stats, player.token);
+      }
+    }
+  }
+
+  /**
+   * Submit result for a single user
+   */
+  async submitResultForUser(userId: number, stats: any, token: string): Promise<void> {
+    try {
+      const response = await fetch(`/api/game/update-stats/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(stats)
+      });
+      if (!response.ok) {
+        console.error(`Failed to update stats for user ${userId}`);
+      }
+    } catch (error) {
+      console.error(`Error updating stats for user ${userId}:`, error);
+    }
+  }
   private currentScreen: string = 'login';
   private router: Router;
   private gameSettings: GameSettings = {
@@ -871,15 +914,16 @@ class SpiritualAscensionApp {
   initializeLocalPlayers(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    
+    const token = localStorage.getItem('token') || '';
     if (user) {
       this.localPlayers = [{
         id: user.userId.toString(),
         username: user.username,
-        isCurrentUser: true
+        isCurrentUser: true,
+        userId: user.userId,
+        token: token
       }];
     }
-    
     this.updateLocalPlayersDisplay();
   }
 
@@ -1129,47 +1173,65 @@ class SpiritualAscensionApp {
 
   handleAddPlayerSubmit(event: Event): void {
     event.preventDefault();
-    
-    const playerNicknameInput = document.getElementById('player-nickname') as HTMLInputElement;
-    const nickname = playerNicknameInput.value.trim();
-    
-    if (!nickname) {
-      alert('Please enter a nickname for the player');
+    const usernameInput = document.getElementById('add-player-username') as HTMLInputElement;
+    const passwordInput = document.getElementById('add-player-password') as HTMLInputElement;
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!username || !password) {
+      alert('Please enter both username and password');
       return;
     }
-    
-    if (nickname.length > 20) {
-      alert('Nickname must be 20 characters or less');
+
+    // Check if player already exists in all logged-in users (host and local)
+    const allPlayers = [
+      ...this.localPlayers,
+    ];
+    const duplicate = allPlayers.find(player => player.username.toLowerCase() === username.toLowerCase());
+    if (duplicate) {
+      alert('A player with this username is already logged in');
       return;
     }
-    
-    // Check if nickname already exists
-    const existingPlayer = this.localPlayers.find(player => 
-      player.username.toLowerCase() === nickname.toLowerCase()
-    );
-    
-    if (existingPlayer) {
-      alert('A player with this nickname already exists');
+    // Add Player Modal: Forgot Password and Create Account links
+    document.getElementById('add-player-forgot-password-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.hideAddPlayerDialog();
+      this.router.navigate('forgot-password');
+    });
+    document.getElementById('add-player-create-account-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.hideAddPlayerDialog();
+      this.router.navigate('register');
+    });
+
+    // Use AuthManager to login as this user
+    const authManager = (window as any).authManager;
+    if (!authManager) {
+      alert('Auth system not available');
       return;
     }
-    
-    // Add the player and close modal
-    this.addLocalPlayer(nickname);
-    this.hideAddPlayerDialog();
+
+    authManager.login(username, password).then((result: any) => {
+      if (result.success && result.data && result.data.user && result.data.token) {
+        // Store token and user info for this local player
+        const newPlayer: LocalPlayer = {
+          id: result.data.user.userId.toString(),
+          username: result.data.user.username,
+          isCurrentUser: false,
+          userId: result.data.user.userId,
+          token: result.data.token
+        };
+        this.localPlayers.push(newPlayer);
+        this.updateGamePartyDisplay();
+        this.hideAddPlayerDialog();
+      } else {
+        alert(result.error || 'Login failed for local player');
+      }
+    }).catch(() => {
+      alert('Network error during login');
+    });
   }
 
-  addLocalPlayer(username: string): void {
-    const playerId = Date.now().toString();
-    const newPlayer = {
-      id: playerId,
-      username: username,
-      isCurrentUser: false,
-      type: 'local' as const
-    };
-    
-    this.localPlayers.push(newPlayer);
-    this.updateGamePartyDisplay();
-  }
 
   removeLocalPlayer(playerId: string): void {
     this.localPlayers = this.localPlayers.filter(player => player.id !== playerId);

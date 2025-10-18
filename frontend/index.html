@@ -616,9 +616,21 @@
       <div class="modal-body">
         <form id="add-player-form" class="add-player-form">
           <div class="form-group">
-            <label for="player-nickname">Player Nickname</label>
-            <input type="text" id="player-nickname" placeholder="Enter player nickname..." required class="form-input" maxlength="20">
-            <small class="form-hint">Enter a nickname for the new player (max 20 characters)</small>
+            <label for="add-player-username">Username</label>
+            <input type="text" id="add-player-username" placeholder="Username" required class="login-input" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="add-player-password">Password</label>
+            <input type="password" id="add-player-password" placeholder="Password" required class="login-input" maxlength="64">
+          </div>
+          <div class="login-links" style="margin-bottom: 10px;">
+            <a href="#" id="add-player-forgot-password-link" class="login-link">
+              <span style="color: #e94560;">▶</span> Forgot Password?
+            </a>
+            <span>OR</span>
+            <a href="#" id="add-player-create-account-link" class="login-link">
+              <span style="color: #e94560;">▶</span> Create an Account
+            </a>
           </div>
           <div class="form-actions">
             <button type="button" id="cancel-add-player" class="btn-secondary">Cancel</button>

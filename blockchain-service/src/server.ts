@@ -101,7 +101,7 @@ async function initializeBlockchain(): Promise<void> {
     // Get the first account (owner)
     const signer = await provider.getSigner(0);
     
-    // Deploy contract if not exists, or connect to existing
+    // Deploy contract t exists, or connect to existing
     if (!contractAddress) {
       console.log('Deploying TournamentRankings contract...');
       
