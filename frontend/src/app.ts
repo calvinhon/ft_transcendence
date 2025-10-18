@@ -1183,34 +1183,23 @@ class SpiritualAscensionApp {
       return;
     }
 
-    // Check if player already exists in all logged-in users (host and local)
-    const allPlayers = [
-      ...this.localPlayers,
+    // Check for duplicate username against host and all local players
+    const hostAuthManager = (window as any).authManager;
+    const hostUser = hostAuthManager?.getCurrentUser();
+    const allUsernames = [
+      ...(hostUser ? [hostUser.username.toLowerCase()] : []),
+      ...this.localPlayers.map(p => p.username.toLowerCase())
     ];
-    const duplicate = allPlayers.find(player => player.username.toLowerCase() === username.toLowerCase());
-    if (duplicate) {
+    if (allUsernames.includes(username.toLowerCase())) {
       alert('A player with this username is already logged in');
       return;
     }
-    // Add Player Modal: Forgot Password and Create Account links
-    document.getElementById('add-player-forgot-password-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hideAddPlayerDialog();
-      this.router.navigate('forgot-password');
-    });
-    document.getElementById('add-player-create-account-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hideAddPlayerDialog();
-      this.router.navigate('register');
-    });
-
-    // Use AuthManager to login as this user
+    // Attempt to log in local player
     const authManager = (window as any).authManager;
     if (!authManager) {
       alert('Auth system not available');
       return;
     }
-
     authManager.login(username, password).then((result: any) => {
       if (result.success && result.data && result.data.user && result.data.token) {
         // Store token and user info for this local player
@@ -1222,16 +1211,82 @@ class SpiritualAscensionApp {
           token: result.data.token
         };
         this.localPlayers.push(newPlayer);
-        this.updateGamePartyDisplay();
+        this.updateLocalPlayersDisplay();
         this.hideAddPlayerDialog();
+        this.updateGamePartyDisplay();
+        // Highlight/select the newly added local player as active
+        setTimeout(() => {
+          const partyList = document.getElementById('game-party-list');
+          if (partyList) {
+            const playerCards = partyList.querySelectorAll('.player-card.local-player');
+            if (playerCards.length > 0) {
+              const lastPlayerCard = playerCards[playerCards.length - 1] as HTMLElement;
+              lastPlayerCard.classList.add('active');
+            }
+          }
+        }, 100);
       } else {
         alert(result.error || 'Login failed for local player');
       }
     }).catch(() => {
       alert('Network error during login');
     });
+    // Modal links for forgot password and create account
+    document.getElementById('add-player-forgot-password-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.hideAddPlayerDialog();
+      this.router.navigate('forgot-password');
+    });
+    document.getElementById('add-player-create-account-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.hideAddPlayerDialog();
+      this.showRegistrationForLocalPlayer();
+    });
+
   }
 
+  showRegistrationForLocalPlayer(): void {
+    // Show registration screen
+    this.router.navigate('register');
+    // Listen for registration form submit
+    const registerForm = document.getElementById('register-form') as HTMLFormElement;
+    if (registerForm) {
+      const handler = async (event: Event) => {
+        event.preventDefault();
+        const usernameInput = document.getElementById('register-username') as HTMLInputElement;
+        const emailInput = document.getElementById('register-email') as HTMLInputElement;
+        const passwordInput = document.getElementById('register-password') as HTMLInputElement;
+        const username = usernameInput?.value.trim();
+        const email = emailInput?.value.trim();
+        const password = passwordInput?.value;
+        const authManager = (window as any).authManager;
+        if (!authManager) {
+          alert('Auth system not available');
+          return;
+        }
+        const result = await authManager.register(username, email, password);
+        if (result.success && result.data) {
+          alert('Account created!');
+          // Switch host session to new local player
+          const authManager = (window as any).authManager;
+          authManager.currentUser = {
+            userId: result.data.userId,
+            username: result.data.username,
+            email: result.data.email
+          };
+          localStorage.setItem('token', result.data.token || '');
+          this.initializeLocalPlayers();
+          this.router.navigate('play-config');
+          this.updateLocalPlayersDisplay();
+        } else {
+          alert(result.error || 'Registration failed');
+        }
+        registerForm.removeEventListener('submit', handler);
+      };
+      registerForm.addEventListener('submit', handler);
+    }
+
+  }
 
   removeLocalPlayer(playerId: string): void {
     this.localPlayers = this.localPlayers.filter(player => player.id !== playerId);
