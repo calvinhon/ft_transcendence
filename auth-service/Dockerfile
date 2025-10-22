@@ -1,24 +1,7 @@
-<<<<<<< HEAD
-# auth-service/Dockerfile
-=======
->>>>>>> origin/feature/backend_solo
 FROM node:18-alpine
 
 WORKDIR /app
 
-<<<<<<< HEAD
-# Install Python and build dependencies for native modules
-RUN apk add --no-cache python3 make g++ npm
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
-=======
 # Copy package files
 COPY auth-service/package*.json ./
 COPY auth-service/tsconfig.json ./
@@ -50,4 +33,3 @@ USER node
 
 # Start using compiled JavaScript
 CMD ["node", "dist/server.js"]
->>>>>>> origin/feature/backend_solo

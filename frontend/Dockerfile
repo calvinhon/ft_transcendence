@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-# frontend/Dockerfile
-FROM nginx:alpine
-COPY . /usr/share/nginx/html
-EXPOSE 80
-=======
 # Build stage
 FROM node:18-alpine as builder
 
@@ -40,5 +34,4 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
->>>>>>> origin/feature/backend_solo
 CMD ["nginx", "-g", "daemon off;"]

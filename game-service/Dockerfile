@@ -1,21 +1,7 @@
-<<<<<<< HEAD
-# game-service/Dockerfile
-=======
->>>>>>> origin/feature/backend_solo
 FROM node:18-alpine
 
 WORKDIR /app
 
-<<<<<<< HEAD
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
-=======
 # Copy package files
 COPY game-service/package*.json ./
 COPY game-service/tsconfig.json ./
@@ -40,4 +26,3 @@ EXPOSE 3000
 
 # Start using compiled JavaScript
 CMD ["node", "dist/server.js"]
->>>>>>> origin/feature/backend_solo

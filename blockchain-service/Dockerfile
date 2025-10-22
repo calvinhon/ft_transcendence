@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy application code
-COPY . .
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
-=======
 FROM node:20-alpine
 
 WORKDIR /app
@@ -30,9 +12,6 @@ RUN npm install
 
 # Copy source code
 COPY src/ ./src/
-COPY contracts/ ./contracts/
-COPY scripts/ ./scripts/
-COPY test/ ./test/
 COPY hardhat.config.js ./
 
 # Build TypeScript if src exists
@@ -56,4 +35,3 @@ EXPOSE 8545 3001
 
 # Start both hardhat node and API server
 CMD ["/app/start.sh"]
->>>>>>> origin/feature/backend_solo

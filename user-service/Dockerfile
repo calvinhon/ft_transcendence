@@ -1,19 +1,4 @@
 # user-service/Dockerfile
-<<<<<<< HEAD
-FROM node:18-bullseye-slim
-
-WORKDIR /app
-
-COPY package*.json ./
-# Clear npm cache and install with specific flags
-RUN npm install --omit=dev
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
-=======
 FROM node:18-alpine
 
 WORKDIR /app
@@ -42,4 +27,3 @@ EXPOSE 3000
 
 # Use built TypeScript if available, otherwise fallback to JavaScript
 CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]
->>>>>>> origin/feature/backend_solo
