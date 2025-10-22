@@ -1,15 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "blockchain-service",
-  "type": "module",
-  "dependencies": {
-    "fastify": "^4.25.0",
-    "@fastify/cors": "^8.5.0",
-    "ethers": "^6.9.0",
-    "dotenv": "^16.3.0"
-  }
-}
-=======
 	"name": "tournament-dapp",
 	"version": "1.0.0",
 	"main": "dist/server.js",
@@ -42,4 +31,3 @@
 		"rimraf": "^5.0.0"
 	}
 }
->>>>>>> origin/feature/backend_solo

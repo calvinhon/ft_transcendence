@@ -2,16 +2,6 @@
   "name": "game-service",
   "version": "1.0.0",
   "description": "Game microservice for Transcendence Pong",
-<<<<<<< HEAD
-  "main": "server.js",
-  "dependencies": {
-    "fastify": "^4.24.3",
-    "@fastify/cors": "^8.4.0",
-    "@fastify/websocket": "^8.3.1",
-    "sqlite3": "^5.1.6"
-  }
-}
-=======
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -37,4 +27,3 @@
     "typescript": "^5.9.3"
   }
 }
->>>>>>> origin/feature/backend_solo
