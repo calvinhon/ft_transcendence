@@ -3,13 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+<<<<<<< HEAD
   <title>Transcendence - Pong Game</title>
   <link rel="stylesheet" href="css/style.css" />
+=======
+    <title>ft_transcendence</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+>>>>>>> origin/feature/backend_solo
 </head>
 <body>
   <div id="app">
     <!-- Login Screen -->
     <div id="login-screen" class="screen active">
+<<<<<<< HEAD
       <div class="container">
         <h1 class="app-title">Transcendence</h1>
         <div class="auth-forms">
@@ -29,11 +38,57 @@
               <input type="password" id="register-password" placeholder="Password" required />
               <button type="submit" class="btn btn-primary">Register</button>
             </form>
+=======
+      <div class="login-container">
+        <div class="login-panel">
+        
+          <div class="login-form-container">
+            <form id="login-form" class="login-form">
+              <input type="text" id="login-username" placeholder="Username" required class="login-input" />
+              <input type="password" id="login-password" placeholder="Password" required class="login-input" />
+              <button type="submit" class="login-btn">LOGIN</button>
+            </form>
+            
+            <div class="login-links">
+              <a href="#" id="forgot-password-link" class="login-link">
+                <span style="color: #e94560;">▶</span> Forgot Password?
+              </a>
+              <span>OR</span>
+              <a href="#" id="create-account-link" class="login-link">
+                <span style="color: #e94560;">▶</span> Create an Account
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Registration Screen -->
+    <div id="register-screen" class="screen">
+      <div class="login-container">
+        <div class="login-panel">
+          <h1 class="login-title">Create Account</h1>
+          
+          <div class="login-form-container">
+            <form id="register-form" class="login-form">
+              <input type="text" id="register-username" placeholder="Username" required class="login-input" />
+              <input type="email" id="register-email" placeholder="Email" required class="login-input" />
+              <input type="password" id="register-password" placeholder="Password" required class="login-input" />
+              <button type="submit" class="login-btn">Create Account</button>
+            </form>
+            
+            <div class="login-links">
+              <a href="#" id="back-to-login-link" class="login-link">
+                <span style="color: #e94560;">◀</span> Back to Login
+              </a>
+            </div>
+>>>>>>> origin/feature/backend_solo
+          </div>
+        </div>
+      </div>
+    </div>
+
+<<<<<<< HEAD
     <!-- Main Game Screen -->
     <div id="game-screen" class="screen">
       <header class="site-header">
@@ -145,10 +200,373 @@
               <div id="my-tournaments" class="tab-content">
                 <div id="my-tournaments-list" class="tournaments-list">
                   <!-- Dynamic tournament cards will be inserted here -->
+=======
+    <!-- Forgot Password Screen -->
+    <div id="forgot-password-screen" class="screen">
+      <div class="login-container">
+        <div class="login-panel">
+          <h1 class="login-title">Reset Password</h1>
+          
+          <div class="login-form-container">
+            <div class="forgot-password-info">
+              <p>Enter your email address and we'll send you a link to reset your password.</p>
+            </div>
+            
+            <form id="forgot-password-form" class="login-form">
+              <input type="email" id="forgot-password-email" placeholder="Email Address" required class="login-input" />
+              <button type="submit" class="login-btn">Send Reset Link</button>
+            </form>
+            
+            <div class="login-links">
+              <a href="#" id="back-to-login-from-forgot-link" class="login-link">
+                <span style="color: #e94560;">◀</span> Back to Login
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div id="main-menu-screen" class="screen">
+      <div class="main-menu-container">
+        <div class="main-menu-panel">
+            <h1 class="launch-seq">LAUNCHSEQ</h1>
+            <div class="main-menu-buttons">
+            <button id="play-btn" class="menu-btn play-btn" style="font-size: 24px;">▶</button>
+            <button id="profile-btn" class="menu-btn profile-btn" style="font-size: 24px;">👤</button>
+            <button id="settings-btn" class="menu-btn settings-btn" style="background: linear-gradient(180deg, #666 0%, #555 100%); color: white; font-size: 24px;">⚙️</button>
+          </div>
+          
+          <div class="logout-section" style="margin-top: 20px; text-align: center;">
+            <a href="#" id="main-menu-logout-btn" class="login-link" style="color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: bold;">
+              <span style="color: #e94560; font-size: 20px;">◀</span>
+              <span>LOGOUT</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play Configuration Screen -->
+    <div id="play-config-screen" class="screen">
+      <div class="main-menu-container">
+        <div class="main-menu-panel">
+          <!-- Center Title -->
+          <div class="play-header-center">
+            <h1 class="launch-seq">PLAY MODE</h1>
+          </div>
+          
+          <div class="play-config-content">
+            <!-- Button Row Above Columns -->
+            <div class="play-config-buttons">
+              <button id="back-to-main-btn" class="back-btn">
+                <span style="color: inherit;">◀</span>
+                <span>Back</span>
+              </button>
+              <div class="button-spacer"></div>
+              <button id="start-game-btn" class="start-game-btn">
+                <i class="fas fa-play"></i>
+                <span>START GAME</span>
+              </button>
+            </div>
+            
+            <!-- Three Column Layout -->
+            <div class="play-config-columns">
+              
+              <!-- Column 1: Settings -->
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-sliders-h"></i>
+                  <span>SETTINGS</span>
+                </div>
+                <div class="column-subtitle">
+                </div>
+                
+                <div class="column-content">
+                  <!-- AI Difficulty -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>AI Difficulty</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option active" data-setting="ai-difficulty" data-value="easy" data-short="E">
+                        <span>EASY</span>
+                      </button>
+                      <button class="setting-option" data-setting="ai-difficulty" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="ai-difficulty" data-value="hard" data-short="H">
+                        <span>HARD</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Ball Speed -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>Ball Speed</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option" data-setting="ball-speed" data-value="slow" data-short="S">
+                        <span>SLOW</span>
+                      </button>
+                      <button class="setting-option active" data-setting="ball-speed" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="ball-speed" data-value="fast" data-short="F">
+                        <span>FAST</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Paddle Speed -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>Paddle Speed</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option" data-setting="paddle-speed" data-value="slow" data-short="S">
+                        <span>SLOW</span>
+                      </button>
+                      <button class="setting-option active" data-setting="paddle-speed" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="paddle-speed" data-value="fast" data-short="F">
+                        <span>FAST</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Checkboxes -->
+                  <div class="setting-checkboxes">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="powerups-enabled" class="setting-checkbox">
+                      <span class="checkbox-text">PowerUps</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="accelerate-on-hit" class="setting-checkbox">
+                      <span class="checkbox-text">Accelerate</span>
+                    </label>
+                  </div>
+                  
+                  <!-- Score to Win (Arcade Mode) -->
+                  <div class="setting-group arcade-only">
+                    <label class="setting-label">
+                      <span>Score to Win</span>
+                    </label>
+                    <div class="score-setting">
+                      <button class="score-btn decrement" id="score-decrement">
+                        <i class="fas fa-minus"></i>
+                      </button>
+                      <span class="score-value" id="score-value">5</span>
+                      <button class="score-btn increment" id="score-increment">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Column 2: Game Mode -->
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-gamepad"></i>
+                  <span>MODES</span>
+                </div>
+                
+                <div class="column-content">
+                  <div class="game-mode-selection">
+                    <div class="game-mode-tabs">
+                      <button class="game-mode-tab active" data-mode="coop">
+                        <i class="fas fa-users"></i>
+                        <span>CO-OP</span>
+                        <small>Campaign</small>
+                      </button>
+                      <button class="game-mode-tab" data-mode="arcade">
+                        <i class="fas fa-coins"></i>
+                        <span>ARCADE</span>
+                        <small>Classic</small>
+                      </button>
+                      <button class="game-mode-tab" data-mode="tournament">
+                        <i class="fas fa-trophy"></i>
+                        <span>TOURNAMENT</span>
+                        <small>Competitive</small>
+                      </button>
+                    </div>
+                    
+                    <div class="mode-description">
+                      <div id="mode-desc-coop" class="mode-desc active">
+                        <i class="fas fa-users"></i>
+                        <h4>Co-op Campaign</h4>
+                        <p>Team up with friends against AI opponents</p>
+                      </div>
+                      <div id="mode-desc-arcade" class="mode-desc">
+                        <i class="fas fa-coins"></i>
+                        <h4>Arcade Mode</h4>
+                        <p>Classic pong with customizable rules</p>
+                      </div>
+                      <div id="mode-desc-tournament" class="mode-desc">
+                        <i class="fas fa-trophy"></i>
+                        <h4>Tournament</h4>
+                        <p>Compete in ranked matches</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Column 3: Players -->
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-user-friends"></i>
+                  <span>Players</span>
+                </div>
+                
+                <div class="column-content">
+                  <div id="game-party-list" class="players-list">
+                    <div id="host-player-card" class="player-card host-player">
+                      <div class="player-avatar">
+                        <i class="fas fa-crown"></i>
+                      </div>
+                      <div class="player-info">
+                        <div class="player-name" id="host-player-name">Loading...</div>
+                        <span class="role-badge host">HOST</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button id="add-player-btn" class="add-player-btn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Add Player</span>
+                  </button>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Playing Screen -->
+    <div id="game-screen" class="screen">
+      <div class="game-container">
+        <div class="game-canvas-container">
+          <!-- Game Control Buttons above canvas -->
+          <div class="game-canvas-controls">
+            <button id="pause-game-btn" class="game-control-btn">
+              <i class="fas fa-pause"></i>
+              <span>Pause</span>
+            </button>
+            <button id="stop-game-btn" class="game-control-btn quit">
+              <i class="fas fa-stop"></i>
+              <span>Quit</span>
+            </button>
+          </div>
+          <!-- UI overlay removed - all player info now rendered on canvas -->
+          <div class="canvas-wrapper">
+            <canvas id="game-canvas" width="800" height="600" aria-label="Pong game area" tabindex="0"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+      <div class="settings-container">
+        <div class="settings-panel">
+          <!-- Top Back Button -->
+          <button id="back-to-main-settings-btn" class="back-btn-simple">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+          
+          <h2 class="settings-title">Settings</h2>
+          
+          <div class="settings-content">
+            <div class="settings-grid">
+              <!-- Column 1: Audio Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Audio</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Master Volume</label>
+                  <input type="range" min="0" max="100" value="50" class="volume-slider">
+                  <span class="setting-value">50%</span>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Sound Effects</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Music Volume</label>
+                  <input type="range" min="0" max="100" value="30" class="volume-slider">
+                  <span class="setting-value">30%</span>
+                </div>
+              </div>
+              
+              <!-- Column 2: Graphics Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Graphics</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Particle Effects</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Screen Shake</label>
+                  <input type="checkbox" class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Visual Quality</label>
+                  <select class="setting-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Column 3: Controls Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Controls</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Player 1 Up</label>
+                  <button class="key-btn" data-key="w">W</button>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Player 1 Down</label>
+                  <button class="key-btn" data-key="s">S</button>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Pause Game</label>
+                  <button class="key-btn" data-key="escape">ESC</button>
+                </div>
+              </div>
+              
+              <!-- Column 4: Game Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Game</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Auto-Save</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Show FPS</label>
+                  <input type="checkbox" class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Language</label>
+                  <select class="setting-select">
+                    <option value="en" selected>English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                  </select>
+>>>>>>> origin/feature/backend_solo
                 </div>
               </div>
             </div>
           </div>
+<<<<<<< HEAD
 
           <!-- Create Tournament Modal -->
           <div id="create-tournament-modal" class="modal hidden">
@@ -215,11 +633,154 @@
                   <h4>Recent Games</h4>
                   <div id="profile-recent-games" class="recent-games">
                     <!-- Dynamic game history will be inserted here -->
+=======
+          
+          <!-- Bottom Back Button -->
+          <button id="back-to-main-settings-bottom-btn" class="back-btn-simple back-btn-bottom">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Dashboard Screen -->
+    <div id="profile-screen" class="screen">
+      <div class="profile-container">
+        <div class="profile-panel">
+          <!-- Top Back Button -->
+          <button id="back-to-main-profile-btn" class="back-btn-simple">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+          
+          <h2 class="profile-title">Player Dashboard</h2>
+          
+          <div class="profile-content">
+            <!-- Compact Profile Header -->
+            <div class="profile-header-compact">
+              <div class="user-avatar">👤</div>
+              <div class="user-basic-info">
+                <h3 id="profile-username">Loading...</h3>
+                <div class="user-meta">
+                  <span id="profile-user-id" class="user-detail">ID: Loading...</span>
+                  <span class="separator">•</span>
+                  <span id="profile-member-since" class="user-detail">Member since: Loading...</span>
+                </div>
+              </div>
+              <div class="level-compact">
+                <div class="level-number" id="profile-level">1</div>
+                <div class="level-label">Level</div>
+                <div class="exp-compact">
+                  <div class="exp-bar">
+                    <div class="exp-fill" id="profile-exp-bar" style="width: 30%"></div>
+                  </div>
+                  <span class="exp-text" id="profile-exp-text">300 / 1000 XP</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats Table Layout -->
+            <div class="profile-stats-table">
+              <div class="stats-section">
+                <h4 class="section-title">Game Statistics</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Total Games</span>
+                    <span class="stat-value" id="profile-total-games">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Wins</span>
+                    <span class="stat-value" id="profile-wins">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Losses</span>
+                    <span class="stat-value" id="profile-losses">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-value" id="profile-win-rate">0%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Performance Metrics</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Current Streak</span>
+                    <span class="stat-value" id="profile-streak">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Best Streak</span>
+                    <span class="stat-value" id="profile-best-streak">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Global Rank</span>
+                    <span class="stat-value" id="profile-rank">#--</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Rating</span>
+                    <span class="stat-value" id="profile-rating">1200</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Tournament History</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Tournaments</span>
+                    <span class="stat-value" id="profile-tournaments">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Tournament Wins</span>
+                    <span class="stat-value" id="profile-tournament-wins">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Top 3 Finishes</span>
+                    <span class="stat-value" id="profile-top3">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Prize Money</span>
+                    <span class="stat-value" id="profile-earnings">$0</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Recent Activity</h4>
+                <div class="activity-table">
+                  <div class="activity-row activity-header">
+                    <span>Date</span>
+                    <span>Game Mode</span>
+                    <span>Opponent</span>
+                    <span>Result</span>
+                    <span>Score</span>
+                  </div>
+                  <div id="profile-recent-activity" class="activity-list">
+                    <!-- Dynamic activity items will be inserted here -->
+                    <div class="activity-row">
+                      <span>Today</span>
+                      <span>Arcade</span>
+                      <span>Player42</span>
+                      <span class="result-win">Win</span>
+                      <span>8-5</span>
+                    </div>
+                    <div class="activity-row">
+                      <span>Yesterday</span>
+                      <span>Tournament</span>
+                      <span>ProGamer</span>
+                      <span class="result-loss">Loss</span>
+                      <span>6-8</span>
+                    </div>
+>>>>>>> origin/feature/backend_solo
                   </div>
                 </div>
               </div>
             </div>
           </div>
+<<<<<<< HEAD
         </section>
 
         <!-- Leaderboard Section -->
@@ -252,10 +813,81 @@
           </div>
         </section>
       </main>
+=======
+          
+          <!-- Bottom Back Button -->
+          <button id="back-to-main-profile-bottom-btn" class="back-btn-simple back-btn-bottom">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Widget - Only visible when logged in -->
+  <div id="chat-widget" class="chat-widget hidden">
+    <div class="chat-button" id="chat-button">
+      <i class="fas fa-comments"></i>
+    </div>
+    <div class="chat-content" id="chat-content">
+      <div class="chat-header">
+        <i class="fas fa-comments"></i>
+        <button id="chat-close-btn" class="chat-close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <form id="chat-form" class="chat-form">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Message..." maxlength="200">
+        <button type="submit" class="chat-send-btn">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Player Modal -->
+  <div id="add-player-modal" class="modal hidden">
+    <div class="modal-overlay" id="add-player-modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Player</h3>
+        <button id="close-add-player-modal" class="modal-close-btn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="add-player-form" class="add-player-form">
+          <div class="form-group">
+            <label for="add-player-username">Username</label>
+            <input type="text" id="add-player-username" placeholder="Username" required class="login-input" maxlength="32">
+          </div>
+          <div class="form-group">
+            <label for="add-player-password">Password</label>
+            <input type="password" id="add-player-password" placeholder="Password" required class="login-input" maxlength="64">
+          </div>
+          <div class="login-links" style="margin-bottom: 10px;">
+            <a href="#" id="add-player-forgot-password-link" class="login-link">
+              <span style="color: #e94560;">▶</span> Forgot Password?
+            </a>
+            <span>OR</span>
+            <a href="#" id="add-player-create-account-link" class="login-link">
+              <span style="color: #e94560;">▶</span> Create an Account
+            </a>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancel-add-player" class="btn-secondary">Cancel</button>
+            <button type="submit" class="btn-primary">Add Player</button>
+          </div>
+        </form>
+      </div>
+>>>>>>> origin/feature/backend_solo
     </div>
   </div>
 
   <!-- Scripts -->
+<<<<<<< HEAD
   <script src="js/auth.js"></script>
   <script src="js/game.js"></script>
   <script src="js/match.js"></script>
@@ -264,5 +896,8 @@
   <script src="js/profile.js"></script>
   <script src="js/leaderboard.js"></script>
   <script src="js/chat.js"></script>
+=======
+  <script src="dist/bundle.js"></script>
+>>>>>>> origin/feature/backend_solo
 </body>
 </html>

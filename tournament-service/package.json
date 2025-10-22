@@ -2,10 +2,30 @@
   "name": "tournament-service",
   "version": "1.0.0",
   "description": "Tournament microservice for Transcendence",
+<<<<<<< HEAD
   "main": "server.js",
+=======
+  "main": "dist/server.js",
+  "scripts": {
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+  },
+>>>>>>> origin/feature/backend_solo
   "dependencies": {
     "fastify": "^4.24.3",
     "@fastify/cors": "^8.4.0",
     "sqlite3": "^5.1.6"
+<<<<<<< HEAD
+=======
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node-dev": "^2.0.0",
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.0"
+>>>>>>> origin/feature/backend_solo
   }
 }

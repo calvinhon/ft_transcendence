@@ -3,6 +3,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+<<<<<<< HEAD
 COPY package*.json ./
 RUN npm install
 
@@ -11,3 +12,29 @@ COPY . .
 EXPOSE 3000
 
 CMD ["node", "server.js"]
+=======
+# Copy package files
+COPY tournament-service/package*.json ./
+COPY tournament-service/tsconfig.json ./
+
+# Install ALL dependencies (including devDependencies for TypeScript compilation)
+RUN npm install
+
+# Copy source code and shared types
+COPY tournament-service/src/ ./src/
+COPY shared/ ./shared/
+
+# Build TypeScript
+RUN npm run build
+
+# Remove devDependencies after build
+RUN npm prune --production
+
+# Copy database directory
+COPY tournament-service/database/ ./database/
+
+EXPOSE 3000
+
+# Use built TypeScript if available, otherwise fallback to JavaScript
+CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]
+>>>>>>> origin/feature/backend_solo

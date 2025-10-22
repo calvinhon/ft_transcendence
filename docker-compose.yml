@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 version: '3.8'
 
 services:
@@ -8,6 +9,17 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./frontend:/usr/share/nginx/html
+=======
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+>>>>>>> origin/feature/backend_solo
     depends_on:
       - auth-service
       - game-service
@@ -17,6 +29,7 @@ services:
     networks:
       - transcendence-network
 
+<<<<<<< HEAD
   frontend:
     build: ./frontend
     volumes:
@@ -26,6 +39,12 @@ services:
 
   auth-service:
     build: ./auth-service
+=======
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+>>>>>>> origin/feature/backend_solo
     ports:
       - "3001:3000"
     volumes:
@@ -33,6 +52,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=auth-service
+<<<<<<< HEAD
     networks:
       - transcendence-network
 
@@ -72,11 +92,20 @@ services:
     depends_on:
       hardhat-node:
         condition: service_healthy
+=======
+      - NODE_ENV=development
+>>>>>>> origin/feature/backend_solo
     networks:
       - transcendence-network
 
   game-service:
+<<<<<<< HEAD
     build: ./game-service
+=======
+    build:
+      context: .
+      dockerfile: game-service/Dockerfile
+>>>>>>> origin/feature/backend_solo
     ports:
       - "3002:3000"
     volumes:
@@ -88,7 +117,13 @@ services:
       - transcendence-network
 
   tournament-service:
+<<<<<<< HEAD
     build: ./tournament-service
+=======
+    build:
+      context: .
+      dockerfile: tournament-service/Dockerfile
+>>>>>>> origin/feature/backend_solo
     ports:
       - "3003:3000"
     volumes:
@@ -96,12 +131,21 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=tournament-service
+<<<<<<< HEAD
       - BLOCKCHAIN_SERVICE_URL=http://blockchain-service:3000
+=======
+>>>>>>> origin/feature/backend_solo
     networks:
       - transcendence-network
 
   user-service:
+<<<<<<< HEAD
     build: ./user-service
+=======
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+>>>>>>> origin/feature/backend_solo
     ports:
       - "3004:3000"
     volumes:
@@ -112,6 +156,23 @@ services:
     networks:
       - transcendence-network
 
+<<<<<<< HEAD
+=======
+  blockchain-service:
+    build: ./blockchain-service
+    ports:
+      - "8545:8545"
+      - "3005:3001"
+    environment:
+      - BLOCKCHAIN_PORT=8545
+      - API_PORT=3001
+      - NODE_ENV=development
+    networks:
+      - transcendence-network
+    volumes:
+      - blockchain-data:/app/data
+
+>>>>>>> origin/feature/backend_solo
 networks:
   transcendence-network:
     driver: bridge
@@ -121,4 +182,8 @@ volumes:
   games-db:
   tournaments-db:
   users-db:
+<<<<<<< HEAD
   hardhat-data:
+=======
+  blockchain-data:
+>>>>>>> origin/feature/backend_solo

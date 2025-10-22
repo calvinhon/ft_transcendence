@@ -2,10 +2,23 @@
   "name": "auth-service",
   "version": "1.0.0",
   "description": "Authentication microservice for Transcendence",
+<<<<<<< HEAD
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
+=======
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:js": "nodemon server.js",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "watch": "tsc --watch",
+    "type-check": "tsc --noEmit"
+>>>>>>> origin/feature/backend_solo
   },
   "dependencies": {
     "@fastify/cors": "^8.4.0",
@@ -14,5 +27,16 @@
     "fastify": "^4.29.1",
     "jsonwebtoken": "^9.0.2",
     "sqlite3": "^5.1.6"
+<<<<<<< HEAD
+=======
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.19.20",
+    "rimraf": "^5.0.10",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+>>>>>>> origin/feature/backend_solo
   }
 }

@@ -1,0 +1,33 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types"],
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "js/*.js"
+  ]
+}
