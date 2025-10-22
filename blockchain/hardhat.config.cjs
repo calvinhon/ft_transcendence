@@ -20,14 +20,6 @@ const config = {
   networks: {
     hardhat: {
       chainId: 1337,
-      mining: {
-        auto: true,
-        interval: 0  // Instant mining
-      },
-      accounts: {
-        count: 20,
-        accountsBalance: "10000000000000000000000" // 10000 ETH
-      }
     },
     localhost: {
       url: "http://hardhat-node:8545",
@@ -35,12 +27,6 @@ const config = {
       accounts: [privateKey]
     }
   },
-  paths: {
-    sources: "./contracts",
-    tests: "./test",
-    cache: "./cache",
-    artifacts: "./artifacts"
-  }
 };
 
 module.exports = config;
