@@ -1,3 +1,4 @@
+import { showToast } from './toast';
 // Stub file - tournament module
 // frontend/src/tournament.ts - TypeScript version of tournament manager
 
@@ -266,7 +267,7 @@ export class TournamentManager {
     const user = authManager?.getCurrentUser();
     
     if (!user) {
-      alert('You must be logged in to create tournaments');
+  showToast('You must be logged in to create tournaments', 'error');
       return;
     }
     
@@ -301,7 +302,7 @@ export class TournamentManager {
         // Reload tournaments
         this.loadTournaments();
         
-        alert('Tournament created successfully!');
+  showToast('Tournament created successfully!', 'success');
       } else {
         let errorMessage = 'Unknown error';
         try {
@@ -311,11 +312,11 @@ export class TournamentManager {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
         console.error('Create tournament failed:', errorMessage);
-        alert('Failed to create tournament: ' + errorMessage);
+  showToast('Failed to create tournament: ' + errorMessage, 'error');
       }
     } catch (error) {
       console.error('Create tournament network error:', error);
-      alert('Failed to create tournament: Network error');
+  showToast('Failed to create tournament: Network error', 'error');
     }
   }
 
@@ -325,7 +326,7 @@ export class TournamentManager {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     if (!user) {
-      alert('You must be logged in to join tournaments');
+  showToast('You must be logged in to join tournaments', 'error');
       return;
     }
 
@@ -354,7 +355,7 @@ export class TournamentManager {
       if (response.ok) {
         const result = await response.json();
         console.log('Join success:', result);
-        alert('Successfully joined tournament!');
+  showToast('Successfully joined tournament!', 'success');
         this.loadTournaments();
       } else {
         let errorMessage = 'Unknown error';
@@ -365,16 +366,16 @@ export class TournamentManager {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
         console.error('Join failed:', errorMessage);
-        alert('Failed to join tournament: ' + errorMessage);
+  showToast('Failed to join tournament: ' + errorMessage, 'error');
       }
     } catch (error) {
       console.error('Join tournament network error:', error);
-      alert('Failed to join tournament: Network error - ' + (error instanceof Error ? error.message : 'Unknown error'));
+  showToast('Failed to join tournament: Network error - ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
     }
   }
 
   public async viewTournament(tournamentId: number): Promise<void> {
-    alert('Tournament details view coming soon!');
+  showToast('Tournament details view coming soon!', 'info');
   }
 
   private escapeHtml(text: string): string {

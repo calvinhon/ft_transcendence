@@ -726,7 +726,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
             players: {
               player1: { userId: player1.userId, username: player1.username },
               player2: { userId: player2.userId, username: player2.username }
-            }
+            },
+            gameSettings: data.gameSettings
           };
           console.log('🎮 [BOT-GAME] Sending gameStart message:', startMessage);
           player1.socket.send(JSON.stringify(startMessage));

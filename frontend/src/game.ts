@@ -1,3 +1,4 @@
+import { showToast } from './toast';
 // Stub file - game module
 // frontend/src/game.ts - TypeScript version of game manager
 
@@ -49,11 +50,12 @@ export class GameManager {
   private ctx: CanvasRenderingContext2D | null = null;
   private websocket: WebSocket | null = null;
   private gameState: GameState | null = null;
+  private gameSettings: any = null;
   public isPlaying: boolean = false;
   public isPaused: boolean = false;
   private keys: KeyState = {};
   private chatSocket: WebSocket | null = null;
-  private inputInterval: NodeJS.Timeout | null = null;
+  private inputInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.setupEventListeners();
@@ -415,7 +417,7 @@ export class GameManager {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     if (!user || !user.userId) {
-      alert('You must be logged in to play. Redirecting to login page.');
+      showToast('You must be logged in to play. Redirecting to login page.', 'error');
       // Redirect to login page
       const gameScreen = document.getElementById('game-screen');
       const loginScreen = document.getElementById('login-screen');
@@ -530,6 +532,17 @@ export class GameManager {
   private startGame(gameData: any): void {
     console.log('🎮 [START] Game starting with data:', gameData);
     this.isPlaying = true;
+    
+    // Store game settings from server
+    this.gameSettings = gameData.gameSettings || {
+      gameMode: 'arcade',
+      aiDifficulty: 'easy',
+      ballSpeed: 'medium',
+      paddleSpeed: 'medium',
+      powerupsEnabled: false,
+      accelerateOnHit: false,
+      scoreToWin: 5
+    };
     
     // Show game screen and hide other screens
     const app = (window as any).app;
@@ -807,7 +820,7 @@ export class GameManager {
     const rightPlayerName = 'AI Bot'; // or could be from game state
     const leftPlayerLevel = 12; // could be from user data
     const rightPlayerLevel = 15; // could be from AI difficulty
-    const targetScore = 8; // could be from game settings
+    const targetScore = this.gameSettings?.scoreToWin || 8; // Use game settings or default to 8
 
     // Left player info
     this.drawPlayerInfoSection(
@@ -922,7 +935,7 @@ export class GameManager {
       `Final Score: ${result.scores.player1} - ${result.scores.player2}` : 
       '';
     
-    alert(`${winnerMessage}\n${finalScores}`);
+  showToast(`${winnerMessage}\n${finalScores}`, 'info');
     
     // Reset UI
     this.resetFindMatch();
@@ -1034,7 +1047,7 @@ export class GameManager {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     if (!user || !user.userId) {
-      alert('You must be logged in to play. Redirecting to login page.');
+      showToast('You must be logged in to play. Redirecting to login page.', 'error');
       // Redirect to login page
       const gameScreen = document.getElementById('game-screen');
       const loginScreen = document.getElementById('login-screen');
@@ -1057,7 +1070,7 @@ export class GameManager {
     } catch (error) {
       console.error('Failed to start bot match:', error);
       if (waitingMsg) waitingMsg.classList.add('hidden');
-      alert('Failed to start bot match. Please try again.');
+  showToast('Failed to start bot match. Please try again.', 'error');
     }
   }
 

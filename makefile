@@ -51,6 +51,12 @@ open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
 		open http://localhost:80; \
+	elif echo "$(OS)" | grep -q "MINGW\|MSYS"; then \
+		if command -v firefox >/dev/null 2>&1; then \
+			start firefox http://localhost:80; \
+		else \
+			start http://localhost:80; \
+		fi \
 	elif command -v wslview >/dev/null 2>&1; then \
 		wslview http://localhost:80; \
 	elif command -v xdg-open >/dev/null 2>&1; then \

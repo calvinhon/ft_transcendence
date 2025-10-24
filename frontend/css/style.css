@@ -1308,6 +1308,100 @@ body {
   margin-bottom: var(--space-lg);
 }
 
+.teams-row {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  align-items: center;
+  width: 100%;
+}
+
+.team-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+  background: rgba(17, 25, 39, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--space-lg);
+  box-shadow:
+    0 0 30px rgba(119, 230, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  min-height: 500px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.team-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanline 2s linear infinite;
+}
+
+.team-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid rgba(119, 230, 255, 0.3);
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  text-align: center;
+  justify-content: center;
+}
+
+
+
+.team-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+  align-items: stretch;
+  width: 100%;
+}
+
+.add-player-btn {
+  margin-top: 18px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-muted);
+  border-radius: 10px;
+  border: 2px dashed rgba(119, 230, 255, 0.3);
+  font-weight: 700;
+  font-size: 1em;
+  box-shadow: 0 2px 8px rgba(30,96,145,0.08);
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s, color 0.2s;
+}
+
+
+.add-player-btn:hover {
+  border-color: var(--accent);
+  background: rgba(119, 230, 255, 0.1);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(119, 230, 255, 0.3);
+}
+
 .player-card {
   display: flex;
   align-items: center;
@@ -1327,6 +1421,23 @@ body {
 .player-card.host-player {
   border-color: var(--accent);
   background: rgba(119, 230, 255, 0.1);
+}
+
+.player-card.host-player.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #000000;
+  box-shadow:
+    0 0 20px rgba(119, 230, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.player-card.host-player.active::after {
+  content: '_';
+  animation: blink 1s infinite;
+  color: #000000;
+  margin-left: 4px;
+  font-weight: 700;
 }
 
 .player-avatar {
@@ -1372,29 +1483,7 @@ body {
   color: #000000;
 }
 
-.add-player-btn {
-  padding: 16px;
-  border: 2px dashed rgba(119, 230, 255, 0.3);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Courier New', monospace;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
 
-.add-player-btn:hover {
-  border-color: var(--accent);
-  background: rgba(119, 230, 255, 0.1);
-  color: var(--accent);
-}
 
 /* ---------- Settings Screen - Cyberpunk Style ---------- */
 .settings-container {
@@ -2081,7 +2170,7 @@ body {
   content: '_';
   animation: blink 1s infinite;
   color: #000000;
-  margin-left: 8px;
+  margin-left: 4px;
   font-weight: 700;
 }
 
@@ -2107,6 +2196,17 @@ body {
   border-color: var(--accent);
   background: var(--accent);
   color: #000000;
+  box-shadow:
+    0 0 20px rgba(119, 230, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.player-card.ai-player.active::after {
+  content: '_';
+  animation: blink 1s infinite;
+  color: #000000;
+  margin-left: 4px;
+  font-weight: 700;
 }
 
 .player-card.ai-player.active .player-name,
@@ -2184,33 +2284,7 @@ body {
   border: 1px solid var(--text-muted);
 }
 
-/* Add Player Button */
-.add-player-btn {
-  width: 100%;
-  padding: 16px;
-  border: 2px dashed var(--panel-border);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-weight: 600;
-  font-family: 'Courier New', monospace;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 
-.add-player-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(119, 230, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(119, 230, 255, 0.3);
-}
 
 /* Back Button */
 .main-menu-actions {
@@ -2953,6 +3027,24 @@ body {
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-xs);
   color: var(--text);
+}
+
+.modal-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.modal-links a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.modal-links a:hover {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .modal-content textarea {

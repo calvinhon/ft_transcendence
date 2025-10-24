@@ -130,11 +130,8 @@
                 <span>START GAME</span>
               </button>
             </div>
-            
-            <!-- Three Column Layout -->
+            <!-- Settings Column (unchanged) -->
             <div class="play-config-columns">
-              
-              <!-- Column 1: Settings -->
               <div class="config-column">
                 <div class="column-title">
                   <i class="fas fa-sliders-h"></i>
@@ -254,12 +251,16 @@
                         <small>Competitive</small>
                       </button>
                     </div>
-                    
+                    <!-- Co-op campaign progress UI -->
+                    <div id="coop-campaign-progress" class="coop-campaign-progress" style="display:none; margin: 12px 0; text-align:center;">
+                      <span id="coop-level-label" style="font-weight:bold; font-size:1.1em;"></span>
+                      <span id="coop-next-ai" style="margin-left:12px; color:#e94560;"></span>
+                    </div>
                     <div class="mode-description">
                       <div id="mode-desc-coop" class="mode-desc active">
                         <i class="fas fa-users"></i>
                         <h4>Co-op Campaign</h4>
-                        <p>Team up with friends against AI opponents</p>
+                        <p>Defeat the AI at each level to increase your rank!<br>Progress: <span id="coop-campaign-desc"></span></p>
                       </div>
                       <div id="mode-desc-arcade" class="mode-desc">
                         <i class="fas fa-coins"></i>
@@ -282,24 +283,64 @@
                   <i class="fas fa-user-friends"></i>
                   <span>Players</span>
                 </div>
-                
                 <div class="column-content">
                   <div id="game-party-list" class="players-list">
-                    <div id="host-player-card" class="player-card host-player">
-                      <div class="player-avatar">
-                        <i class="fas fa-crown"></i>
-                      </div>
-                      <div class="player-info">
-                        <div class="player-name" id="host-player-name">Loading...</div>
-                        <span class="role-badge host">HOST</span>
-                      </div>
+                    <div class="teams-row" style="display: flex; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
+                        <!-- TEAM 1 Section -->
+                        <div class="team-section" id="team1-section">
+                          <div class="team-title">TEAM 1</div>
+                          <div class="team-list" id="team1-list">
+                            <div id="host-player-card" class="player-card host-player active">
+                              <div class="player-avatar">
+                                <i class="fas fa-crown"></i>
+                              </div>
+                              <div class="player-info">
+                                <div class="player-name" id="host-player-name">Loading...</div>
+                                <span class="role-badge host">HOST</span>
+                              </div>
+                            </div>
+
+                            <!-- Local players will be injected here -->
+                            <div id="team1-local-players" class="local-players"></div>
+
+                            <!-- Add Player button (opens Add Player modal; limited to 4 players per team) -->
+                            <div class="add-player-container" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                              <button
+                                id="add-team1-player-btn"
+                                class="add-player-btn"
+                                data-team="team1"
+                                aria-controls="add-player-modal"
+                                aria-haspopup="dialog"
+                                title="Add player to Team 1"
+                              >
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Player</span>
+                              </button>
+                              <small class="slots-info" id="team1-slots-info" aria-live="polite">Slots: <span id="team1-slots-left">3</span>/4</small>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- TEAM 2 Section -->
+                        <div class="team-section" id="team2-section">
+                            <div class="team-title">TEAM 2</div>
+                            <div class="team-list" id="team2-list">
+                              <div id="ai-player-card" class="player-card ai-player active">
+                                <div class="player-avatar">
+                                  <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="player-info">
+                                  <div class="player-name">AI</div>
+                                  <span class="role-badge ai">AI</span>
+                                </div>
+                              </div>
+                              <!-- AI team local players will be injected here -->
+                              <button id="add-team2-player-btn" class="add-player-btn">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Player</span>
+                              </button>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  
-                  <button id="add-player-btn" class="add-player-btn">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Add Player</span>
-                  </button>
                 </div>
               </div>
               
@@ -605,36 +646,24 @@
 
   <!-- Add Player Modal -->
   <div id="add-player-modal" class="modal hidden">
-    <div class="modal-overlay" id="add-player-modal-overlay"></div>
-    <div class="modal-content">
+    <div class="modal-overlay" id="add-player-modal-overlay" tabindex="-1" aria-hidden="true"></div>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="add-player-modal-title">
       <div class="modal-header">
-        <h3>Add Player</h3>
-        <button id="close-add-player-modal" class="modal-close-btn">
-          <i class="fas fa-times"></i>
+        <h3 id="add-player-modal-title">Add Player</h3>
+        <button id="close-add-player-modal" class="modal-close-btn" aria-label="Close Add Player Modal">
+          <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>
       <div class="modal-body">
-        <form id="add-player-form" class="add-player-form">
+        <form id="add-player-form" class="add-player-form" autocomplete="off">
           <div class="form-group">
             <label for="add-player-username">Username</label>
-            <input type="text" id="add-player-username" placeholder="Username" required class="login-input" maxlength="32">
+            <input type="text" id="add-player-username" placeholder="Username" required class="login-input" maxlength="32" aria-required="true" aria-label="Player Username" autocomplete="off">
           </div>
-          <div class="form-group">
-            <label for="add-player-password">Password</label>
-            <input type="password" id="add-player-password" placeholder="Password" required class="login-input" maxlength="64">
-          </div>
-          <div class="login-links" style="margin-bottom: 10px;">
-            <a href="#" id="add-player-forgot-password-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Forgot Password?
-            </a>
-            <span>OR</span>
-            <a href="#" id="add-player-create-account-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Create an Account
-            </a>
-          </div>
+          <div id="add-player-error" style="color:red;display:none;" role="alert" aria-live="polite"></div>
           <div class="form-actions">
-            <button type="button" id="cancel-add-player" class="btn-secondary">Cancel</button>
-            <button type="submit" class="btn-primary">Add Player</button>
+            <button type="button" id="cancel-add-player" class="btn-secondary" aria-label="Cancel Add Player">Cancel</button>
+            <button type="submit" class="btn-primary" aria-label="Confirm Add Player">Add Player</button>
           </div>
         </form>
       </div>
