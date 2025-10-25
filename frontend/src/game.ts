@@ -61,6 +61,30 @@ export class GameManager {
     this.setupEventListeners();
     // Chat functionality removed
     // this.setupChat();
+    // DEBUG: Draw a static test ball on canvas at startup to confirm rendering works
+    setTimeout(() => this.drawDebugBall(), 1000);
+  }
+  // DEBUG: Draw a static test ball on the canvas for troubleshooting
+  private drawDebugBall(): void {
+    const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+    if (!canvas) {
+      console.warn('DEBUG: game-canvas not found');
+      return;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.warn('DEBUG: canvas context not found');
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#e94560';
+    ctx.beginPath();
+    ctx.arc(400, 300, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = 'bold 18px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('DEBUG BALL', 340, 280);
+    console.log('DEBUG: Test ball drawn on canvas');
   }
 
   // Chat functionality completely disabled
@@ -532,6 +556,7 @@ export class GameManager {
   private startGame(gameData: any): void {
     console.log('🎮 [START] Game starting with data:', gameData);
     this.isPlaying = true;
+  console.log('DEBUG: startGame called, isPlaying:', this.isPlaying);
     
     // Store game settings from server
     this.gameSettings = gameData.gameSettings || {
@@ -618,6 +643,7 @@ export class GameManager {
   private updateGameFromBackend(backendState: any): void {
     // Don't update game state if paused
     if (this.isPaused) return;
+  console.log('DEBUG: updateGameFromBackend called, backendState:', backendState);
     
     // Convert backend game state format to frontend format
     if (backendState.ball && backendState.paddles && backendState.scores) {
@@ -640,6 +666,23 @@ export class GameManager {
         ballRadius: 5
       };
       
+  this.gameState = frontendState;
+  console.log('[DEBUG] Assigned gameState:', this.gameState);
+      // Validate ball coordinates (defensive): backend may occasionally send invalid values
+      if (!frontendState.ball || !isFinite(frontendState.ball.x) || !isFinite(frontendState.ball.y)) {
+        console.warn('🎮 [GAME] Invalid ball coordinates received from backend:', frontendState.ball);
+        // Ensure we have a sensible fallback so the ball remains visible
+        frontendState.ball = frontendState.ball || { x: 400, y: 300, vx: 0, vy: 0 };
+        if (!isFinite(frontendState.ball.x)) frontendState.ball.x = 400;
+        if (!isFinite(frontendState.ball.y)) frontendState.ball.y = 300;
+      }
+
+      // Clamp ball coordinates to canvas bounds to avoid drawing off-screen
+      const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+      const ballRadius = this.gameState.ballRadius || 5;
+      frontendState.ball.x = clamp(frontendState.ball.x, ballRadius, 800 - ballRadius);
+      frontendState.ball.y = clamp(frontendState.ball.y, ballRadius, 600 - ballRadius);
+
       this.gameState = frontendState;
       this.render();
       
@@ -659,6 +702,12 @@ export class GameManager {
 
   private render(): void {
     if (!this.ctx || !this.canvas || !this.gameState || this.isPaused) return;
+    console.log('[RENDER] Canvas dimensions:', this.canvas.width, 'x', this.canvas.height, 'visible:', this.canvas.style.display !== 'none');
+    // Debug: print paddle and ball positions
+    if (this.gameState) {
+      console.log('[RENDER] leftPaddle.y:', this.gameState.leftPaddle?.y, 'rightPaddle.y:', this.gameState.rightPaddle?.y);
+      console.log('[RENDER] ball.x:', this.gameState.ball?.x, 'ball.y:', this.gameState.ball?.y);
+    }
     
     // Clear canvas
     this.ctx.fillStyle = '#0a0a0a';
@@ -680,9 +729,11 @@ export class GameManager {
     
     // Left paddle
     this.ctx.fillRect(50, this.gameState.leftPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    console.log('[DRAW] Left paddle drawn at y:', this.gameState.leftPaddle.y);
     
     // Right paddle  
     this.ctx.fillRect(this.canvas.width - 60, this.gameState.rightPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    console.log('[DRAW] Right paddle drawn at y:', this.gameState.rightPaddle.y);
     
     // Draw ball with trailing effect based on speed
     this.drawBallWithTrail();
@@ -698,6 +749,7 @@ export class GameManager {
     if (!this.ctx || !this.gameState) return;
 
     const ball = this.gameState.ball;
+    console.log('[DRAW] drawBallWithTrail called with ball:', ball.x, ball.y, 'radius:', this.gameState.ballRadius);
     const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
     const maxSpeed = 15; // Adjust based on your game's max ball speed
     const normalizedSpeed = Math.min(speed / maxSpeed, 1);
@@ -758,6 +810,7 @@ export class GameManager {
     this.ctx.beginPath();
     this.ctx.arc(ball.x, ball.y, dynamicRadius, 0, Math.PI * 2);
     this.ctx.fill();
+    console.log('[DRAW] Main ball drawn at:', ball.x, ball.y, 'with radius:', dynamicRadius);
     
     // Add inner highlight for 3D effect
     this.ctx.shadowBlur = 0;

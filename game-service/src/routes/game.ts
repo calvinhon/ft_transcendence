@@ -360,6 +360,9 @@ class PongGame {
       gameState: this.gameState
     };
 
+    // DEBUG LOG: Print game state every time it's broadcast
+    console.log('🔴 [GAME-STATE] Broadcasting game state:', JSON.stringify(gameState));
+
     if (this.player1.socket.readyState === WebSocket.OPEN) {
       this.player1.socket.send(JSON.stringify(gameState));
     }
