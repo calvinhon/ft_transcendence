@@ -87,11 +87,54 @@ export class GameManager {
     accelerateOnHit: false,
     scoreToWin: 3
   };
+  
+  // Campaign mode properties
+  private isCampaignMode: boolean = false;
+  private currentCampaignLevel: number = 1;
+  private maxCampaignLevel: number = 10;
 
   constructor() {
     this.setupEventListeners();
     // Chat functionality removed
     // this.setupChat();
+  }
+
+  // Campaign progress persistence methods
+  private loadPlayerCampaignLevel(): number {
+    try {
+      const authManager = (window as any).authManager;
+      const user = authManager?.getCurrentUser();
+      
+      if (user && user.userId) {
+        const savedLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+        if (savedLevel) {
+          const level = parseInt(savedLevel, 10);
+          if (level >= 1 && level <= this.maxCampaignLevel) {
+            console.log(`🎯 [CAMPAIGN] Loaded saved level ${level} for player ${user.username}`);
+            return level;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading campaign level:', error);
+    }
+    
+    console.log('🎯 [CAMPAIGN] No saved level found, starting at level 1');
+    return 1;
+  }
+
+  private savePlayerCampaignLevel(level: number): void {
+    try {
+      const authManager = (window as any).authManager;
+      const user = authManager?.getCurrentUser();
+      
+      if (user && user.userId) {
+        localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
+        console.log(`🎯 [CAMPAIGN] Saved level ${level} for player ${user.username}`);
+      }
+    } catch (error) {
+      console.error('Error saving campaign level:', error);
+    }
   }
 
   // Chat functionality completely disabled
@@ -704,11 +747,6 @@ export class GameManager {
     // All UI updates are now handled in the render() method
   }
 
-  private updateGame(gameState: GameState): void {
-    this.gameState = gameState;
-    this.render();
-  }
-
   private render(): void {
     if (!this.ctx || !this.canvas || !this.gameState || this.isPaused) return;
     
@@ -754,8 +792,11 @@ export class GameManager {
     const maxSpeed = 15; // Adjust based on your game's max ball speed
     const normalizedSpeed = Math.min(speed / maxSpeed, 1);
     
-    // Calculate trail length based on speed (longer trail for faster ball)
-    const trailLength = Math.floor(normalizedSpeed * 8) + 3;
+    // Calculate trail length based on speed AND campaign level
+    const speedTrailLength = Math.floor(normalizedSpeed * 8) + 3;
+    const campaignBonus = this.isCampaignMode ? Math.floor(this.currentCampaignLevel / 2) : 0;
+    const trailLength = Math.min(speedTrailLength + campaignBonus, 15); // Cap at 15 for performance
+    
     const trailSpacing = normalizedSpeed * 3 + 1;
     
     // Dynamic ball size based on speed (slightly larger when faster)
@@ -870,9 +911,9 @@ export class GameManager {
     // Player names and levels (these could be passed from game server)
     const leftPlayerName = user?.username || 'Player 1';
     const rightPlayerName = 'AI Bot'; // or could be from game state
-    const leftPlayerLevel = 12; // could be from user data
-    const rightPlayerLevel = 15; // could be from AI difficulty
-    const targetScore = 8; // could be from game settings
+    const leftPlayerLevel = this.isCampaignMode ? this.currentCampaignLevel : 12; // could be from user data
+    const rightPlayerLevel = this.isCampaignMode ? this.currentCampaignLevel : 15; // could be from AI difficulty
+    const targetScore = this.gameSettings.scoreToWin;
 
     // Left player info
     this.drawPlayerInfoSection(
@@ -896,11 +937,16 @@ export class GameManager {
       'right'
     );
 
-    // Center info - "First to X"
+    // Center info - "First to X" or campaign level
     this.ctx.font = 'bold 16px Arial';
     this.ctx.fillStyle = '#ffffff';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
+    
+    if (this.isCampaignMode) {
+      this.ctx.fillText(`Campaign Level ${this.currentCampaignLevel} - First to ${targetScore}`, this.canvas.width / 2, 30);
+    } else {
+      this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
+    }
 
     // Draw large scores in center-top area
     this.ctx.font = 'bold 48px Courier New, monospace';
@@ -969,6 +1015,13 @@ export class GameManager {
       this.inputInterval = null;
     }
     
+    // Handle campaign mode progression
+    if (this.isCampaignMode) {
+      this.handleCampaignGameEnd(result);
+      return; // Campaign mode handles its own UI and navigation
+    }
+    
+    // Regular game end handling
     // Determine winner message
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -1094,7 +1147,24 @@ export class GameManager {
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
     console.log('GameManager: Starting bot match');
+    this.startBotMatchWithSettings(false);
+  }
+
+  // Start campaign mode (progressive difficulty against AI)
+  public async startCampaignGame(): Promise<void> {
+    console.log('🎯 [CAMPAIGN] Starting campaign mode');
+    this.isCampaignMode = true;
     
+    // Load player's current campaign level instead of always starting at 1
+    this.currentCampaignLevel = this.loadPlayerCampaignLevel();
+    
+    console.log(`🎯 [CAMPAIGN] Starting campaign at player's current level ${this.currentCampaignLevel}`);
+    this.updateCampaignLevelSettings();
+    this.updateCampaignUI();
+    this.startCampaignMatch();
+  }
+
+  private async startBotMatchWithSettings(isCampaign: boolean): Promise<void> {
     // Check if user is logged in
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -1108,6 +1178,13 @@ export class GameManager {
         loginScreen.classList.add('active');
       }
       return;
+    }
+
+    // Initialize campaign mode if requested
+    if (isCampaign) {
+      this.isCampaignMode = true;
+      this.currentCampaignLevel = 1;
+      this.updateCampaignLevelSettings();
     }
 
     // Update UI to show game starting
@@ -1155,17 +1232,24 @@ export class GameManager {
           // Request bot match with game settings
           setTimeout(() => {
             if (this.websocket) {
-              // Get game settings from the app
-              const app = (window as any).app;
-              const gameSettings = app?.gameSettings || {
-                gameMode: 'arcade',
-                aiDifficulty: 'easy',
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerupsEnabled: false,
-                accelerateOnHit: false,
-                scoreToWin: 5
-              };
+              let gameSettings: GameSettings;
+              
+              if (this.isCampaignMode) {
+                // Use campaign level settings
+                gameSettings = this.getCampaignLevelSettings();
+              } else {
+                // Get game settings from the app
+                const app = (window as any).app;
+                gameSettings = app?.gameSettings || {
+                  gameMode: 'arcade',
+                  aiDifficulty: 'easy',
+                  ballSpeed: 'medium',
+                  paddleSpeed: 'medium',
+                  powerupsEnabled: false,
+                  accelerateOnHit: false,
+                  scoreToWin: 5
+                };
+              }
               
               console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
               
@@ -1300,6 +1384,427 @@ export class GameManager {
 
   public getScoreToWin(): number {
     return this.gameSettings.scoreToWin;
+  }
+
+  private getCampaignLevelSettings(): GameSettings {
+    const level = this.currentCampaignLevel;
+    
+    console.log(`🎯 [CAMPAIGN] Getting settings for level ${level} (host player level)`);
+    
+    // Calculate settings based on current level
+    let ballSpeed: 'slow' | 'medium' | 'fast';
+    if (level <= 3) ballSpeed = 'slow';
+    else if (level <= 6) ballSpeed = 'medium';
+    else ballSpeed = 'fast';
+    
+    // Paddle speed increases with level
+    let paddleSpeed: 'slow' | 'medium' | 'fast';
+    if (level <= 2) paddleSpeed = 'slow';
+    else if (level <= 5) paddleSpeed = 'medium';
+    else paddleSpeed = 'fast';
+    
+    // AI difficulty increases with level - directly tied to host player level
+    let aiDifficulty: 'easy' | 'medium' | 'hard';
+    if (level <= 3) aiDifficulty = 'easy';
+    else if (level <= 7) aiDifficulty = 'medium';
+    else aiDifficulty = 'hard';
+    
+    // Score to win increases slightly with level
+    const scoreToWin = Math.min(3 + Math.floor((level - 1) / 3), 5);
+    
+    // Enable accelerate on hit from level 4
+    const accelerateOnHit = level >= 4;
+    
+    const settings: GameSettings = {
+      gameMode: 'coop' as const,
+      aiDifficulty,
+      ballSpeed,
+      paddleSpeed,
+      powerupsEnabled: false, // Keep powerups disabled for campaign
+      accelerateOnHit,
+      scoreToWin
+    };
+    
+    console.log(`🎯 [CAMPAIGN] Level ${level} AI settings:`, {
+      aiDifficulty,
+      ballSpeed,
+      paddleSpeed,
+      scoreToWin,
+      accelerateOnHit
+    });
+    
+    return settings;
+  }
+
+  public getCurrentCampaignLevel(): number {
+    return this.currentCampaignLevel;
+  }
+
+  public isInCampaignMode(): boolean {
+    return this.isCampaignMode;
+  }
+
+  private updateCampaignLevelSettings(): void {
+    // Calculate settings based on current level
+    const level = this.currentCampaignLevel;
+    
+    // Ball speed increases with level (starts slow, gets faster)
+    let ballSpeed: 'slow' | 'medium' | 'fast';
+    if (level <= 3) ballSpeed = 'slow';
+    else if (level <= 6) ballSpeed = 'medium';
+    else ballSpeed = 'fast';
+    
+    // Paddle speed increases with level
+    let paddleSpeed: 'slow' | 'medium' | 'fast';
+    if (level <= 2) paddleSpeed = 'slow';
+    else if (level <= 5) paddleSpeed = 'medium';
+    else paddleSpeed = 'fast';
+    
+    // AI difficulty increases with level
+    let aiDifficulty: 'easy' | 'medium' | 'hard';
+    if (level <= 3) aiDifficulty = 'easy';
+    else if (level <= 7) aiDifficulty = 'medium';
+    else aiDifficulty = 'hard';
+    
+    // Score to win increases slightly with level
+    const scoreToWin = Math.min(3 + Math.floor((level - 1) / 3), 5);
+    
+    // Enable accelerate on hit from level 4
+    const accelerateOnHit = level >= 4;
+    
+    // Update game settings
+    const newSettings: Partial<GameSettings> = {
+      gameMode: 'coop',
+      aiDifficulty,
+      ballSpeed,
+      paddleSpeed,
+      powerupsEnabled: false, // Keep powerups disabled for campaign
+      accelerateOnHit,
+      scoreToWin
+    };
+    
+    this.setGameSettings(newSettings);
+    
+    // Update UI to show current level
+    this.updateCampaignUI();
+    
+    console.log(`🎯 [CAMPAIGN] Level ${level} settings updated:`, newSettings);
+  }
+
+  private updateCampaignUI(): void {
+    // Update level display
+    const levelDisplay = document.getElementById('campaign-level-display');
+    const levelNumber = document.getElementById('current-level-number');
+    const progressBar = document.getElementById('campaign-progress-fill');
+    
+    if (levelDisplay && levelNumber) {
+      levelNumber.textContent = this.currentCampaignLevel.toString();
+      // Show the level display during campaign mode
+      levelDisplay.style.display = this.isCampaignMode ? 'block' : 'none';
+    }
+    
+    // Update level progress bar
+    if (progressBar) {
+      const progress = (this.currentCampaignLevel / this.maxCampaignLevel) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+  }
+
+  public progressToNextLevel(): void {
+    if (!this.isCampaignMode) return;
+    
+    const oldLevel = this.currentCampaignLevel;
+    if (this.currentCampaignLevel < this.maxCampaignLevel) {
+      this.currentCampaignLevel++;
+      console.log(`🎯 [CAMPAIGN] Level progressed from ${oldLevel} to ${this.currentCampaignLevel}`);
+      
+      // Save the new level to localStorage
+      this.savePlayerCampaignLevel(this.currentCampaignLevel);
+      
+      // Show level up message
+      this.showLevelUpMessage();
+      
+      // Update settings for new level
+      this.updateCampaignLevelSettings();
+      
+      // Restart game with new settings
+      setTimeout(() => {
+        this.restartCampaignLevel();
+      }, 2000); // Give time to show level up message
+    } else {
+      // Campaign completed!
+      this.showCampaignCompleteMessage();
+    }
+  }
+
+  private showLevelUpMessage(): void {
+    const message = document.createElement('div');
+    message.id = 'level-up-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #ffffff;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 2px solid #77e6ff;
+      box-shadow: 0 0 30px rgba(119, 230, 255, 0.5);
+    `;
+    message.innerHTML = `
+      <div style="color: #77e6ff; margin-bottom: 10px;">🎯 LEVEL UP!</div>
+      <div>Level ${this.currentCampaignLevel}</div>
+      <div style="font-size: 16px; margin-top: 10px; color: #cccccc;">
+        Get ready for the next challenge!
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 2 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 2000);
+  }
+
+  private showCampaignCompleteMessage(): void {
+    const message = document.createElement('div');
+    message.id = 'campaign-complete-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #ffffff;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 3px solid #77e6ff;
+      box-shadow: 0 0 50px rgba(119, 230, 255, 0.8);
+      max-width: 500px;
+    `;
+    message.innerHTML = `
+      <div style="color: #77e6ff; margin-bottom: 15px;">🏆 CAMPAIGN COMPLETE!</div>
+      <div style="font-size: 18px; color: #cccccc; margin-bottom: 20px;">
+        Congratulations! You have mastered all levels!
+      </div>
+      <div style="font-size: 16px;">
+        🏅 Pong Champion 🏅
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Return to main menu after 5 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+      this.endCampaign();
+    }, 5000);
+  }
+
+  private restartCampaignLevel(): void {
+    console.log('🎯 [CAMPAIGN] Restarting level with new settings');
+    
+    // Stop current game
+    this.stopGame();
+    
+    // Start new campaign match with updated settings (maintain campaign mode)
+    setTimeout(() => {
+      this.startCampaignMatch();
+    }, 500);
+  }
+
+  private startCampaignMatch(): void {
+    console.log('🎯 [CAMPAIGN] Starting campaign match at level', this.currentCampaignLevel);
+    
+    // Update campaign UI to show current level
+    this.updateCampaignUI();
+    
+    // Check if user is logged in
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    if (!user || !user.userId) {
+      alert('You must be logged in to play. Redirecting to login page.');
+      const gameScreen = document.getElementById('game-screen');
+      const loginScreen = document.getElementById('login-screen');
+      if (gameScreen && loginScreen) {
+        gameScreen.classList.remove('active');
+        loginScreen.classList.add('active');
+      }
+      return;
+    }
+
+    // Update UI to show game starting
+    const waitingMsg = document.getElementById('waiting-message');
+    const gameArea = document.getElementById('game-area');
+    
+    if (waitingMsg) waitingMsg.classList.remove('hidden');
+    
+    try {
+      // Connect to game server for campaign match
+      this.connectToCampaignGameServer();
+    } catch (error) {
+      console.error('Failed to start campaign match:', error);
+      if (waitingMsg) waitingMsg.classList.add('hidden');
+      alert('Failed to start campaign match. Please try again.');
+    }
+  }
+
+  private async connectToCampaignGameServer(): Promise<void> {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
+    
+    return new Promise((resolve, reject) => {
+      this.websocket = new WebSocket(wsUrl);
+
+      this.websocket.onopen = () => {
+        console.log('Connected to game server for campaign match');
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        
+        if (!user || !user.userId) {
+          console.error('No valid user logged in!');
+          reject(new Error('No valid user'));
+          return;
+        }
+
+        // Send authentication and request campaign match
+        if (this.websocket) {
+          this.websocket.send(JSON.stringify({
+            type: 'userConnect',
+            userId: user.userId,
+            username: user.username
+          }));
+          
+          // Request campaign match with current level settings
+          setTimeout(() => {
+            if (this.websocket) {
+              // Use current campaign level settings
+              const gameSettings = this.getCampaignLevelSettings();
+              
+              console.log(`🎯 [CAMPAIGN] Starting match at level ${this.currentCampaignLevel} with AI level matching host player level`);
+              console.log('🎯 [CAMPAIGN] Sending level', this.currentCampaignLevel, 'settings to backend:', gameSettings);
+              
+              this.websocket.send(JSON.stringify({
+                type: 'joinBotGame',
+                userId: user.userId,
+                gameSettings: gameSettings
+              }));
+            }
+          }, 100);
+        }
+        resolve();
+      };
+
+      this.websocket.onmessage = (event: MessageEvent) => {
+        this.handleGameMessage(event);
+      };
+
+      this.websocket.onclose = () => {
+        console.log('Campaign game server connection closed');
+        this.resetFindMatch();
+        this.isPlaying = false;
+        if (this.inputInterval) {
+          clearInterval(this.inputInterval);
+          this.inputInterval = null;
+        }
+      };
+
+      this.websocket.onerror = (error) => {
+        console.error('Campaign game server connection error:', error);
+        reject(error);
+      };
+    });
+  }
+
+  public endCampaign(): void {
+    this.isCampaignMode = false;
+    this.currentCampaignLevel = 1;
+    console.log('🎯 [CAMPAIGN] Campaign ended');
+    
+    // Update UI to hide campaign elements
+    this.updateCampaignUI();
+    
+    // Navigate back to play config
+    const app = (window as any).app;
+    if (app && typeof app.showScreen === 'function') {
+      app.showScreen('play-config');
+    }
+  }
+
+  // Override game end handling for campaign mode
+  private handleCampaignGameEnd(gameData: any): void {
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    
+    if (!user) return;
+    
+    // Check if player won (assuming player is left side)
+    const playerWon = gameData.winnerId === user.userId;
+    
+    if (playerWon && this.isCampaignMode) {
+      console.log('🎯 [CAMPAIGN] Player won! Progressing to next level');
+      this.progressToNextLevel();
+    } else if (!playerWon && this.isCampaignMode) {
+      console.log('🎯 [CAMPAIGN] Player lost. Restarting current level');
+      // Show retry message
+      this.showRetryMessage();
+      
+      // Restart level after delay
+      setTimeout(() => {
+        this.restartCampaignLevel();
+      }, 3000);
+    }
+  }
+
+  private showRetryMessage(): void {
+    const message = document.createElement('div');
+    message.id = 'retry-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(233, 69, 96, 0.9);
+      color: #ffffff;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 2px solid #ff6b8a;
+      box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+    `;
+    message.innerHTML = `
+      <div style="color: #ff6b8a; margin-bottom: 10px;">💪 TRY AGAIN!</div>
+      <div>Level ${this.currentCampaignLevel}</div>
+      <div style="font-size: 16px; margin-top: 10px; color: #ffcccc;">
+        You can do this! Practice makes perfect!
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 3000);
   }
 }
 

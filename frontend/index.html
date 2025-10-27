@@ -353,6 +353,13 @@
     <div id="game-screen" class="screen">
       <div class="game-container">
         <div class="game-canvas-container">
+          <!-- Campaign Level Display (shown during campaign mode) -->
+          <div id="campaign-level-display" class="campaign-level-display" style="display: none; text-align: center; margin: 10px 0; color: #ffffff; font-size: 18px; font-weight: bold;">
+            Campaign Level: <span id="current-level-number">1</span>
+            <div id="campaign-progress-bar" class="campaign-progress-bar" style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); margin: 5px auto; border-radius: 4px; overflow: hidden;">
+              <div id="campaign-progress-fill" style="height: 100%; background: linear-gradient(90deg, #77e6ff, #e94560); width: 10%; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
           <!-- Game Control Buttons above canvas -->
           <div class="game-canvas-controls">
             <button id="pause-game-btn" class="game-control-btn">
