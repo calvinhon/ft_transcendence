@@ -474,6 +474,7 @@ export class App {
 
       switch (e.key) {
         case 'Backspace':
+        case 'Escape':
           e.preventDefault();
           this.handleBackspaceShortcut(currentScreen);
           break;
@@ -529,8 +530,15 @@ export class App {
         break;
       
       case 'play-config-screen':
+        // Don't auto-start game with Enter - let user manually click start button
+        // Focus on start game button for visual feedback
         const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
-        if (startGameBtn) startGameBtn.click();
+        if (startGameBtn) startGameBtn.focus();
+        break;
+      
+      case 'game-screen':
+        const pauseBtn = document.getElementById('pause-game-btn') as HTMLButtonElement;
+        if (pauseBtn) pauseBtn.click();
         break;
     }
   }

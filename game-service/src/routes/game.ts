@@ -356,25 +356,39 @@ class PongGame {
     }
 
     // Ball collision with paddles
-    if (this.ball.x <= 60 && this.ball.y >= this.paddles.player1.y && 
+    if (this.ball.x <= 60 && this.ball.y >= this.paddles.player1.y &&
         this.ball.y <= this.paddles.player1.y + 100) {
-      this.ball.dx = -this.ball.dx;
+      // Calculate hit position on paddle (0 = top, 1 = bottom)
+      const hitPos = (this.ball.y - this.paddles.player1.y) / 100;
+      // Angle proportional to hit position: middle = 0°, edges = ±90°
+      const angle = (hitPos - 0.5) * Math.PI / 2; // -90° to +90°
+
+      const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+      this.ball.dx = Math.abs(speed) * Math.cos(angle);
+      this.ball.dy = speed * Math.sin(angle);
+
       if (this.accelerateOnHit) {
         this.ball.dx *= 1.1; // Increase speed by 10%
         this.ball.dy *= 1.1;
       }
     }
 
-    if (this.ball.x >= 740 && this.ball.y >= this.paddles.player2.y && 
+    if (this.ball.x >= 740 && this.ball.y >= this.paddles.player2.y &&
         this.ball.y <= this.paddles.player2.y + 100) {
-      this.ball.dx = -this.ball.dx;
+      // Calculate hit position on paddle (0 = top, 1 = bottom)
+      const hitPos = (this.ball.y - this.paddles.player2.y) / 100;
+      // Angle proportional to hit position: middle = 180°, edges = 90° to 270°
+      const angle = Math.PI + (hitPos - 0.5) * Math.PI / 2; // 90° to 270°
+
+      const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+      this.ball.dx = -Math.abs(speed) * Math.cos(angle);
+      this.ball.dy = speed * Math.sin(angle);
+
       if (this.accelerateOnHit) {
         this.ball.dx *= 1.1; // Increase speed by 10%
         this.ball.dy *= 1.1;
       }
-    }
-
-    // Scoring
+    }    // Scoring
     if (this.ball.x < 0) {
       this.scores.player2++;
       this.resetBall();

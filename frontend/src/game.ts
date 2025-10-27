@@ -909,11 +909,25 @@ export class GameManager {
     const user = authManager?.getCurrentUser();
     
     // Player names and levels (these could be passed from game server)
-    const leftPlayerName = user?.username || 'Player 1';
-    const rightPlayerName = 'AI Bot'; // or could be from game state
-    const leftPlayerLevel = this.isCampaignMode ? this.currentCampaignLevel : 12; // could be from user data
-    const rightPlayerLevel = this.isCampaignMode ? this.currentCampaignLevel : 15; // could be from AI difficulty
-    const targetScore = this.gameSettings.scoreToWin;
+	const leftPlayerName = user?.username || 'Player 1';
+	const rightPlayerName = 'AI Bot';
+
+	// Try to read player level from user profile (supports number or numeric string)
+	const userLevelFromProfile = (() => {
+	  const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+	  if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+	  if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+	  return null;
+	})();
+
+	// Left player level comes from user profile when available, otherwise fallback
+	const leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+
+	// AI level starts with the user's level (can be adjusted later based on difficulty)
+	const rightPlayerLevel = leftPlayerLevel;
+
+	// Use getter to respect current game settings and campaign adjustments
+	const targetScore = this.getScoreToWin();
 
     // Left player info
     this.drawPlayerInfoSection(
@@ -1147,7 +1161,14 @@ export class GameManager {
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
     console.log('GameManager: Starting bot match');
-    this.startBotMatchWithSettings(false);
+    
+    // Check if this is CO-OP mode (campaign mode)
+    if (this.gameSettings.gameMode === 'coop') {
+      console.log('🎯 [CAMPAIGN] CO-OP mode detected, starting campaign game');
+      await this.startCampaignGame();
+    } else {
+      this.startBotMatchWithSettings(false);
+    }
   }
 
   // Start campaign mode (progressive difficulty against AI)

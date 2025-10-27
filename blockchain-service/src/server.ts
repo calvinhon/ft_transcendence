@@ -305,7 +305,7 @@ app.get('/tournament/:id/rankings', async (req: Request<{ id: string }>, res: Re
     // For demo, return mock rankings
     // In production, you'd query events or maintain a player list
     const mockRankings: RankingEntry[] = [
-      { address: '0x1234...', name: 'Player1', rank: 1 },
+      { address: '0x1234...', name: '', rank: 1 },
       { address: '0x5678...', name: 'Player2', rank: 2 },
       { address: '0x9ABC...', name: 'Player3', rank: 3 }
     ];
