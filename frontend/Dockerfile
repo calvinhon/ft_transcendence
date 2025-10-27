@@ -4,19 +4,18 @@ FROM node:18-alpine as builder
 WORKDIR /app
 
 # Copy all configuration files
-COPY frontend/package*.json ./
-COPY tsconfig.json ./tsconfig.base.json
-COPY frontend/tsconfig.json ./tsconfig.json
-COPY frontend/webpack.config.js ./
+COPY package*.json ./
+COPY tsconfig.json ./tsconfig.json
+COPY webpack.config.js ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code and shared types
-COPY frontend/src/ ./src/
-COPY frontend/css/ ./css/
-COPY frontend/index.html ./
-COPY shared/ ./shared/
+COPY src/ ./src/
+COPY css/ ./css/
+COPY index.html ./
+# COPY ../shared/ ./shared/
 
 # Build the application
 RUN npm run build

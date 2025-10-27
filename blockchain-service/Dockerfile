@@ -12,19 +12,12 @@ RUN npm install
 
 # Copy source code
 COPY src/ ./src/
-COPY contracts/ ./contracts/
-COPY scripts/ ./scripts/
-COPY test/ ./test/
-COPY hardhat.config.js ./
 
 # Build TypeScript if src exists
 RUN if [ -d "src" ]; then npm run build; else echo "No TypeScript source found, using JavaScript"; fi
 
 # Copy JavaScript files for backward compatibility
 COPY *.js ./
-
-# Compile contracts
-RUN npx hardhat compile
 
 # Create startup script with TypeScript support
 RUN echo '#!/bin/sh' > /app/start.sh && \

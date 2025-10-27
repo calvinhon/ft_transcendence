@@ -1,12 +1,10 @@
 services:
   nginx:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    build: ./frontend
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - auth-service
       - game-service
@@ -17,9 +15,7 @@ services:
       - transcendence-network
 
   auth-service:
-    build:
-      context: .
-      dockerfile: auth-service/Dockerfile
+    build: ./auth-service
     ports:
       - "3001:3000"
     volumes:
@@ -32,9 +28,7 @@ services:
       - transcendence-network
 
   game-service:
-    build:
-      context: .
-      dockerfile: game-service/Dockerfile
+    build: ./game-service
     ports:
       - "3002:3000"
     volumes:
@@ -46,9 +40,7 @@ services:
       - transcendence-network
 
   tournament-service:
-    build:
-      context: .
-      dockerfile: tournament-service/Dockerfile
+    build: ./tournament-service
     ports:
       - "3003:3000"
     volumes:
@@ -60,9 +52,7 @@ services:
       - transcendence-network
 
   user-service:
-    build:
-      context: .
-      dockerfile: user-service/Dockerfile
+    build: ./user-service
     ports:
       - "3004:3000"
     volumes:
@@ -73,19 +63,41 @@ services:
     networks:
       - transcendence-network
 
+  hardhat-node:
+    build: ./blockchain
+    container_name: hardhat-node
+    ports:
+      - "8545:8545"
+    volumes:
+      - hardhat-data:/app/data
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
+    env_file:
+      - .env
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   blockchain-service:
     build: ./blockchain-service
     ports:
-      - "8545:8545"
       - "3005:3001"
     environment:
-      - BLOCKCHAIN_PORT=8545
-      - API_PORT=3001
-      - NODE_ENV=development
+      - PORT=3000
+      - SERVICE_NAME=blockchain-service
+      - BLOCKCHAIN_RPC_URL=http://hardhat-node:8545
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+    depends_on:
+      hardhat-node:
+        condition: service_healthy
     networks:
       - transcendence-network
-    volumes:
-      - blockchain-data:/app/data
 
 networks:
   transcendence-network:
@@ -96,4 +108,4 @@ volumes:
   games-db:
   tournaments-db:
   users-db:
-  blockchain-data:
+  hardhat-data:

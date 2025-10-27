@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <button id="connectBtn">Connect & Find Match</button>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+        const connectBtn = document.getElementById('connectBtn');
+        
+        function log(message) {
+            output.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        connectBtn.onclick = function() {
+            log('Attempting to connect to WebSocket...');
+            
+            const ws = new WebSocket('ws://localhost/api/game/ws');
+            
+            ws.onopen = function() {
+                log('WebSocket connected!');
+                
+                // Send join game message
+                const joinMessage = {
+                    type: 'joinGame',
+                    userId: 3,
+                    username: 'testuser'
+                };
+                
+                log('Sending join message: ' + JSON.stringify(joinMessage));
+                ws.send(JSON.stringify(joinMessage));
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                log('Received: ' + event.data);
+                
+                if (data.type === 'gameStart') {
+                    if (data.players.player2.username === 'Bot') {
+                        log('SUCCESS: Bot match started!');
+                    } else {
+                        log('Real player match started');
+                    }
+                }
+            };
+            
+            ws.onerror = function(error) {
+                log('WebSocket error: ' + error);
+            };
+            
+            ws.onclose = function() {
+                log('WebSocket closed');
+            };
+            
+            // Disable button
+            connectBtn.disabled = true;
+        };
+    </script>
+</body>
+</html>

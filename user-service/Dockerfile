@@ -1,18 +1,17 @@
-# user-service/Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
 
 # Copy package files
-COPY user-service/package*.json ./
-COPY user-service/tsconfig.json ./
+COPY package*.json ./
+COPY tsconfig.json ./
 
 # Install ALL dependencies (including devDependencies for TypeScript compilation)
 RUN npm install
 
 # Copy source code and shared types
-COPY user-service/src/ ./src/
-COPY shared/ ./shared/
+COPY src/ ./src/
+# COPY ../shared/ ./shared/
 
 # Build TypeScript
 RUN npm run build
@@ -21,7 +20,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Copy database directory
-COPY user-service/database/ ./database/
+COPY database/ ./database/
 
 EXPOSE 3000
 
