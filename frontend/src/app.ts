@@ -647,6 +647,16 @@ export class App {
     if (targetScreen) {
       targetScreen.classList.add('active');
       this.currentScreen = screenName;
+      // Debug: log when play-config-screen is activated
+      if (screenName === 'play-config') {
+        console.log('[DEBUG] play-config-screen activated');
+        // Also visually highlight play-config-buttons for debug
+        const playConfigButtons = document.querySelector('.play-config-buttons') as HTMLElement;
+        if (playConfigButtons) {
+          playConfigButtons.style.border = '4px solid lime';
+          playConfigButtons.style.background = 'rgba(0,255,0,0.1)';
+        }
+      }
     }
 
     // Set body data attribute for CSS targeting
@@ -663,10 +673,9 @@ export class App {
     }
   }
 
-  // Legacy method for backwards compatibility - now uses router
-  showScreen(screenName: string): void {
-    this.router.navigate(screenName);
-  }
+
+  // Unified method: always use router.navigate(screenName) for screen changes
+  // Remove any direct calls to showScreenDirect except from router
 
   async handleLogin(): Promise<void> {
     const usernameInput = document.getElementById('login-username') as HTMLInputElement;
@@ -1047,23 +1056,26 @@ export class App {
     addPlayerButtons.forEach(btn => {
       (btn as HTMLElement).style.display = 'flex';
     });
-    
+
     // Clear any default selections - let user choose
     const hostPlayerCard = document.getElementById('host-player-card');
     const aiPlayerCard = document.getElementById('ai-player-card');
-    
+
     if (hostPlayerCard) {
       hostPlayerCard.classList.remove('active');
     }
     if (aiPlayerCard) {
       aiPlayerCard.classList.remove('active');
     }
-    
+
     // Hide CO-OP campaign progress UI
     const coopProgress = document.getElementById('coop-campaign-progress');
     if (coopProgress) {
       coopProgress.style.display = 'none';
     }
+
+    // Re-attach add player button listeners for arcade mode
+    this.setupAddPlayerButtons();
   }
 
   private invitePlayer(playerId: string, playerName: string): void {
@@ -1194,8 +1206,8 @@ export class App {
     // Update game UI with player information
     this.updateGameUI();
 
-    // Show game screen
-    this.showScreen('game');
+  // Show game screen
+  this.router.navigate('game');
 
     // Start the actual game
     const gameManager = (window as any).gameManager;
@@ -1204,7 +1216,7 @@ export class App {
     } else {
       console.error('GameManager not available');
   showToast('Game system not available', 'error');
-      this.showScreen('play-config');
+  this.router.navigate('play-config');
     }
   }
 

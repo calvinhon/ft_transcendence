@@ -42,29 +42,6 @@ html {
   height: 100%;
   /* Enable zoom functionality */
   zoom: reset;
-  -webkit-text-size-adjust: none;
-  -moz-text-size-adjust: none;
-  -ms-text-size-adjust: none;
-  text-size-adjust: none;
-}
-
-body { 
-  height: 100%;
-  margin: 0;
-  font-family: var(--font-secondary);
-  font-size: var(--font-size-md);
-  line-height: 1.5;
-  color: var(--text);
-  background: var(--bg-primary);
-  /* Remove all gradients - pure black background */
-  /* Ensure proper zoom behavior */
-  transform-origin: top left;
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce){
   *{ animation: none !important; transition: none !important; }
 }
 
@@ -797,6 +774,8 @@ body {
   align-items: center;
   margin-bottom: var(--space-lg);
   padding: 0 var(--space);
+  border: 2px dashed red !important;
+  background: rgba(255,0,0,0.1) !important;
 }
 
 .button-spacer {
@@ -2027,7 +2006,7 @@ body {
 }
 
 /* Start Game Button */
-.start-game-btn {
+/* .start-game-btn {
   padding: clamp(12px, 1.5vw, 20px) clamp(20px, 2.5vw, 32px);
   border: 2px solid var(--primary);
   border-radius: var(--radius-sm);
@@ -2048,9 +2027,9 @@ body {
   min-width: clamp(140px, 18vw, 220px);
   width: auto;
   margin-top: 0;
-}
+} */
 
-.start-game-btn::before {
+/* .start-game-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2071,7 +2050,7 @@ body {
   box-shadow: 
     0 0 30px rgba(233, 69, 96, 0.6),
     0 8px 25px rgba(233, 69, 96, 0.4);
-}
+} */
 
 /* Players List */
 .players-list {
