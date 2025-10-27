@@ -36,9 +36,22 @@ check-compose:
 	fi
 
 clean:
-	@echo "🧹 Stopping and cleaning old containers..."
+	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."
 	@if [ -f docker-compose.yml ]; then \
-		docker compose down --remove-orphans; \
+		if docker compose version >/dev/null 2>&1; then \
+			docker compose down --rmi all --volumes --remove-orphans; \
+			docker compose rm -f >/dev/null 2>&1 || true; \
+		elif command -v docker-compose >/dev/null 2>&1; then \
+			docker-compose down --rmi all --volumes --remove-orphans; \
+			docker-compose rm -f >/dev/null 2>&1 || true; \
+		else \
+			echo "❌ Docker Compose not found. Cannot clean."; \
+			exit 1; \
+		fi; \
+		PROJECT=$$(basename "$$(pwd)"); \
+		CONTAINERS=$$(docker ps -a --filter "label=com.docker.compose.project=$$PROJECT" -q 2>/dev/null || true); \
+		if [ -n "$$CONTAINERS" ]; then docker rm -f $$CONTAINERS >/dev/null 2>&1 || true; fi; \
+		echo "✅ Complete removal done for compose project: $$PROJECT"; \
 	else \
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi

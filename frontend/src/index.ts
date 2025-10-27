@@ -8,7 +8,6 @@ import './profile';
 import './leaderboard';
 import './chat';
 import './blockchain';
-import './error-tracker';
 
 // Import CSS
 import '../css/style.css';

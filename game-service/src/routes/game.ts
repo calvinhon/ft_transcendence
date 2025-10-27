@@ -54,9 +54,13 @@ interface WebSocketMessage {
 }
 
 interface GameSettings {
+  gameMode: 'coop' | 'arcade' | 'tournament';
+  aiDifficulty: 'easy' | 'medium' | 'hard';
+  ballSpeed: 'slow' | 'medium' | 'fast';
+  paddleSpeed: 'slow' | 'medium' | 'fast';
+  powerupsEnabled: boolean;
+  accelerateOnHit: boolean;
   scoreToWin: number;
-  paddleSpeed: number;
-  ballSpeed: number;
 }
 
 interface JoinGameMessage extends WebSocketMessage {
@@ -193,25 +197,81 @@ class PongGame {
   lastStateTime: number;
   isPaused: boolean;
   private gameInterval?: NodeJS.Timeout;
+  
+  // Game settings
+  gameSettings: GameSettings;
+  ballSpeed: number;
+  paddleSpeed: number;
+  aiDifficulty: 'easy' | 'medium' | 'hard';
+  powerupsEnabled: boolean;
+  accelerateOnHit: boolean;
 
   constructor(player1: GamePlayer, player2: GamePlayer, gameId: number, gameSettings?: GameSettings) {
     this.gameId = gameId;
     this.player1 = player1;
     this.player2 = player2;
-    this.ball = { x: 400, y: 300, dx: 5, dy: 3 };
+    
+    // Set default game settings if not provided
+    this.gameSettings = gameSettings || {
+      gameMode: 'arcade',
+      aiDifficulty: 'medium',
+      ballSpeed: 'medium',
+      paddleSpeed: 'medium',
+      powerupsEnabled: false,
+      accelerateOnHit: false,
+      scoreToWin: 3
+    };
+    
+    // Convert string settings to numeric values
+    this.ballSpeed = this.getBallSpeedValue(this.gameSettings.ballSpeed);
+    this.paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    this.aiDifficulty = this.gameSettings.aiDifficulty;
+    this.powerupsEnabled = this.gameSettings.powerupsEnabled;
+    this.accelerateOnHit = this.gameSettings.accelerateOnHit;
+    
+    // Initialize ball with appropriate speed
+    this.ball = { 
+      x: 400, 
+      y: 300, 
+      dx: this.getInitialBallDirection() * this.ballSpeed, 
+      dy: (Math.random() - 0.5) * this.ballSpeed 
+    };
+    
     this.paddles = {
       player1: { y: 250, x: 50 },
       player2: { y: 250, x: 750 }
     };
     this.scores = { player1: 0, player2: 0 };
     this.gameState = 'playing';
-    this.maxScore = gameSettings?.scoreToWin || 3; // Use provided setting or default to 3
-    this.lastStateTime = 0; // For throttling state broadcasts
-    this.isPaused = false; // Initialize pause state
+    this.maxScore = this.gameSettings.scoreToWin;
+    this.lastStateTime = 0;
+    this.isPaused = false;
     
-    console.log(`🎮 [GAME-${this.gameId}] Created with maxScore: ${this.maxScore}`);
+    console.log(`🎮 [GAME-${this.gameId}] Created with settings:`, this.gameSettings);
     
     this.startGameLoop();
+  }
+
+  private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
+    switch (speed) {
+      case 'slow': return 3;
+      case 'medium': return 5;
+      case 'fast': return 7;
+      default: return 5;
+    }
+  }
+
+  private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
+    switch (speed) {
+      case 'slow': return 5;
+      case 'medium': return 8;
+      case 'fast': return 12;
+      default: return 8;
+    }
+  }
+
+  private getInitialBallDirection(): number {
+    return Math.random() > 0.5 ? 1 : -1;
   }
 
   startGameLoop(): void {
@@ -243,16 +303,37 @@ class PongGame {
   }
 
   moveBotPaddle(): void {
-    // Simple AI: move bot paddle towards ball
+    // AI behavior based on difficulty setting
     const botPaddle = this.paddles.player2;
     const ballY = this.ball.y;
-    // Center of paddle
     const paddleCenter = botPaddle.y + 50;
     
-    // Make bot less perfect - add some randomness and slower movement
-    const moveSpeed = 3; // Much slower movement speed for easier gameplay
-    const reactionDelay = Math.random() > 0.8; // 20% chance bot doesn't react immediately
-    const errorMargin = 30; // Larger error margin for imperfect AI
+    // Adjust AI parameters based on difficulty
+    let moveSpeed: number;
+    let reactionDelay: boolean;
+    let errorMargin: number;
+    
+    switch (this.aiDifficulty) {
+      case 'easy':
+        moveSpeed = 2;
+        reactionDelay = Math.random() > 0.6; // 40% chance bot doesn't react
+        errorMargin = 50; // Large error margin
+        break;
+      case 'medium':
+        moveSpeed = 3;
+        reactionDelay = Math.random() > 0.8; // 20% chance bot doesn't react
+        errorMargin = 30; // Medium error margin
+        break;
+      case 'hard':
+        moveSpeed = 5;
+        reactionDelay = Math.random() > 0.95; // 5% chance bot doesn't react
+        errorMargin = 10; // Small error margin
+        break;
+      default:
+        moveSpeed = 3;
+        reactionDelay = Math.random() > 0.8;
+        errorMargin = 30;
+    }
     
     if (reactionDelay) return; // Sometimes bot doesn't react
     
@@ -278,11 +359,19 @@ class PongGame {
     if (this.ball.x <= 60 && this.ball.y >= this.paddles.player1.y && 
         this.ball.y <= this.paddles.player1.y + 100) {
       this.ball.dx = -this.ball.dx;
+      if (this.accelerateOnHit) {
+        this.ball.dx *= 1.1; // Increase speed by 10%
+        this.ball.dy *= 1.1;
+      }
     }
 
     if (this.ball.x >= 740 && this.ball.y >= this.paddles.player2.y && 
         this.ball.y <= this.paddles.player2.y + 100) {
       this.ball.dx = -this.ball.dx;
+      if (this.accelerateOnHit) {
+        this.ball.dx *= 1.1; // Increase speed by 10%
+        this.ball.dy *= 1.1;
+      }
     }
 
     // Scoring
@@ -301,7 +390,12 @@ class PongGame {
   }
 
   resetBall(): void {
-    this.ball = { x: 400, y: 300, dx: 5 * (Math.random() > 0.5 ? 1 : -1), dy: 3 * (Math.random() > 0.5 ? 1 : -1) };
+    this.ball = { 
+      x: 400, 
+      y: 300, 
+      dx: this.getInitialBallDirection() * this.ballSpeed, 
+      dy: (Math.random() - 0.5) * this.ballSpeed 
+    };
     
     // Add a short pause when ball resets to make game feel more natural
     setTimeout(() => {
@@ -324,8 +418,8 @@ class PongGame {
     const oldY = this.paddles[paddle].y;
     console.log('🏓 [MOVEPLADDLE] Current paddle Y:', oldY, 'Max Y (500):', 500);
     
-    // Increased movement speed from 5 to 15 pixels for more responsive movement
-    const moveSpeed = 15;
+    // Use paddle speed from game settings
+    const moveSpeed = this.paddleSpeed;
     
     if (direction === 'up' && this.paddles[paddle].y > 0) {
       this.paddles[paddle].y = Math.max(0, this.paddles[paddle].y - moveSpeed);
@@ -621,7 +715,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
         [player1.userId, player2.userId],
         function(this: sqlite3.RunResult, err: Error | null) {
           if (!err) {
-            const game = new PongGame(player1, player2, this.lastID!, undefined);
+            const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
             activeGames.set(this.lastID!, game);
             
             // Notify players game started
@@ -631,7 +725,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
               players: {
                 player1: { userId: player1.userId, username: player1.username },
                 player2: { userId: player2.userId, username: player2.username }
-              }
+              },
+              gameSettings: data.gameSettings
             };
             
             player1.socket.send(JSON.stringify(startMessage));
@@ -668,7 +763,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
             [player1.userId, player2.userId],
             function(this: sqlite3.RunResult, err: Error | null) {
               if (!err) {
-                const game = new PongGame(player1, player2, this.lastID!, undefined);
+                const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
                 activeGames.set(this.lastID!, game);
                 // Notify real player game started
                 const startMessage = {
@@ -677,7 +772,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
                   players: {
                     player1: { userId: player1.userId, username: player1.username },
                     player2: { userId: player2.userId, username: player2.username }
-                  }
+                  },
+                  gameSettings: data.gameSettings
                 };
                 player1.socket.send(JSON.stringify(startMessage));
               }

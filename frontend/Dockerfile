@@ -5,8 +5,8 @@ WORKDIR /app
 
 # Copy all configuration files
 COPY package*.json ./
-COPY tsconfig.json ./tsconfig.json
-COPY webpack.config.js ./
+COPY ../tsconfig.json ./tsconfig.json
+COPY vite.config.js ./
 
 # Install dependencies
 RUN npm install
@@ -24,8 +24,7 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copy all built files to nginx
-COPY --from=builder /app/dist /usr/share/nginx/html/dist
-COPY --from=builder /app/index.html /usr/share/nginx/html/
+COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
 
 # Copy nginx configuration

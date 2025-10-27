@@ -1,26 +1,17 @@
 {
   "name": "frontend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Frontend for Transcendence Pong Game",
-  "main": "dist/index.js",
   "scripts": {
-    "build": "webpack --mode production",
-    "dev": "webpack serve --mode development --open",
+    "build": "vite build",
+    "dev": "vite",
     "clean": "rimraf dist",
     "prebuild": "npm run clean"
   },
+  "dependencies": {},
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "webpack": "^5.88.0",
-    "webpack-cli": "^5.1.0",
-    "webpack-dev-server": "^4.15.0",
-    "ts-loader": "^9.4.0",
-    "html-webpack-plugin": "^5.5.0",
-    "css-loader": "^6.8.0",
-    "style-loader": "^3.3.0",
-    "@types/node": "^20.0.0",
-  "rimraf": "^5.0.0",
-  "@types/node": "^20.0.0"
-  },
-  "dependencies": {}
+    "vite": "^4.3.9",
+    "rimraf": "^3.0.2"
+  }
 }
