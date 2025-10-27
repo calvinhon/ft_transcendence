@@ -6,24 +6,18 @@ const dbPath = path.join(__dirname, '../database/tournaments.db');
 
 // Initialize database
 const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
+  if (err) console.error('Error opening database:', err);
+  else {
     console.log('Connected to Tournaments SQLite database');
     
     // Create tournaments table
     db.run(`
       CREATE TABLE IF NOT EXISTS tournaments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        max_participants INTEGER DEFAULT 8,
+        min_participants INTEGER 4,
+        max_participants INTEGER 4,
         current_participants INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'open',
-        created_by INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         started_at DATETIME,
-        finished_at DATETIME,
         winner_id INTEGER
       )
     `);
@@ -34,10 +28,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tournament_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
-        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         eliminated_at DATETIME,
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id),
-        UNIQUE(tournament_id, user_id)
       )
     `);
 
@@ -47,7 +39,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tournament_id INTEGER NOT NULL,
         round INTEGER NOT NULL,
-        match_number INTEGER NOT NULL,
         player1_id INTEGER,
         player2_id INTEGER,
         winner_id INTEGER,
@@ -66,10 +57,6 @@ async function routes(fastify, options) {
   fastify.post('/create', async (request, reply) => {
     const { name, description, maxParticipants, createdBy } = request.body;
     
-    if (!name || !createdBy) {
-      return reply.status(400).send({ error: 'Name and creator required' });
-    }
-
     return new Promise((resolve, reject) => {
       db.run(
         'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',

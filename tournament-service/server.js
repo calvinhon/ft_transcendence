@@ -7,7 +7,7 @@ fastify.register(require('@fastify/cors'), {
 });
 
 // Register routes
-fastify.register(require('./routes/tournament'));
+fastify.register(require('./routes/tournament'), { prefix: '/api/tournament' });
 
 const start = async () => {
   try {
