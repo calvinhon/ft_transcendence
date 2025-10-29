@@ -12,6 +12,30 @@ import { setupLocalPlayerRegisterModal, showLocalPlayerRegisterModal, setupLocal
 
 
 export class App {
+  // Handles game mode tab click and initialization
+  handleGameModeChange(tab: HTMLElement): void {
+    const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
+    if (!mode) return;
+    // Remove active from all tabs
+    document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    // Show correct mode description
+    document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active'));
+    const activeDesc = document.getElementById(`mode-desc-${mode}`);
+    if (activeDesc) activeDesc.classList.add('active');
+    // Show/hide arcade-only settings
+    document.querySelectorAll('.arcade-only').forEach(element => {
+      if (mode === 'arcade') {
+        (element as HTMLElement).style.display = 'block';
+        (element as HTMLElement).classList.add('active');
+      } else {
+        (element as HTMLElement).style.display = 'none';
+        (element as HTMLElement).classList.remove('active');
+      }
+    });
+    // Update players section based on mode
+    this.updatePlayersForMode(mode);
+  }
   createPlayerCard(player: any): HTMLElement {
     const playerCard = document.createElement('div');
     playerCard.className = 'player-card local-player';
@@ -84,21 +108,47 @@ export class App {
     const hostUser = authManager?.getCurrentUser();
     const hostToken = localStorage.getItem('token');
     if (hostUser && hostToken) {
+      // Debug: log stats sent to user-service
+      console.debug('Submitting host result:', {
+        userId: hostUser.userId,
+        stats: results.find(r => r.userId === hostUser.userId)?.stats,
+        token: hostToken
+      });
       await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
     }
 
     // Local players
     for (const player of this.localPlayers) {
       if (player.token && player.userId) {
+        // Debug: log stats sent to user-service
+        console.debug('Submitting local player result:', {
+          userId: player.userId,
+          stats: results.find(r => r.userId === player.userId)?.stats,
+          token: player.token
+        });
         await this.submitResultForUser(player.userId, results.find(r => r.userId === player.userId)?.stats, player.token);
       }
     }
 
-    // Co-op level progression: if host won in co-op mode, increment level
+    // Co-op level progression: if host won in co-op mode, increment level and update AI for next match
     if (this.gameSettings.gameMode === 'coop' && results.length > 0 && results[0].stats?.won) {
       incrementCoopLevel();
       this.updateCoopProgressUI();
+      // Sync AI difficulty for next match
+      const level = getCoopLevel();
+      this.gameSettings.aiDifficulty = (level === 1 ? 'easy' : level === 2 ? 'medium' : 'hard');
       showToast('Congratulations! Next AI unlocked.', 'success');
+      // Prompt user to continue to next match
+      this.promptContinueCoopMatch();
+    }
+  }
+
+  promptContinueCoopMatch(): void {
+    // Show a modal or simple confirm dialog
+    if (window.confirm('Continue to next CO-OP match with increased AI level?')) {
+      this.startGame();
+    } else {
+      this.router.navigate('play-config');
     }
   }
   // --- Place this at the end of the class ---
@@ -320,11 +370,22 @@ export class App {
 
     // Game control buttons
     document.getElementById('stop-game-btn')?.addEventListener('click', () => {
-      this.stopGame();
+      const gameManager = (window as any).gameManager;
+      if (gameManager && typeof gameManager.stopGame === 'function') {
+        gameManager.stopGame();
+      }
     });
 
-    document.getElementById('pause-game-btn')?.addEventListener('click', () => {
-      this.pauseGame();
+    document.addEventListener('DOMContentLoaded', () => {
+      const pauseBtn = document.getElementById('pause-game-btn');
+      if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+          const gameManager = (window as any).gameManager;
+          if (gameManager && typeof gameManager.pauseGame === 'function') {
+            gameManager.pauseGame();
+          }
+        });
+      }
     });
 
     // Add Player Modal event listeners
@@ -478,7 +539,6 @@ export class App {
           e.preventDefault();
           this.handleBackspaceShortcut(currentScreen);
           break;
-        
         case 'Enter':
           e.preventDefault();
           this.handleEnterShortcut(currentScreen);
@@ -488,8 +548,11 @@ export class App {
   }
 
   private handleBackspaceShortcut(currentScreen: string | undefined): void {
+    if (!currentScreen) return;
     switch (currentScreen) {
       case 'register-screen':
+        this.router.navigate('login');
+        break;
       case 'forgot-password-screen':
         this.router.navigate('login');
         break;
@@ -497,49 +560,60 @@ export class App {
         this.handleLogout();
         break;
       case 'play-config-screen':
+        this.router.navigate('main-menu');
+        break;
       case 'settings-screen':
+        this.router.navigate('main-menu');
+        break;
       case 'profile-screen':
         this.router.navigate('main-menu');
         break;
-      case 'game-screen':
-        this.stopGame();
+      case 'game-screen': {
+        const gameManager = (window as any).gameManager;
+        if (gameManager && typeof gameManager.stopGame === 'function') {
+          gameManager.stopGame();
+        }
         break;
+      }
     }
   }
 
   private handleEnterShortcut(currentScreen: string | undefined): void {
     switch (currentScreen) {
-      case 'login-screen':
+      case 'login-screen': {
         const loginSubmitBtn = document.querySelector('#login-form button[type="submit"]') as HTMLButtonElement;
         if (loginSubmitBtn) loginSubmitBtn.click();
         break;
-      
-      case 'register-screen':
+      }
+      case 'register-screen': {
         const registerSubmitBtn = document.querySelector('#register-form button[type="submit"]') as HTMLButtonElement;
         if (registerSubmitBtn) registerSubmitBtn.click();
         break;
-      
-      case 'forgot-password-screen':
+      }
+      case 'forgot-password-screen': {
         const forgotSubmitBtn = document.querySelector('#forgot-password-form button[type="submit"]') as HTMLButtonElement;
         if (forgotSubmitBtn) forgotSubmitBtn.click();
         break;
-      
-      case 'main-menu-screen':
+      }
+      case 'main-menu-screen': {
         const playBtn = document.getElementById('play-btn') as HTMLButtonElement;
         if (playBtn) playBtn.click();
         break;
-      
-      case 'play-config-screen':
+      }
+      case 'play-config-screen': {
         // Don't auto-start game with Enter - let user manually click start button
         // Focus on start game button for visual feedback
         const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
-        if (startGameBtn) startGameBtn.focus();
+        if (startGameBtn) startGameBtn.click();
         break;
-      
-      case 'game-screen':
-        const pauseBtn = document.getElementById('pause-game-btn') as HTMLButtonElement;
-        if (pauseBtn) pauseBtn.click();
+      }
+      case 'game-screen': {
+        const pauseBtn = document.getElementById('pause-game-btn');
+        if (pauseBtn instanceof HTMLButtonElement) {
+          pauseBtn.click();
+        }
         break;
+      }
     }
   }
 
@@ -708,7 +782,7 @@ export class App {
   async handleRegister(): Promise<void> {
     const usernameInput = document.getElementById('register-username') as HTMLInputElement;
     const emailInput = document.getElementById('register-email') as HTMLInputElement;
-    const passwordInput = document.getElementById('register-password') as HTMLInputElement;
+    const passwordInput = document.getElementById('register-password') as HTMLFormElement;
     const username = usernameInput.value;
     const email = emailInput.value;
     const password = passwordInput.value;
@@ -848,71 +922,24 @@ export class App {
   handleConfigOption(button: HTMLElement): void {
     const setting = button.getAttribute('data-setting');
     const value = button.getAttribute('data-value');
-    
     if (!setting || !value) return;
 
     // Remove active class from siblings
     const siblings = button.parentElement?.querySelectorAll('.config-option, .setting-option') || [];
     siblings.forEach(sibling => sibling.classList.remove('active'));
-    
-    // Add active class to clicked button
     button.classList.add('active');
 
-    // Update settings
-    switch (setting) {
-      case 'ai-difficulty':
-        this.gameSettings.aiDifficulty = value as 'easy' | 'medium' | 'hard';
-        break;
-      case 'ball-speed':
-        this.gameSettings.ballSpeed = value as 'slow' | 'medium' | 'fast';
-        break;
-      case 'paddle-speed':
-        this.gameSettings.paddleSpeed = value as 'slow' | 'medium' | 'fast';
-        break;
-    }
-  }
-
-  handleGameModeChange(tab: HTMLElement): void {
-    const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
-    if (!mode) return;
-
-    // Remove active class from all tabs
-    document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
-    
-    // Add active class to clicked tab
-    tab.classList.add('active');
-
-    // Update game settings
-    this.gameSettings.gameMode = mode;
-
-    // Set default score to win based on mode
-    if (mode === 'coop') {
-      this.gameSettings.scoreToWin = 3;
-    } else if (mode === 'arcade') {
-      this.gameSettings.scoreToWin = 5; // Default for arcade
+    // Update settings (example: update gameSettings)
+    if (setting in this.gameSettings) {
+      (this.gameSettings as any)[setting] = value;
     }
 
-    // Show/hide mode descriptions
-    document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active'));
-    const activeDesc = document.getElementById(`mode-desc-${mode}`);
-    if (activeDesc) {
-      activeDesc.classList.add('active');
+    // Optionally trigger UI updates if needed
+    // For mode changes, call handleGameModeChange
+    if (setting === 'gameMode') {
+      const tab = document.querySelector(`.game-mode-tab[data-mode="${value}"]`) as HTMLElement;
+      if (tab) this.handleGameModeChange(tab);
     }
-
-    // Show/hide arcade-specific settings
-    const arcadeOnlyElements = document.querySelectorAll('.arcade-only');
-    arcadeOnlyElements.forEach(element => {
-      if (mode === 'arcade') {
-        (element as HTMLElement).style.display = 'block';
-        (element as HTMLElement).classList.add('active');
-      } else {
-        (element as HTMLElement).style.display = 'none';
-        (element as HTMLElement).classList.remove('active');
-      }
-    });
-
-    // Update players section based on mode
-    this.updatePlayersForMode(mode);
   }
 
   private updatePlayersForMode(mode: 'coop' | 'arcade' | 'tournament'): void {
@@ -1329,10 +1356,13 @@ export class App {
     const levelEl = document.getElementById('profile-level');
     const expBarEl = document.getElementById('profile-exp-bar');
     const expTextEl = document.getElementById('profile-exp-text');
+    // Add a combined level+XP element if present
+    const levelXpEl = document.getElementById('profile-level-xp');
 
-    if (levelEl) levelEl.textContent = level.toString();
+    if (levelEl) levelEl.textContent = `Level: ${level}`;
     if (expBarEl) expBarEl.style.width = `${expPercentage}%`;
-    if (expTextEl) expTextEl.textContent = `${expInLevel * 100} / ${expNeeded * 100} XP`;
+    if (expTextEl) expTextEl.textContent = `XP: ${expInLevel * 100} / ${expNeeded * 100}`;
+    if (levelXpEl) levelXpEl.textContent = `Level ${level} | XP: ${expInLevel * 100} / ${expNeeded * 100}`;
   }
 
   updateRecentActivity(activities: any[]): void {

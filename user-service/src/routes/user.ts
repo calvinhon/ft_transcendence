@@ -235,6 +235,49 @@ async function routes(fastify: FastifyInstance): Promise<void> {
          bio = COALESCE(?, bio),
          country = COALESCE(?, country),
          preferred_language = COALESCE(?, preferred_language),
+
+    // Update game stats (wins, total_games, xp, level, etc)
+    fastify.post<{
+      Params: { userId: string };
+      Body: {
+        wins?: number;
+        total_games?: number;
+        xp?: number;
+        level?: number;
+        winRate?: number;
+        lost?: number;
+        [key: string]: any;
+      };
+    }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: any }>, reply: FastifyReply) => {
+      const { userId } = request.params;
+      const { wins, total_games, xp, level, winRate, lost } = request.body;
+
+      // Build dynamic SQL for only provided fields
+      const fields = [];
+      const values = [];
+      if (typeof wins === 'number') { fields.push('wins = ?'); values.push(wins); }
+      if (typeof total_games === 'number') { fields.push('total_games = ?'); values.push(total_games); }
+      if (typeof xp === 'number') { fields.push('xp = ?'); values.push(xp); }
+      if (typeof level === 'number') { fields.push('level = ?'); values.push(level); }
+      if (typeof winRate === 'number') { fields.push('winRate = ?'); values.push(winRate); }
+      if (typeof lost === 'number') { fields.push('lost = ?'); values.push(lost); }
+      fields.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(userId);
+
+      if (fields.length === 1) {
+        // Only updated_at, nothing to update
+        return reply.status(400).send({ error: 'No stats provided' });
+      }
+
+      const sql = 'UPDATE user_profiles SET ' + fields.join(', ') + ' WHERE user_id = ?';
+      db.run(sql, values, function(this: sqlite3.RunResult, err: Error | null) {
+        if (err) {
+          reply.status(500).send({ error: 'Database error', details: err });
+        } else {
+          reply.send({ message: 'Game stats updated successfully' });
+        }
+      });
+    });
          theme_preference = COALESCE(?, theme_preference),
          updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,

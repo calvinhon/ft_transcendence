@@ -373,7 +373,7 @@ class PongGame {
       }
     }
 
-    if (this.ball.x >= 740 && this.ball.y >= this.paddles.player2.y &&
+    if (this.ball.x >= (740) && this.ball.y >= this.paddles.player2.y &&
         this.ball.y <= this.paddles.player2.y + 100) {
       // Calculate hit position on paddle (0 = top, 1 = bottom)
       const hitPos = (this.ball.y - this.paddles.player2.y) / 100;
@@ -381,7 +381,7 @@ class PongGame {
       const angle = Math.PI + (hitPos - 0.5) * Math.PI / 2; // 90° to 270°
 
       const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
-      this.ball.dx = -Math.abs(speed) * Math.cos(angle);
+      this.ball.dx = Math.abs(speed) * Math.cos(angle);
       this.ball.dy = speed * Math.sin(angle);
 
       if (this.accelerateOnHit) {
@@ -527,15 +527,24 @@ class PongGame {
   }
 
   endGame(): void {
-    console.log(`🏁 [GAME-${this.gameId}] Game ending. Final scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
     this.gameState = 'finished';
     if (this.gameInterval) {
-      clearInterval(this.gameInterval);
+      globalThis.clearInterval(this.gameInterval);
     }
-    
-    const winnerId = this.scores.player1 > this.scores.player2 ? 
-      this.player1.userId : this.player2.userId;
+    // Remove from active games (only once)
+    activeGames.delete(this.gameId);
 
+    // Remove players from waitingPlayers if present (in-place removal)
+    for (let i = waitingPlayers.length - 1; i >= 0; i--) {
+      if (
+        waitingPlayers[i].userId === this.player1.userId ||
+        waitingPlayers[i].userId === this.player2.userId
+      ) {
+        waitingPlayers.splice(i, 1);
+      }
+    }
+
+    const winnerId = this.scores.player1 > this.scores.player2 ? this.player1.userId : this.player2.userId;
     console.log(`🏁 [GAME-${this.gameId}] Winner: ${winnerId === this.player1.userId ? this.player1.username : this.player2.username}`);
 
     // Update database
@@ -569,8 +578,6 @@ class PongGame {
       console.log(`📤 [GAME-${this.gameId}] End message sent to ${this.player2.username}`);
     }
 
-    // Remove from active games
-    activeGames.delete(this.gameId);
     console.log(`🗑️ [GAME-${this.gameId}] Game removed from active games. Active games count: ${activeGames.size}`);
   }
 }
@@ -697,6 +704,12 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   function handleJoinGame(socket: WebSocket, data: JoinGameMessage): void {
     console.log('handleJoinGame called with:', data);
     
+    // Prevent duplicate joins
+    if (waitingPlayers.some(p => p.userId === data.userId)) {
+      socket.send(JSON.stringify({ type: 'error', message: 'Already waiting for a match.' }));
+      return;
+    }
+
     // Track this user as online
     addOnlineUser(data.userId, data.username, socket);
     

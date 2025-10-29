@@ -774,8 +774,8 @@ html {
   align-items: center;
   margin-bottom: var(--space-lg);
   padding: 0 var(--space);
-  border: 2px dashed red !important;
-  background: rgba(255,0,0,0.1) !important;
+  border: none;
+  background: transparent;
 }
 
 .button-spacer {
@@ -850,7 +850,7 @@ html {
   background: rgba(17, 25, 39, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 2px solid var(--accent);
+  border: none;
   border-radius: var(--radius);
   padding: var(--space-lg);
   box-shadow: 
@@ -1258,7 +1258,7 @@ html {
   box-shadow:
     0 0 30px rgba(119, 230, 255, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  min-height: 500px;
+  min-height: 280px;
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -1798,8 +1798,8 @@ html {
 
 .back-btn {
   padding: clamp(12px, 1.5vw, 18px) clamp(18px, 2.5vw, 28px);
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-sm);
+  /* border: 2px solid var(--primary);
+  border-radius: var(--radius-sm); */
   background: var(--primary);
   color: #ffffff;
   cursor: pointer;
@@ -2006,10 +2006,10 @@ html {
 }
 
 /* Start Game Button */
-/* .start-game-btn {
+.start-game-btn {
   padding: clamp(12px, 1.5vw, 20px) clamp(20px, 2.5vw, 32px);
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-sm);
+  /* border: 2px solid var(--primary);
+  border-radius: var(--radius-sm); */
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
   color: white;
   font-size: clamp(0.8rem, 1vw, 1.1rem);
@@ -2029,7 +2029,7 @@ html {
   margin-top: 0;
 } */
 
-/* .start-game-btn::before {
+.start-game-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2050,7 +2050,7 @@ html {
   box-shadow: 
     0 0 30px rgba(233, 69, 96, 0.6),
     0 8px 25px rgba(233, 69, 96, 0.4);
-} */
+}
 
 /* Players List */
 .players-list {

@@ -14,8 +14,8 @@ RUN npm install
 # Copy blockchain development files
 COPY hardhat.config.cjs ./
 COPY contracts ./contracts
-COPY scripts ./scripts
-COPY test ./test
+# COPY scripts ./scripts
+# COPY test ./test
 
 # Compile contracts on build
 RUN npx hardhat compile

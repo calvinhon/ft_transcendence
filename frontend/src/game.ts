@@ -688,6 +688,10 @@ export class GameManager {
   }
 
   private startInputHandler(): void {
+    if (this.inputInterval) {
+      clearInterval(this.inputInterval);
+      this.inputInterval = null;
+    }
     this.inputInterval = setInterval(() => {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
         // Send individual paddle movement messages based on current key state
@@ -1161,6 +1165,7 @@ export class GameManager {
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
     console.log('GameManager: Starting bot match');
+    this.stopGame();
     
     // Check if this is CO-OP mode (campaign mode)
     if (this.gameSettings.gameMode === 'coop') {
@@ -1360,10 +1365,10 @@ export class GameManager {
     
     console.log('Game stopped');
     
-    // Navigate back to play config immediately
+    // Navigate back to play config using router
     const app = (window as any).app;
-    if (app && typeof app.showScreen === 'function') {
-      app.showScreen('play-config');
+    if (app && app.router && typeof app.router.navigate === 'function') {
+      app.router.navigate('play-config');
     }
   }
 
@@ -1651,6 +1656,8 @@ export class GameManager {
   private startCampaignMatch(): void {
     console.log('🎯 [CAMPAIGN] Starting campaign match at level', this.currentCampaignLevel);
     
+    this.stopGame();
+
     // Update campaign UI to show current level
     this.updateCampaignUI();
     
@@ -1696,10 +1703,18 @@ export class GameManager {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         
+        // In CO-OP campaign mode, always use the latest campaign level from localStorage
         if (!user || !user.userId) {
           console.error('No valid user logged in!');
           reject(new Error('No valid user'));
           return;
+        }
+        if (this.isCampaignMode) {
+          // Always reload the latest campaign level before starting the match
+          this.currentCampaignLevel = this.loadPlayerCampaignLevel();
+          this.updateCampaignLevelSettings();
+          this.updateCampaignUI();
+          console.log(`🎯 [CAMPAIGN] Synced campaign level from storage: ${this.currentCampaignLevel}`);
         }
 
         // Send authentication and request campaign match
