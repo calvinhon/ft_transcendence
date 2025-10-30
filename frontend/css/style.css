@@ -774,8 +774,8 @@ html {
   align-items: center;
   margin-bottom: var(--space-lg);
   padding: 0 var(--space);
-  border: none;
-  background: transparent;
+  border: none !important;
+  background: transparent !important;
 }
 
 .button-spacer {

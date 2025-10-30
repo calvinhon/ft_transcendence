@@ -859,16 +859,21 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
           player1.socket.send(JSON.stringify(startMessage));
           console.log('🎮 [BOT-GAME] Bot game started immediately for:', player1.username);
           
-          // Give a small delay to ensure gameStart message is processed before gameState messages
+        // --- Fix: Also send initial gameState after gameStart ---
           setTimeout(() => {
-            console.log('🎮 [BOT-GAME] Game should be fully initialized now');
-          }, 100);
-        } else {
-          console.error('Failed to create bot game:', err);
-        }
+            game.broadcastGameState();
+        }, 100);
+      } else {
+        console.error('Failed to create bot game:', err);
+        // --- Fix: Send error message to frontend if bot match creation fails ---
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Failed to start bot match. Please try again.'
+        }));
       }
-    );
-  }
+    }
+  );
+}
 
   function handleMovePaddle(socket: WebSocket, data: MovePaddleMessage): void {
     console.log('🎮 [HANDLE-MOVE] handleMovePaddle called with:', data);

@@ -592,7 +592,10 @@ export class GameManager {
 
       this.websocket.onerror = (error) => {
         console.error('Game server connection error:', error);
+        this.isPlaying = false; // <-- Ensure game is not marked as playing
+        this.resetFindMatch();  
         reject(error);
+
       };
     });
   }
@@ -716,7 +719,7 @@ export class GameManager {
 
   private updateGameFromBackend(backendState: any): void {
     // Don't update game state if paused
-    if (this.isPaused) return;
+    if (this.isPaused || !this.isPlaying) return;
     
     // Convert backend game state format to frontend format
     if (backendState.ball && backendState.paddles && backendState.scores) {
@@ -1226,6 +1229,9 @@ export class GameManager {
       console.error('Failed to start bot match:', error);
       if (waitingMsg) waitingMsg.classList.add('hidden');
       alert('Failed to start bot match. Please try again.');
+      this.isPlaying = false; //modified
+      this.stopGame(); // <-- Ensures full cleanup
+      return; // no further action
     }
   }
 
@@ -1306,6 +1312,8 @@ export class GameManager {
 
       this.websocket.onerror = (error) => {
         console.error('Bot game server connection error:', error);
+        this.isPlaying = false;
+        this.resetFindMatch();
         reject(error);
       };
     });
@@ -1538,7 +1546,7 @@ export class GameManager {
 
   public progressToNextLevel(): void {
     if (!this.isCampaignMode) return;
-    
+    this.stopGame();
     const oldLevel = this.currentCampaignLevel;
     if (this.currentCampaignLevel < this.maxCampaignLevel) {
       this.currentCampaignLevel++;
@@ -1547,23 +1555,21 @@ export class GameManager {
       // Save the new level to localStorage
       this.savePlayerCampaignLevel(this.currentCampaignLevel);
       
-      // Show level up message
-      this.showLevelUpMessage();
+      // Show level up message with confirmation button
+      this.showLevelUpMessageWithConfirm();
       
       // Update settings for new level
       this.updateCampaignLevelSettings();
-      
-      // Restart game with new settings
-      setTimeout(() => {
-        this.restartCampaignLevel();
-      }, 2000); // Give time to show level up message
+      // Do NOT automatically restart the game here!
     } else {
       // Campaign completed!
       this.showCampaignCompleteMessage();
     }
   }
 
-  private showLevelUpMessage(): void {
+  // --- Add new method to show confirmation button for next level ---
+
+  private showLevelUpMessageWithConfirm(): void {
     const message = document.createElement('div');
     message.id = 'level-up-message';
     message.style.cssText = `
@@ -1588,16 +1594,32 @@ export class GameManager {
       <div style="font-size: 16px; margin-top: 10px; color: #cccccc;">
         Get ready for the next challenge!
       </div>
+      <button id="next-level-confirm-btn" style="
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #77e6ff, #e94560);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(119, 230, 255, 0.3);
+      ">Start Next Level</button>
     `;
-    
+
     document.body.appendChild(message);
-    
-    // Remove message after 2 seconds
-    setTimeout(() => {
-      if (message.parentNode) {
-        message.parentNode.removeChild(message);
-      }
-    }, 2000);
+
+    // Add click handler for confirmation button
+    const confirmBtn = document.getElementById('next-level-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        if (message.parentNode) {
+          message.parentNode.removeChild(message);
+        }
+        this.restartCampaignLevel();
+      });
+    }
   }
 
   private showCampaignCompleteMessage(): void {
@@ -1646,11 +1668,7 @@ export class GameManager {
     
     // Stop current game
     this.stopGame();
-    
-    // Start new campaign match with updated settings (maintain campaign mode)
-    setTimeout(() => {
-      this.startCampaignMatch();
-    }, 500);
+    this.startCampaignMatch();
   }
 
   private startCampaignMatch(): void {
@@ -1761,6 +1779,8 @@ export class GameManager {
 
       this.websocket.onerror = (error) => {
         console.error('Campaign game server connection error:', error);
+        this.isPlaying = false; // <-- Ensure game is not marked as playing
+        this.resetFindMatch();  
         reject(error);
       };
     });
