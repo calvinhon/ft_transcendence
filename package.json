@@ -1,7 +1,9 @@
 {
   "dependencies": {
-    "@types/node": "^24.9.1",
     "fastify": "^5.6.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2"
   }
 }

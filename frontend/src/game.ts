@@ -67,6 +67,26 @@ interface MovePaddleMessage extends GameMessage {
 }
 
 export class GameManager {
+  // Start game with backend-provided message
+  private startGame(message: any): void {
+    // Example: set isPlaying, initialize game state, start input handler
+    this.isPlaying = true;
+    this.isPaused = false;
+    // You may want to parse message.gameState or other fields
+    this.gameState = message.gameState || null;
+    // HOach Modified
+    this.initCanvas({
+    canvasWidth: 800,
+    canvasHeight: 600,
+    paddleWidth: 10,
+    paddleHeight: 100,
+    ballRadius: 5,
+    paddleSpeed: this.getPaddleSpeedValue()
+    });
+    //
+    this.startInputHandler();
+    console.log('Game started with message:', message);
+  }
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private websocket: WebSocket | null = null;
@@ -75,7 +95,7 @@ export class GameManager {
   public isPaused: boolean = false;
   private keys: KeyState = {};
   private chatSocket: WebSocket | null = null;
-  private inputInterval: NodeJS.Timeout | null = null;
+  private inputInterval: number | null = null;
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -565,7 +585,7 @@ export class GameManager {
               console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
               
               this.websocket.send(JSON.stringify({
-                type: 'joinGame',
+                type: 'joinBotGame', // fix here for bot game
                 userId: user.userId,
                 username: user.username,
                 gameSettings: gameSettings
@@ -604,11 +624,38 @@ export class GameManager {
     try {
       const message: any = JSON.parse(event.data);
       console.log('🎮 [GAME-MSG] Received message:', message);
-      
       switch (message.type) {
-        case 'connectionAck':
+        case 'connectionAck': {
           console.log('Game connection acknowledged:', message.message);
+          // Send joinBotGame only after connectionAck
+          const authManager = (window as any).authManager;
+          const user = authManager?.getCurrentUser();
+          if (user && user.userId && this.websocket) {
+            let gameSettings: any;
+            if (this.isCampaignMode) {
+              gameSettings = this.getCampaignLevelSettings();
+            } else {
+              const app = (window as any).app;
+              gameSettings = app?.gameSettings || {
+                gameMode: 'arcade',
+                aiDifficulty: 'easy',
+                ballSpeed: 'medium',
+                paddleSpeed: 'medium',
+                powerupsEnabled: false,
+                accelerateOnHit: false,
+                scoreToWin: 5
+              };
+            }
+            console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
+            this.websocket.send(JSON.stringify({
+              type: 'joinBotGame',
+              userId: user.userId,
+              username: user.username,
+              gameSettings: gameSettings
+            }));
+          }
           break;
+        }
         case 'waiting':
           console.log('Waiting for opponent:', message.message);
           break;
@@ -631,46 +678,6 @@ export class GameManager {
       console.error('Error parsing game message:', error);
     }
   }
-
-  private startGame(gameData: any): void {
-    console.log('🎮 [START] Game starting with data:', gameData);
-    this.isPlaying = true;
-    
-    // Update game settings if provided by server
-    if (gameData.gameSettings) {
-      this.setGameSettings(gameData.gameSettings);
-      console.log('🎮 [START] Applied game settings from server:', gameData.gameSettings);
-    }
-    
-    // Show game screen and hide other screens
-    const app = (window as any).app;
-    if (app && typeof app.showScreen === 'function') {
-      app.showScreen('game');
-    }
-    
-    // Hide waiting message and show game
-    const waitingMsg = document.getElementById('waiting-message');
-    const gameArea = document.getElementById('game-area');
-    
-    if (waitingMsg) waitingMsg.classList.add('hidden');
-    if (gameArea) gameArea.classList.remove('hidden');
-    
-    // Initialize canvas with standard pong dimensions
-    this.initCanvas({
-      canvasWidth: 800,
-      canvasHeight: 600,
-      paddleWidth: 10,
-      paddleHeight: 100,
-      ballRadius: 5,
-      paddleSpeed: this.getPaddleSpeedValue() // Use game settings
-    });
-    
-    // Start input handler
-    this.startInputHandler();
-    
-    console.log('🎮 [START] Game initialization complete, waiting for game state updates');
-  }
-
   private initCanvas(config: GameConfig): void {
     this.canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
     if (!this.canvas) {
@@ -1168,8 +1175,7 @@ export class GameManager {
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
     console.log('GameManager: Starting bot match');
-    this.stopGame();
-    
+  // error to stopGame() here
     // Check if this is CO-OP mode (campaign mode)
     if (this.gameSettings.gameMode === 'coop') {
       console.log('🎯 [CAMPAIGN] CO-OP mode detected, starting campaign game');
@@ -1228,7 +1234,7 @@ export class GameManager {
     } catch (error) {
       console.error('Failed to start bot match:', error);
       if (waitingMsg) waitingMsg.classList.add('hidden');
-      alert('Failed to start bot match. Please try again.');
+      alert('Failed to start bot match. Please try again.<Frontend>');
       this.isPlaying = false; //modified
       this.stopGame(); // <-- Ensures full cleanup
       return; // no further action
@@ -1253,45 +1259,13 @@ export class GameManager {
           return;
         }
 
-        // Send authentication and request bot match
+        // Send authentication only
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
             userId: user.userId,
             username: user.username
           }));
-          
-          // Request bot match with game settings
-          setTimeout(() => {
-            if (this.websocket) {
-              let gameSettings: GameSettings;
-              
-              if (this.isCampaignMode) {
-                // Use campaign level settings
-                gameSettings = this.getCampaignLevelSettings();
-              } else {
-                // Get game settings from the app
-                const app = (window as any).app;
-                gameSettings = app?.gameSettings || {
-                  gameMode: 'arcade',
-                  aiDifficulty: 'easy',
-                  ballSpeed: 'medium',
-                  paddleSpeed: 'medium',
-                  powerupsEnabled: false,
-                  accelerateOnHit: false,
-                  scoreToWin: 5
-                };
-              }
-              
-              console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
-              
-              this.websocket.send(JSON.stringify({
-                type: 'joinBotGame',
-                userId: user.userId,
-                gameSettings: gameSettings
-              }));
-            }
-          }, 100);
         }
         resolve();
       };
@@ -1546,7 +1520,7 @@ export class GameManager {
 
   public progressToNextLevel(): void {
     if (!this.isCampaignMode) return;
-    this.stopGame();
+    this.stopGame();//check
     const oldLevel = this.currentCampaignLevel;
     if (this.currentCampaignLevel < this.maxCampaignLevel) {
       this.currentCampaignLevel++;
@@ -1674,7 +1648,7 @@ export class GameManager {
   private startCampaignMatch(): void {
     console.log('🎯 [CAMPAIGN] Starting campaign match at level', this.currentCampaignLevel);
     
-    this.stopGame();
+    // this.stopGame();
 
     // Update campaign UI to show current level
     this.updateCampaignUI();
@@ -1699,14 +1673,12 @@ export class GameManager {
     
     if (waitingMsg) waitingMsg.classList.remove('hidden');
     
-    try {
-      // Connect to game server for campaign match
-      this.connectToCampaignGameServer();
-    } catch (error) {
+    // Connect to game server for campaign match
+    this.connectToCampaignGameServer().catch((error) => {
       console.error('Failed to start campaign match:', error);
       if (waitingMsg) waitingMsg.classList.add('hidden');
       alert('Failed to start campaign match. Please try again.');
-    }
+    });
   }
 
   private async connectToCampaignGameServer(): Promise<void> {

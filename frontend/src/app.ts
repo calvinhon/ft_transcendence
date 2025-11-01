@@ -1242,8 +1242,8 @@ export class App {
       await gameManager.startBotMatch();
     } else {
       console.error('GameManager not available');
-  showToast('Game system not available', 'error');
-  this.router.navigate('play-config');
+      showToast('Game system not available', 'error');
+      this.router.navigate('play-config');
     }
   }
 

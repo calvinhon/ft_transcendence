@@ -802,6 +802,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
                   },
                   gameSettings: data.gameSettings
                 };
+                console.log('About to send gameStart to:', player1.username, player1.socket.readyState);
+                player1.socket.send(JSON.stringify(startMessage));
+                console.log('Sent gameStart to:', player1.username);
                 player1.socket.send(JSON.stringify(startMessage));
               }
             }
@@ -868,7 +871,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
         // --- Fix: Send error message to frontend if bot match creation fails ---
         socket.send(JSON.stringify({
           type: 'error',
-          message: 'Failed to start bot match. Please try again.'
+          message: 'Failed to start bot match. Please try again.<Backend>'
         }));
       }
     }
