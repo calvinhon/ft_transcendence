@@ -99,7 +99,7 @@ export class GameManager {
   
   // Game settings
   private gameSettings: GameSettings = {
-    gameMode: 'arcade',
+    gameMode: 'coop',
     aiDifficulty: 'medium',
     ballSpeed: 'medium',
     paddleSpeed: 'medium',
@@ -574,7 +574,7 @@ export class GameManager {
               // Get game settings from the app
               const app = (window as any).app;
               const gameSettings = app?.gameSettings || {
-                gameMode: 'arcade',
+                gameMode: 'coop',
                 aiDifficulty: 'medium',
                 ballSpeed: 'medium',
                 paddleSpeed: 'medium',
@@ -638,7 +638,7 @@ export class GameManager {
             } else {
               const app = (window as any).app;
               gameSettings = app?.gameSettings || {
-                gameMode: 'arcade',
+                gameMode: 'coop',
                 aiDifficulty: 'easy',
                 ballSpeed: 'medium',
                 paddleSpeed: 'medium',
