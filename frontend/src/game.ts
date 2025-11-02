@@ -95,7 +95,7 @@ export class GameManager {
   public isPaused: boolean = false;
   private keys: KeyState = {};
   private chatSocket: WebSocket | null = null;
-  private inputInterval: number | null = null;
+  private inputInterval: ReturnType<typeof setInterval> | null = null;
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -109,6 +109,7 @@ export class GameManager {
   };
   
   // Campaign mode properties
+  // Start false by default; set to true when entering campaign via startCampaignGame or startBotMatchWithSettings
   private isCampaignMode: boolean = false;
   private currentCampaignLevel: number = 1;
   private maxCampaignLevel: number = 10;
