@@ -183,7 +183,7 @@ export class App {
     paddleSpeed: 'medium',
     powerupsEnabled: false,
     accelerateOnHit: false,
-    scoreToWin: 5
+    scoreToWin: 3
   };
   private localPlayers: LocalPlayer[] = [];
 

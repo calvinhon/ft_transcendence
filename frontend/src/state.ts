@@ -20,7 +20,7 @@ const defaultState = {
     paddleSpeed: 'medium',
     powerupsEnabled: false,
     accelerateOnHit: false,
-    scoreToWin: 5
+    scoreToWin: 3
   },
   coopLevel: 1 // 1: easy, 2: medium, 3: hard
 };

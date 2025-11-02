@@ -219,7 +219,7 @@ class PongGame {
       paddleSpeed: 'medium',
       powerupsEnabled: false,
       accelerateOnHit: false,
-      scoreToWin: 3
+      scoreToWin: 5
     };
     
     // Convert string settings to numeric values

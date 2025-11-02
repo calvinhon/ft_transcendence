@@ -401,8 +401,8 @@ export class GameManager {
       const activeElement = document.activeElement;
       const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
       
-      console.log('🎯 [KEYDOWN] Key pressed:', e.key, 'isPlaying:', this.isPlaying, 'activeElement:', activeElement?.tagName, (activeElement as HTMLElement)?.id);
-      console.log('🎯 [KEYDOWN] isInputFocused:', isInputFocused);
+  console.log('[KEYDOWN] Key pressed:', e.key, 'isPlaying:', this.isPlaying, 'activeElement:', activeElement?.tagName, (activeElement as HTMLElement)?.id);
+  console.log('[KEYDOWN] isInputFocused:', isInputFocused);
       
       if (!isInputFocused && this.isPlaying) {
         const key = e.key.toLowerCase();
@@ -579,7 +579,7 @@ export class GameManager {
                 paddleSpeed: 'medium',
                 powerupsEnabled: false,
                 accelerateOnHit: false,
-                scoreToWin: 3
+                scoreToWin: 5
               };
               
               console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
@@ -1476,7 +1476,6 @@ export class GameManager {
     
     // Score to win increases slightly with level
     const scoreToWin = Math.min(3 + Math.floor((level - 1) / 3), 5);
-    
     // Enable accelerate on hit from level 4
     const accelerateOnHit = level >= 4;
     
@@ -1535,6 +1534,7 @@ export class GameManager {
       // Update settings for new level
       this.updateCampaignLevelSettings();
       // Do NOT automatically restart the game here!
+          this.restartCampaignLevel();
     } else {
       // Campaign completed!
       this.showCampaignCompleteMessage();
