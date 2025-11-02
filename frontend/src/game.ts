@@ -110,7 +110,7 @@ export class GameManager {
   
   // Campaign mode properties
   // Start false by default; set to true when entering campaign via startCampaignGame or startBotMatchWithSettings
-  private isCampaignMode: boolean = false;
+  private Mode: boolean = false;
   private currentCampaignLevel: number = 1;
   private maxCampaignLevel: number = 10;
 
