@@ -1528,13 +1528,34 @@ export class GameManager {
       // Save the new level to localStorage
       this.savePlayerCampaignLevel(this.currentCampaignLevel);
       
+      // Try to persist the new level to the backend (user stats/profile)
+      try {
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
+        if (user && user.userId) {
+          const url = `/api/game/update-stats/${user.userId}`;
+          const body = { level: this.currentCampaignLevel };
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...headers },
+            body: JSON.stringify(body)
+          }).then(res => {
+            if (!res.ok) console.warn('Failed to update campaign level on server');
+            else console.log('🎯 [CAMPAIGN] Synced new level to server');
+          }).catch(err => console.warn('Error syncing campaign level:', err));
+        }
+      } catch (err) {
+        console.warn('Could not sync campaign level to server:', err);
+      }
+
       // Show level up message with confirmation button
       this.showLevelUpMessageWithConfirm();
-      
+
       // Update settings for new level
       this.updateCampaignLevelSettings();
       // Do NOT automatically restart the game here!
-          this.restartCampaignLevel();
+      this.restartCampaignLevel();
     } else {
       // Campaign completed!
       this.showCampaignCompleteMessage();
@@ -1780,8 +1801,9 @@ export class GameManager {
     
     if (!user) return;
     
-    // Check if player won (assuming player is left side)
-    const playerWon = gameData.winnerId === user.userId;
+    // Check if player won (accept either `winner` or `winnerId` from backend)
+    const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = winnerId === user.userId;
     
     if (playerWon && this.isCampaignMode) {
       console.log('🎯 [CAMPAIGN] Player won! Progressing to next level');
