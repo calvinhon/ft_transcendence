@@ -74,16 +74,8 @@ export class GameManager {
     this.isPaused = false;
     // You may want to parse message.gameState or other fields
     this.gameState = message.gameState || null;
-    // HOach Modified
-    this.initCanvas({
-    canvasWidth: 800,
-    canvasHeight: 600,
-    paddleWidth: 10,
-    paddleHeight: 100,
-    ballRadius: 5,
-    paddleSpeed: this.getPaddleSpeedValue()
-    });
-    //
+  // Canvas initialization moved to ensureCanvasInitialized() so it's only
+  // created once per session (avoids duplicate canvas/init during campaign)
     this.startInputHandler();
     console.log('Game started with message:', message);
     // Notify MatchManager (UI) that the game has started so it can hide menus
@@ -97,6 +89,7 @@ export class GameManager {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private websocket: WebSocket | null = null;
+  private boundHandleGameMessage: ((event: MessageEvent) => void) | null = null;
   private gameState: GameState | null = null;
   public isPlaying: boolean = false;
   public isPaused: boolean = false;
@@ -123,6 +116,8 @@ export class GameManager {
 
   constructor() {
     this.setupEventListeners();
+    // Bind the message handler once so we can attach/detach it safely
+    this.boundHandleGameMessage = this.handleGameMessage.bind(this);
     // Chat functionality removed
     // this.setupChat();
   }
@@ -317,6 +312,20 @@ export class GameManager {
     const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
     
     return new Promise((resolve, reject) => {
+      // Close any existing websocket first to avoid duplicate handlers/sockets
+      if (this.websocket) {
+        try {
+          this.websocket.onmessage = null as any;
+          this.websocket.onopen = null as any;
+          this.websocket.onclose = null as any;
+          this.websocket.onerror = null as any;
+          this.websocket.close();
+        } catch (e) {
+          console.warn('Error closing existing websocket before opening new one', e);
+        }
+        this.websocket = null;
+      }
+
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
@@ -367,9 +376,10 @@ export class GameManager {
         resolve();
       };
 
-      this.websocket.onmessage = (event: MessageEvent) => {
-        this.handleGameMessage(event);
-      };
+      // Attach the single bound message handler to ensure only one handler is called
+      if (this.websocket && this.boundHandleGameMessage) {
+        this.websocket.onmessage = this.boundHandleGameMessage;
+      }
 
       this.websocket.onclose = () => {
         console.log('Game server connection closed');
@@ -394,7 +404,7 @@ export class GameManager {
   private handleGameMessage(event: MessageEvent): void {
     try {
       const message: any = JSON.parse(event.data);
-      console.log('🎮 [GAME-MSG] Received message:', message);
+      // console.log('🎮 [GAME-MSG] Received message:', message);
       switch (message.type) {
         case 'connectionAck': {
           console.log('Game connection acknowledged:', message.message);
@@ -428,22 +438,22 @@ export class GameManager {
           break;
         }
         case 'waiting':
-          console.log('Waiting for opponent:', message.message);
+          // console.log('Waiting for opponent:', message.message);
           break;
         case 'gameStart':
           console.log('🎮 [GAME-MSG] Game starting:', message);
           this.startGame(message);
           break;
         case 'gameState':
-          console.log('🎮 [GAME-MSG] Game state update:', message);
+          // console.log('🎮 [GAME-MSG] Game state update:', message);
           this.updateGameFromBackend(message);
           break;
         case 'gameEnd':
-          console.log('🎮 [GAME-MSG] Game ended:', message);
+          // console.log('🎮 [GAME-MSG] Game ended:', message);
           this.endGame(message);
           break;
         default:
-          console.log('🎮 [GAME-MSG] Unknown message type:', message.type);
+          // console.log('🎮 [GAME-MSG] Unknown message type:', message.type);
       }
     } catch (error) {
       console.error('Error parsing game message:', error);
@@ -466,6 +476,22 @@ export class GameManager {
     this.canvas.height = config.canvasHeight;
     this.canvas.tabIndex = 1; // Make canvas focusable
     this.canvas.focus();
+  }
+
+  /**
+   * Ensure the canvas is initialized only once. Uses the default config
+   * so callers can be idempotent.
+   */
+  private ensureCanvasInitialized(): void {
+    if (this.canvas) return; // already initialized
+    this.initCanvas({
+      canvasWidth: 800,
+      canvasHeight: 600,
+      paddleWidth: 10,
+      paddleHeight: 100,
+      ballRadius: 5,
+      paddleSpeed: this.getPaddleSpeedValue()
+    });
   }
 
   private startInputHandler(): void {
@@ -963,6 +989,8 @@ export class GameManager {
     this.currentCampaignLevel = this.loadPlayerCampaignLevel();
     
     console.log(`🎯 [CAMPAIGN] Starting campaign at player's current level ${this.currentCampaignLevel}`);
+    // Ensure canvas exists once when campaign starts
+    this.ensureCanvasInitialized();
     this.updateCampaignLevelSettings();
     this.updateCampaignUI();
     this.startCampaignMatch();
@@ -995,6 +1023,9 @@ export class GameManager {
     const waitingMsg = document.getElementById('waiting-message');
     const gameArea = document.getElementById('game-area');
     
+  // Ensure canvas is initialized for non-campaign bot matches as well
+  this.ensureCanvasInitialized();
+
     if (waitingMsg) waitingMsg.classList.remove('hidden');
     
     try {
@@ -1015,6 +1046,20 @@ export class GameManager {
     const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
     
     return new Promise((resolve, reject) => {
+      // Close any existing websocket first to avoid duplicate handlers/sockets
+      if (this.websocket) {
+        try {
+          this.websocket.onmessage = null as any;
+          this.websocket.onopen = null as any;
+          this.websocket.onclose = null as any;
+          this.websocket.onerror = null as any;
+          this.websocket.close();
+        } catch (e) {
+          console.warn('Error closing existing websocket before opening new one', e);
+        }
+        this.websocket = null;
+      }
+
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
@@ -1039,9 +1084,10 @@ export class GameManager {
         resolve();
       };
 
-      this.websocket.onmessage = (event: MessageEvent) => {
-        this.handleGameMessage(event);
-      };
+      // Attach the single bound message handler to ensure only one handler is called
+      if (this.websocket && this.boundHandleGameMessage) {
+        this.websocket.onmessage = this.boundHandleGameMessage;
+      }
 
       this.websocket.onclose = () => {
         console.log('Bot game server connection closed');
@@ -1484,6 +1530,20 @@ export class GameManager {
     const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
     
     return new Promise((resolve, reject) => {
+      // Close any existing websocket first to avoid duplicate handlers/sockets
+      if (this.websocket) {
+        try {
+          this.websocket.onmessage = null as any;
+          this.websocket.onopen = null as any;
+          this.websocket.onclose = null as any;
+          this.websocket.onerror = null as any;
+          this.websocket.close();
+        } catch (e) {
+          console.warn('Error closing existing websocket before opening new one', e);
+        }
+        this.websocket = null;
+      }
+
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
@@ -1533,9 +1593,10 @@ export class GameManager {
         resolve();
       };
 
-      this.websocket.onmessage = (event: MessageEvent) => {
-        this.handleGameMessage(event);
-      };
+      // Attach the single bound message handler to ensure only one handler is called
+      if (this.websocket && this.boundHandleGameMessage) {
+        this.websocket.onmessage = this.boundHandleGameMessage;
+      }
 
       this.websocket.onclose = () => {
         console.log('Campaign game server connection closed');
