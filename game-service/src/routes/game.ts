@@ -582,70 +582,10 @@ class PongGame {
   }
 }
 
-async function chatRoutes(fastify: FastifyInstance): Promise<void> {
-  fastify.get('/ws/chat', { websocket: true }, (connection: SocketStream, req: FastifyRequest) => {
-    const timestamp = new Date().toISOString();
-    console.log(`🔵 [GAME-SERVICE] [${timestamp}] 🔌 Chat WebSocket connection opened`);
-    
-    chatClients.add(connection.socket);
-    
-    connection.socket.on('message', (message: Buffer | string) => {
-      try {
-        const messageStr = message.toString();
-        const timestamp = new Date().toISOString();
-        
-        console.log(`🔵 [GAME-SERVICE] [${timestamp}] 📨 Chat WS message received:`, messageStr.substring(0, 100));
-        
-        // Check if this is a JSON message with user authentication
-        try {
-          const data = JSON.parse(messageStr) as WebSocketMessage;
-          if (data.type === 'userConnect') {
-            console.log(`🔵 [GAME-SERVICE] 👤 User connecting to chat: ${data.username} (${data.userId})`);
-            // Track user as online when they connect to chat
-            addOnlineUser(data.userId, data.username, connection.socket);
-            const ackMessage = JSON.stringify({
-              type: 'connectionAck',
-              message: 'Connected to chat and tracked as online'
-            });
-            connection.socket.send(ackMessage);
-            console.log(`🔵 [GAME-SERVICE] 📤 Sent connection ack to ${data.username}`);
-            return;
-          }
-        } catch (e) {
-          // Not JSON, treat as regular chat message
-          console.log(`🔵 [GAME-SERVICE] 💬 Broadcasting chat message to ${chatClients.size - 1} clients`);
-        }
-        
-        // Broadcast received message to all clients EXCEPT the sender
-        let broadcastCount = 0;
-        for (const client of chatClients) {
-          if (client.readyState === WebSocket.OPEN && client !== connection.socket) {
-            client.send(messageStr);
-            broadcastCount++;
-          }
-        }
-        console.log(`🔵 [GAME-SERVICE] 📡 Message broadcasted to ${broadcastCount} clients`);
-      } catch (error) {
-        console.error(`🔴 [GAME-SERVICE] Chat WebSocket message error:`, error);
-      }
-    });
-    
-    connection.socket.on('close', () => {
-      const timestamp = new Date().toISOString();
-      console.log(`🔵 [GAME-SERVICE] [${timestamp}] 🔌 Chat WebSocket connection closed`);
-      chatClients.delete(connection.socket);
-      removeOnlineUser(connection.socket);
-    });
-    
-    connection.socket.on('error', (error: Error) => {
-      const timestamp = new Date().toISOString();
-      console.error(`🔴 [GAME-SERVICE] [${timestamp}] Chat WebSocket error:`, error);
-    });
-  });
-}
-
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
-  await chatRoutes(fastify);
+  // Chat routes were removed/disabled from this service. If chat is
+  // reintroduced later, add the appropriate import and uncomment the
+  // initialization call here.
   
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection: SocketStream, req: FastifyRequest) => {

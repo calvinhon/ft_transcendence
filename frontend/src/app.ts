@@ -1,6 +1,4 @@
 import { showToast } from './toast';
-import { showChatWidget, hideChatWidget, forceHideChatWidget, expandChatWidget, collapseChatWidget } from './ui';
-// frontend/src/app.ts - TypeScript version of main app controller
 
 // Type definitions moved to types.ts
 
@@ -130,27 +128,13 @@ export class App {
       }
     }
 
-    // Co-op level progression: if host won in co-op mode, increment level and update AI for next match
-    if (this.gameSettings.gameMode === 'coop' && results.length > 0 && results[0].stats?.won) {
-      incrementCoopLevel();
-      this.updateCoopProgressUI();
-      // Sync AI difficulty for next match
-      const level = getCoopLevel();
-      this.gameSettings.aiDifficulty = (level === 1 ? 'easy' : level === 2 ? 'medium' : 'hard');
-      showToast('Congratulations! Next AI unlocked.', 'success');
-      // Prompt user to continue to next match
-      this.promptContinueCoopMatch();
-    }
+    // NOTE: Co-op / campaign progression is handled inside the GameManager
+    // (frontend/src/game.ts) when a campaign match ends. Avoid changing
+    // campaign level or auto-starting the next match here to prevent
+    // duplicate starts. This method only submits results to the backend.
   }
 
-  promptContinueCoopMatch(): void {
-    // Show a modal or simple confirm dialog
-    if (window.confirm('Continue to next CO-OP match with increased AI level?')) {
-      this.startGame();
-    } else {
-      this.router.navigate('play-config');
-    }
-  }
+  // Note: campaign continuation is handled by the GameManager (game.ts).
   // --- Place this at the end of the class ---
 
 
@@ -238,7 +222,7 @@ export class App {
 
   async init(): Promise<void> {
     // IMMEDIATELY hide chat widget before any other logic
-    forceHideChatWidget();
+    // forceHideChatWidget();
     
     // Set initial body attribute to login screen
     document.body.setAttribute('data-current-screen', 'login');
@@ -260,7 +244,7 @@ export class App {
     this.setupEventListeners();
     
     // Setup chat widget (this will also hide it again)
-    this.setupChatWidget();
+    // this.setupChatWidget();
     
     // Initialize local players with current user
     this.initializeLocalPlayers();
@@ -271,6 +255,46 @@ export class App {
     // Navigate to initial route based on URL and auth state
     const initialRoute = this.router.getInitialRoute();
     this.router.navigateToPath(initialRoute, false);
+
+    // Pause game when user navigates away from the game screen or when
+    // the page becomes hidden. Stop the game on page unload to ensure
+    // no background matches continue running.
+    document.addEventListener('visibilitychange', () => {
+      try {
+        const gm = (window as any).gameManager;
+        if (document.hidden && gm && gm.isPlaying && !gm.isPaused && typeof gm.pauseGame === 'function') {
+          console.log('App: Page hidden — pausing game');
+          gm.pauseGame();
+        }
+      } catch (e) {
+        console.warn('App: visibilitychange handler failed', e);
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      try {
+        const gm = (window as any).gameManager;
+        if (gm && gm.isPlaying && typeof gm.pauseGame === 'function' && !gm.isPaused) {
+          console.log('App: pagehide — pausing game');
+          gm.pauseGame();
+        }
+      } catch (e) {
+        console.warn('App: pagehide handler failed', e);
+      }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      try {
+        const gm = (window as any).gameManager;
+        if (gm && gm.isPlaying && typeof gm.stopGame === 'function') {
+          console.log('App: beforeunload — stopping game');
+          gm.stopGame();
+        }
+      } catch (err) {
+        console.warn('App: beforeunload handler failed', err);
+      }
+      // No need to call preventDefault; just allow unload.
+    });
   }
 
   setupEventListeners(): void {
@@ -535,9 +559,17 @@ export class App {
 
       switch (e.key) {
         case 'Backspace':
-        case 'Escape':
           e.preventDefault();
           this.handleBackspaceShortcut(currentScreen);
+          break;
+        case 'Escape':
+            e.preventDefault();
+            // Stop any running game
+            const gameManager = (window as any).gameManager;
+            if (gameManager && gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
+              gameManager.stopGame();
+            }
+          this.router.navigate('login');
           break;
         case 'Enter':
           e.preventDefault();
@@ -617,82 +649,7 @@ export class App {
     }
   }
 
-  setupChatWidget(): void {
-    const chatButton = document.getElementById('chat-button');
-    const chatCloseBtn = document.getElementById('chat-close-btn');
-    if (!chatButton || !chatCloseBtn) return;
-    chatButton.addEventListener('click', () => {
-      expandChatWidget();
-    });
-    chatCloseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      collapseChatWidget();
-    });
-    // Handle Enter key in chat input
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    if (chatInput) {
-      chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const chatForm = document.getElementById('chat-form') as HTMLFormElement;
-          if (chatForm) {
-            chatForm.dispatchEvent(new Event('submit'));
-          }
-        }
-      });
-    }
-    // Handle chat form submission
-    const chatForm = document.getElementById('chat-form') as HTMLFormElement;
-    if (chatForm) {
-      chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.sendChatMessage();
-      });
-    }
-    // Initially hide chat widget and update based on auth status
-    hideChatWidget();
-    this.updateChatVisibility();
-  }
-
-  private sendChatMessage(): void {
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    const chatMessages = document.getElementById('chat-messages');
-    
-    if (chatInput && chatMessages) {
-      const message = chatInput.value.trim();
-      if (message) {
-        // Add message to chat (basic implementation)
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
-        messageDiv.textContent = `You: ${message}`;
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Clear input
-        chatInput.value = '';
-        
-        // Here you would typically send to WebSocket/server
-        console.log('Chat message:', message);
-      }
-    }
-  }
-
-  // Chat widget helpers are now in ui.ts
-
-  updateChatVisibility(): void {
-    // Always hide chat widget on login and register screens
-    const currentScreen = this.getCurrentScreen();
-    if (currentScreen === 'login-screen' || currentScreen === 'register-screen') {
-      hideChatWidget();
-      return;
-    }
-    if (this.isAuthenticated()) {
-      showChatWidget();
-    } else {
-      hideChatWidget();
-    }
-  }
-
+ 
   // Get current active screen
   private getCurrentScreen(): string | null {
     const activeScreen = document.querySelector('.screen.active');
@@ -737,13 +694,27 @@ export class App {
     document.body.setAttribute('data-current-screen', screenName);
 
     // Update chat visibility based on current screen and auth status
-    this.updateChatVisibility();
+    // this.updateChatVisibility();
 
     // Update UI based on screen
     if (screenName === 'play-config') {
       this.updatePlayConfigUI();
     } else if (screenName === 'profile') {
       this.loadProfileData();
+    }
+
+    // If we navigated away from the game screen, ensure the game is stopped
+    // (stop vs pause: stopping guarantees no background RAF/intervals/sockets remain)
+    if (screenName !== 'game') {
+      try {
+        const gm = (window as any).gameManager;
+        if (gm && gm.isPlaying && typeof gm.stopGame === 'function') {
+          console.log('App: Navigated away from game screen — stopping game');
+          gm.stopGame();
+        }
+      } catch (e) {
+        console.warn('App: failed to stop game on navigation', e);
+      }
     }
   }
 
@@ -767,7 +738,7 @@ export class App {
         this.router.navigate('main-menu');
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
-        this.updateChatVisibility();
+        // this.updateChatVisibility();
         this.loginForm.reset();
       } else {
         authManager.currentUser = null;
@@ -801,7 +772,7 @@ export class App {
         this.router.navigate('main-menu');
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
-        this.updateChatVisibility();
+        // this.updateChatVisibility();
         this.registerForm.reset();
       } else {
   showToast('Registration failed: ' + result.error, 'error');
@@ -842,7 +813,7 @@ export class App {
     authManager.logout();
     this.router.navigate('login');
     this.localPlayers = [];
-    this.updateChatVisibility();
+    // this.updateChatVisibility();
   }
 
   async checkExistingLogin(): Promise<void> {
@@ -855,7 +826,7 @@ export class App {
         this.router.navigate('main-menu');
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
-        this.updateChatVisibility();
+        // this.updateChatVisibility();
       }
     }
   }

@@ -86,6 +86,13 @@ export class GameManager {
     //
     this.startInputHandler();
     console.log('Game started with message:', message);
+    // Notify MatchManager (UI) that the game has started so it can hide menus
+    try {
+      const mm = (window as any).matchManager;
+      if (mm && typeof mm.onGameStart === 'function') mm.onGameStart();
+    } catch (e) {
+      console.warn('Failed to notify matchManager of game start', e);
+    }
   }
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -94,7 +101,7 @@ export class GameManager {
   public isPlaying: boolean = false;
   public isPaused: boolean = false;
   private keys: KeyState = {};
-  private chatSocket: WebSocket | null = null;
+  // private chatSocket: WebSocket | null = null;
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   
   // Game settings
@@ -110,7 +117,7 @@ export class GameManager {
   
   // Campaign mode properties
   // Start false by default; set to true when entering campaign via startCampaignGame or startBotMatchWithSettings
-  private Mode: boolean = false;
+  private isCampaignMode: boolean = false;
   private currentCampaignLevel: number = 1;
   private maxCampaignLevel: number = 10;
 
@@ -158,244 +165,7 @@ export class GameManager {
     }
   }
 
-  // Chat functionality completely disabled
-  /*
-  private setupChat(): void {
-    // Create chat UI if not present
-    let chatContainer = document.getElementById('chat-container');
-    if (!chatContainer) {
-      chatContainer = document.createElement('div');
-      chatContainer.id = 'chat-container';
-      chatContainer.style.position = 'fixed';
-      chatContainer.style.right = '24px';
-      chatContainer.style.bottom = '24px';
-      chatContainer.style.zIndex = '1000';
-      chatContainer.style.transition = 'all 0.3s ease';
-      
-      // Create icon-only chat button
-      chatContainer.innerHTML = `
-        <div id="game-chat-button" style="
-          width: 48px;
-          height: 48px;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        ">
-          <i class="fas fa-comments" style="font-size: 20px; color: #ffffff;"></i>
-        </div>
-        <div id="game-chat-content" style="
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 280px;
-          height: 300px;
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          display: none;
-          flex-direction: column;
-          overflow: hidden;
-        ">
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px 12px 0 0;
-          ">
-            <i class="fas fa-comments" style="color: #ffffff; font-size: 16px;"></i>
-            <button id="game-chat-close" style="
-              background: none;
-              border: none;
-              color: #ffffff;
-              font-size: 14px;
-              cursor: pointer;
-              padding: 4px;
-              border-radius: 3px;
-              transition: all 0.2s ease;
-              width: 24px;
-              height: 24px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div id="chat-messages" style="
-            flex: 1;
-            padding: 8px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-          "></div>
-          <form id="chat-form" style="
-            display: flex;
-            padding: 8px;
-            gap: 6px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 0 0 12px 12px;
-          ">
-            <input id="chat-input" type="text" placeholder="Message..." style="
-              flex: 1;
-              padding: 6px 8px;
-              background: rgba(255, 255, 255, 0.1);
-              border: 1px solid rgba(255, 255, 255, 0.2);
-              border-radius: 4px;
-              color: #ffffff;
-              font-size: 12px;
-              outline: none;
-              transition: all 0.2s ease;
-            " maxlength="200" />
-            <button type="submit" style="
-              padding: 6px 8px;
-              background: linear-gradient(180deg, #e94560 0%, #c73650 100%);
-              border: none;
-              border-radius: 4px;
-              color: #ffffff;
-              font-size: 12px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              white-space: nowrap;
-              box-shadow: 0 2px 8px rgba(233, 69, 96, 0.3);
-              width: 32px;
-              height: 32px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <i class="fas fa-paper-plane"></i>
-            </button>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(chatContainer);
-
-      // Add click handlers for expand/collapse
-      const chatButton = document.getElementById('game-chat-button');
-      const chatContent = document.getElementById('game-chat-content');
-      const chatClose = document.getElementById('game-chat-close');
-
-      if (chatButton && chatContent && chatClose) {
-        chatButton.addEventListener('click', () => {
-          chatButton.style.display = 'none';
-          chatContent.style.display = 'flex';
-        });
-
-        chatClose.addEventListener('click', (e) => {
-          e.stopPropagation();
-          chatContent.style.display = 'none';
-          chatButton.style.display = 'flex';
-        });
-
-        // Add hover effect to button
-        chatButton.addEventListener('mouseenter', () => {
-          chatButton.style.background = 'rgba(255, 255, 255, 0.15)';
-          chatButton.style.transform = 'translateY(-2px)';
-          chatButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)';
-        });
-
-        chatButton.addEventListener('mouseleave', () => {
-          chatButton.style.background = 'rgba(255, 255, 255, 0.1)';
-          chatButton.style.transform = 'translateY(0)';
-          chatButton.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
-        });
-      }
-    }
-
-    // Connect to chat WebSocket
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const chatUrl = `${protocol}//${window.location.host}/api/game/ws/chat`;
-    this.chatSocket = new WebSocket(chatUrl);
-
-    this.chatSocket.onopen = () => {
-      console.log('Connected to chat WebSocket');
-      this.authenticateChatSocket();
-    };
-
-    this.chatSocket.onmessage = (event: MessageEvent) => {
-      try {
-        // Try to parse as JSON first (for system messages)
-        const data = JSON.parse(event.data);
-        if (data.type === 'connectionAck') {
-          console.log('Chat connection acknowledged:', data.message);
-          return;
-        }
-      } catch (e) {
-        // Not JSON, treat as regular chat message
-      }
-      
-      const msg = event.data;
-      this.addChatMessage(msg);
-    };
-
-    // Handle chat form submit
-    const chatForm = document.getElementById('chat-form') as HTMLFormElement;
-    if (chatForm) {
-      chatForm.onsubmit = (e: Event) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input') as HTMLInputElement;
-        const authManager = (window as any).authManager;
-        const user = authManager?.getCurrentUser();
-        const text = input.value.trim();
-        if (text && this.chatSocket) {
-          const chatMsg = `${user?.username || 'User'}: ${text}`;
-          this.chatSocket.send(chatMsg);
-          input.value = '';
-        }
-      };
-    }
-
-    // Add focus/blur handlers to chat input to prevent game control conflicts
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    if (chatInput) {
-      chatInput.addEventListener('focus', () => {
-        // Clear game keys when chat is focused
-        this.keys = {};
-      });
-      
-      chatInput.addEventListener('keydown', (e) => {
-        // Prevent game controls from being triggered while typing
-        e.stopPropagation();
-      });
-    }
-  }
-  */
-  // End of commented chat functionality
-
-  // Chat message functionality also disabled
-  /*
-  private addChatMessage(msg: string): void {
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-      const div = document.createElement('div');
-      div.textContent = msg;
-      div.style.marginBottom = '6px';
-      div.style.padding = '6px 8px';
-      div.style.background = 'rgba(255, 255, 255, 0.05)';
-      div.style.borderRadius = '6px';
-      div.style.color = '#ffffff';
-      div.style.fontSize = '12px';
-      div.style.lineHeight = '1.3';
-      div.style.wordWrap = 'break-word';
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-  }
-  */
-
+  
   private setupEventListeners(): void {
     document.addEventListener('keydown', (e: KeyboardEvent) => {
       // Only handle game controls if game canvas is focused or no input is focused
@@ -1080,6 +850,14 @@ export class GameManager {
       this.websocket = null;
     }
     
+    // Notify MatchManager (UI) that the game ended
+    try {
+      const mm = (window as any).matchManager;
+      if (mm && typeof mm.onGameEnd === 'function') mm.onGameEnd();
+    } catch (e) {
+      console.warn('Failed to notify matchManager of game end', e);
+    }
+
     // Navigate back to play config
     const app = (window as any).app;
     if (app && typeof app.showScreen === 'function') {
@@ -1101,33 +879,23 @@ export class GameManager {
     if (gameArea) gameArea.classList.add('hidden');
   }
 
-  private authenticateChatSocket(): void {
-    const authManager = (window as any).authManager;
-    const user = authManager?.getCurrentUser();
-    if (!user) return;
+  // private authenticateChatSocket(): void {
+  //   const authManager = (window as any).authManager;
+  //   const user = authManager?.getCurrentUser();
+  //   if (!user) return;
     
-    if (this.chatSocket && this.chatSocket.readyState === WebSocket.OPEN) {
-      this.chatSocket.send(JSON.stringify({
-        type: 'userConnect',
-        userId: user.userId,
-        username: user.username
-      }));
-    }
-  }
+  //   if (this.chatSocket && this.chatSocket.readyState === WebSocket.OPEN) {
+  //     this.chatSocket.send(JSON.stringify({
+  //       type: 'userConnect',
+  //       userId: user.userId,
+  //       username: user.username
+  //     }));
+  //   }
+  
 
   public onUserAuthenticated(user: User): void {
     console.log('GameManager: User authenticated:', user);
-    
-    // Authenticate chat socket if it exists
-    if (this.chatSocket && this.chatSocket.readyState === WebSocket.OPEN) {
-      console.log('Authenticating existing chat socket');
-      this.chatSocket.send(JSON.stringify({
-        type: 'userConnect',
-        userId: user.userId,
-        username: user.username
-      }));
-    }
-    
+      
     // If game websocket is connected, authenticate it too
     if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
       console.log('Authenticating existing game socket');
@@ -1520,15 +1288,22 @@ export class GameManager {
 
   public progressToNextLevel(): void {
     if (!this.isCampaignMode) return;
-    this.stopGame();//check
+
+    // Ensure only one match is playing at a time
+    if (this.isPlaying) {
+      // Record result if needed (could be extended to save stats, etc.)
+      console.log('🎯 [CAMPAIGN] Closing previous match before progressing to next level');
+      this.stopGame();
+    }
+
     const oldLevel = this.currentCampaignLevel;
     if (this.currentCampaignLevel < this.maxCampaignLevel) {
       this.currentCampaignLevel++;
       console.log(`🎯 [CAMPAIGN] Level progressed from ${oldLevel} to ${this.currentCampaignLevel}`);
-      
+
       // Save the new level to localStorage
       this.savePlayerCampaignLevel(this.currentCampaignLevel);
-      
+
       // Try to persist the new level to the backend (user stats/profile)
       try {
         const authManager = (window as any).authManager;
@@ -1556,7 +1331,8 @@ export class GameManager {
       // Update settings for new level
       this.updateCampaignLevelSettings();
       // Do NOT automatically restart the game here!
-      this.restartCampaignLevel();
+      // Only start next match after confirmation
+      // this.restartCampaignLevel(); <-- removed to ensure only one match at a time
     } else {
       // Campaign completed!
       this.showCampaignCompleteMessage();
@@ -1859,5 +1635,7 @@ export class GameManager {
   }
 }
 
-// Global game manager instance
-(window as any).gameManager = new GameManager();
+// Do not create a global GameManager here. The app entrypoint (`frontend/src/main.ts`)
+// is responsible for creating and assigning the singleton instance to window.gameManager.
+// Creating it here would produce duplicate managers during module import/HMR and
+// can cause multiple websockets/render loops to run.
