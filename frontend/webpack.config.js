@@ -14,13 +14,27 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.(gltf|glb|bin)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext][query]'
+        }
+      },
+      {
         test: /\.ts$/,
         use: 'ts-loader',
-        exclude: /node_modules/,
+        include: [path.resolve(__dirname, 'src')],
       },
       {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.(gltf)$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[name][ext]',
+        },
       },
     ],
   },

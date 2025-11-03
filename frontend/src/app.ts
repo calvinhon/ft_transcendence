@@ -14,10 +14,10 @@ interface AuthResult {
 }
 
 interface GameSettings {
-  gameMode: 'coop' | 'arcade' | 'tournament';
-  aiDifficulty: 'easy' | 'medium' | 'hard';
-  ballSpeed: 'slow' | 'medium' | 'fast';
-  paddleSpeed: 'slow' | 'medium' | 'fast';
+  gameMode: "coop" | "arcade" | "tournament";
+  aiDifficulty: "easy" | "medium" | "hard";
+  ballSpeed: "slow" | "medium" | "fast";
+  paddleSpeed: "slow" | "medium" | "fast";
   powerupsEnabled: boolean;
   accelerateOnHit: boolean;
   scoreToWin?: number; // Only for arcade mode
@@ -52,21 +52,66 @@ class Router {
 
   private setupRoutes(): void {
     this.routes = [
-      { path: '/', screen: 'login', requiresAuth: false, title: 'SpritualAscension - Login' },
-      { path: '/login', screen: 'login', requiresAuth: false, title: 'SpritualAscension - Login' },
-      { path: '/register', screen: 'register', requiresAuth: false, title: 'SpritualAscension - Register' },
-      { path: '/forgot-password', screen: 'forgot-password', requiresAuth: false, title: 'SpritualAscension - Reset Password' },
-      { path: '/main-menu', screen: 'main-menu', requiresAuth: true, title: 'SpritualAscension - Main Menu' },
-      { path: '/play', screen: 'play-config', requiresAuth: true, title: 'SpritualAscension - Game Setup' },
-      { path: '/profile', screen: 'profile', requiresAuth: true, title: 'SpritualAscension - Profile' },
-      { path: '/settings', screen: 'settings', requiresAuth: true, title: 'SpritualAscension - Settings' },
-      { path: '/game', screen: 'game', requiresAuth: true, title: 'SpritualAscension - Playing' }
+      {
+        path: "/",
+        screen: "login",
+        requiresAuth: false,
+        title: "SpritualAscension - Login",
+      },
+      {
+        path: "/login",
+        screen: "login",
+        requiresAuth: false,
+        title: "SpritualAscension - Login",
+      },
+      {
+        path: "/register",
+        screen: "register",
+        requiresAuth: false,
+        title: "SpritualAscension - Register",
+      },
+      {
+        path: "/forgot-password",
+        screen: "forgot-password",
+        requiresAuth: false,
+        title: "SpritualAscension - Reset Password",
+      },
+      {
+        path: "/main-menu",
+        screen: "main-menu",
+        requiresAuth: true,
+        title: "SpritualAscension - Main Menu",
+      },
+      {
+        path: "/play",
+        screen: "play-config",
+        requiresAuth: true,
+        title: "SpritualAscension - Game Setup",
+      },
+      {
+        path: "/profile",
+        screen: "profile",
+        requiresAuth: true,
+        title: "SpritualAscension - Profile",
+      },
+      {
+        path: "/settings",
+        screen: "settings",
+        requiresAuth: true,
+        title: "SpritualAscension - Settings",
+      },
+      {
+        path: "/game",
+        screen: "game",
+        requiresAuth: true,
+        title: "SpritualAscension - Playing",
+      },
     ];
   }
 
   private setupEventListeners(): void {
     // Handle browser back/forward buttons
-    window.addEventListener('popstate', (e) => {
+    window.addEventListener("popstate", (e) => {
       const path = e.state?.path || window.location.pathname;
       this.navigateToPath(path, false); // false = don't push to history
     });
@@ -76,13 +121,13 @@ class Router {
     const route = this.findRoute(path);
     if (!route) {
       console.warn(`Route not found for path: ${path}`);
-      this.navigateToPath('/login');
+      this.navigateToPath("/login");
       return;
     }
 
     // Check authentication requirement
     if (route.requiresAuth && !this.app.isAuthenticated()) {
-      this.navigateToPath('/login');
+      this.navigateToPath("/login");
       return;
     }
 
@@ -100,7 +145,7 @@ class Router {
   }
 
   private findRoute(path: string): Route | null {
-    return this.routes.find(route => route.path === path) || null;
+    return this.routes.find((route) => route.path === path) || null;
   }
 
   getCurrentRoute(): Route | null {
@@ -109,7 +154,7 @@ class Router {
 
   // Navigate programmatically (used by the app)
   navigate(screen: string): void {
-    const route = this.routes.find(r => r.screen === screen);
+    const route = this.routes.find((r) => r.screen === screen);
     if (route) {
       this.navigateToPath(route.path);
     }
@@ -119,15 +164,15 @@ class Router {
   getInitialRoute(): string {
     const path = window.location.pathname;
     const route = this.findRoute(path);
-    
+
     if (route) {
       if (route.requiresAuth && !this.app.isAuthenticated()) {
-        return '/login';
+        return "/login";
       }
       return path;
     }
-    
-    return '/login';
+
+    return "/login";
   }
 }
 
@@ -136,19 +181,29 @@ class SpiritualAscensionApp {
    * Submit game results for all selected players (host and local)
    * @param results Array of { userId, stats } for each player
    */
-  async submitGameResults(results: Array<{ userId: number, stats: any }>): Promise<void> {
+  async submitGameResults(
+    results: Array<{ userId: number; stats: any }>
+  ): Promise<void> {
     // Host player
     const authManager = (window as any).authManager;
     const hostUser = authManager?.getCurrentUser();
-    const hostToken = localStorage.getItem('token');
+    const hostToken = localStorage.getItem("token");
     if (hostUser && hostToken) {
-      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
+      await this.submitResultForUser(
+        hostUser.userId,
+        results.find((r) => r.userId === hostUser.userId)?.stats,
+        hostToken
+      );
     }
 
     // Local players
     for (const player of this.localPlayers) {
       if (player.token && player.userId) {
-        await this.submitResultForUser(player.userId, results.find(r => r.userId === player.userId)?.stats, player.token);
+        await this.submitResultForUser(
+          player.userId,
+          results.find((r) => r.userId === player.userId)?.stats,
+          player.token
+        );
       }
     }
   }
@@ -156,15 +211,19 @@ class SpiritualAscensionApp {
   /**
    * Submit result for a single user
    */
-  async submitResultForUser(userId: number, stats: any, token: string): Promise<void> {
+  async submitResultForUser(
+    userId: number,
+    stats: any,
+    token: string
+  ): Promise<void> {
     try {
       const response = await fetch(`/api/game/update-stats/${userId}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(stats)
+        body: JSON.stringify(stats),
       });
       if (!response.ok) {
         console.error(`Failed to update stats for user ${userId}`);
@@ -173,16 +232,16 @@ class SpiritualAscensionApp {
       console.error(`Error updating stats for user ${userId}:`, error);
     }
   }
-  private currentScreen: string = 'login';
+  private currentScreen: string = "login";
   private router: Router;
   private gameSettings: GameSettings = {
-    gameMode: 'coop',
-    aiDifficulty: 'easy',
-    ballSpeed: 'medium',
-    paddleSpeed: 'medium',
+    gameMode: "coop",
+    aiDifficulty: "easy",
+    ballSpeed: "medium",
+    paddleSpeed: "medium",
     powerupsEnabled: false,
     accelerateOnHit: false,
-    scoreToWin: 5
+    scoreToWin: 5,
   };
   private localPlayers: LocalPlayer[] = [];
 
@@ -207,29 +266,41 @@ class SpiritualAscensionApp {
   async init(): Promise<void> {
     // IMMEDIATELY hide chat widget before any other logic
     this.forceHideChatWidget();
-    
+
     // Set initial body attribute to login screen
-    document.body.setAttribute('data-current-screen', 'login');
-    
+    document.body.setAttribute("data-current-screen", "login");
+
     // Get screen elements
-    this.loginScreen = document.getElementById('login-screen') as HTMLElement;
-    this.registerScreen = document.getElementById('register-screen') as HTMLElement;
-    this.mainMenuScreen = document.getElementById('main-menu-screen') as HTMLElement;
-    this.playConfigScreen = document.getElementById('play-config-screen') as HTMLElement;
-    this.gameScreen = document.getElementById('game-screen') as HTMLElement;
-    this.settingsScreen = document.getElementById('settings-screen') as HTMLElement;
+    this.loginScreen = document.getElementById("login-screen") as HTMLElement;
+    this.registerScreen = document.getElementById(
+      "register-screen"
+    ) as HTMLElement;
+    this.mainMenuScreen = document.getElementById(
+      "main-menu-screen"
+    ) as HTMLElement;
+    this.playConfigScreen = document.getElementById(
+      "play-config-screen"
+    ) as HTMLElement;
+    this.gameScreen = document.getElementById("game-screen") as HTMLElement;
+    this.settingsScreen = document.getElementById(
+      "settings-screen"
+    ) as HTMLElement;
 
     // Get form elements
-    this.loginForm = document.getElementById('login-form') as HTMLFormElement;
-    this.registerForm = document.getElementById('register-form') as HTMLFormElement;
-    this.forgotPasswordForm = document.getElementById('forgot-password-form') as HTMLFormElement;
+    this.loginForm = document.getElementById("login-form") as HTMLFormElement;
+    this.registerForm = document.getElementById(
+      "register-form"
+    ) as HTMLFormElement;
+    this.forgotPasswordForm = document.getElementById(
+      "forgot-password-form"
+    ) as HTMLFormElement;
 
     // Setup all event listeners
     this.setupEventListeners();
-    
+
     // Setup chat widget (this will also hide it again)
     this.setupChatWidget();
-    
+
     // Initialize local players with current user
     this.initializeLocalPlayers();
 
@@ -243,155 +314,199 @@ class SpiritualAscensionApp {
 
   setupEventListeners(): void {
     // Login form
-    this.loginForm.addEventListener('submit', (e: Event) => {
+    this.loginForm.addEventListener("submit", (e: Event) => {
       e.preventDefault();
       this.handleLogin();
     });
 
     // Register form
-    this.registerForm.addEventListener('submit', (e: Event) => {
+    this.registerForm.addEventListener("submit", (e: Event) => {
       e.preventDefault();
       this.handleRegister();
     });
 
     // Forgot password form
-    this.forgotPasswordForm.addEventListener('submit', (e: Event) => {
+    this.forgotPasswordForm.addEventListener("submit", (e: Event) => {
       e.preventDefault();
       this.handleForgotPassword();
     });
 
     // Navigation links
-    document.getElementById('create-account-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.router.navigate('register');
-    });
+    document
+      .getElementById("create-account-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.router.navigate("register");
+      });
 
-    document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.router.navigate('forgot-password');
-    });
+    document
+      .getElementById("forgot-password-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.router.navigate("forgot-password");
+      });
 
-    document.getElementById('back-to-login-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.router.navigate('login');
-    });
+    document
+      .getElementById("back-to-login-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.router.navigate("login");
+      });
 
-    document.getElementById('back-to-login-from-forgot-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.router.navigate('login');
-    });
+    document
+      .getElementById("back-to-login-from-forgot-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.router.navigate("login");
+      });
 
     // Main menu buttons
-    document.getElementById('play-btn')?.addEventListener('click', () => {
-      this.router.navigate('play-config');
+    document.getElementById("play-btn")?.addEventListener("click", () => {
+      this.router.navigate("play-config");
     });
 
-    document.getElementById('profile-btn')?.addEventListener('click', () => {
-      this.router.navigate('profile');
+    document.getElementById("profile-btn")?.addEventListener("click", () => {
+      this.router.navigate("profile");
     });
 
-    document.getElementById('settings-btn')?.addEventListener('click', () => {
-      this.router.navigate('settings');
+    document.getElementById("settings-btn")?.addEventListener("click", () => {
+      this.router.navigate("settings");
     });
 
-    document.getElementById('main-menu-logout-btn')?.addEventListener('click', () => {
-      this.handleLogout();
-    });
+    document
+      .getElementById("main-menu-logout-btn")
+      ?.addEventListener("click", () => {
+        this.handleLogout();
+      });
 
     // Play config buttons
-    document.getElementById('back-to-main-btn')?.addEventListener('click', () => {
-      this.router.navigate('main-menu');
-    });
+    document
+      .getElementById("back-to-main-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigate("main-menu");
+      });
 
-    document.getElementById('start-game-btn')?.addEventListener('click', () => {
+    document.getElementById("start-game-btn")?.addEventListener("click", () => {
       this.startGame();
     });
 
-    document.getElementById('add-player-btn')?.addEventListener('click', () => {
+    document.getElementById("add-player-btn")?.addEventListener("click", () => {
       this.showAddPlayerDialog();
     });
 
     // Settings buttons
-    document.getElementById('back-to-main-settings-btn')?.addEventListener('click', () => {
-      this.router.navigate('main-menu');
-    });
+    document
+      .getElementById("back-to-main-settings-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigate("main-menu");
+      });
 
-    document.getElementById('back-to-main-settings-bottom-btn')?.addEventListener('click', () => {
-      this.router.navigate('main-menu');
-    });
+    document
+      .getElementById("back-to-main-settings-bottom-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigate("main-menu");
+      });
 
     // Profile buttons
-    document.getElementById('back-to-main-profile-btn')?.addEventListener('click', () => {
-      this.router.navigate('main-menu');
-    });
+    document
+      .getElementById("back-to-main-profile-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigate("main-menu");
+      });
 
-    document.getElementById('back-to-main-profile-bottom-btn')?.addEventListener('click', () => {
-      this.router.navigate('main-menu');
-    });
+    document
+      .getElementById("back-to-main-profile-bottom-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigate("main-menu");
+      });
 
     // Game control buttons
-    document.getElementById('stop-game-btn')?.addEventListener('click', () => {
+    document.getElementById("stop-game-btn")?.addEventListener("click", () => {
       this.stopGame();
     });
 
-    document.getElementById('pause-game-btn')?.addEventListener('click', () => {
+    document.getElementById("pause-game-btn")?.addEventListener("click", () => {
       this.pauseGame();
     });
 
     // Add Player Modal event listeners
-    document.getElementById('add-player-form')?.addEventListener('submit', (e) => {
-      this.handleAddPlayerSubmit(e);
-    });
+    document
+      .getElementById("add-player-form")
+      ?.addEventListener("submit", (e) => {
+        this.handleAddPlayerSubmit(e);
+      });
 
-    document.getElementById('close-add-player-modal')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
+    document
+      .getElementById("close-add-player-modal")
+      ?.addEventListener("click", () => {
+        this.hideAddPlayerDialog();
+      });
 
-    document.getElementById('cancel-add-player')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
+    document
+      .getElementById("cancel-add-player")
+      ?.addEventListener("click", () => {
+        this.hideAddPlayerDialog();
+      });
 
-    document.getElementById('add-player-modal-overlay')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
+    document
+      .getElementById("add-player-modal-overlay")
+      ?.addEventListener("click", () => {
+        this.hideAddPlayerDialog();
+      });
 
     // Config option buttons
-    document.querySelectorAll('.config-option, .setting-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.handleConfigOption(btn as HTMLElement);
+    document
+      .querySelectorAll(".config-option, .setting-option")
+      .forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.handleConfigOption(btn as HTMLElement);
+        });
       });
-    });
 
     // Game mode tabs
-    document.querySelectorAll('.game-mode-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
+    document.querySelectorAll(".game-mode-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
         this.handleGameModeChange(tab as HTMLElement);
       });
     });
 
     // Initialize the UI with default CO-OP mode
-    const defaultTab = document.querySelector('.game-mode-tab.active') as HTMLElement;
+    const defaultTab = document.querySelector(
+      ".game-mode-tab.active"
+    ) as HTMLElement;
     if (defaultTab) {
       this.handleGameModeChange(defaultTab);
     }
 
     // Score increment/decrement buttons
-    document.getElementById('score-increment')?.addEventListener('click', () => {
-      this.changeScoreToWin(1);
-    });
+    document
+      .getElementById("score-increment")
+      ?.addEventListener("click", () => {
+        this.changeScoreToWin(1);
+      });
 
-    document.getElementById('score-decrement')?.addEventListener('click', () => {
-      this.changeScoreToWin(-1);
-    });
+    document
+      .getElementById("score-decrement")
+      ?.addEventListener("click", () => {
+        this.changeScoreToWin(-1);
+      });
 
     // Checkbox settings
-    document.getElementById('powerups-enabled')?.addEventListener('change', (e) => {
-      this.gameSettings.powerupsEnabled = (e.target as HTMLInputElement).checked;
-    });
+    document
+      .getElementById("powerups-enabled")
+      ?.addEventListener("change", (e) => {
+        this.gameSettings.powerupsEnabled = (
+          e.target as HTMLInputElement
+        ).checked;
+      });
 
-    document.getElementById('accelerate-on-hit')?.addEventListener('change', (e) => {
-      this.gameSettings.accelerateOnHit = (e.target as HTMLInputElement).checked;
-    });
+    document
+      .getElementById("accelerate-on-hit")
+      ?.addEventListener("change", (e) => {
+        this.gameSettings.accelerateOnHit = (
+          e.target as HTMLInputElement
+        ).checked;
+      });
 
     // Global keyboard shortcuts
     this.setupKeyboardShortcuts();
@@ -407,40 +522,47 @@ class SpiritualAscensionApp {
     const zoomStep = 0.1;
 
     // Handle Ctrl + Mouse Wheel for zoom
-    document.addEventListener('wheel', (e: WheelEvent) => {
-      // Only zoom when Ctrl key is pressed
-      if (e.ctrlKey) {
-        e.preventDefault();
-        
-        // Determine zoom direction
-        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-        const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
-        
-        if (newZoom !== currentZoom) {
-          currentZoom = newZoom;
-          this.applyZoom(currentZoom);
+    document.addEventListener(
+      "wheel",
+      (e: WheelEvent) => {
+        // Only zoom when Ctrl key is pressed
+        if (e.ctrlKey) {
+          e.preventDefault();
+
+          // Determine zoom direction
+          const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+          const newZoom = Math.max(
+            minZoom,
+            Math.min(maxZoom, currentZoom + delta)
+          );
+
+          if (newZoom !== currentZoom) {
+            currentZoom = newZoom;
+            this.applyZoom(currentZoom);
+          }
         }
-      }
-    }, { passive: false });
+      },
+      { passive: false }
+    );
 
     // Handle Ctrl + Plus/Minus for zoom (keyboard shortcuts)
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === '=' || e.key === '+') {
+        if (e.key === "=" || e.key === "+") {
           e.preventDefault();
           const newZoom = Math.min(maxZoom, currentZoom + zoomStep);
           if (newZoom !== currentZoom) {
             currentZoom = newZoom;
             this.applyZoom(currentZoom);
           }
-        } else if (e.key === '-') {
+        } else if (e.key === "-") {
           e.preventDefault();
           const newZoom = Math.max(minZoom, currentZoom - zoomStep);
           if (newZoom !== currentZoom) {
             currentZoom = newZoom;
             this.applyZoom(currentZoom);
           }
-        } else if (e.key === '0') {
+        } else if (e.key === "0") {
           e.preventDefault();
           currentZoom = 1.0;
           this.applyZoom(currentZoom);
@@ -450,15 +572,15 @@ class SpiritualAscensionApp {
   }
 
   applyZoom(zoomLevel: number): void {
-    const app = document.getElementById('app');
+    const app = document.getElementById("app");
     if (app) {
       app.style.transform = `scale(${zoomLevel})`;
-      app.style.transformOrigin = 'top left';
-      
+      app.style.transformOrigin = "top left";
+
       // Adjust body size to accommodate zoom
       document.body.style.width = `${100 / zoomLevel}%`;
       document.body.style.height = `${100 / zoomLevel}%`;
-      
+
       // Show zoom level indicator (optional)
       this.showZoomIndicator(zoomLevel);
     }
@@ -466,14 +588,14 @@ class SpiritualAscensionApp {
 
   showZoomIndicator(zoomLevel: number): void {
     // Remove existing indicator
-    const existingIndicator = document.getElementById('zoom-indicator');
+    const existingIndicator = document.getElementById("zoom-indicator");
     if (existingIndicator) {
       existingIndicator.remove();
     }
 
     // Create and show new indicator
-    const indicator = document.createElement('div');
-    indicator.id = 'zoom-indicator';
+    const indicator = document.createElement("div");
+    indicator.id = "zoom-indicator";
     indicator.textContent = `${Math.round(zoomLevel * 100)}%`;
     indicator.style.cssText = `
       position: fixed;
@@ -492,12 +614,12 @@ class SpiritualAscensionApp {
       pointer-events: none;
       transition: opacity 0.3s ease;
     `;
-    
+
     document.body.appendChild(indicator);
-    
+
     // Auto-hide after 2 seconds
     setTimeout(() => {
-      indicator.style.opacity = '0';
+      indicator.style.opacity = "0";
       setTimeout(() => {
         indicator.remove();
       }, 300);
@@ -505,22 +627,26 @@ class SpiritualAscensionApp {
   }
 
   setupKeyboardShortcuts(): void {
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
       // Don't trigger shortcuts if user is typing in an input field
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true"
+      ) {
         return;
       }
 
-      const currentScreen = document.querySelector('.screen.active')?.id;
+      const currentScreen = document.querySelector(".screen.active")?.id;
 
       switch (e.key) {
-        case 'Backspace':
+        case "Backspace":
           e.preventDefault();
           this.handleBackspaceShortcut(currentScreen);
           break;
-        
-        case 'Enter':
+
+        case "Enter":
           e.preventDefault();
           this.handleEnterShortcut(currentScreen);
           break;
@@ -530,19 +656,19 @@ class SpiritualAscensionApp {
 
   private handleBackspaceShortcut(currentScreen: string | undefined): void {
     switch (currentScreen) {
-      case 'register-screen':
-      case 'forgot-password-screen':
-        this.router.navigate('login');
+      case "register-screen":
+      case "forgot-password-screen":
+        this.router.navigate("login");
         break;
-      case 'main-menu-screen':
+      case "main-menu-screen":
         this.handleLogout();
         break;
-      case 'play-config-screen':
-      case 'settings-screen':
-      case 'profile-screen':
-        this.router.navigate('main-menu');
+      case "play-config-screen":
+      case "settings-screen":
+      case "profile-screen":
+        this.router.navigate("main-menu");
         break;
-      case 'game-screen':
+      case "game-screen":
         this.stopGame();
         break;
     }
@@ -550,69 +676,81 @@ class SpiritualAscensionApp {
 
   private handleEnterShortcut(currentScreen: string | undefined): void {
     switch (currentScreen) {
-      case 'login-screen':
-        const loginSubmitBtn = document.querySelector('#login-form button[type="submit"]') as HTMLButtonElement;
+      case "login-screen":
+        const loginSubmitBtn = document.querySelector(
+          '#login-form button[type="submit"]'
+        ) as HTMLButtonElement;
         if (loginSubmitBtn) loginSubmitBtn.click();
         break;
-      
-      case 'register-screen':
-        const registerSubmitBtn = document.querySelector('#register-form button[type="submit"]') as HTMLButtonElement;
+
+      case "register-screen":
+        const registerSubmitBtn = document.querySelector(
+          '#register-form button[type="submit"]'
+        ) as HTMLButtonElement;
         if (registerSubmitBtn) registerSubmitBtn.click();
         break;
-      
-      case 'forgot-password-screen':
-        const forgotSubmitBtn = document.querySelector('#forgot-password-form button[type="submit"]') as HTMLButtonElement;
+
+      case "forgot-password-screen":
+        const forgotSubmitBtn = document.querySelector(
+          '#forgot-password-form button[type="submit"]'
+        ) as HTMLButtonElement;
         if (forgotSubmitBtn) forgotSubmitBtn.click();
         break;
-      
-      case 'main-menu-screen':
-        const playBtn = document.getElementById('play-btn') as HTMLButtonElement;
+
+      case "main-menu-screen":
+        const playBtn = document.getElementById(
+          "play-btn"
+        ) as HTMLButtonElement;
         if (playBtn) playBtn.click();
         break;
-      
-      case 'play-config-screen':
-        const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
+
+      case "play-config-screen":
+        const startGameBtn = document.getElementById(
+          "start-game-btn"
+        ) as HTMLButtonElement;
         if (startGameBtn) startGameBtn.click();
         break;
     }
   }
 
   setupChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
-    const chatButton = document.getElementById('chat-button');
-    const chatCloseBtn = document.getElementById('chat-close-btn');
-    
+    const chatWidget = document.getElementById("chat-widget");
+    const chatButton = document.getElementById("chat-button");
+    const chatCloseBtn = document.getElementById("chat-close-btn");
+
     if (!chatWidget || !chatButton || !chatCloseBtn) return;
 
     // Show chat button when clicking the chat button
-    chatButton.addEventListener('click', () => {
+    chatButton.addEventListener("click", () => {
       this.expandChatWidget();
     });
 
     // Hide chat widget when clicking close button
-    chatCloseBtn.addEventListener('click', (e) => {
+    chatCloseBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.collapseChatWidget();
     });
 
     // Handle Enter key in  input
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
+    const chatInput = document.getElementById("chat-input") as HTMLInputElement;
     if (chatInput) {
-      chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+      chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
           e.preventDefault();
-          const chatForm = document.getElementById('chat-form') as HTMLFormElement;
+          const chatForm = document.getElementById(
+            "chat-form"
+          ) as HTMLFormElement;
           if (chatForm) {
-            chatForm.dispatchEvent(new Event('submit'));
+            chatForm.dispatchEvent(new Event("submit"));
           }
         }
       });
     }
 
     // Handle chat form submission
-    const chatForm = document.getElementById('chat-form') as HTMLFormElement;
+    const chatForm = document.getElementById("chat-form") as HTMLFormElement;
     if (chatForm) {
-      chatForm.addEventListener('submit', (e) => {
+      chatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.sendChatMessage();
       });
@@ -624,79 +762,82 @@ class SpiritualAscensionApp {
   }
 
   private sendChatMessage(): void {
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    const chatMessages = document.getElementById('chat-messages');
-    
+    const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+    const chatMessages = document.getElementById("chat-messages");
+
     if (chatInput && chatMessages) {
       const message = chatInput.value.trim();
       if (message) {
         // Add message to chat (basic implementation)
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "chat-message";
         messageDiv.textContent = `You: ${message}`;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
+
         // Clear input
-        chatInput.value = '';
-        
+        chatInput.value = "";
+
         // Here you would typically send to WebSocket/server
-        console.log('Chat message:', message);
+        console.log("Chat message:", message);
       }
     }
   }
 
   showChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
+    const chatWidget = document.getElementById("chat-widget");
     if (chatWidget) {
-      chatWidget.classList.remove('hidden');
+      chatWidget.classList.remove("hidden");
       // Remove inline styles to allow CSS to take over
-      chatWidget.style.display = '';
-      chatWidget.style.visibility = '';
-      chatWidget.style.opacity = '';
+      chatWidget.style.display = "";
+      chatWidget.style.visibility = "";
+      chatWidget.style.opacity = "";
     }
   }
 
   hideChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
+    const chatWidget = document.getElementById("chat-widget");
     if (chatWidget) {
-      chatWidget.classList.add('hidden');
-      chatWidget.classList.remove('expanded');
+      chatWidget.classList.add("hidden");
+      chatWidget.classList.remove("expanded");
       // Force hide with inline style as backup
-      chatWidget.style.display = 'none';
+      chatWidget.style.display = "none";
     }
   }
 
   // Force hide chat widget immediately, even before DOM is fully loaded
   forceHideChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
+    const chatWidget = document.getElementById("chat-widget");
     if (chatWidget) {
-      chatWidget.classList.add('hidden');
-      chatWidget.classList.remove('expanded');
-      chatWidget.style.display = 'none';
-      chatWidget.style.visibility = 'hidden';
-      chatWidget.style.opacity = '0';
+      chatWidget.classList.add("hidden");
+      chatWidget.classList.remove("expanded");
+      chatWidget.style.display = "none";
+      chatWidget.style.visibility = "hidden";
+      chatWidget.style.opacity = "0";
     }
   }
 
   expandChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
+    const chatWidget = document.getElementById("chat-widget");
     if (chatWidget) {
-      chatWidget.classList.add('expanded');
+      chatWidget.classList.add("expanded");
     }
   }
 
   collapseChatWidget(): void {
-    const chatWidget = document.getElementById('chat-widget');
+    const chatWidget = document.getElementById("chat-widget");
     if (chatWidget) {
-      chatWidget.classList.remove('expanded');
+      chatWidget.classList.remove("expanded");
     }
   }
 
   updateChatVisibility(): void {
     // Always hide chat widget on login and register screens
     const currentScreen = this.getCurrentScreen();
-    if (currentScreen === 'login-screen' || currentScreen === 'register-screen') {
+    if (
+      currentScreen === "login-screen" ||
+      currentScreen === "register-screen"
+    ) {
       this.hideChatWidget();
       return;
     }
@@ -710,7 +851,7 @@ class SpiritualAscensionApp {
 
   // Get current active screen
   private getCurrentScreen(): string | null {
-    const activeScreen = document.querySelector('.screen.active');
+    const activeScreen = document.querySelector(".screen.active");
     return activeScreen ? activeScreen.id : null;
   }
 
@@ -718,36 +859,36 @@ class SpiritualAscensionApp {
   isAuthenticated(): boolean {
     const authManager = (window as any).authManager;
     if (!authManager) return false;
-    
+
     const user = authManager.getCurrentUser();
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     return !!(user && user.userId && token);
   }
 
   // Show screen directly (used by router)
   showScreenDirect(screenName: string): void {
     // Hide all screens
-    document.querySelectorAll('.screen').forEach(screen => {
-      screen.classList.remove('active');
+    document.querySelectorAll(".screen").forEach((screen) => {
+      screen.classList.remove("active");
     });
 
     // Show target screen
     const targetScreen = document.getElementById(`${screenName}-screen`);
     if (targetScreen) {
-      targetScreen.classList.add('active');
+      targetScreen.classList.add("active");
       this.currentScreen = screenName;
     }
 
     // Set body data attribute for CSS targeting
-    document.body.setAttribute('data-current-screen', screenName);
+    document.body.setAttribute("data-current-screen", screenName);
 
     // Update chat visibility based on current screen and auth status
     this.updateChatVisibility();
 
     // Update UI based on screen
-    if (screenName === 'play-config') {
+    if (screenName === "play-config") {
       this.updatePlayConfigUI();
-    } else if (screenName === 'profile') {
+    } else if (screenName === "profile") {
       this.loadProfileData();
     }
   }
@@ -758,119 +899,135 @@ class SpiritualAscensionApp {
   }
 
   async handleLogin(): Promise<void> {
-    const usernameInput = document.getElementById('login-username') as HTMLInputElement;
-    const passwordInput = document.getElementById('login-password') as HTMLInputElement;
-    
+    const usernameInput = document.getElementById(
+      "login-username"
+    ) as HTMLInputElement;
+    const passwordInput = document.getElementById(
+      "login-password"
+    ) as HTMLInputElement;
+
     const username = usernameInput.value;
     const password = passwordInput.value;
 
     if (!username || !password) {
-      alert('Please fill in all fields');
+      alert("Please fill in all fields");
       return;
     }
 
-    console.log('Attempting login:', { username });
-    
+    console.log("Attempting login:", { username });
+
     try {
       const authManager = (window as any).authManager;
       const result: AuthResult = await authManager.login(username, password);
-      console.log('Login result:', result);
-      
+      console.log("Login result:", result);
+
       if (result.success) {
-        console.log('Login successful, user data:', result.data);
-        this.router.navigate('main-menu');
+        console.log("Login successful, user data:", result.data);
+        this.router.navigate("main-menu");
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
         this.updateChatVisibility(); // Show chat widget after login
         this.loginForm.reset();
       } else {
-        console.log('Login failed:', result.error);
+        console.log("Login failed:", result.error);
         authManager.currentUser = null;
-        localStorage.removeItem('token');
-        alert('Login failed: ' + result.error);
+        localStorage.removeItem("token");
+        alert("Login failed: " + result.error);
       }
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed: Network error');
+      console.error("Login error:", error);
+      alert("Login failed: Network error");
     }
   }
 
   async handleRegister(): Promise<void> {
-    const usernameInput = document.getElementById('register-username') as HTMLInputElement;
-    const emailInput = document.getElementById('register-email') as HTMLInputElement;
-    const passwordInput = document.getElementById('register-password') as HTMLInputElement;
-    
+    const usernameInput = document.getElementById(
+      "register-username"
+    ) as HTMLInputElement;
+    const emailInput = document.getElementById(
+      "register-email"
+    ) as HTMLInputElement;
+    const passwordInput = document.getElementById(
+      "register-password"
+    ) as HTMLInputElement;
+
     const username = usernameInput.value;
     const email = emailInput.value;
     const password = passwordInput.value;
-    
+
     if (!username || !email || !password) {
-      alert('Please fill in all fields');
+      alert("Please fill in all fields");
       return;
     }
-    
+
     if (password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      alert("Password must be at least 6 characters long");
       return;
     }
-    
-    console.log('Attempting registration:', { username, email });
-    
+
+    console.log("Attempting registration:", { username, email });
+
     try {
       const authManager = (window as any).authManager;
-      const result: AuthResult = await authManager.register(username, email, password);
-      
+      const result: AuthResult = await authManager.register(
+        username,
+        email,
+        password
+      );
+
       if (result.success) {
-        this.router.navigate('main-menu');
+        this.router.navigate("main-menu");
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
         this.updateChatVisibility(); // Show chat widget after registration
         this.registerForm.reset();
-        console.log('Registration successful');
+        console.log("Registration successful");
       } else {
-        alert('Registration failed: ' + result.error);
+        alert("Registration failed: " + result.error);
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('Registration failed: Network error');
+      console.error("Registration error:", error);
+      alert("Registration failed: Network error");
     }
   }
 
   async handleForgotPassword(): Promise<void> {
-    const emailInput = document.getElementById('forgot-password-email') as HTMLInputElement;
+    const emailInput = document.getElementById(
+      "forgot-password-email"
+    ) as HTMLInputElement;
     const email = emailInput.value.trim();
-    
+
     if (!email) {
-      alert('Please enter your email address');
+      alert("Please enter your email address");
       return;
     }
-    
-    if (!email.includes('@')) {
-      alert('Please enter a valid email address');
+
+    if (!email.includes("@")) {
+      alert("Please enter a valid email address");
       return;
     }
-    
+
     try {
       const authManager = (window as any).authManager;
       const result: AuthResult = await authManager.forgotPassword(email);
-      
+
       if (result.success) {
-        alert('Password reset link sent! Please check your email.');
+        alert("Password reset link sent! Please check your email.");
         this.forgotPasswordForm.reset();
-        this.router.navigate('login');
+        this.router.navigate("login");
       } else {
-        alert('Failed to send reset email: ' + result.error);
+        alert("Failed to send reset email: " + result.error);
       }
     } catch (error) {
-      console.error('Forgot password error:', error);
-      alert('Failed to send reset email: Network error');
+      console.error("Forgot password error:", error);
+      alert("Failed to send reset email: Network error");
     }
   }
 
   handleLogout(): void {
     const authManager = (window as any).authManager;
     authManager.logout();
-    this.router.navigate('login');
+    this.router.navigate("login");
     this.localPlayers = [];
     this.updateChatVisibility(); // Hide chat widget after logout
   }
@@ -878,12 +1035,12 @@ class SpiritualAscensionApp {
   async checkExistingLogin(): Promise<void> {
     const authManager = (window as any).authManager;
     if (!authManager) return;
-    
+
     const isValid = await authManager.verifyToken();
     if (isValid) {
       const user = authManager.getCurrentUser();
       if (user) {
-        this.router.navigate('main-menu');
+        this.router.navigate("main-menu");
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
         this.updateChatVisibility(); // Show chat widget if already logged in
@@ -894,8 +1051,8 @@ class SpiritualAscensionApp {
   updateUserDisplay(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    
-    const userDisplay = document.getElementById('main-menu-user-display');
+
+    const userDisplay = document.getElementById("main-menu-user-display");
     if (userDisplay && user) {
       userDisplay.textContent = `Welcome, ${user.username}!`;
     }
@@ -904,8 +1061,8 @@ class SpiritualAscensionApp {
   updateHostPlayerDisplay(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    
-    const hostPlayerName = document.getElementById('host-player-name');
+
+    const hostPlayerName = document.getElementById("host-player-name");
     if (hostPlayerName && user) {
       hostPlayerName.textContent = user.username;
     }
@@ -914,98 +1071,124 @@ class SpiritualAscensionApp {
   initializeLocalPlayers(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    const token = localStorage.getItem('token') || '';
+    const token = localStorage.getItem("token") || "";
     if (user) {
-      this.localPlayers = [{
-        id: user.userId.toString(),
-        username: user.username,
-        isCurrentUser: true,
-        userId: user.userId,
-        token: token
-      }];
+      this.localPlayers = [
+        {
+          id: user.userId.toString(),
+          username: user.username,
+          isCurrentUser: true,
+          userId: user.userId,
+          token: token,
+        },
+      ];
     }
     this.updateLocalPlayersDisplay();
   }
 
   updateLocalPlayersDisplay(): void {
-    const container = document.getElementById('local-players-list');
+    const container = document.getElementById("local-players-list");
     if (!container) return;
 
-    container.innerHTML = this.localPlayers.map(player => `
+    container.innerHTML = this.localPlayers
+      .map(
+        (player) => `
       <div class="player-item">
         <div class="player-info">
-          <div class="player-name">${player.username}${player.isCurrentUser ? ' (You)' : ''}</div>
-          <div class="player-status">${player.isCurrentUser ? 'Host' : 'Local Player'}</div>
+          <div class="player-name">${player.username}${
+          player.isCurrentUser ? " (You)" : ""
+        }</div>
+          <div class="player-status">${
+            player.isCurrentUser ? "Host" : "Local Player"
+          }</div>
         </div>
-        ${!player.isCurrentUser ? '<button class="remove-player-btn" data-player-id="' + player.id + '">Remove</button>' : ''}
+        ${
+          !player.isCurrentUser
+            ? '<button class="remove-player-btn" data-player-id="' +
+              player.id +
+              '">Remove</button>'
+            : ""
+        }
       </div>
-    `).join('');
+    `
+      )
+      .join("");
 
     // Add remove button listeners
-    container.querySelectorAll('.remove-player-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const playerId = btn.getAttribute('data-player-id');
-        this.removeLocalPlayer(playerId || '');
+    container.querySelectorAll(".remove-player-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const playerId = btn.getAttribute("data-player-id");
+        this.removeLocalPlayer(playerId || "");
       });
     });
   }
 
   handleConfigOption(button: HTMLElement): void {
-    const setting = button.getAttribute('data-setting');
-    const value = button.getAttribute('data-value');
-    
+    const setting = button.getAttribute("data-setting");
+    const value = button.getAttribute("data-value");
+
     if (!setting || !value) return;
 
     // Remove active class from siblings
-    const siblings = button.parentElement?.querySelectorAll('.config-option, .setting-option') || [];
-    siblings.forEach(sibling => sibling.classList.remove('active'));
-    
+    const siblings =
+      button.parentElement?.querySelectorAll(
+        ".config-option, .setting-option"
+      ) || [];
+    siblings.forEach((sibling) => sibling.classList.remove("active"));
+
     // Add active class to clicked button
-    button.classList.add('active');
+    button.classList.add("active");
 
     // Update settings
     switch (setting) {
-      case 'ai-difficulty':
-        this.gameSettings.aiDifficulty = value as 'easy' | 'medium' | 'hard';
+      case "ai-difficulty":
+        this.gameSettings.aiDifficulty = value as "easy" | "medium" | "hard";
         break;
-      case 'ball-speed':
-        this.gameSettings.ballSpeed = value as 'slow' | 'medium' | 'fast';
+      case "ball-speed":
+        this.gameSettings.ballSpeed = value as "slow" | "medium" | "fast";
         break;
-      case 'paddle-speed':
-        this.gameSettings.paddleSpeed = value as 'slow' | 'medium' | 'fast';
+      case "paddle-speed":
+        this.gameSettings.paddleSpeed = value as "slow" | "medium" | "fast";
         break;
     }
   }
 
   handleGameModeChange(tab: HTMLElement): void {
-    const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
+    const mode = tab.getAttribute("data-mode") as
+      | "coop"
+      | "arcade"
+      | "tournament";
     if (!mode) return;
 
     // Remove active class from all tabs
-    document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
-    
+    document
+      .querySelectorAll(".game-mode-tab")
+      .forEach((t) => t.classList.remove("active"));
+
     // Add active class to clicked tab
-    tab.classList.add('active');
+    tab.classList.add("active");
 
     // Update game settings
     this.gameSettings.gameMode = mode;
 
     // Show/hide mode descriptions
-    document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active'));
+    document
+      .querySelectorAll(".mode-desc")
+      .forEach((desc) => desc.classList.remove("active"));
     const activeDesc = document.getElementById(`mode-desc-${mode}`);
     if (activeDesc) {
-      activeDesc.classList.add('active');
+      activeDesc.classList.add("active");
     }
 
     // Show/hide arcade-specific settings
-    const arcadeOnlyElements = document.querySelectorAll('.arcade-only');
-    arcadeOnlyElements.forEach(element => {
-      if (mode === 'arcade') {
-        (element as HTMLElement).style.display = 'block';
-        (element as HTMLElement).classList.add('active');
+    const arcadeOnlyElements = document.querySelectorAll(".arcade-only");
+    arcadeOnlyElements.forEach((element) => {
+      if (mode === "arcade") {
+        (element as HTMLElement).style.display = "block";
+        (element as HTMLElement).classList.add("active");
       } else {
-        (element as HTMLElement).style.display = 'none';
-        (element as HTMLElement).classList.remove('active');
+        (element as HTMLElement).style.display = "none";
+        (element as HTMLElement).classList.remove("active");
       }
     });
 
@@ -1013,14 +1196,20 @@ class SpiritualAscensionApp {
     this.updatePlayersForMode(mode);
   }
 
-  private updatePlayersForMode(mode: 'coop' | 'arcade' | 'tournament'): void {
-    const currentUserCard = document.getElementById('current-user-card');
-    const onlinePlayersSection = document.querySelector('.player-section:nth-child(2)') as HTMLElement;
-    const localPlayersSection = document.querySelector('.player-section:nth-child(3)') as HTMLElement;
-    const partySection = document.querySelector('.player-section:nth-child(4)') as HTMLElement;
-    
+  private updatePlayersForMode(mode: "coop" | "arcade" | "tournament"): void {
+    const currentUserCard = document.getElementById("current-user-card");
+    const onlinePlayersSection = document.querySelector(
+      ".player-section:nth-child(2)"
+    ) as HTMLElement;
+    const localPlayersSection = document.querySelector(
+      ".player-section:nth-child(3)"
+    ) as HTMLElement;
+    const partySection = document.querySelector(
+      ".player-section:nth-child(4)"
+    ) as HTMLElement;
+
     // Update host player display with username
-    const hostPlayerName = document.getElementById('host-player-name');
+    const hostPlayerName = document.getElementById("host-player-name");
     const authManager = (window as any).authManager;
     if (hostPlayerName && authManager && authManager.getCurrentUser()) {
       hostPlayerName.textContent = authManager.getCurrentUser().username;
@@ -1028,36 +1217,36 @@ class SpiritualAscensionApp {
 
     // Show/hide sections based on mode (simplified since we only have one party list now)
     switch (mode) {
-      case 'coop':
+      case "coop":
         this.populateOnlinePlayers();
         break;
-      case 'arcade':
+      case "arcade":
         // Arcade mode - local players only
         break;
-      case 'tournament':
+      case "tournament":
         this.populateOnlinePlayers();
         break;
     }
-    
+
     // Initialize the game party display
     this.updateGamePartyDisplay();
   }
 
   private populateOnlinePlayers(): void {
-    const onlinePlayersList = document.getElementById('online-players-list');
-    const onlineCount = document.getElementById('online-count');
-    
+    const onlinePlayersList = document.getElementById("online-players-list");
+    const onlineCount = document.getElementById("online-count");
+
     if (!onlinePlayersList || !onlineCount) return;
 
     // Mock online players data - replace with real API call
     const mockOnlinePlayers = [
-      { id: '2', username: 'player2', status: 'online' },
-      { id: '3', username: 'player3', status: 'online' },
-      { id: '4', username: 'player4', status: 'in-game' }
+      { id: "2", username: "player2", status: "online" },
+      { id: "3", username: "player3", status: "online" },
+      { id: "4", username: "player4", status: "in-game" },
     ];
 
     onlineCount.textContent = mockOnlinePlayers.length.toString();
-    
+
     if (mockOnlinePlayers.length === 0) {
       onlinePlayersList.innerHTML = `
         <div class="empty-state">
@@ -1066,7 +1255,9 @@ class SpiritualAscensionApp {
         </div>
       `;
     } else {
-      onlinePlayersList.innerHTML = mockOnlinePlayers.map(player => `
+      onlinePlayersList.innerHTML = mockOnlinePlayers
+        .map(
+          (player) => `
         <div class="player-card" data-player-id="${player.id}">
           <div class="player-avatar">
             <i class="fas fa-user"></i>
@@ -1076,13 +1267,15 @@ class SpiritualAscensionApp {
             <span class="player-status ${player.status}">${player.status}</span>
           </div>
         </div>
-      `).join('');
+      `
+        )
+        .join("");
 
       // Add click listeners for online players
-      onlinePlayersList.querySelectorAll('.player-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const playerId = card.getAttribute('data-player-id');
-          const playerName = card.querySelector('.player-name')?.textContent;
+      onlinePlayersList.querySelectorAll(".player-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const playerId = card.getAttribute("data-player-id");
+          const playerName = card.querySelector(".player-name")?.textContent;
           if (playerId && playerName) {
             this.invitePlayer(playerId, playerName);
           }
@@ -1092,32 +1285,38 @@ class SpiritualAscensionApp {
   }
 
   private updatePartyList(): void {
-    const partyPlayersList = document.getElementById('party-players-list');
-    const partyCount = document.getElementById('party-count');
-    
+    const partyPlayersList = document.getElementById("party-players-list");
+    const partyCount = document.getElementById("party-count");
+
     if (!partyPlayersList || !partyCount) return;
 
     // Always include current user
     const authManager = (window as any).authManager;
     const currentUser = authManager?.getCurrentUser();
     let partyMembers = currentUser ? [currentUser] : [];
-    
+
     // Add local players to party
     partyMembers = partyMembers.concat(this.localPlayers);
 
     partyCount.textContent = partyMembers.length.toString();
-    
-    partyPlayersList.innerHTML = partyMembers.map(player => `
-      <div class="player-card ${player === currentUser ? 'current-user' : ''}">
+
+    partyPlayersList.innerHTML = partyMembers
+      .map(
+        (player) => `
+      <div class="player-card ${player === currentUser ? "current-user" : ""}">
         <div class="player-avatar">
           <i class="fas fa-user"></i>
         </div>
         <div class="player-info">
           <span class="player-name">${player.username}</span>
-          <span class="player-status ${player === currentUser ? 'online' : 'local'}">${player === currentUser ? 'You' : 'Local'}</span>
+          <span class="player-status ${
+            player === currentUser ? "online" : "local"
+          }">${player === currentUser ? "You" : "Local"}</span>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join("");
   }
 
   private invitePlayer(playerId: string, playerName: string): void {
@@ -1128,15 +1327,15 @@ class SpiritualAscensionApp {
   }
 
   changeScoreToWin(delta: number): void {
-    if (this.gameSettings.gameMode !== 'arcade') return;
+    if (this.gameSettings.gameMode !== "arcade") return;
 
     const currentScore = this.gameSettings.scoreToWin || 5;
     const newScore = Math.max(1, Math.min(21, currentScore + delta)); // Limit between 1 and 21
-    
+
     this.gameSettings.scoreToWin = newScore;
-    
+
     // Update display
-    const scoreDisplay = document.getElementById('score-value');
+    const scoreDisplay = document.getElementById("score-value");
     if (scoreDisplay) {
       scoreDisplay.textContent = newScore.toString();
     }
@@ -1150,36 +1349,42 @@ class SpiritualAscensionApp {
   }
 
   showAddPlayerDialog(): void {
-    const modal = document.getElementById('add-player-modal');
-    const playerNicknameInput = document.getElementById('player-nickname') as HTMLInputElement;
-    
+    const modal = document.getElementById("add-player-modal");
+    const playerNicknameInput = document.getElementById(
+      "player-nickname"
+    ) as HTMLInputElement;
+
     // Clear previous input and show modal
     if (playerNicknameInput) {
-      playerNicknameInput.value = '';
+      playerNicknameInput.value = "";
       playerNicknameInput.focus();
     }
-    
+
     if (modal) {
-      modal.classList.remove('hidden');
+      modal.classList.remove("hidden");
     }
   }
 
   hideAddPlayerDialog(): void {
-    const modal = document.getElementById('add-player-modal');
+    const modal = document.getElementById("add-player-modal");
     if (modal) {
-      modal.classList.add('hidden');
+      modal.classList.add("hidden");
     }
   }
 
   handleAddPlayerSubmit(event: Event): void {
     event.preventDefault();
-    const usernameInput = document.getElementById('add-player-username') as HTMLInputElement;
-    const passwordInput = document.getElementById('add-player-password') as HTMLInputElement;
+    const usernameInput = document.getElementById(
+      "add-player-username"
+    ) as HTMLInputElement;
+    const passwordInput = document.getElementById(
+      "add-player-password"
+    ) as HTMLInputElement;
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
 
     if (!username || !password) {
-      alert('Please enter both username and password');
+      alert("Please enter both username and password");
       return;
     }
 
@@ -1188,145 +1393,173 @@ class SpiritualAscensionApp {
     const hostUser = hostAuthManager?.getCurrentUser();
     const allUsernames = [
       ...(hostUser ? [hostUser.username.toLowerCase()] : []),
-      ...this.localPlayers.map(p => p.username.toLowerCase())
+      ...this.localPlayers.map((p) => p.username.toLowerCase()),
     ];
     if (allUsernames.includes(username.toLowerCase())) {
-      alert('A player with this username is already logged in');
+      alert("A player with this username is already logged in");
       return;
     }
     // Attempt to log in local player
     const authManager = (window as any).authManager;
     if (!authManager) {
-      alert('Auth system not available');
+      alert("Auth system not available");
       return;
     }
-    authManager.login(username, password).then((result: any) => {
-      if (result.success && result.data && result.data.user && result.data.token) {
-        // Store token and user info for this local player
-        const newPlayer: LocalPlayer = {
-          id: result.data.user.userId.toString(),
-          username: result.data.user.username,
-          isCurrentUser: false,
-          userId: result.data.user.userId,
-          token: result.data.token
-        };
-        this.localPlayers.push(newPlayer);
-        this.updateLocalPlayersDisplay();
-        this.hideAddPlayerDialog();
-        this.updateGamePartyDisplay();
-        // Highlight/select the newly added local player as active
-        setTimeout(() => {
-          const partyList = document.getElementById('game-party-list');
-          if (partyList) {
-            const playerCards = partyList.querySelectorAll('.player-card.local-player');
-            if (playerCards.length > 0) {
-              const lastPlayerCard = playerCards[playerCards.length - 1] as HTMLElement;
-              lastPlayerCard.classList.add('active');
+    authManager
+      .login(username, password)
+      .then((result: any) => {
+        if (
+          result.success &&
+          result.data &&
+          result.data.user &&
+          result.data.token
+        ) {
+          // Store token and user info for this local player
+          const newPlayer: LocalPlayer = {
+            id: result.data.user.userId.toString(),
+            username: result.data.user.username,
+            isCurrentUser: false,
+            userId: result.data.user.userId,
+            token: result.data.token,
+          };
+          this.localPlayers.push(newPlayer);
+          this.updateLocalPlayersDisplay();
+          this.hideAddPlayerDialog();
+          this.updateGamePartyDisplay();
+          // Highlight/select the newly added local player as active
+          setTimeout(() => {
+            const partyList = document.getElementById("game-party-list");
+            if (partyList) {
+              const playerCards = partyList.querySelectorAll(
+                ".player-card.local-player"
+              );
+              if (playerCards.length > 0) {
+                const lastPlayerCard = playerCards[
+                  playerCards.length - 1
+                ] as HTMLElement;
+                lastPlayerCard.classList.add("active");
+              }
             }
-          }
-        }, 100);
-      } else {
-        alert(result.error || 'Login failed for local player');
-      }
-    }).catch(() => {
-      alert('Network error during login');
-    });
+          }, 100);
+        } else {
+          alert(result.error || "Login failed for local player");
+        }
+      })
+      .catch(() => {
+        alert("Network error during login");
+      });
     // Modal links for forgot password and create account
-    document.getElementById('add-player-forgot-password-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hideAddPlayerDialog();
-      this.router.navigate('forgot-password');
-    });
-    document.getElementById('add-player-create-account-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hideAddPlayerDialog();
-      this.showRegistrationForLocalPlayer();
-    });
-
+    document
+      .getElementById("add-player-forgot-password-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.hideAddPlayerDialog();
+        this.router.navigate("forgot-password");
+      });
+    document
+      .getElementById("add-player-create-account-link")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.hideAddPlayerDialog();
+        this.showRegistrationForLocalPlayer();
+      });
   }
 
   showRegistrationForLocalPlayer(): void {
     // Show registration screen
-    this.router.navigate('register');
+    this.router.navigate("register");
     // Listen for registration form submit
-    const registerForm = document.getElementById('register-form') as HTMLFormElement;
+    const registerForm = document.getElementById(
+      "register-form"
+    ) as HTMLFormElement;
     if (registerForm) {
       const handler = async (event: Event) => {
         event.preventDefault();
-        const usernameInput = document.getElementById('register-username') as HTMLInputElement;
-        const emailInput = document.getElementById('register-email') as HTMLInputElement;
-        const passwordInput = document.getElementById('register-password') as HTMLInputElement;
+        const usernameInput = document.getElementById(
+          "register-username"
+        ) as HTMLInputElement;
+        const emailInput = document.getElementById(
+          "register-email"
+        ) as HTMLInputElement;
+        const passwordInput = document.getElementById(
+          "register-password"
+        ) as HTMLInputElement;
         const username = usernameInput?.value.trim();
         const email = emailInput?.value.trim();
         const password = passwordInput?.value;
         const authManager = (window as any).authManager;
         if (!authManager) {
-          alert('Auth system not available');
+          alert("Auth system not available");
           return;
         }
         const result = await authManager.register(username, email, password);
         if (result.success && result.data) {
-          alert('Account created!');
+          alert("Account created!");
           // Switch host session to new local player
           const authManager = (window as any).authManager;
           authManager.currentUser = {
             userId: result.data.userId,
             username: result.data.username,
-            email: result.data.email
+            email: result.data.email,
           };
-          localStorage.setItem('token', result.data.token || '');
+          localStorage.setItem("token", result.data.token || "");
           this.initializeLocalPlayers();
-          this.router.navigate('play-config');
+          this.router.navigate("play-config");
           this.updateLocalPlayersDisplay();
         } else {
-          alert(result.error || 'Registration failed');
+          alert(result.error || "Registration failed");
         }
-        registerForm.removeEventListener('submit', handler);
+        registerForm.removeEventListener("submit", handler);
       };
-      registerForm.addEventListener('submit', handler);
+      registerForm.addEventListener("submit", handler);
     }
-
   }
 
   removeLocalPlayer(playerId: string): void {
-    this.localPlayers = this.localPlayers.filter(player => player.id !== playerId);
+    this.localPlayers = this.localPlayers.filter(
+      (player) => player.id !== playerId
+    );
     this.updateGamePartyDisplay();
   }
 
   updateGamePartyDisplay(): void {
-    const gamePartyList = document.getElementById('game-party-list');
+    const gamePartyList = document.getElementById("game-party-list");
     if (!gamePartyList) return;
 
     // Clear existing players except the host
-    const hostCard = document.getElementById('host-player-card');
-    gamePartyList.innerHTML = '';
-    
+    const hostCard = document.getElementById("host-player-card");
+    gamePartyList.innerHTML = "";
+
     // Re-add the host card with active state by default
     if (hostCard) {
       const newHostCard = hostCard.cloneNode(true) as HTMLElement;
       // Host is active by default
-      newHostCard.classList.add('active');
-      newHostCard.addEventListener('click', () => this.togglePlayerSelection(newHostCard, 'host'));
+      newHostCard.classList.add("active");
+      newHostCard.addEventListener("click", () =>
+        this.togglePlayerSelection(newHostCard, "host")
+      );
       gamePartyList.appendChild(newHostCard);
     }
 
     // Add AI player if AI difficulty is selected
-    const aiDifficultyActive = document.querySelector('.setting-option[data-setting="ai-difficulty"].active');
+    const aiDifficultyActive = document.querySelector(
+      '.setting-option[data-setting="ai-difficulty"].active'
+    );
     if (aiDifficultyActive) {
       const aiPlayerCard = this.createAIPlayerCard();
       gamePartyList.appendChild(aiPlayerCard);
     }
 
     // Add local players
-    this.localPlayers.forEach(player => {
+    this.localPlayers.forEach((player) => {
       const playerCard = this.createPlayerCard(player);
       gamePartyList.appendChild(playerCard);
     });
   }
 
   createPlayerCard(player: any): HTMLElement {
-    const playerCard = document.createElement('div');
-    playerCard.className = 'player-card local-player';
+    const playerCard = document.createElement("div");
+    playerCard.className = "player-card local-player";
     playerCard.dataset.playerId = player.id;
 
     playerCard.innerHTML = `
@@ -1345,19 +1578,19 @@ class SpiritualAscensionApp {
     `;
 
     // Add click handler for player selection
-    playerCard.addEventListener('click', (e) => {
+    playerCard.addEventListener("click", (e) => {
       // Don't trigger selection if clicking the remove button
-      if ((e.target as HTMLElement).closest('.remove-btn')) return;
-      this.togglePlayerSelection(playerCard, 'local');
+      if ((e.target as HTMLElement).closest(".remove-btn")) return;
+      this.togglePlayerSelection(playerCard, "local");
     });
 
     return playerCard;
   }
 
   createAIPlayerCard(): HTMLElement {
-    const playerCard = document.createElement('div');
-    playerCard.className = 'player-card ai-player active'; // AI player is active by default
-    playerCard.dataset.playerId = 'ai-player';
+    const playerCard = document.createElement("div");
+    playerCard.className = "player-card ai-player active"; // AI player is active by default
+    playerCard.dataset.playerId = "ai-player";
 
     playerCard.innerHTML = `
       <div class="player-avatar">
@@ -1370,18 +1603,20 @@ class SpiritualAscensionApp {
     `;
 
     // Add click handler for AI player selection
-    playerCard.addEventListener('click', () => this.togglePlayerSelection(playerCard, 'ai'));
+    playerCard.addEventListener("click", () =>
+      this.togglePlayerSelection(playerCard, "ai")
+    );
 
     return playerCard;
   }
 
   togglePlayerSelection(playerCard: HTMLElement, playerType: string): void {
-    playerCard.classList.toggle('active');
-    
+    playerCard.classList.toggle("active");
+
     // Update selected players state for game logic
     const playerId = playerCard.dataset.playerId || playerType;
-    
-    if (playerCard.classList.contains('active')) {
+
+    if (playerCard.classList.contains("active")) {
       console.log(`Player ${playerId} selected for game`);
     } else {
       console.log(`Player ${playerId} deselected from game`);
@@ -1390,9 +1625,11 @@ class SpiritualAscensionApp {
 
   initializePlayerSelection(): void {
     // Set up AI difficulty change handler to update AI player display
-    const aiDifficultyButtons = document.querySelectorAll('.setting-option[data-setting="ai-difficulty"]');
-    aiDifficultyButtons.forEach(button => {
-      button.addEventListener('click', () => {
+    const aiDifficultyButtons = document.querySelectorAll(
+      '.setting-option[data-setting="ai-difficulty"]'
+    );
+    aiDifficultyButtons.forEach((button) => {
+      button.addEventListener("click", () => {
         // Update display after AI difficulty changes
         setTimeout(() => this.updateGamePartyDisplay(), 100);
       });
@@ -1400,48 +1637,48 @@ class SpiritualAscensionApp {
   }
 
   async startGame(): Promise<void> {
-    console.log('Starting game with settings:', this.gameSettings);
-    console.log('Local players:', this.localPlayers);
+    console.log("Starting game with settings:", this.gameSettings);
+    console.log("Local players:", this.localPlayers);
 
     // Update game UI with player information
     this.updateGameUI();
 
     // Show game screen
-    this.showScreen('game');
+    this.showScreen("game");
 
     // Start the actual game
     const gameManager = (window as any).gameManager;
-    if (gameManager && typeof gameManager.startBotMatch === 'function') {
+    if (gameManager && typeof gameManager.startBotMatch === "function") {
       await gameManager.startBotMatch();
     } else {
-      console.error('GameManager not available');
-      alert('Game system not available');
-      this.showScreen('play-config');
+      console.error("GameManager not available");
+      alert("Game system not available");
+      this.showScreen("play-config");
     }
   }
 
   updateGameUI(): void {
     // All UI rendering is now handled directly on canvas in game.ts
     // No need to update HTML elements for player info and scores
-    console.log('Game UI update - rendering handled on canvas');
+    console.log("Game UI update - rendering handled on canvas");
   }
 
   stopGame(): void {
-    console.log('Stopping game');
-    
+    console.log("Stopping game");
+
     const gameManager = (window as any).gameManager;
-    if (gameManager && typeof gameManager.stopGame === 'function') {
+    if (gameManager && typeof gameManager.stopGame === "function") {
       gameManager.stopGame();
     }
-    
+
     // Navigation is now handled by gameManager.stopGame()
   }
 
   pauseGame(): void {
-    console.log('Pausing/Resuming game');
-    
+    console.log("Pausing/Resuming game");
+
     const gameManager = (window as any).gameManager;
-    if (gameManager && typeof gameManager.pauseGame === 'function') {
+    if (gameManager && typeof gameManager.pauseGame === "function") {
       gameManager.pauseGame();
     }
   }
@@ -1462,7 +1699,7 @@ class SpiritualAscensionApp {
         this.loadBasicStats(user.userId);
       }
     } catch (error) {
-      console.error('Failed to load profile data:', error);
+      console.error("Failed to load profile data:", error);
       // Fallback to basic user info
       this.updateBasicProfileInfo(user);
     }
@@ -1471,10 +1708,12 @@ class SpiritualAscensionApp {
   private async loadBasicStats(userId: number): Promise<void> {
     const authManager = (window as any).authManager;
     const headers = authManager.getAuthHeaders();
-    
+
     try {
       // Load profile stats
-      const statsResponse = await fetch(`/api/game/stats/${userId}`, { headers });
+      const statsResponse = await fetch(`/api/game/stats/${userId}`, {
+        headers,
+      });
       if (statsResponse.ok) {
         const stats = await statsResponse.json();
         this.updateProfileStats(stats);
@@ -1486,39 +1725,42 @@ class SpiritualAscensionApp {
           win_rate: 0,
           streak: 0,
           tournaments: 0,
-          rank: '--'
+          rank: "--",
         });
       }
     } catch (error) {
-      console.error('Failed to load basic stats:', error);
+      console.error("Failed to load basic stats:", error);
     }
   }
 
   updateBasicProfileInfo(user: User): void {
-    const usernameEl = document.getElementById('profile-username');
-    const userIdEl = document.getElementById('profile-user-id');
-    const memberSinceEl = document.getElementById('profile-member-since');
+    const usernameEl = document.getElementById("profile-username");
+    const userIdEl = document.getElementById("profile-user-id");
+    const memberSinceEl = document.getElementById("profile-member-since");
 
     if (usernameEl) usernameEl.textContent = user.username;
     if (userIdEl) userIdEl.textContent = `User ID: ${user.userId}`;
-    if (memberSinceEl) memberSinceEl.textContent = 'Member since: Recent';
+    if (memberSinceEl) memberSinceEl.textContent = "Member since: Recent";
   }
 
   updateProfileStats(stats: any): void {
     // Update stat values
-    const totalGamesEl = document.getElementById('profile-total-games');
-    const winsEl = document.getElementById('profile-wins');
-    const winRateEl = document.getElementById('profile-win-rate');
-    const streakEl = document.getElementById('profile-streak');
-    const tournamentsEl = document.getElementById('profile-tournaments');
-    const rankEl = document.getElementById('profile-rank');
+    const totalGamesEl = document.getElementById("profile-total-games");
+    const winsEl = document.getElementById("profile-wins");
+    const winRateEl = document.getElementById("profile-win-rate");
+    const streakEl = document.getElementById("profile-streak");
+    const tournamentsEl = document.getElementById("profile-tournaments");
+    const rankEl = document.getElementById("profile-rank");
 
-    if (totalGamesEl) totalGamesEl.textContent = stats.total_games?.toString() || '0';
-    if (winsEl) winsEl.textContent = stats.wins?.toString() || '0';
-    if (winRateEl) winRateEl.textContent = `${Math.round(stats.win_rate || 0)}%`;
-    if (streakEl) streakEl.textContent = stats.streak?.toString() || '0';
-    if (tournamentsEl) tournamentsEl.textContent = stats.tournaments?.toString() || '0';
-    if (rankEl) rankEl.textContent = stats.rank ? `#${stats.rank}` : '#--';
+    if (totalGamesEl)
+      totalGamesEl.textContent = stats.total_games?.toString() || "0";
+    if (winsEl) winsEl.textContent = stats.wins?.toString() || "0";
+    if (winRateEl)
+      winRateEl.textContent = `${Math.round(stats.win_rate || 0)}%`;
+    if (streakEl) streakEl.textContent = stats.streak?.toString() || "0";
+    if (tournamentsEl)
+      tournamentsEl.textContent = stats.tournaments?.toString() || "0";
+    if (rankEl) rankEl.textContent = stats.rank ? `#${stats.rank}` : "#--";
 
     // Update level and experience (calculated from total games)
     const level = Math.floor((stats.total_games || 0) / 10) + 1;
@@ -1526,17 +1768,18 @@ class SpiritualAscensionApp {
     const expNeeded = 10;
     const expPercentage = (expInLevel / expNeeded) * 100;
 
-    const levelEl = document.getElementById('profile-level');
-    const expBarEl = document.getElementById('profile-exp-bar');
-    const expTextEl = document.getElementById('profile-exp-text');
+    const levelEl = document.getElementById("profile-level");
+    const expBarEl = document.getElementById("profile-exp-bar");
+    const expTextEl = document.getElementById("profile-exp-text");
 
     if (levelEl) levelEl.textContent = level.toString();
     if (expBarEl) expBarEl.style.width = `${expPercentage}%`;
-    if (expTextEl) expTextEl.textContent = `${expInLevel * 100} / ${expNeeded * 100} XP`;
+    if (expTextEl)
+      expTextEl.textContent = `${expInLevel * 100} / ${expNeeded * 100} XP`;
   }
 
   updateRecentActivity(activities: any[]): void {
-    const container = document.getElementById('profile-recent-activity');
+    const container = document.getElementById("profile-recent-activity");
     if (!container) return;
 
     if (activities.length === 0) {
@@ -1549,44 +1792,80 @@ class SpiritualAscensionApp {
       return;
     }
 
-    container.innerHTML = activities.slice(0, 5).map(activity => {
-      const timeAgo = this.formatTimeAgo(new Date(activity.created_at || Date.now()));
-      const result = activity.won ? 'Won' : 'Lost';
-      const resultClass = activity.won ? 'win' : 'loss';
-      
-      return `
+    container.innerHTML = activities
+      .slice(0, 5)
+      .map((activity) => {
+        const timeAgo = this.formatTimeAgo(
+          new Date(activity.created_at || Date.now())
+        );
+        const result = activity.won ? "Won" : "Lost";
+        const resultClass = activity.won ? "win" : "loss";
+
+        return `
         <div class="activity-item">
           <span class="activity-text">
-            <span class="${resultClass}">${result}</span> game vs ${activity.opponent || 'AI'}
+            <span class="${resultClass}">${result}</span> game vs ${
+          activity.opponent || "AI"
+        }
           </span>
           <span class="activity-time">${timeAgo}</span>
         </div>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   updateAchievements(): void {
-    const container = document.getElementById('profile-achievements');
+    const container = document.getElementById("profile-achievements");
     if (!container) return;
 
     const achievements = [
-      { icon: '🎮', title: 'First Game', desc: 'Play your first game', unlocked: true },
-      { icon: '🏆', title: 'First Victory', desc: 'Win your first game', unlocked: false },
-      { icon: '🔥', title: 'Hot Streak', desc: 'Win 5 games in a row', unlocked: false },
-      { icon: '💯', title: 'Century', desc: 'Play 100 games', unlocked: false },
-      { icon: '🏅', title: 'Champion', desc: 'Win a tournament', unlocked: false },
-      { icon: '⚡', title: 'Speed Demon', desc: 'Win with fast ball speed', unlocked: false }
+      {
+        icon: "🎮",
+        title: "First Game",
+        desc: "Play your first game",
+        unlocked: true,
+      },
+      {
+        icon: "🏆",
+        title: "First Victory",
+        desc: "Win your first game",
+        unlocked: false,
+      },
+      {
+        icon: "🔥",
+        title: "Hot Streak",
+        desc: "Win 5 games in a row",
+        unlocked: false,
+      },
+      { icon: "💯", title: "Century", desc: "Play 100 games", unlocked: false },
+      {
+        icon: "🏅",
+        title: "Champion",
+        desc: "Win a tournament",
+        unlocked: false,
+      },
+      {
+        icon: "⚡",
+        title: "Speed Demon",
+        desc: "Win with fast ball speed",
+        unlocked: false,
+      },
     ];
 
-    container.innerHTML = achievements.map(achievement => `
-      <div class="achievement-card ${achievement.unlocked ? '' : 'locked'}">
+    container.innerHTML = achievements
+      .map(
+        (achievement) => `
+      <div class="achievement-card ${achievement.unlocked ? "" : "locked"}">
         <div class="achievement-icon">${achievement.icon}</div>
         <div class="achievement-info">
           <h4>${achievement.title}</h4>
           <p>${achievement.desc}</p>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join("");
   }
 
   formatTimeAgo(date: Date): string {
@@ -1599,11 +1878,11 @@ class SpiritualAscensionApp {
     if (days > 0) return `${days}d ago`;
     if (hours > 0) return `${hours}h ago`;
     if (minutes > 0) return `${minutes}m ago`;
-    return 'Just now';
+    return "Just now";
   }
 }
 
 // Initialize the app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   (window as any).app = new SpiritualAscensionApp();
 });
