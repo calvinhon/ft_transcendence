@@ -969,6 +969,12 @@ export class GameManager {
 
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
+    // GUARD: Prevent double starts
+    if (this.isPlaying) {
+      console.warn('⚠️ GameManager: Game already in progress, ignoring duplicate startBotMatch call');
+      return;
+    }
+
     console.log('GameManager: Starting bot match');
   // error to stopGame() here
     // Check if this is CO-OP mode (campaign mode)

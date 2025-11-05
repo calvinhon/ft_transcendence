@@ -1,0 +1,68 @@
+<!-- Local Player Register Modal -->
+<div id="local-player-register-modal" class="modal" style="display: none;">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Add Local Player - Create Account</h2>
+      <button type="button" class="modal-close" id="close-local-player-register-modal" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <p class="modal-description">Create a new account to add a local player to this game session.</p>
+      
+      <form id="local-player-register-form" class="login-form">
+        <div class="form-group">
+          <label for="local-player-register-username" class="form-label">Username</label>
+          <input 
+            type="text" 
+            id="local-player-register-username" 
+            class="login-input" 
+            placeholder="Choose a username" 
+            required 
+            autocomplete="username"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="local-player-register-email" class="form-label">Email</label>
+          <input 
+            type="email" 
+            id="local-player-register-email" 
+            class="login-input" 
+            placeholder="Enter email address" 
+            required 
+            autocomplete="email"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="local-player-register-password" class="form-label">Password</label>
+          <input 
+            type="password" 
+            id="local-player-register-password" 
+            class="login-input" 
+            placeholder="Choose a password (min 6 characters)" 
+            required 
+            minlength="6"
+            autocomplete="new-password"
+          />
+        </div>
+        
+        <div id="local-player-register-error" class="error-message" style="display: none;"></div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-local-player-register">Cancel</button>
+          <button type="submit" class="login-btn">Create Account</button>
+        </div>
+      </form>
+      
+      <div class="login-links">
+        <a href="#" id="local-player-back-to-login-link" class="login-link">
+          <span style="color: #e94560;">▶</span> Already have an account? Login
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

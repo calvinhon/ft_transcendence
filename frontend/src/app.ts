@@ -10,6 +10,7 @@ import { setupLocalPlayerRegisterModal, showLocalPlayerRegisterModal, setupLocal
 
 
 export class App {
+  private addPlayerButtonsInitialized: boolean = false;
   // Handles game mode tab click and initialization
   handleGameModeChange(tab: HTMLElement): void {
     const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
@@ -53,11 +54,7 @@ export class App {
       e.stopPropagation();
       this.removeLocalPlayer(player.id);
     });
-    // Add click handler for player selection
-    playerCard.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.remove-btn')) return;
-      this.togglePlayerSelection(playerCard, 'local');
-    });
+    // Selection is handled via event delegation on the party container
     return playerCard;
   }
 
@@ -90,7 +87,16 @@ export class App {
     // Add local players to TEAM 1
     this.localPlayers.forEach(player => {
       const playerCard = this.createPlayerCard(player);
-      if (team1LocalContainer) team1LocalContainer.appendChild(playerCard);
+      if (team1LocalContainer) {
+        team1LocalContainer.appendChild(playerCard);
+        // restore highlight if this player was previously selected
+        const pid = player.id?.toString();
+        if (pid && this.selectedPlayerIds.has(pid)) {
+          playerCard.classList.add('active');
+        } else {
+          playerCard.classList.remove('active');
+        }
+      }
     });
 
     // TEAM 2 has AI by default, no additional local players for now
@@ -170,6 +176,14 @@ export class App {
     scoreToWin: 3
   };
   private localPlayers: LocalPlayer[] = [];
+  // Persisted set of selected player ids (used to restore highlights after re-renders)
+  private selectedPlayerIds: Set<string> = new Set();
+  // Prevent double-registration of party click handlers
+  private playerSelectionInitialized: boolean = false;
+  // Debounce map to prevent double-clicks on same card
+  private lastClickTimestamps: Map<string, number> = new Map();
+  // Debounce for start game button
+  private lastStartGameClick: number = 0;
 
   // Screen elements
   private loginScreen!: HTMLElement;
@@ -202,21 +216,35 @@ export class App {
   }
 
   setupAddPlayerButtons() {
+    if (this.addPlayerButtonsInitialized) return;
+    this.addPlayerButtonsInitialized = true;
+
     // TEAM 1 add player button
     const addTeam1Btn = document.getElementById('add-team1-player-btn');
     if (addTeam1Btn) {
       addTeam1Btn.addEventListener('click', () => {
+        console.log('🎮 [App] TEAM 1 Add Player button clicked');
         (window as any).addPlayerTeam = 1;
+        console.log('[App] Set addPlayerTeam = 1, calling showLocalPlayerLoginModal()');
         showLocalPlayerLoginModal();
       });
+      console.log('✅ [App] TEAM 1 add player button listener registered');
+    } else {
+      console.warn('⚠️ [App] TEAM 1 add player button (#add-team1-player-btn) not found');
     }
+    
     // TEAM 2 add player button
     const addTeam2Btn = document.getElementById('add-team2-player-btn');
     if (addTeam2Btn) {
       addTeam2Btn.addEventListener('click', () => {
+        console.log('🎮 [App] TEAM 2 Add Player button clicked');
         (window as any).addPlayerTeam = 2;
+        console.log('[App] Set addPlayerTeam = 2, calling showLocalPlayerLoginModal()');
         showLocalPlayerLoginModal();
       });
+      console.log('✅ [App] TEAM 2 add player button listener registered');
+    } else {
+      console.warn('⚠️ [App] TEAM 2 add player button (#add-team2-player-btn) not found');
     }
   }
 
@@ -242,6 +270,10 @@ export class App {
 
     // Setup all event listeners
     this.setupEventListeners();
+
+  // Ensure add-player buttons are wired immediately so UI is responsive
+  // even before optional modal HTML is fetched/inserted.
+  this.setupAddPlayerButtons();
     
     // Setup chat widget (this will also hide it again)
     // this.setupChatWidget();
@@ -371,6 +403,15 @@ export class App {
     });
 
     document.getElementById('add-player-btn')?.addEventListener('click', () => {
+      this.showAddPlayerDialog();
+    });
+
+    // Team-specific add player buttons
+    document.getElementById('add-team1-player-btn')?.addEventListener('click', () => {
+      this.showAddPlayerDialog();
+    });
+
+    document.getElementById('add-team2-player-btn')?.addEventListener('click', () => {
       this.showAddPlayerDialog();
     });
 
@@ -1002,9 +1043,16 @@ export class App {
     
     if (hostPlayerCard) {
       hostPlayerCard.classList.add('active');
+      // persist host selection
+      try {
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+      } catch (e) { /* ignore */ }
     }
     if (aiPlayerCard) {
       aiPlayerCard.classList.add('active');
+      this.selectedPlayerIds.add('ai-player');
     }
     
     // Hide add player buttons for CO-OP mode since it's HOST vs AI only
@@ -1036,9 +1084,16 @@ export class App {
     
     if (hostPlayerCard) {
       hostPlayerCard.classList.remove('active');
+      // remove persisted host selection
+      try {
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        if (user && user.userId) this.selectedPlayerIds.delete(String(user.userId));
+      } catch (e) { /* ignore */ }
     }
     if (aiPlayerCard) {
       aiPlayerCard.classList.remove('active');
+      this.selectedPlayerIds.delete('ai-player');
     }
     
     // Hide CO-OP campaign progress UI
@@ -1061,9 +1116,15 @@ export class App {
 
     if (hostPlayerCard) {
       hostPlayerCard.classList.remove('active');
+      try {
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        if (user && user.userId) this.selectedPlayerIds.delete(String(user.userId));
+      } catch (e) { /* ignore */ }
     }
     if (aiPlayerCard) {
       aiPlayerCard.classList.remove('active');
+      this.selectedPlayerIds.delete('ai-player');
     }
 
     // Hide CO-OP campaign progress UI
@@ -1157,26 +1218,64 @@ export class App {
         '<span class="role-badge ai">Computer</span>',
       '</div>'
     ].join('');
-    // Add click handler for AI player selection
-    playerCard.addEventListener('click', () => this.togglePlayerSelection(playerCard, 'ai'));
+  // Selection handled via event delegation on the party container
+    // ensure AI is tracked as selected by default
+    this.selectedPlayerIds.add('ai-player');
     return playerCard;
   }
 
   togglePlayerSelection(playerCard: HTMLElement, playerType: string): void {
+    // Update selected players state for game logic and persist selection
+    const playerId = playerCard.dataset.playerId || playerType;
+    if (!playerId) return;
+
+    // GUARD: Prevent re-entrant calls during same tick
+    const processingKey = `toggle-${playerId}`;
+    const now = Date.now();
+    const lastProcess = this.lastClickTimestamps.get(processingKey) || 0;
+    if (now - lastProcess < 50) { // 50ms guard window
+      console.warn('[togglePlayerSelection] Re-entrant call blocked for', playerId);
+      return;
+    }
+    this.lastClickTimestamps.set(processingKey, now);
+
+    // Check current state BEFORE toggling
+    const wasActive = playerCard.classList.contains('active');
+    
+    // Toggle the active class
     playerCard.classList.toggle('active');
     
-    // Update selected players state for game logic
-    const playerId = playerCard.dataset.playerId || playerType;
+    // Force immediate reflow to ensure DOM updates before checking state
+    void playerCard.offsetHeight;
     
-    if (playerCard.classList.contains('active')) {
-      console.log(`Player ${playerId} selected for game`);
+    const isNowActive = playerCard.classList.contains('active');
+
+    // Update state based on NEW active status
+    if (isNowActive) {
+      this.selectedPlayerIds.add(playerId);
+      console.log(`✅ Player ${playerId} selected for game`);
     } else {
-      console.log(`Player ${playerId} deselected from game`);
+      this.selectedPlayerIds.delete(playerId);
+      console.log(`❌ Player ${playerId} deselected from game`);
+    }
+
+    // Debug: log classes and computed styles
+    try {
+      const cs = window.getComputedStyle(playerCard);
+      console.log('[toggle]', wasActive ? 'WAS active' : 'was INACTIVE', '→', isNowActive ? 'NOW active' : 'now INACTIVE', 
+                  'classList=', Array.from(playerCard.classList), 
+                  'bg=', cs.backgroundColor, 'transform=', cs.transform);
+    } catch (e) {
+      // ignore
     }
   }
 
   initializePlayerSelection(): void {
-    // Set up AI difficulty change handler to update AI player display
+    // Host and AI selection are handled by event delegation on the party container
+    if (this.playerSelectionInitialized) return;
+    this.playerSelectionInitialized = true;
+
+    // Set up AI difficulty change handler to update AI player display (only once)
     const aiDifficultyButtons = document.querySelectorAll('.setting-option[data-setting="ai-difficulty"]');
     aiDifficultyButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -1185,19 +1284,82 @@ export class App {
       });
     });
 
-    // Add click handlers for host and AI player cards
-    const hostPlayerCard = document.getElementById('host-player-card');
-    if (hostPlayerCard) {
-      hostPlayerCard.addEventListener('click', () => this.togglePlayerSelection(hostPlayerCard, 'host'));
-    }
+    const partyContainer = document.getElementById('game-party-list') || document;
+    partyContainer.addEventListener('click', (e: Event) => {
+      const me = e as MouseEvent;
+      const target = (me.target || (e as any).srcElement) as HTMLElement;
+      
+      // Allow clicks on add-player buttons to pass through
+      if (target.closest('.add-player-btn')) {
+        console.debug('[App] Add player button clicked, allowing event to propagate');
+        return;
+      }
+      
+      // Ignore clicks on remove buttons
+      if (target.closest('.remove-player-btn') || target.closest('.remove-btn')) return;
+      
+      const card = target.closest('.player-card') as HTMLElement | null;
+      if (!card) return;
 
-    const aiPlayerCard = document.getElementById('ai-player-card');
-    if (aiPlayerCard) {
-      aiPlayerCard.addEventListener('click', () => this.togglePlayerSelection(aiPlayerCard, 'ai'));
-    }
+      // IMMEDIATELY stop propagation to prevent double-firing (only for player cards)
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      // CRITICAL: Check if we're inside the party container to avoid processing
+      // clicks that bubble up from outside
+      const isInsideParty = card.closest('#game-party-list, #team1-list, #team2-list');
+      if (!isInsideParty) {
+        console.debug('[App] Click outside party container, ignoring');
+        return;
+      }
+
+      // DEBOUNCE: Ignore rapid clicks on same card (within 300ms)
+      const cardId = card.id || card.dataset.playerId || 'unknown';
+      const now = Date.now();
+      const lastClick = this.lastClickTimestamps.get(cardId) || 0;
+      if (now - lastClick < 300) {
+        console.debug('[App] Ignoring duplicate click within 300ms');
+        return;
+      }
+      this.lastClickTimestamps.set(cardId, now);
+
+      // Debug: log click target and classes to help diagnose selection issues
+      try {
+        console.debug('[App] player-card clicked', card, 'classes=', Array.from(card.classList));
+      } catch (e) { /* ignore */ }
+
+      // Determine player type for togglePlayerSelection
+      let playerType = 'local';
+      if (card.id === 'host-player-card' || card.classList.contains('host-player')) playerType = 'host';
+      else if (card.id === 'ai-player-card' || card.classList.contains('ai-player')) playerType = 'ai';
+
+      // Delegate to the App's selection logic so logs and state updates run once
+      try {
+        this.togglePlayerSelection(card, playerType);
+      } catch (err) {
+        console.error('[App] togglePlayerSelection failed:', err);
+        // As a fallback, toggle class directly
+        card.classList.toggle('active');
+      }
+    }, { capture: true }); // Use capture phase to catch event early
   }
 
   async startGame(): Promise<void> {
+    // DEBOUNCE: Prevent rapid double-clicks on start button (within 1 second)
+    const now = Date.now();
+    if (now - this.lastStartGameClick < 1000) {
+      console.warn('⚠️ App: Ignoring rapid start-game click (debounced)');
+      return;
+    }
+    this.lastStartGameClick = now;
+
+    // GUARD: Prevent double starts
+    const gameManager = (window as any).gameManager;
+    if (gameManager && gameManager.isPlaying) {
+      console.warn('⚠️ App: Game already in progress, ignoring duplicate startGame call');
+      return;
+    }
+
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
 
@@ -1208,7 +1370,6 @@ export class App {
   this.router.navigate('game');
 
     // Start the actual game
-    const gameManager = (window as any).gameManager;
     if (gameManager && typeof gameManager.startBotMatch === 'function') {
       await gameManager.startBotMatch();
     } else {

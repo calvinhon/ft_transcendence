@@ -9,9 +9,9 @@
     "clean": "rimraf dist",
     "prebuild": "npm run clean"
   },
-  "dependencies": {},
   "devDependencies": {
-    "vite": "^4.3.9",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "typescript": "^5.9.3",
+    "vite": "^4.3.9"
   }
 }
