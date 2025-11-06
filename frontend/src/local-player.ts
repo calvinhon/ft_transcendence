@@ -1,5 +1,20 @@
+// Track if modals have been initialized to prevent duplicate event listeners
+let loginModalInitialized = false;
+let registerModalInitialized = false;
+
+// Track submission state to prevent double submits
+let isSubmittingLogin = false;
+let isSubmittingRegister = false;
+
 export function setupLocalPlayerLoginModal(app: any) {
   console.log('🔧 [LocalPlayer] setupLocalPlayerLoginModal() called');
+  
+  // Prevent duplicate initialization
+  if (loginModalInitialized) {
+    console.log('[LocalPlayer] Login modal already initialized, skipping');
+    return;
+  }
+  
   const loginModal = document.getElementById('local-player-login-modal') as HTMLElement;
   const loginForm = document.getElementById('local-player-login-form') as HTMLFormElement;
   const error = document.getElementById('local-player-login-error') as HTMLElement;
@@ -12,9 +27,21 @@ export function setupLocalPlayerLoginModal(app: any) {
     return;
   }
   
+  // Mark as initialized before adding listeners
+  loginModalInitialized = true;
+  console.log('[LocalPlayer] Login modal marked as initialized');
+  
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    console.log('📝 [LocalPlayer] Login form submitted');
+    
+    // Prevent double submission
+    if (isSubmittingLogin) {
+      console.warn('⚠️ [LocalPlayer] Login already in progress, ignoring duplicate submit');
+      return;
+    }
+    
+    isSubmittingLogin = true;
+    console.log('📝 [LocalPlayer] Login form submitted, isSubmittingLogin set to true');
     
     const emailInput = document.getElementById('local-player-login-email') as HTMLInputElement;
     const passwordInput = document.getElementById('local-player-login-password') as HTMLInputElement;
@@ -27,97 +54,169 @@ export function setupLocalPlayerLoginModal(app: any) {
       error!.textContent = 'Please fill in all fields.';
       error!.style.display = 'block';
       console.warn('⚠️ [LocalPlayer] Missing email or password');
+      isSubmittingLogin = false;  // Reset guard
       return;
     }
-    // Duplicate check: host, both teams
-    const hostEmail = (window as any).authManager?.getCurrentUser()?.email;
-    const team1List = document.getElementById('team1-list');
-    const team2List = document.getElementById('team2-list');
+    
+    // Enhanced duplicate check: host player and all local players (by email/username and userId)
+    const hostUser = (window as any).authManager?.getCurrentUser();
+    const hostEmail = hostUser?.email;
+    const hostUsername = hostUser?.username;
+    const hostUserId = hostUser?.userId?.toString();
+    
+    console.log('[LocalPlayer] Duplicate check - Host:', { email: hostEmail, username: hostUsername, userId: hostUserId });
+    console.log('[LocalPlayer] Duplicate check - Input email:', email);
+    
     let duplicate = false;
-    if (hostEmail && hostEmail === email) duplicate = true;
-    if (team1List) {
-      team1List.querySelectorAll('.player-card.local-player').forEach(card => {
-        if ((card as HTMLElement).dataset.email === email) duplicate = true;
+    let duplicateReason = '';
+    
+    // Check against host player
+    if (hostEmail && (hostEmail === email || hostUsername === email)) {
+      duplicate = true;
+      duplicateReason = 'Host player is already using this email/username';
+    }
+    
+    // Check against local players array
+    if (!duplicate && app.localPlayers) {
+      app.localPlayers.forEach((player: any) => {
+        if (player.email === email || player.username === email) {
+          duplicate = true;
+          duplicateReason = `Player ${player.username} is already using this email/username`;
+        }
       });
     }
-    if (team2List) {
-      team2List.querySelectorAll('.player-card.local-player').forEach(card => {
-        if ((card as HTMLElement).dataset.email === email) duplicate = true;
-      });
+    
+    // Also check DOM elements as backup (in case localPlayers array is out of sync)
+    if (!duplicate) {
+      const team1List = document.getElementById('team1-list');
+      const team2List = document.getElementById('team2-list');
+      
+      if (team1List) {
+        team1List.querySelectorAll('.player-card.local-player').forEach(card => {
+          const cardEmail = (card as HTMLElement).dataset.email;
+          if (cardEmail && cardEmail === email) {
+            duplicate = true;
+            duplicateReason = 'This player is already in TEAM 1';
+          }
+        });
+      }
+      if (team2List) {
+        team2List.querySelectorAll('.player-card.local-player').forEach(card => {
+          const cardEmail = (card as HTMLElement).dataset.email;
+          if (cardEmail && cardEmail === email) {
+            duplicate = true;
+            duplicateReason = 'This player is already in TEAM 2';
+          }
+        });
+      }
     }
+    
     if (duplicate) {
-      error!.textContent = 'This email is already used by another player.';
+      error!.textContent = duplicateReason || 'This player is already added.';
       error!.style.display = 'block';
-      console.warn('⚠️ [LocalPlayer] Duplicate email detected:', email);
+      console.warn('⚠️ [LocalPlayer] Duplicate detected:', duplicateReason);
+      isSubmittingLogin = false;  // Reset guard
       return;
     }
+    
     const authManager = (window as any).authManager;
     if (!authManager) {
       error!.textContent = 'Auth system not available.';
       error!.style.display = 'block';
       console.error('❌ [LocalPlayer] AuthManager not available');
+      isSubmittingLogin = false;  // Reset guard
       return;
     }
     
     console.log('[LocalPlayer] Attempting authentication...');
-    const result = await authManager.login(email, password);
-    console.log('[LocalPlayer] Auth result:', result.success ? '✅ Success' : '❌ Failed', result);
     
-    if (result.success && result.data) {
+    try {
+      const result = await authManager.login(email, password);
+      console.log('[LocalPlayer] Auth result:', result.success ? '✅ Success' : '❌ Failed', result);
+      console.log('[LocalPlayer] result.success:', result.success);
+      console.log('[LocalPlayer] result.data:', result.data);
+      console.log('[LocalPlayer] Checking condition: result.success && result.data =', result.success && result.data);
+      
+      if (result.success && result.data) {
+      console.log('[LocalPlayer] ✅ Entered success block!');
       if (!app.localPlayers) app.localPlayers = [];
       // Add to correct team
-      const playerObj = {
-        id: result.data.userId.toString(),
-        username: result.data.username,
-        isCurrentUser: false,
-        userId: result.data.userId,
-        token: result.data.token || '',
-        email: result.data.email || email
-      };
       let addPlayerTeam = 1;
       if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
       
-      console.log('[LocalPlayer] Adding player to TEAM', addPlayerTeam, '- Player:', playerObj);
+      console.log('[LocalPlayer] Creating player object...');
+      console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));
       
-      if (addPlayerTeam === 1) {
-        app.localPlayers.push(playerObj);
-        // Update TEAM 1 UI
-        const team1List = document.getElementById('team1-list');
-        console.log('[LocalPlayer] TEAM 1 list element:', team1List ? '✅ Found' : '❌ Not found');
-        if (team1List) {
-            const card = document.createElement('div');
-            card.className = 'player-card local-player active';
-            card.dataset.playerId = playerObj.id;
-            card.dataset.email = playerObj.email;
-            card.innerHTML = `<div class="player-avatar"><i class="fas fa-user"></i></div><div class="player-info"><span class="player-name">${playerObj.username}</span></div>`;
-            // Attach click handler so newly created cards can be toggled
-            team1List.appendChild(card);
-            console.log('✅ [LocalPlayer] Player card added to TEAM 1');
+      // Extract user data from nested structure (result.data.user)
+      const userData = result.data.user || result.data.data || result.data;
+      console.log('[LocalPlayer] Extracted userData:', userData);
+      
+      if (!userData || !userData.userId) {
+        throw new Error('User data is missing userId. Please check the response structure.');
+      }
+      
+      const playerObj = {
+        id: userData.userId.toString(),
+        username: userData.username,
+        isCurrentUser: false,
+        userId: userData.userId,
+        token: result.data.token || '',
+        email: userData.email || email,
+        team: addPlayerTeam  // Store which team this player belongs to
+      };        console.log('[LocalPlayer] Adding player to TEAM', addPlayerTeam, '- Player:', playerObj);
+      
+      // Add player to localPlayers array
+      app.localPlayers.push(playerObj);
+      
+      // Mark player as selected (highlighted)
+      const playerId = playerObj.id;
+      if (!app.selectedPlayerIds) app.selectedPlayerIds = new Set();
+      app.selectedPlayerIds.add(playerId);
+      console.log('[LocalPlayer] Player marked as selected:', playerId);
+      
+      // Reset submitting guard before closing modal
+      isSubmittingLogin = false;
+      console.log('[LocalPlayer] Login submitting guard reset');
+      
+      // Close modal - use hideLocalPlayerLoginModal for consistency
+      hideLocalPlayerLoginModal();
+      console.log('🎉 [LocalPlayer] Login successful, modal hidden via hideLocalPlayerLoginModal()');
+      
+      // Check current route before navigating
+      const currentRoute = app.router ? app.router.getCurrentRoute() : 'unknown';
+      console.log('[LocalPlayer] Current route:', currentRoute);
+      
+      // Navigate to play-config if not already there
+      if (app.router) {
+        if (currentRoute !== 'play-config') {
+          console.log('[LocalPlayer] Navigating to play-config...');
+          app.router.navigate('play-config');
+          console.log('[LocalPlayer] Navigation complete');
+        } else {
+          console.log('[LocalPlayer] Already on play-config, no navigation needed');
         }
       } else {
-        // TEAM 2
-        app.localPlayers.push(playerObj);
-        const team2List = document.getElementById('team2-list');
-        console.log('[LocalPlayer] TEAM 2 list element:', team2List ? '✅ Found' : '❌ Not found');
-        if (team2List) {
-            const card = document.createElement('div');
-            card.className = 'player-card local-player active';
-            card.dataset.playerId = playerObj.id;
-            card.dataset.email = playerObj.email;
-            card.innerHTML = `<div class="player-avatar"><i class="fas fa-user"></i></div><div class="player-info"><span class="player-name">${playerObj.username}</span></div>`;
-            team2List.appendChild(card);
-            console.log('✅ [LocalPlayer] Player card added to TEAM 2');
-        }
+        console.warn('[LocalPlayer] No router available!');
       }
-      loginModal.style.display = 'none';
-      console.log('🎉 [LocalPlayer] Login successful, modal closed');
+      
+      // Update the party display to show the new player with highlighting
+      console.log('[LocalPlayer] Scheduling updateGamePartyDisplay in 50ms...');
       setTimeout(() => {
-        app.router.navigate('play-config');
-      }, 100);
+        console.log('[LocalPlayer] Executing updateGamePartyDisplay...');
+        app.updateGamePartyDisplay();
+        console.log('[LocalPlayer] ✅ Party display updated with new player');
+      }, 50);
     } else {
       error!.textContent = result.error || 'Login failed.';
       error!.style.display = 'block';
       console.error('❌ [LocalPlayer] Login failed:', result.error);
+      isSubmittingLogin = false;  // Reset guard on error
+    }
+    } catch (err) {
+      console.error('❌ [LocalPlayer] Exception during login:', err);
+      error!.textContent = 'An error occurred during login: ' + (err as Error).message;
+      error!.style.display = 'block';
+      isSubmittingLogin = false;
     }
   });
   // Forgot password link
@@ -166,22 +265,16 @@ export function setupLocalPlayerLoginModal(app: any) {
     showLocalPlayerRegisterModal();
   });
   
-  // Cancel button
-  document.getElementById('cancel-local-player-login')?.addEventListener('click', () => {
-    console.log('[LocalPlayer] Login cancelled');
-    loginModal.style.display = 'none';
-  });
-  
   // Close button (X)
   document.getElementById('close-local-player-login-modal')?.addEventListener('click', () => {
     console.log('[LocalPlayer] Login modal closed via X button');
-    loginModal.style.display = 'none';
+    hideLocalPlayerLoginModal();
   });
   
   // Modal overlay click to close
   loginModal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
     console.log('[LocalPlayer] Login modal closed via overlay click');
-    loginModal.style.display = 'none';
+    hideLocalPlayerLoginModal();
   });
 }
 // Register a new local player, update the player list, and preserve highlights
@@ -273,9 +366,13 @@ export function addLocalPlayerToList(localPlayers: LocalPlayer[], user: any, tok
 
 export function setupLocalPlayerRegisterModal(app: any) {
   console.log('🔧 [LocalPlayer] setupLocalPlayerRegisterModal() called');
-  // Track which team is being added to
-  let addPlayerTeam = 1;
-  if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+  
+  // Prevent duplicate initialization
+  if (registerModalInitialized) {
+    console.log('[LocalPlayer] Register modal already initialized, skipping');
+    return;
+  }
+  
   const modal = document.getElementById('local-player-register-modal') as HTMLElement;
   const form = document.getElementById('local-player-register-form') as HTMLFormElement;
   const error = document.getElementById('local-player-register-error') as HTMLElement;
@@ -288,9 +385,21 @@ export function setupLocalPlayerRegisterModal(app: any) {
     return;
   }
   
+  // Mark as initialized before adding listeners
+  registerModalInitialized = true;
+  console.log('[LocalPlayer] Register modal marked as initialized');
+  
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    console.log('📝 [LocalPlayer] Register form submitted');
+    
+    // Prevent double submission
+    if (isSubmittingRegister) {
+      console.warn('⚠️ [LocalPlayer] Registration already in progress, ignoring duplicate submit');
+      return;
+    }
+    
+    isSubmittingRegister = true;
+    console.log('📝 [LocalPlayer] Register form submitted, isSubmittingRegister set to true');
     
     const usernameInput = document.getElementById('local-player-register-username') as HTMLInputElement;
     const emailInput = document.getElementById('local-player-register-email') as HTMLInputElement;
@@ -305,113 +414,187 @@ export function setupLocalPlayerRegisterModal(app: any) {
       error!.textContent = 'Please fill in all fields.';
       error!.style.display = 'block';
       console.warn('⚠️ [LocalPlayer] Missing required fields');
+      isSubmittingRegister = false;  // Reset guard
       return;
     }
     if (password.length < 6) {
       error!.textContent = 'Password must be at least 6 characters.';
       error!.style.display = 'block';
       console.warn('⚠️ [LocalPlayer] Password too short');
+      isSubmittingRegister = false;  // Reset guard
       return;
     }
-    // Duplicate check: host, both teams
-    const hostEmail = (window as any).authManager?.getCurrentUser()?.email;
-    const team1List = document.getElementById('team1-list');
-    const team2List = document.getElementById('team2-list');
+    
+    // Enhanced duplicate check: host player and all local players (by email/username and userId)
+    const hostUser = (window as any).authManager?.getCurrentUser();
+    const hostEmail = hostUser?.email;
+    const hostUsername = hostUser?.username;
+    const hostUserId = hostUser?.userId?.toString();
+    
+    console.log('[LocalPlayer] Duplicate check - Host:', { email: hostEmail, username: hostUsername, userId: hostUserId });
+    console.log('[LocalPlayer] Duplicate check - Input email:', email, 'username:', username);
+    
     let duplicate = false;
-    if (hostEmail && hostEmail === email) duplicate = true;
-    if (team1List) {
-      team1List.querySelectorAll('.player-card.local-player').forEach(card => {
-        if ((card as HTMLElement).dataset.email === email) duplicate = true;
+    let duplicateReason = '';
+    
+    // Check against host player (email or username match)
+    if ((hostEmail && hostEmail === email) || (hostUsername && hostUsername === username)) {
+      duplicate = true;
+      duplicateReason = 'Host player is already using this email or username';
+    }
+    
+    // Check against local players array
+    if (!duplicate && app.localPlayers) {
+      app.localPlayers.forEach((player: any) => {
+        if (player.email === email) {
+          duplicate = true;
+          duplicateReason = `Email already used by ${player.username}`;
+        }
+        if (player.username === username) {
+          duplicate = true;
+          duplicateReason = `Username already taken by another player`;
+        }
       });
     }
-    if (team2List) {
-      team2List.querySelectorAll('.player-card.local-player').forEach(card => {
-        if ((card as HTMLElement).dataset.email === email) duplicate = true;
-      });
+    
+    // Also check DOM elements as backup (in case localPlayers array is out of sync)
+    if (!duplicate) {
+      const team1List = document.getElementById('team1-list');
+      const team2List = document.getElementById('team2-list');
+      
+      if (team1List) {
+        team1List.querySelectorAll('.player-card.local-player').forEach(card => {
+          const cardEmail = (card as HTMLElement).dataset.email;
+          if (cardEmail && cardEmail === email) {
+            duplicate = true;
+            duplicateReason = 'This email is already in TEAM 1';
+          }
+        });
+      }
+      if (team2List) {
+        team2List.querySelectorAll('.player-card.local-player').forEach(card => {
+          const cardEmail = (card as HTMLElement).dataset.email;
+          if (cardEmail && cardEmail === email) {
+            duplicate = true;
+            duplicateReason = 'This email is already in TEAM 2';
+          }
+        });
+      }
     }
+    
     if (duplicate) {
-      error!.textContent = 'This email is already used by another player.';
+      error!.textContent = duplicateReason || 'This player is already added.';
       error!.style.display = 'block';
-      console.warn('⚠️ [LocalPlayer] Duplicate email detected:', email);
+      console.warn('⚠️ [LocalPlayer] Duplicate detected:', duplicateReason);
+      isSubmittingRegister = false;  // Reset guard
       return;
     }
+    
     const authManager = (window as any).authManager;
     if (!authManager) {
       error!.textContent = 'Auth system not available.';
       error!.style.display = 'block';
       console.error('❌ [LocalPlayer] AuthManager not available');
+      isSubmittingRegister = false;  // Reset guard
       return;
     }
     
     console.log('[LocalPlayer] Attempting registration...');
-    const result = await authManager.register(username, email, password);
-    console.log('[LocalPlayer] Registration result:', result.success ? '✅ Success' : '❌ Failed', result);
     
-    if (result.success && result.data) {
+    try {
+      const result = await authManager.register(username, email, password);
+      console.log('[LocalPlayer] Registration result:', result.success ? '✅ Success' : '❌ Failed', result);
+      console.log('[LocalPlayer] result.success:', result.success);
+      console.log('[LocalPlayer] result.data:', result.data);
+      console.log('[LocalPlayer] Checking condition: result.success && result.data =', result.success && result.data);
+      
+      if (result.success && result.data) {
+      console.log('[LocalPlayer] ✅ Entered register success block!');
       if (!app.localPlayers) app.localPlayers = [];
       // Add to correct team
+      let addPlayerTeam = 1;
+      if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+      
+      console.log('[LocalPlayer] Creating player object for registration...');
+      console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));
+      
+      // Extract user data from nested structure (result.data.data for registration)
+      const userData = result.data.data || result.data.user || result.data;
+      console.log('[LocalPlayer] Extracted userData:', userData);
+      
+      if (!userData || !userData.userId) {
+        throw new Error('User data is missing userId. Please check the response structure.');
+      }
+      
       const playerObj = {
-        id: result.data.userId.toString(),
-        username: result.data.username,
+        id: userData.userId.toString(),
+        username: userData.username,
         isCurrentUser: false,
-        userId: result.data.userId,
+        userId: userData.userId,
         token: result.data.token || '',
-        email: result.data.email || email
-      };
+        email: userData.email || email,
+        team: addPlayerTeam  // Store which team this player belongs to
+      };        console.log('[LocalPlayer] Adding new player to TEAM', addPlayerTeam, '- Player:', playerObj);
       
-      console.log('[LocalPlayer] Adding new player to TEAM', addPlayerTeam, '- Player:', playerObj);
+      // Add player to localPlayers array
+      app.localPlayers.push(playerObj);
       
-      if (addPlayerTeam === 1) {
-        app.localPlayers.push(playerObj);
-        // Update TEAM 1 UI
-        const team1List = document.getElementById('team1-list');
-        console.log('[LocalPlayer] TEAM 1 list element:', team1List ? '✅ Found' : '❌ Not found');
-        if (team1List) {
-          const card = document.createElement('div');
-          card.className = 'player-card local-player active';
-          card.dataset.playerId = playerObj.id;
-          card.dataset.email = playerObj.email;
-          card.innerHTML = `<div class="player-avatar"><i class="fas fa-user"></i></div><div class="player-info"><span class="player-name">${playerObj.username}</span></div>`;
-          team1List.appendChild(card);
-          console.log('✅ [LocalPlayer] Player card added to TEAM 1');
+      // Mark player as selected (highlighted)
+      const playerId = playerObj.id;
+      if (!app.selectedPlayerIds) app.selectedPlayerIds = new Set();
+      app.selectedPlayerIds.add(playerId);
+      console.log('[LocalPlayer] Player marked as selected:', playerId);
+      
+      // Reset submitting guard before closing modal
+      isSubmittingRegister = false;
+      console.log('[LocalPlayer] Register submitting guard reset');
+      
+      // Close modal - use hideLocalPlayerRegisterModal for consistency
+      hideLocalPlayerRegisterModal();
+      console.log('🎉 [LocalPlayer] Registration successful, modal hidden via hideLocalPlayerRegisterModal()');
+      
+      // Check current route before navigating
+      const currentRoute = app.router ? app.router.getCurrentRoute() : 'unknown';
+      console.log('[LocalPlayer] Current route:', currentRoute);
+      
+      // Navigate to play-config if not already there
+      if (app.router) {
+        if (currentRoute !== 'play-config') {
+          console.log('[LocalPlayer] Navigating to play-config...');
+          app.router.navigate('play-config');
+          console.log('[LocalPlayer] Navigation complete');
+        } else {
+          console.log('[LocalPlayer] Already on play-config, no navigation needed');
         }
       } else {
-        // TEAM 2
-        app.localPlayers.push(playerObj);
-        const team2List = document.getElementById('team2-list');
-        console.log('[LocalPlayer] TEAM 2 list element:', team2List ? '✅ Found' : '❌ Not found');
-        if (team2List) {
-          const card = document.createElement('div');
-          card.className = 'player-card local-player active';
-          card.dataset.playerId = playerObj.id;
-          card.dataset.email = playerObj.email;
-          card.innerHTML = `<div class="player-avatar"><i class="fas fa-user"></i></div><div class="player-info"><span class="player-name">${playerObj.username}</span></div>`;
-          team2List.appendChild(card);
-          console.log('✅ [LocalPlayer] Player card added to TEAM 2');
-        }
+        console.warn('[LocalPlayer] No router available!');
       }
-      modal.style.display = 'none';
-      console.log('🎉 [LocalPlayer] Registration successful, modal closed');
+      
+      // Update the party display to show the new player with highlighting
+      console.log('[LocalPlayer] Scheduling updateGamePartyDisplay in 50ms...');
       setTimeout(() => {
-        app.router.navigate('play-config');
-      }, 100);
+        console.log('[LocalPlayer] Executing updateGamePartyDisplay...');
+        app.updateGamePartyDisplay();
+        console.log('[LocalPlayer] ✅ Party display updated with new player');
+      }, 50);
     } else {
       error!.textContent = result.error || 'Registration failed.';
       error!.style.display = 'block';
       console.error('❌ [LocalPlayer] Registration failed:', result.error);
+      isSubmittingRegister = false;  // Reset guard on error
     }
-  });
-  
-  // Cancel button
-  document.getElementById('cancel-local-player-register')?.addEventListener('click', () => {
-    console.log('[LocalPlayer] Registration cancelled');
-    modal.style.display = 'none';
+    } catch (err) {
+      console.error('❌ [LocalPlayer] Exception during registration:', err);
+      error!.textContent = 'An error occurred during registration: ' + (err as Error).message;
+      error!.style.display = 'block';
+      isSubmittingRegister = false;
+    }
   });
   
   // Close button (X)
   document.getElementById('close-local-player-register-modal')?.addEventListener('click', () => {
     console.log('[LocalPlayer] Register modal closed via X button');
-    modal.style.display = 'none';
+    hideLocalPlayerRegisterModal();
   });
   
   // Back to login link
@@ -425,12 +608,17 @@ export function setupLocalPlayerRegisterModal(app: any) {
   // Modal overlay click to close
   modal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
     console.log('[LocalPlayer] Register modal closed via overlay click');
-    modal.style.display = 'none';
+    hideLocalPlayerRegisterModal();
   });
 }
 
 function showLocalPlayerLoginModal() {
   console.log('🔓 [LocalPlayer] showLocalPlayerLoginModal() called');
+  
+  // Reset the submitting guard when modal opens
+  isSubmittingLogin = false;
+  console.log('[LocalPlayer] Login submitting guard reset to false');
+  
   const modal = document.getElementById('local-player-login-modal') as HTMLElement;
   const form = document.getElementById('local-player-login-form') as HTMLFormElement;
   const error = document.getElementById('local-player-login-error') as HTMLElement;
@@ -441,8 +629,9 @@ function showLocalPlayerLoginModal() {
   console.log('[LocalPlayer] Current addPlayerTeam:', (window as any).addPlayerTeam);
   
   if (modal) {
-    modal.style.display = 'block';
-    console.log('[LocalPlayer] Modal display set to block');
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+    console.log('[LocalPlayer] Modal display set to flex (centered)');
   }
   if (error) {
     error.style.display = 'none';
@@ -452,15 +641,35 @@ function showLocalPlayerLoginModal() {
 }
 
 function hideLocalPlayerLoginModal() {
+  console.log('🔒 [LocalPlayer] hideLocalPlayerLoginModal() called');
   const modal = document.getElementById('local-player-login-modal') as HTMLElement;
-  if (modal) modal.style.display = 'none';
+  console.log('[LocalPlayer] Modal element found:', modal ? '✅ Yes' : '❌ No');
+  if (modal) {
+    console.log('[LocalPlayer] Current modal display style:', modal.style.display);
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    console.log('[LocalPlayer] Modal display set to: none, hidden class added');
+    console.log('[LocalPlayer] Verified modal display:', modal.style.display);
+    console.log('[LocalPlayer] Verified modal classList:', modal.classList.toString());
+  } else {
+    console.error('[LocalPlayer] ❌ Cannot hide modal - element not found!');
+  }
 }
 
 function showLocalPlayerRegisterModal() {
+  console.log('🔓 [LocalPlayer] showLocalPlayerRegisterModal() called');
+  
+  // Reset the submitting guard when modal opens
+  isSubmittingRegister = false;
+  console.log('[LocalPlayer] Register submitting guard reset to false');
+  
   const modal = document.getElementById('local-player-register-modal') as HTMLElement;
   const form = document.getElementById('local-player-register-form') as HTMLFormElement;
   const error = document.getElementById('local-player-register-error') as HTMLElement;
-  if (modal) modal.style.display = 'block';
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+  }
   if (error) {
     error.style.display = 'none';
     error.textContent = '';
@@ -469,8 +678,19 @@ function showLocalPlayerRegisterModal() {
 }
 
 function hideLocalPlayerRegisterModal() {
+  console.log('🔒 [LocalPlayer] hideLocalPlayerRegisterModal() called');
   const modal = document.getElementById('local-player-register-modal') as HTMLElement;
-  if (modal) modal.style.display = 'none';
+  console.log('[LocalPlayer] Modal element found:', modal ? '✅ Yes' : '❌ No');
+  if (modal) {
+    console.log('[LocalPlayer] Current modal display style:', modal.style.display);
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+    console.log('[LocalPlayer] Modal display set to: none, hidden class added');
+    console.log('[LocalPlayer] Verified modal display:', modal.style.display);
+    console.log('[LocalPlayer] Verified modal classList:', modal.classList.toString());
+  } else {
+    console.error('[LocalPlayer] ❌ Cannot hide modal - element not found!');
+  }
 }
 
 // Export them

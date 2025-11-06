@@ -152,10 +152,13 @@ html {
 .modal-title {
   margin: 0;
   color: var(--text);
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .modal-close-btn,

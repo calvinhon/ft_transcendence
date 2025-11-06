@@ -39,6 +39,7 @@ export class App {
     const playerCard = document.createElement('div');
     playerCard.className = 'player-card local-player';
     playerCard.dataset.playerId = player.id;
+    playerCard.dataset.email = player.email || ''; // Store email for duplicate checking
     playerCard.innerHTML = [
       '<div class="player-avatar"><i class="fas fa-home"></i></div>',
       '<div class="player-info">',
@@ -72,35 +73,40 @@ export class App {
     if (team1LocalContainer) team1LocalContainer.innerHTML = '';
 
     // For TEAM 2, clear any local players after AI
-    const team2LocalContainer = document.createElement('div');
-    team2LocalContainer.id = 'team2-local-players';
-    team2LocalContainer.className = 'local-players';
-    // Remove existing local players container if exists
-    const existingTeam2Local = document.getElementById('team2-local-players');
-    if (existingTeam2Local) existingTeam2Local.remove();
-    // Insert after AI card
-    const aiCard = document.getElementById('ai-player-card');
-    if (aiCard && aiCard.parentNode) {
-      aiCard.parentNode.insertBefore(team2LocalContainer, aiCard.nextSibling);
+    let team2LocalContainer = document.getElementById('team2-local-players');
+    if (team2LocalContainer) {
+      team2LocalContainer.innerHTML = '';
+    } else {
+      // Create container if it doesn't exist
+      team2LocalContainer = document.createElement('div');
+      team2LocalContainer.id = 'team2-local-players';
+      team2LocalContainer.className = 'local-players';
+      // Insert after AI card
+      const aiCard = document.getElementById('ai-player-card');
+      if (aiCard && aiCard.parentNode) {
+        aiCard.parentNode.insertBefore(team2LocalContainer, aiCard.nextSibling);
+      }
     }
 
-    // Add local players to TEAM 1
+    // Add local players to their respective teams
     this.localPlayers.forEach(player => {
       const playerCard = this.createPlayerCard(player);
-      if (team1LocalContainer) {
-        team1LocalContainer.appendChild(playerCard);
-        // restore highlight if this player was previously selected
-        const pid = player.id?.toString();
-        if (pid && this.selectedPlayerIds.has(pid)) {
+      const playerId = player.id?.toString();
+      
+      // Determine which team container to use
+      const team = (player as any).team || 1; // Default to team 1 if not specified
+      const targetContainer = team === 2 ? team2LocalContainer : team1LocalContainer;
+      
+      if (targetContainer) {
+        targetContainer.appendChild(playerCard);
+        // Restore highlight if this player is selected
+        if (playerId && this.selectedPlayerIds.has(playerId)) {
           playerCard.classList.add('active');
         } else {
           playerCard.classList.remove('active');
         }
       }
     });
-
-    // TEAM 2 has AI by default, no additional local players for now
-    // (Can be extended later if needed)
   }
   /**
    * Submit game results for all selected players (host and local)
