@@ -201,18 +201,12 @@ export class App {
   constructor() {
     this.router = new Router(this);
     this.init();
-    // Inject local player modals HTML
-    Promise.all([
-      fetch('local-player-login-modal.html').then(r => r.text()),
-      fetch('local-player-register-modal.html').then(r => r.text())
-    ]).then(([loginHtml, registerHtml]) => {
-      document.body.insertAdjacentHTML('beforeend', loginHtml);
-      document.body.insertAdjacentHTML('beforeend', registerHtml);
-      // Setup modals via local-player.ts
-      setupLocalPlayerLoginModal(this);
-      setupLocalPlayerRegisterModal(this);
-      this.setupAddPlayerButtons();
-    });
+    // Setup local player modals (now directly in index.html)
+    console.log('[App] Setting up local player modals...');
+    setupLocalPlayerLoginModal(this);
+    setupLocalPlayerRegisterModal(this);
+    this.setupAddPlayerButtons();
+    console.log('[App] Local player modal setup complete');
   }
 
   setupAddPlayerButtons() {
@@ -330,13 +324,8 @@ export class App {
   }
 
   setupEventListeners(): void {
-    // Add Player Modal: Create Account link opens local player register modal
-    document.getElementById('add-player-create-account-link')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.hideAddPlayerDialog();
-      // Use local-player.ts to show modal
-      // showLocalPlayerRegisterModal();
-    });
+    // Old add-player-modal event listeners removed - now using local-player modals
+    
     // Login form
     this.loginForm.addEventListener('submit', (e: Event) => {
       e.preventDefault();
@@ -402,18 +391,8 @@ export class App {
       this.startGame();
     });
 
-    document.getElementById('add-player-btn')?.addEventListener('click', () => {
-      this.showAddPlayerDialog();
-    });
-
-    // Team-specific add player buttons
-    document.getElementById('add-team1-player-btn')?.addEventListener('click', () => {
-      this.showAddPlayerDialog();
-    });
-
-    document.getElementById('add-team2-player-btn')?.addEventListener('click', () => {
-      this.showAddPlayerDialog();
-    });
+    // Team-specific add player buttons are now handled in setupAddPlayerButtons()
+    // (called after modal setup in constructor)
 
     // Settings buttons
     document.getElementById('back-to-main-settings-btn')?.addEventListener('click', () => {
@@ -453,22 +432,7 @@ export class App {
       }
     });
 
-    // Add Player Modal event listeners
-    document.getElementById('add-player-form')?.addEventListener('submit', (e) => {
-      this.handleAddPlayerSubmit(e);
-    });
-
-    document.getElementById('close-add-player-modal')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
-
-    document.getElementById('cancel-add-player')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
-
-    document.getElementById('add-player-modal-overlay')?.addEventListener('click', () => {
-      this.hideAddPlayerDialog();
-    });
+    // Old Add Player Modal event listeners removed - now using local-player modals
 
     // Config option buttons
     document.querySelectorAll('.config-option, .setting-option').forEach(btn => {
@@ -1166,37 +1130,9 @@ export class App {
     this.initializePlayerSelection();
   }
 
-  showAddPlayerDialog(): void {
-    const modal = document.getElementById('add-player-modal');
-    const playerNicknameInput = document.getElementById('player-nickname') as HTMLInputElement;
-    
-    // Clear previous input and show modal
-    if (playerNicknameInput) {
-      playerNicknameInput.value = '';
-      playerNicknameInput.focus();
-    }
-    
-    if (modal) {
-      modal.classList.remove('hidden');
-    }
-  }
-
-  hideAddPlayerDialog(): void {
-    const modal = document.getElementById('add-player-modal');
-    if (modal) {
-      modal.classList.add('hidden');
-    }
-  }
-
-  // Local player registration is now handled in local-player.ts
-  handleAddPlayerSubmit(event: Event): void {
-    event.preventDefault();
-    if ((window as any).registerAndHighlightLocalPlayer) {
-      (window as any).registerAndHighlightLocalPlayer();
-    } else {
-  showToast('Local player registration system not available', 'error');
-    }
-  }
+  // showAddPlayerDialog is deprecated - now using showLocalPlayerLoginModal from local-player.ts
+  // hideAddPlayerDialog is deprecated - now using hideLocalPlayerLoginModal from local-player.ts
+  // handleAddPlayerSubmit is deprecated - now handled in setupLocalPlayerLoginModal
 
   // Local player registration modal logic is now handled in local-player.ts
   showRegistrationForLocalPlayer(): void {
