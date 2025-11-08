@@ -1273,6 +1273,9 @@ export class GameManager {
     this.isPlaying = false;
     this.isPaused = false;
     
+    // Clean up any campaign modals
+    this.cleanupCampaignModals();
+    
     // Close websocket connection
     if (this.websocket) {
       console.log(`🛑 [GM#${this.instanceId}] Closing websocket`);
@@ -1604,12 +1607,50 @@ export class GameManager {
     const confirmBtn = document.getElementById('next-level-confirm-btn');
     if (confirmBtn) {
       confirmBtn.addEventListener('click', () => {
+        // Check if still on game screen before starting next level
+        const app = (window as any).app;
+        const currentScreen = app?.currentScreen;
+        
+        if (currentScreen !== 'game') {
+          console.log('🎯 [CAMPAIGN] User not on game screen. Canceling next level start.');
+          if (message.parentNode) {
+            message.parentNode.removeChild(message);
+          }
+          return;
+        }
+        
         if (message.parentNode) {
           message.parentNode.removeChild(message);
         }
         this.restartCampaignLevel();
       });
     }
+  }
+  
+  // Clean up all campaign modals (called when navigating away from game screen)
+  public cleanupCampaignModals(): void {
+    const modalIds = ['level-up-message', 'campaign-complete-message', 'retry-message'];
+    modalIds.forEach(id => {
+      const modal = document.getElementById(id);
+      if (modal) {
+        // Remove from DOM (this also removes all event listeners)
+        modal.remove();
+        console.log(`🎯 [CAMPAIGN] Removed modal: ${id}`);
+      }
+    });
+    
+    // Also query for any orphaned modals with these styles (in case ID was changed)
+    const orphanedModals = document.querySelectorAll('[style*="z-index: 10000"]');
+    orphanedModals.forEach((modal) => {
+      const element = modal as HTMLElement;
+      // Check if it's a campaign modal by checking content
+      if (element.textContent?.includes('LEVEL UP') || 
+          element.textContent?.includes('CAMPAIGN COMPLETE') || 
+          element.textContent?.includes('TRY AGAIN')) {
+        element.remove();
+        console.log('🎯 [CAMPAIGN] Removed orphaned campaign modal');
+      }
+    });
   }
 
   private showCampaignCompleteMessage(): void {
@@ -1691,6 +1732,14 @@ export class GameManager {
 
   private startCampaignMatch(): void {
     console.log('🎯 [CAMPAIGN] startCampaignMatch called, checking if safe to start...');
+    
+    // GUARD: Check if still on game screen
+    const app = (window as any).app;
+    const currentScreen = app?.currentScreen;
+    if (currentScreen !== 'game') {
+      console.warn('⚠️ [CAMPAIGN] Not on game screen, cannot start campaign match');
+      return;
+    }
     
     // GUARD: Don't start if already playing
     if (this.isPlaying) {

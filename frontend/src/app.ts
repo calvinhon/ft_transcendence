@@ -591,10 +591,17 @@ export class App {
           break;
         case 'Escape':
             e.preventDefault();
-            // Stop any running game
+            // Clean up campaign modals and stop any running game
             const gameManager = (window as any).gameManager;
-            if (gameManager && gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
-              gameManager.stopGame();
+            if (gameManager) {
+              // Clean up any campaign modals that might be visible
+              if (typeof gameManager.cleanupCampaignModals === 'function') {
+                gameManager.cleanupCampaignModals();
+              }
+              // Stop the game if it's running
+              if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
+                gameManager.stopGame();
+              }
             }
           this.router.navigate('login');
           break;
@@ -629,8 +636,15 @@ export class App {
         break;
       case 'game-screen': {
         const gameManager = (window as any).gameManager;
-        if (gameManager && typeof gameManager.stopGame === 'function') {
-          gameManager.stopGame();
+        if (gameManager) {
+          // Clean up any campaign modals that might be visible
+          if (typeof gameManager.cleanupCampaignModals === 'function') {
+            gameManager.cleanupCampaignModals();
+          }
+          // Stop the game if it's running
+          if (typeof gameManager.stopGame === 'function') {
+            gameManager.stopGame();
+          }
         }
         break;
       }
@@ -735,9 +749,16 @@ export class App {
     if (screenName !== 'game') {
       try {
         const gm = (window as any).gameManager;
-        if (gm && gm.isPlaying && typeof gm.stopGame === 'function') {
-          console.log('App: Navigated away from game screen — stopping game');
-          gm.stopGame();
+        if (gm) {
+          // Clean up any campaign modals that might be visible
+          if (typeof gm.cleanupCampaignModals === 'function') {
+            gm.cleanupCampaignModals();
+          }
+          // Stop the game if it's running
+          if (gm.isPlaying && typeof gm.stopGame === 'function') {
+            console.log('App: Navigated away from game screen — stopping game');
+            gm.stopGame();
+          }
         }
       } catch (e) {
         console.warn('App: failed to stop game on navigation', e);
