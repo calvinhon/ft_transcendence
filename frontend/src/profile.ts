@@ -196,9 +196,23 @@ export class ProfileManager {
       });
 
       if (response.ok) {
-        const stats: GameStats = await response.json();
+        const apiStats: any = await response.json();
+        console.log('[ProfileManager] Raw API stats:', apiStats);
+        
+        // Map API response to GameStats interface
+        const stats: GameStats = {
+          wins: apiStats.wins || 0,
+          losses: apiStats.losses || 0,
+          draws: apiStats.draws || 0,
+          total_games: apiStats.totalGames || apiStats.total_games || 0,
+          winRate: apiStats.winRate || 0,
+          averageGameDuration: apiStats.averageGameDuration || 0
+        };
+        
+        console.log('[ProfileManager] Mapped stats:', stats);
         this.displayGameStats(stats);
       } else {
+        console.warn('[ProfileManager] Game stats API returned error:', response.status);
         // Display default stats if not available
         this.displayGameStats({
           wins: 0,
@@ -230,12 +244,8 @@ export class ProfileManager {
     const totalGamesEl = document.getElementById('profile-total-games');
     const winRateEl = document.getElementById('profile-win-rate');
     const avgDurationEl = document.getElementById('profile-avg-duration');
-    const streakEl = document.getElementById('profile-streak');
-    const bestStreakEl = document.getElementById('profile-best-streak');
-    const rankEl = document.getElementById('profile-rank');
-    const expBarEl = document.getElementById('profile-exp-bar') as HTMLElement;
-    const expTextEl = document.getElementById('profile-exp-text');
     
+    // Display only real data from database
     if (winsEl) winsEl.textContent = stats.wins.toString();
     if (lossesEl) lossesEl.textContent = stats.losses.toString();
     if (drawsEl) drawsEl.textContent = stats.draws.toString();
@@ -243,36 +253,68 @@ export class ProfileManager {
     if (winRateEl) winRateEl.textContent = `${stats.winRate}%`;
     if (avgDurationEl) avgDurationEl.textContent = `${Math.round(stats.averageGameDuration / 1000)}s`;
     
-    // Update streak/rank/exp with placeholder values or calculated values
-    // TODO: These should come from backend when implemented
-    const currentStreak = Math.min(stats.wins, 5); // Simplified calculation
-    const bestStreak = Math.max(stats.wins, currentStreak);
+    // Hide or remove mock/calculated fields that don't exist in database
+    // Streak, Best Streak, Rank, XP/Level Progress are not in database, so hide them
+    const streakEl = document.getElementById('profile-streak');
+    const bestStreakEl = document.getElementById('profile-best-streak');
+    const rankEl = document.getElementById('profile-rank');
+    const expBarEl = document.getElementById('profile-exp-bar') as HTMLElement;
+    const expTextEl = document.getElementById('profile-exp-text');
     
-    if (streakEl) streakEl.textContent = currentStreak.toString();
-    if (bestStreakEl) bestStreakEl.textContent = bestStreak.toString();
-    if (rankEl) rankEl.textContent = stats.total_games > 0 ? '#--' : '#--'; // TODO: Get real rank from backend
-    
-    // Calculate XP based on wins (100 XP per win as example)
-    const xp = stats.wins * 100;
-    const xpForNextLevel = 1000;
-    const xpProgress = (xp % xpForNextLevel);
-    const xpPercentage = Math.min(100, (xpProgress / xpForNextLevel) * 100);
-    
-    if (expBarEl) expBarEl.style.width = `${xpPercentage}%`;
-    if (expTextEl) expTextEl.textContent = `${xpProgress} / ${xpForNextLevel} XP`;
+    // Hide elements by setting to empty or dash
+    if (streakEl) streakEl.textContent = '--';
+    if (bestStreakEl) bestStreakEl.textContent = '--';
+    if (rankEl) rankEl.textContent = '--';
+    if (expBarEl) expBarEl.style.width = '0%';
+    if (expTextEl) expTextEl.textContent = '--';
   }
 
   private async loadRecentGames(userId: number): Promise<void> {
     try {
       const authManager = (window as any).authManager;
-      const response = await fetch(`${this.gameURL}/history/${userId}?limit=5`, {
+      // Load more games (20) so the scrollbar will show
+      const response = await fetch(`${this.gameURL}/history/${userId}?limit=20`, {
         headers: authManager.getAuthHeaders()
       });
 
       if (response.ok) {
-        const games: RecentGame[] = await response.json();
+        const apiGames: any[] = await response.json();
+        console.log('[ProfileManager] Raw API games:', apiGames);
+        
+        // Display up to 20 games, scrollable container will handle the overflow
+        const games: RecentGame[] = apiGames.slice(0, 20).map((game: any) => {
+          const isPlayer1 = game.player1_id === userId;
+          const playerScore = isPlayer1 ? game.player1_score : game.player2_score;
+          const opponentScore = isPlayer1 ? game.player2_score : game.player1_score;
+          const opponentId = isPlayer1 ? game.player2_id : game.player1_id;
+          
+          // Determine result
+          let result: 'win' | 'loss' | 'draw';
+          if (game.winner_id === userId) {
+            result = 'win';
+          } else if (game.winner_id === 0 && playerScore === opponentScore) {
+            result = 'draw';
+          } else {
+            result = 'loss';
+          }
+          
+          // Determine opponent name
+          const opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+          
+          return {
+            id: game.id,
+            opponent: opponentName,
+            result: result,
+            score: `${playerScore}-${opponentScore}`,
+            date: game.finished_at || game.started_at,
+            duration: 0 // Not provided by API
+          };
+        });
+        
+        console.log('[ProfileManager] Mapped games:', games);
         this.displayRecentGames(games);
       } else {
+        console.warn('[ProfileManager] Game history API returned error:', response.status);
         this.displayRecentGames([]);
       }
     } catch (error) {
@@ -282,26 +324,45 @@ export class ProfileManager {
   }
 
   private displayRecentGames(games: RecentGame[]): void {
-    const container = document.getElementById('profile-recent-games');
-    if (!container) return;
+    const container = document.getElementById('profile-recent-activity');
+    if (!container) {
+      console.warn('[ProfileManager] Recent activity container not found!');
+      return;
+    }
+    
+    console.log('[ProfileManager] Displaying', games.length, 'recent games');
     
     if (games.length === 0) {
-      container.innerHTML = '<p class="muted">No recent games</p>';
+      container.innerHTML = '<div class="activity-row"><span colspan="5">No recent games</span></div>';
       return;
     }
 
-    container.innerHTML = games.map(game => `
-      <div class="recent-game-item">
-        <div class="game-info">
-          <div class="opponent">vs ${this.escapeHtml(game.opponent)}</div>
-          <div class="game-meta">
-            <span class="result result-${game.result}">${game.result}</span>
-            <span class="score">${game.score}</span>
-          </div>
+    // Match the HTML table structure: Date, Game Mode, Opponent, Result, Score
+    container.innerHTML = games.map(game => {
+      const date = new Date(game.date);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      let dateDisplay;
+      if (date.toDateString() === today.toDateString()) {
+        dateDisplay = 'Today';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        dateDisplay = 'Yesterday';
+      } else {
+        dateDisplay = date.toLocaleDateString();
+      }
+      
+      return `
+        <div class="activity-row">
+          <span>${dateDisplay}</span>
+          <span>Campaign</span>
+          <span>${this.escapeHtml(game.opponent)}</span>
+          <span class="result-${game.result}">${game.result.charAt(0).toUpperCase() + game.result.slice(1)}</span>
+          <span>${game.score}</span>
         </div>
-        <div class="game-date">${new Date(game.date).toLocaleDateString()}</div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   private async loadTournamentCount(userId: number): Promise<void> {

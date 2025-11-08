@@ -2649,9 +2649,55 @@ html {
   font-family: var(--font-primary);
 }
 
+/* Hide stats that don't have real data from database */
+#profile-streak,
+#profile-best-streak,
+#profile-rank {
+  display: none;
+}
+
+.stat-cell:has(#profile-streak),
+.stat-cell:has(#profile-best-streak),
+.stat-cell:has(#profile-rank) {
+  display: none;
+}
+
+/* Hide entire Performance Metrics section since Campaign Level is already shown at top */
+.stats-section:has(#profile-campaign-level) {
+  display: none;
+}
+
 /* Activity Table */
 .activity-table {
   width: 100%;
+}
+
+#profile-recent-activity {
+  max-height: 240px; /* Adjusted to show ~6 rows, making scrollbar more visible */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: rgba(119, 230, 255, 0.3) rgba(0, 0, 0, 0.2); /* For Firefox */
+}
+
+#profile-recent-activity::-webkit-scrollbar {
+  width: 10px; /* Slightly wider for better visibility */
+}
+
+#profile-recent-activity::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  margin: 2px 0; /* Add some spacing */
+}
+
+#profile-recent-activity::-webkit-scrollbar-thumb {
+  background: rgba(119, 230, 255, 0.4);
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.3); /* Add border for better definition */
+}
+
+#profile-recent-activity::-webkit-scrollbar-thumb:hover {
+  background: rgba(119, 230, 255, 0.6);
 }
 
 .activity-row {
