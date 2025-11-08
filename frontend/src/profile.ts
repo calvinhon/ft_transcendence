@@ -1,5 +1,11 @@
 // Stub file - profile module
 // frontend/src/profile.ts - TypeScript version of profile manager
+// =============================================================================
+// PROFILE MANAGER - VERSION 2.0 - UPDATED TO FIX CAMPAIGN LEVEL DISPLAY
+// This module manages user profile data loading and display
+// CRITICAL: Must be imported as named export to prevent tree-shaking
+// =============================================================================
+console.log('🔵 [PROFILE.TS] Module is loading... VERSION 2.0');
 
 interface User {
   userId: number;
@@ -45,6 +51,8 @@ export class ProfileManager {
   private tournamentURL: string = '/api/tournament';
 
   constructor() {
+    console.log('🟢 [ProfileManager] Constructor called - creating instance');
+    console.trace();
     this.setupEventListeners();
   }
 
@@ -128,6 +136,7 @@ export class ProfileManager {
   }
 
   private displayUserInfo(userInfo: UserProfile): void {
+    console.log('[ProfileManager] displayUserInfo() START - UPDATED VERSION 2.0');
     console.log('[ProfileManager] Displaying user info:', userInfo);
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -144,7 +153,8 @@ export class ProfileManager {
     const profileLevelEl = document.getElementById('profile-level');
     
     console.log('[ProfileManager] Campaign level element found:', !!campaignLevelEl);
-    console.log('[ProfileManager] Campaign level value:', userInfo.campaign_level);
+    console.log('[ProfileManager] Profile level element found:', !!profileLevelEl);
+    console.log('[ProfileManager] Campaign level value from API:', userInfo.campaign_level);
     
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
     if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || 'Unknown'}`;
@@ -157,23 +167,25 @@ export class ProfileManager {
     if (campaignLevelEl) {
       const levelText = userInfo.campaign_level ? `Level ${userInfo.campaign_level}` : 'Level 1';
       campaignLevelEl.textContent = levelText;
-      console.log('[ProfileManager] Set campaign level to:', levelText);
+      console.log('[ProfileManager] Set campaign level element to:', levelText);
     } else {
-      console.warn('[ProfileManager] Campaign level element not found in DOM!');
+      console.warn('[ProfileManager] Campaign level element NOT FOUND in DOM!');
     }
     
     // Update big level number at top of dashboard
     if (profileLevelEl) {
       const level = userInfo.campaign_level || 1;
       profileLevelEl.textContent = level.toString();
-      console.log('[ProfileManager] Set profile level to:', level);
+      console.log('[ProfileManager] Set profile-level element to:', level);
+    } else {
+      console.error('[ProfileManager] CRITICAL: profile-level element NOT FOUND in DOM!');
     }
     
     if (avatarEl) {
       avatarEl.textContent = (userInfo.display_name || user?.username || 'U').charAt(0).toUpperCase();
     }
     
-    console.log('[ProfileManager] User info display complete');
+    console.log('[ProfileManager] displayUserInfo() COMPLETE');
   }
 
   private async loadGameStats(userId: number): Promise<void> {
@@ -329,6 +341,3 @@ export class ProfileManager {
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
   }
 }
-
-// Global profile manager instance
-(window as any).profileManager = new ProfileManager();

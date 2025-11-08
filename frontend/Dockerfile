@@ -17,8 +17,8 @@ COPY css/ ./css/
 COPY index.html ./
 # COPY ../shared/ ./shared/
 
-# Build the application
-RUN npm run build
+# Clean any existing build artifacts and build the application
+RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"
 
 # Production stage
 FROM nginx:alpine

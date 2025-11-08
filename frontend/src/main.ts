@@ -4,8 +4,9 @@ import { handleHostLogin, handleHostRegister } from './host-auth';
 import { setupLocalPlayerRegisterModal } from './local-player';
 import { AuthManager } from './auth';
 import { GameManager } from './game';
+import { ProfileManager } from './profile';
 
-console.log('🚀 [MAIN] main.ts executing...');
+console.log('🚀 [MAIN] main.ts executing... BUILD VERSION 3.0 - PROFILE FIX');
 
 // GUARD: Prevent multiple initializations
 if ((window as any).__appInitialized) {
@@ -27,6 +28,13 @@ if (!(window as any).gameManager) {
   (window as any).gameManager = new GameManager();
 } else {
   console.warn('⚠️ [MAIN] GameManager already exists, skipping');
+}
+
+if (!(window as any).profileManager) {
+  console.log('✅ [MAIN] Creating ProfileManager');
+  (window as any).profileManager = new ProfileManager();
+} else {
+  console.warn('⚠️ [MAIN] ProfileManager already exists, skipping');
 }
 
 // ...initialize app, bind UI, etc...

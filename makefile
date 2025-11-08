@@ -57,8 +57,9 @@ clean:
 	fi
 
 up:
-	@echo "🚀 Running docker compose up --build..."
-	docker compose up --build -d
+	@echo "🚀 Running docker compose up --build --no-cache..."
+	docker compose build --no-cache
+	docker compose up -d
 
 open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
