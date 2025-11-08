@@ -214,5 +214,5 @@ export class AuthManager {
   }
 }
 
-// Global auth manager instance
-(window as any).authManager = new AuthManager();
+// Note: AuthManager is now created in main.ts to ensure proper initialization order
+// DO NOT create it here as it causes duplicate instances

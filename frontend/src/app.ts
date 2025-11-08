@@ -190,6 +190,8 @@ export class App {
   private lastClickTimestamps: Map<string, number> = new Map();
   // Debounce for start game button
   private lastStartGameClick: number = 0;
+  // Prevent duplicate event listener setup
+  private eventListenersInitialized: boolean = false;
 
   // Screen elements
   private loginScreen!: HTMLElement;
@@ -205,6 +207,8 @@ export class App {
   private forgotPasswordForm!: HTMLFormElement;
 
   constructor() {
+    console.log('🏗️ [App] Constructor called - Creating new App instance');
+    console.trace();
     this.router = new Router(this);
     this.init();
     // Setup local player modals (now directly in index.html)
@@ -330,6 +334,14 @@ export class App {
   }
 
   setupEventListeners(): void {
+    // GUARD: Prevent duplicate event listener registration
+    if (this.eventListenersInitialized) {
+      console.warn('⚠️ setupEventListeners already called, skipping duplicate registration');
+      return;
+    }
+    this.eventListenersInitialized = true;
+    console.log('✅ Initializing event listeners for the first time');
+
     // Old add-player-modal event listeners removed - now using local-player modals
     
     // Login form
@@ -394,6 +406,7 @@ export class App {
     });
 
     document.getElementById('start-game-btn')?.addEventListener('click', () => {
+      console.log('🔵 [EventListener] start-game-btn clicked!');
       this.startGame();
     });
 
@@ -420,23 +433,26 @@ export class App {
 
     // Game control buttons
     document.getElementById('stop-game-btn')?.addEventListener('click', () => {
+      console.log('🛑 [UI] Stop button clicked');
       const gameManager = (window as any).gameManager;
       if (gameManager && typeof gameManager.stopGame === 'function') {
         gameManager.stopGame();
       }
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const pauseBtn = document.getElementById('pause-game-btn');
-      if (pauseBtn) {
-        pauseBtn.addEventListener('click', () => {
-          const gameManager = (window as any).gameManager;
-          if (gameManager && typeof gameManager.pauseGame === 'function') {
-            gameManager.pauseGame();
-          }
-        });
-      }
-    });
+    // Pause button - don't wrap in DOMContentLoaded since we're already in setupEventListeners
+    const pauseBtn = document.getElementById('pause-game-btn');
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', () => {
+        console.log('⏸️ [UI] Pause button clicked');
+        const gameManager = (window as any).gameManager;
+        if (gameManager && typeof gameManager.pauseGame === 'function') {
+          gameManager.pauseGame();
+        }
+      });
+    } else {
+      console.warn('⚠️ [UI] Pause button not found during setup');
+    }
 
     // Old Add Player Modal event listeners removed - now using local-player modals
 
@@ -647,7 +663,7 @@ export class App {
         // Don't auto-start game with Enter - let user manually click start button
         // Focus on start game button for visual feedback
         const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
-        if (startGameBtn) startGameBtn.click();
+        if (startGameBtn) startGameBtn.focus();
         break;
       }
       case 'game-screen': {
@@ -1287,6 +1303,9 @@ export class App {
   }
 
   async startGame(): Promise<void> {
+    console.log('🚀 [App.startGame] === CALLED === Stack trace:');
+    console.trace();
+    
     // DEBOUNCE: Prevent rapid double-clicks on start button (within 1 second)
     const now = Date.now();
     if (now - this.lastStartGameClick < 1000) {
@@ -1302,6 +1321,7 @@ export class App {
       return;
     }
 
+    console.log('✅ [App.startGame] Guards passed - proceeding with game start');
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
 
@@ -1313,12 +1333,14 @@ export class App {
 
     // Start the actual game
     if (gameManager && typeof gameManager.startBotMatch === 'function') {
+      console.log('🎮 [App.startGame] Calling gameManager.startBotMatch()');
       await gameManager.startBotMatch();
     } else {
       console.error('GameManager not available');
       showToast('Game system not available', 'error');
       this.router.navigate('play-config');
     }
+    console.log('🏁 [App.startGame] === COMPLETED ===');
   }
 
   updateGameUI(): void {
@@ -1528,7 +1550,5 @@ export class App {
   }
 }
 
-// Initialize the app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  (window as any).app = new App();
-});
+// Note: App initialization is now handled in main.ts
+// Removing duplicate DOMContentLoaded listener to prevent double initialization

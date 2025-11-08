@@ -69,15 +69,32 @@ interface MovePaddleMessage extends GameMessage {
 export class GameManager {
   // Start game with backend-provided message
   private startGame(message: any): void {
+    // Guard: ignore duplicate start requests if a game is already playing
+    if (this.isPlaying) {
+      console.warn(`⚠️ [GM#${this.instanceId}] startGame called while already playing; ignoring duplicate`, message);
+      return;
+    }
+
+    console.log(`✅ [GM#${this.instanceId}] Starting game...`);
+    
     // Example: set isPlaying, initialize game state, start input handler
     this.isPlaying = true;
     this.isPaused = false;
+
     // You may want to parse message.gameState or other fields
     this.gameState = message.gameState || null;
-  // Canvas initialization moved to ensureCanvasInitialized() so it's only
-  // created once per session (avoids duplicate canvas/init during campaign)
+
+    // Ensure canvas is initialized (idempotent)
+    try {
+      this.ensureCanvasInitialized();
+    } catch (e) {
+      console.warn('Failed to ensure canvas initialized before starting game', e);
+    }
+
+    // Start input handler to emit paddle moves
     this.startInputHandler();
-    console.log('Game started with message:', message);
+
+    console.log(`🎮 [GM#${this.instanceId}] Game started with message:`, message);
     // Notify MatchManager (UI) that the game has started so it can hide menus
     try {
       const mm = (window as any).matchManager;
@@ -86,6 +103,11 @@ export class GameManager {
       console.warn('Failed to notify matchManager of game start', e);
     }
   }
+  
+  // Instance tracking
+  private static instanceCounter: number = 0;
+  private instanceId: number;
+  
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private websocket: WebSocket | null = null;
@@ -115,6 +137,20 @@ export class GameManager {
   private maxCampaignLevel: number = 10;
 
   constructor() {
+    // Assign unique instance ID
+    GameManager.instanceCounter++;
+    this.instanceId = GameManager.instanceCounter;
+    
+    console.log(`🎮 [GameManager] Constructor called - creating instance #${this.instanceId}`);
+    console.trace();
+    
+    // ENFORCE SINGLETON: Only allow ONE instance
+    if (GameManager.instanceCounter > 1) {
+      console.error(`⚠️⚠️⚠️ MULTIPLE GameManager instances detected! This is instance #${this.instanceId}`);
+      console.error('⚠️⚠️⚠️ BLOCKING DUPLICATE INSTANCE CREATION');
+      throw new Error(`GameManager instance #${this.instanceId} rejected - only one instance allowed!`);
+    }
+    
     this.setupEventListeners();
     // Bind the message handler once so we can attach/detach it safely
     this.boundHandleGameMessage = this.handleGameMessage.bind(this);
@@ -404,7 +440,8 @@ export class GameManager {
   private handleGameMessage(event: MessageEvent): void {
     try {
       const message: any = JSON.parse(event.data);
-      // console.log('🎮 [GAME-MSG] Received message:', message);
+      console.log(`🎮 [GM#${this.instanceId}] Received message type:`, message.type, 'isPlaying:', this.isPlaying);
+      
       switch (message.type) {
         case 'connectionAck': {
           console.log('Game connection acknowledged:', message.message);
@@ -441,6 +478,7 @@ export class GameManager {
           // console.log('Waiting for opponent:', message.message);
           break;
         case 'gameStart':
+          console.log('🎮 [GAME-MSG] gameStart received, current isPlaying:', this.isPlaying);
           console.log('🎮 [GAME-MSG] Game starting:', message);
           this.startGame(message);
           break;
@@ -449,7 +487,8 @@ export class GameManager {
           this.updateGameFromBackend(message);
           break;
         case 'gameEnd':
-          // console.log('🎮 [GAME-MSG] Game ended:', message);
+          console.log('🎮 [GAME-MSG] gameEnd received, current isPlaying:', this.isPlaying);
+          console.log('🎮 [GAME-MSG] Game ended:', message);
           this.endGame(message);
           break;
         default:
@@ -522,8 +561,16 @@ export class GameManager {
   }
 
   private updateGameFromBackend(backendState: any): void {
-    // Don't update game state if paused
-    if (this.isPaused || !this.isPlaying) return;
+    // Don't update game state if paused or not playing
+    if (this.isPaused) {
+      // console.log(`🎮 [GM#${this.instanceId}] Ignoring game state - game is paused`);
+      return;
+    }
+    
+    if (!this.isPlaying) {
+      console.log(`⚠️ [GM#${this.instanceId}] Ignoring game state - game is not playing`);
+      return;
+    }
     
     // Convert backend game state format to frontend format
     if (backendState.ball && backendState.paddles && backendState.scores) {
@@ -833,6 +880,13 @@ export class GameManager {
 
   private endGame(result: any): void {
     console.log('🎮 [END] Game ended:', result);
+    
+    // GUARD: Prevent handling endGame multiple times
+    if (!this.isPlaying) {
+      console.warn('⚠️ [END] Game already ended, ignoring duplicate endGame call');
+      return;
+    }
+    
     this.isPlaying = false;
     
     if (this.inputInterval) {
@@ -842,6 +896,7 @@ export class GameManager {
     
     // Handle campaign mode progression
     if (this.isCampaignMode) {
+      console.log('🎯 [CAMPAIGN] Handling campaign game end');
       this.handleCampaignGameEnd(result);
       return; // Campaign mode handles its own UI and navigation
     }
@@ -969,12 +1024,17 @@ export class GameManager {
 
   // Start a bot match (single player game against AI)
   public async startBotMatch(): Promise<void> {
+    console.log('🎮 [GameManager.startBotMatch] === CALLED === Stack trace:');
+    console.trace();
+    
     // GUARD: Prevent double starts
     if (this.isPlaying) {
       console.warn('⚠️ GameManager: Game already in progress, ignoring duplicate startBotMatch call');
+      console.warn('⚠️ Current isPlaying state:', this.isPlaying);
       return;
     }
 
+    console.log('✅ [GameManager.startBotMatch] Guard passed - proceeding with bot match');
     console.log('GameManager: Starting bot match');
   // error to stopGame() here
     // Check if this is CO-OP mode (campaign mode)
@@ -984,6 +1044,8 @@ export class GameManager {
     } else {
       this.startBotMatchWithSettings(false);
     }
+    
+    console.log('🏁 [GameManager.startBotMatch] === COMPLETED ===');
   }
 
   // Start campaign mode (progressive difficulty against AI)
@@ -1148,17 +1210,30 @@ export class GameManager {
 
   // Stop game functionality
   public stopGame(): void {
+    console.log(`🛑 [GM#${this.instanceId}] stopGame called, isPlaying:`, this.isPlaying, 'isCampaignMode:', this.isCampaignMode);
+    
+    // Set flags first to prevent any new operations
     this.isPlaying = false;
     this.isPaused = false;
     
     // Close websocket connection
     if (this.websocket) {
-      this.websocket.close();
+      console.log(`🛑 [GM#${this.instanceId}] Closing websocket`);
+      try {
+        this.websocket.onmessage = null as any;
+        this.websocket.onopen = null as any;
+        this.websocket.onclose = null as any;
+        this.websocket.onerror = null as any;
+        this.websocket.close();
+      } catch (e) {
+        console.warn('Error closing websocket in stopGame', e);
+      }
       this.websocket = null;
     }
     
     // Clear input interval
     if (this.inputInterval) {
+      console.log(`🛑 [GM#${this.instanceId}] Clearing input interval`);
       clearInterval(this.inputInterval);
       this.inputInterval = null;
     }
@@ -1166,12 +1241,25 @@ export class GameManager {
     // Reset game state
     this.gameState = null;
     
-    console.log('Game stopped');
+    // If in campaign mode, exit campaign
+    if (this.isCampaignMode) {
+      console.log(`🛑 [GM#${this.instanceId}] Exiting campaign mode`);
+      this.isCampaignMode = false;
+      this.currentCampaignLevel = 1;
+    }
+    
+    console.log(`🛑 [GM#${this.instanceId}] Game stopped - attempting navigation to play-config`);
     
     // Navigate back to play config using router
     const app = (window as any).app;
+    console.log(`🛑 [GM#${this.instanceId}] App exists:`, !!app, 'Router exists:', !!(app && app.router));
+    
     if (app && app.router && typeof app.router.navigate === 'function') {
+      console.log(`🛑 [GM#${this.instanceId}] Calling router.navigate('play-config')`);
       app.router.navigate('play-config');
+      console.log(`🛑 [GM#${this.instanceId}] Navigation call completed`);
+    } else {
+      console.error(`🛑 [GM#${this.instanceId}] ERROR: Cannot navigate - app or router not available!`);
     }
   }
 
@@ -1490,15 +1578,55 @@ export class GameManager {
   private restartCampaignLevel(): void {
     console.log('🎯 [CAMPAIGN] Restarting level with new settings');
     
-    // Stop current game
-    this.stopGame();
-    this.startCampaignMatch();
+    // GUARD: Prevent restart if already playing
+    if (this.isPlaying) {
+      console.warn('⚠️ [CAMPAIGN] Game already playing, cannot restart yet');
+      return;
+    }
+    
+    // Stop current game WITHOUT navigating away (campaign mode stays on game screen)
+    this.isPlaying = false;
+    this.isPaused = false;
+    
+    // Close websocket connection
+    if (this.websocket) {
+      console.log('🎯 [CAMPAIGN] Closing existing websocket before restart');
+      this.websocket.close();
+      this.websocket = null;
+    }
+    
+    // Clear input interval
+    if (this.inputInterval) {
+      clearInterval(this.inputInterval);
+      this.inputInterval = null;
+    }
+    
+    // Reset game state
+    this.gameState = null;
+    
+    // Start new match after a short delay to ensure websocket is fully closed
+    setTimeout(() => {
+      console.log('🎯 [CAMPAIGN] Starting new campaign match after cleanup');
+      this.startCampaignMatch();
+    }, 100);
   }
 
   private startCampaignMatch(): void {
-    console.log('🎯 [CAMPAIGN] Starting campaign match at level', this.currentCampaignLevel);
+    console.log('🎯 [CAMPAIGN] startCampaignMatch called, checking if safe to start...');
     
-    // this.stopGame();
+    // GUARD: Don't start if already playing
+    if (this.isPlaying) {
+      console.warn('⚠️ [CAMPAIGN] Match already playing, ignoring startCampaignMatch call');
+      return;
+    }
+    
+    // GUARD: Don't start if websocket already exists
+    if (this.websocket && this.websocket.readyState !== WebSocket.CLOSED) {
+      console.warn('⚠️ [CAMPAIGN] Websocket already open, ignoring startCampaignMatch call');
+      return;
+    }
+    
+    console.log('🎯 [CAMPAIGN] Guards passed - Starting campaign match at level', this.currentCampaignLevel);
 
     // Update campaign UI to show current level
     this.updateCampaignUI();
@@ -1528,6 +1656,8 @@ export class GameManager {
       console.error('Failed to start campaign match:', error);
       if (waitingMsg) waitingMsg.classList.add('hidden');
       alert('Failed to start campaign match. Please try again.');
+      // Reset state on error
+      this.isPlaying = false;
     });
   }
 
@@ -1571,7 +1701,7 @@ export class GameManager {
           console.log(`🎯 [CAMPAIGN] Synced campaign level from storage: ${this.currentCampaignLevel}`);
         }
 
-        // Send authentication and request campaign match
+        // Send authentication only - joinBotGame will be sent after connectionAck
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
@@ -1579,22 +1709,9 @@ export class GameManager {
             username: user.username
           }));
           
-          // Request campaign match with current level settings
-          setTimeout(() => {
-            if (this.websocket) {
-              // Use current campaign level settings
-              const gameSettings = this.getCampaignLevelSettings();
-              
-              console.log(`🎯 [CAMPAIGN] Starting match at level ${this.currentCampaignLevel} with AI level matching host player level`);
-              console.log('🎯 [CAMPAIGN] Sending level', this.currentCampaignLevel, 'settings to backend:', gameSettings);
-              
-              this.websocket.send(JSON.stringify({
-                type: 'joinBotGame',
-                userId: user.userId,
-                gameSettings: gameSettings
-              }));
-            }
-          }, 100);
+          // NOTE: Don't send joinBotGame here! It's already sent in the connectionAck handler
+          // This was causing duplicate games (2 gameStart messages)
+          console.log('🎯 [CAMPAIGN] Waiting for connectionAck before sending joinBotGame');
         }
         resolve();
       };

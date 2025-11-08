@@ -219,51 +219,96 @@ export function setupLocalPlayerLoginModal(app: any) {
       isSubmittingLogin = false;
     }
   });
+  
   // Forgot password link
-  document.getElementById('local-player-forgot-password-link')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log('[LocalPlayer] Forgot password clicked');
-    const emailInput = document.getElementById('local-player-login-email') as HTMLInputElement;
-    const email = emailInput?.value.trim();
-    
-    if (!email) {
-      if ((window as any).showToast) {
-        (window as any).showToast('Please enter your email address first', 'error');
+  const forgotPasswordLink = document.getElementById('local-player-forgot-password-link');
+  console.log('[LocalPlayer] Setup - Forgot Password Link:', forgotPasswordLink ? '✅ Found' : '❌ Not found');
+  
+  if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      console.log('[LocalPlayer] Forgot password clicked');
+      
+      const emailInput = document.getElementById('local-player-login-email') as HTMLInputElement;
+      console.log('[LocalPlayer] Email input element:', emailInput ? '✅ Found' : '❌ Not found');
+      
+      const email = emailInput?.value.trim();
+      console.log('[LocalPlayer] Email value:', email || '(empty)');
+      
+      if (!email) {
+        console.log('[LocalPlayer] No email provided, showing error toast');
+        if ((window as any).showToast) {
+          (window as any).showToast('Please enter your email address first', 'error');
+        } else {
+          console.warn('[LocalPlayer] showToast function not available');
+          alert('Please enter your email address first');
+        }
+        return;
       }
-      return;
-    }
-    
-    const authManager = (window as any).authManager;
-    if (!authManager) {
-      if ((window as any).showToast) {
-        (window as any).showToast('Auth system not available', 'error');
+      
+      const authManager = (window as any).authManager;
+      console.log('[LocalPlayer] AuthManager:', authManager ? '✅ Available' : '❌ Not available');
+      
+      if (!authManager) {
+        console.error('[LocalPlayer] AuthManager not available!');
+        if ((window as any).showToast) {
+          (window as any).showToast('Auth system not available', 'error');
+        } else {
+          alert('Auth system not available');
+        }
+        return;
       }
-      return;
-    }
-    
-    console.log('[LocalPlayer] Sending password reset for:', email);
-    const result = await authManager.forgotPassword(email);
-    
-    if (result.success) {
-      if ((window as any).showToast) {
-        (window as any).showToast('Password reset link sent! Please check your email.', 'success');
+      
+      console.log('[LocalPlayer] Sending password reset for:', email);
+      
+      try {
+        const result = await authManager.forgotPassword(email);
+        console.log('[LocalPlayer] Forgot password result:', result);
+        
+        if (result.success) {
+          if ((window as any).showToast) {
+            (window as any).showToast('Password reset link sent! Please check your email.', 'success');
+          } else {
+            alert('Password reset link sent! Please check your email.');
+          }
+          console.log('✅ [LocalPlayer] Password reset email sent');
+        } else {
+          const errorMsg = 'Failed to send reset email: ' + (result.error || 'Unknown error');
+          if ((window as any).showToast) {
+            (window as any).showToast(errorMsg, 'error');
+          } else {
+            alert(errorMsg);
+          }
+          console.error('❌ [LocalPlayer] Password reset failed:', result.error);
+        }
+      } catch (error) {
+        console.error('❌ [LocalPlayer] Exception during forgot password:', error);
+        const errorMsg = 'An error occurred: ' + (error as Error).message;
+        if ((window as any).showToast) {
+          (window as any).showToast(errorMsg, 'error');
+        } else {
+          alert(errorMsg);
+        }
       }
-      console.log('✅ [LocalPlayer] Password reset email sent');
-    } else {
-      if ((window as any).showToast) {
-        (window as any).showToast('Failed to send reset email: ' + (result.error || 'Unknown error'), 'error');
-      }
-      console.error('❌ [LocalPlayer] Password reset failed:', result.error);
-    }
-  });
+    });
+  } else {
+    console.warn('⚠️ [LocalPlayer] Forgot password link not found in DOM');
+  }
   
   // Create account link
-  document.getElementById('local-player-create-account-link')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log('[LocalPlayer] Create account link clicked');
-    hideLocalPlayerLoginModal();
-    showLocalPlayerRegisterModal();
-  });
+  const createAccountLink = document.getElementById('local-player-create-account-link');
+  console.log('[LocalPlayer] Setup - Create Account Link:', createAccountLink ? '✅ Found' : '❌ Not found');
+  
+  if (createAccountLink) {
+    createAccountLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('[LocalPlayer] Create account link clicked');
+      hideLocalPlayerLoginModal();
+      showLocalPlayerRegisterModal();
+    });
+  } else {
+    console.warn('⚠️ [LocalPlayer] Create account link not found in DOM');
+  }
   
   // Close button (X)
   document.getElementById('close-local-player-login-modal')?.addEventListener('click', () => {
@@ -597,13 +642,21 @@ export function setupLocalPlayerRegisterModal(app: any) {
     hideLocalPlayerRegisterModal();
   });
   
+  
   // Back to login link
-  document.getElementById('local-player-back-to-login-link')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log('[LocalPlayer] Back to login clicked');
-    hideLocalPlayerRegisterModal();
-    showLocalPlayerLoginModal();
-  });
+  const backToLoginLink = document.getElementById('local-player-back-to-login-link');
+  console.log('[LocalPlayer] Setup - Back to Login Link:', backToLoginLink ? '✅ Found' : '❌ Not found');
+  
+  if (backToLoginLink) {
+    backToLoginLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('[LocalPlayer] Back to login clicked');
+      hideLocalPlayerRegisterModal();
+      showLocalPlayerLoginModal();
+    });
+  } else {
+    console.warn('⚠️ [LocalPlayer] Back to login link not found in DOM');
+  }
   
   // Modal overlay click to close
   modal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
