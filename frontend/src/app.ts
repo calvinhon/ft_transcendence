@@ -1370,16 +1370,27 @@ export class App {
   }
 
   async loadProfileData(): Promise<void> {
+    console.log('[App] loadProfileData() called');
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    if (!user) return;
+    console.log('[App] Current user:', user);
+    
+    if (!user) {
+      console.warn('[App] No user logged in');
+      return;
+    }
 
     try {
       // Use the ProfileManager for comprehensive profile loading
       const profileManager = (window as any).profileManager;
+      console.log('[App] ProfileManager available:', !!profileManager);
+      
       if (profileManager) {
+        console.log('[App] Calling profileManager.loadProfile()');
         await profileManager.loadProfile();
+        console.log('[App] ProfileManager.loadProfile() completed');
       } else {
+        console.warn('[App] ProfileManager not available, using fallback');
         // Fallback to basic loading if ProfileManager not available
         this.updateBasicProfileInfo(user);
         this.loadBasicStats(user.userId);

@@ -93,6 +93,9 @@ export class GameManager {
 
     // Start input handler to emit paddle moves
     this.startInputHandler();
+    
+    // Start a periodic check to ensure keys are being tracked
+    this.startKeyMonitor();
 
     console.log(`🎮 [GM#${this.instanceId}] Game started with message:`, message);
     // Notify MatchManager (UI) that the game has started so it can hide menus
@@ -102,6 +105,37 @@ export class GameManager {
     } catch (e) {
       console.warn('Failed to notify matchManager of game start', e);
     }
+  }
+  
+  // Monitor key state to detect if keys get "stuck"
+  private keyMonitorInterval: ReturnType<typeof setInterval> | null = null;
+  private lastKeyPressTime: { [key: string]: number } = {};
+  
+  private startKeyMonitor(): void {
+    // Clear existing monitor
+    if (this.keyMonitorInterval) {
+      clearInterval(this.keyMonitorInterval);
+    }
+    
+    // Check every 100ms for stuck keys or lost input
+    this.keyMonitorInterval = setInterval(() => {
+      if (this.isPlaying && !this.isPaused) {
+        const now = Date.now();
+        
+        // Check for keys that have been held for suspiciously long (>10 seconds)
+        // These might be "stuck" from a missed keyup event
+        for (const key in this.keys) {
+          if (this.keys[key] === true) {
+            const lastPress = this.lastKeyPressTime[key] || now;
+            if (now - lastPress > 10000) {
+              console.warn('Detected stuck key:', key, '- auto-releasing');
+              this.keys[key] = false;
+              delete this.lastKeyPressTime[key];
+            }
+          }
+        }
+      }
+    }, 100);
   }
   
   // Instance tracking
@@ -165,6 +199,11 @@ export class GameManager {
       const user = authManager?.getCurrentUser();
       
       if (user && user.userId) {
+        // Sync from database asynchronously (don't block)
+        this.syncCampaignLevelFromDatabase().catch(err => {
+          console.warn('Background sync failed:', err);
+        });
+        
         const savedLevel = localStorage.getItem(`campaign_level_${user.userId}`);
         if (savedLevel) {
           const level = parseInt(savedLevel, 10);
@@ -180,6 +219,34 @@ export class GameManager {
     
     console.log('🎯 [CAMPAIGN] No saved level found, starting at level 1');
     return 1;
+  }
+  
+  // Sync campaign level from database to localStorage
+  private async syncCampaignLevelFromDatabase(): Promise<void> {
+    try {
+      const authManager = (window as any).authManager;
+      const user = authManager?.getCurrentUser();
+      const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
+      
+      if (user && user.userId) {
+        const response = await fetch(`/api/user/profile/${user.userId}`, { headers });
+        if (response.ok) {
+          const profile = await response.json();
+          if (profile.campaign_level && profile.campaign_level > 1) {
+            // Update localStorage with database value if it's higher
+            const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+            const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
+            
+            if (profile.campaign_level > localLevelNum) {
+              localStorage.setItem(`campaign_level_${user.userId}`, profile.campaign_level.toString());
+              console.log(`🎯 [CAMPAIGN] Synced level ${profile.campaign_level} from database`);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not sync campaign level from database:', error);
+    }
   }
 
   private savePlayerCampaignLevel(level: number): void {
@@ -198,44 +265,35 @@ export class GameManager {
 
   
   private setupEventListeners(): void {
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
+    // Use window-level key listeners with capture phase to ensure we always get events
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
       // Only handle game controls if game canvas is focused or no input is focused
       const activeElement = document.activeElement;
       const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-      
-  console.log('[KEYDOWN] Key pressed:', e.key, 'isPlaying:', this.isPlaying, 'activeElement:', activeElement?.tagName, (activeElement as HTMLElement)?.id);
-  console.log('[KEYDOWN] isInputFocused:', isInputFocused);
       
       if (!isInputFocused && this.isPlaying) {
         const key = e.key.toLowerCase();
         this.keys[key] = true;
         
+        // Track when this key was pressed (for stuck key detection)
+        this.lastKeyPressTime[key] = Date.now();
+        
         // Also handle the original key name for arrow keys
         this.keys[e.key] = true;
-        
-        // Debug logging
-        console.log('🎯 [KEYDOWN] Key accepted:', e.key, '-> lowercase:', key, 'isPlaying:', this.isPlaying);
-        console.log('🎯 [KEYDOWN] Keys object state:', this.keys);
+        this.lastKeyPressTime[e.key] = Date.now();
         
         // Prevent default behavior for game control keys
         if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown' || 
             e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
-          console.log('🎯 [KEYDOWN] Prevented default for key:', key, 'original:', e.key);
-          
-          // Ensure canvas has focus when game keys are pressed
-          const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-          if (canvas && canvas !== document.activeElement) {
-            canvas.focus();
-            console.log('🎯 [KEYDOWN] Re-focused canvas on key press');
-          }
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return false;
         }
-      } else {
-        console.log('🎯 [KEYDOWN] Key ignored - isInputFocused:', isInputFocused, 'isPlaying:', this.isPlaying);
       }
-    });
+    }, true); // Use capture phase to get events before they're handled elsewhere
 
-    document.addEventListener('keyup', (e: KeyboardEvent) => {
+    window.addEventListener('keyup', (e: KeyboardEvent) => {
       // Only handle game controls if no input is focused
       const activeElement = document.activeElement;
       const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
@@ -245,59 +303,60 @@ export class GameManager {
         this.keys[key] = false;
         this.keys[e.key] = false;
         
-        // Debug logging
-        console.log('Key released:', e.key, '-> lowercase:', key);
+        // Clear tracking for released keys
+        delete this.lastKeyPressTime[key];
+        delete this.lastKeyPressTime[e.key];
         
         // Prevent default behavior for game control keys
         if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown' ||
             e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return false;
         }
+      }
+    }, true); // Use capture phase
+
+    // Add visibility change listener to clear keys when tab loses focus
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.isPlaying) {
+        // Clear all keys when tab is hidden
+        for (const key in this.keys) {
+          this.keys[key] = false;
+        }
+        this.lastKeyPressTime = {};
+      }
+    });
+    
+    // Add blur listener to window to catch when window loses focus
+    window.addEventListener('blur', () => {
+      if (this.isPlaying) {
+        for (const key in this.keys) {
+          this.keys[key] = false;
+        }
+        this.lastKeyPressTime = {};
       }
     });
 
-    // Add click handler to game canvas for focus management
-    document.addEventListener('click', (e: MouseEvent) => {
-      const gameCanvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-      const gameContainer = document.getElementById('game-canvas-container');
-      
-      if (this.isPlaying && gameCanvas && gameContainer) {
-        // If clicking inside the game area, ensure focus on game
-        if (gameContainer.contains(e.target as Node)) {
-          gameCanvas.focus();
-          console.log('Canvas focused via click');
-        } else {
-          // Clicking outside game area - allow normal browser behavior
-          gameCanvas.blur();
-          console.log('Canvas blurred - clicked outside');
-        }
-      }
-    });
-
-    // Add direct canvas click handler
-    document.addEventListener('DOMContentLoaded', () => {
+    // Setup canvas click handler - check if DOM is already loaded
+    const setupCanvasHandlers = () => {
       const gameCanvas = document.getElementById('game-canvas') as HTMLCanvasElement;
       if (gameCanvas) {
         gameCanvas.addEventListener('click', () => {
           if (this.isPlaying) {
             gameCanvas.focus();
-            console.log('🎯 [CANVAS-CLICK] Canvas clicked and focused, activeElement:', (document.activeElement as HTMLElement)?.id);
-            
-            // Test key capture
-            console.log('🎯 [CANVAS-CLICK] Testing immediate key capture after focus...');
-            const testKeys = () => {
-              console.log('🎯 [CANVAS-CLICK] Current keys state after focus:', this.keys);
-            };
-            setTimeout(testKeys, 100);
           }
         });
-        
-        // Add manual focus method for testing
-        gameCanvas.addEventListener('keydown', (e: KeyboardEvent) => {
-          console.log('🎯 [CANVAS-KEYDOWN] Canvas received keydown directly:', e.key);
-        });
       }
-    });
+    };
+
+    // Run immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupCanvasHandlers);
+    } else {
+      setupCanvasHandlers();
+    }
 
     // Find match button (legacy support)
     const findMatchBtn = document.getElementById('find-match-btn') as HTMLButtonElement;
@@ -542,7 +601,6 @@ export class GameManager {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
         // Send individual paddle movement messages based on current key state
         if (this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp']) {
-          console.log('🎮 [INPUT] Sending paddle UP command');
           this.websocket.send(JSON.stringify({
             type: 'movePaddle',
             direction: 'up'
@@ -550,7 +608,6 @@ export class GameManager {
         }
         
         if (this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown']) {
-          console.log('🎮 [INPUT] Sending paddle DOWN command');
           this.websocket.send(JSON.stringify({
             type: 'movePaddle',
             direction: 'down'
@@ -1238,8 +1295,18 @@ export class GameManager {
       this.inputInterval = null;
     }
     
+    // Clear key monitor interval
+    if (this.keyMonitorInterval) {
+      console.log(`🛑 [GM#${this.instanceId}] Clearing key monitor interval`);
+      clearInterval(this.keyMonitorInterval);
+      this.keyMonitorInterval = null;
+    }
+    
     // Reset game state
     this.gameState = null;
+    
+    // Clear all key states
+    this.keys = {};
     
     // If in campaign mode, exit campaign
     if (this.isCampaignMode) {
@@ -1444,25 +1511,36 @@ export class GameManager {
       // Save the new level to localStorage
       this.savePlayerCampaignLevel(this.currentCampaignLevel);
 
-      // Try to persist the new level to the backend (user stats/profile)
+      // Update campaign level in backend database
       try {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
         if (user && user.userId) {
-          const url = `/api/game/update-stats/${user.userId}`;
-          const body = { level: this.currentCampaignLevel };
+          const url = `/api/user/game/update-stats/${user.userId}`;
+          const body = { campaign_level: this.currentCampaignLevel };
+          console.log('🎯 [CAMPAIGN] Sending POST to:', url, 'with body:', body);
+          console.log('🎯 [CAMPAIGN] Using headers:', headers);
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...headers },
             body: JSON.stringify(body)
-          }).then(res => {
-            if (!res.ok) console.warn('Failed to update campaign level on server');
-            else console.log('🎯 [CAMPAIGN] Synced new level to server');
-          }).catch(err => console.warn('Error syncing campaign level:', err));
+          }).then(async res => {
+            if (!res.ok) {
+              const errorText = await res.text();
+              console.error('❌ [CAMPAIGN] Failed to update campaign level on server. Status:', res.status, 'Response:', errorText);
+            } else {
+              const responseData = await res.json();
+              console.log('✅ [CAMPAIGN] Campaign level', this.currentCampaignLevel, 'synced to database. Response:', responseData);
+            }
+          }).catch(err => {
+            console.error('❌ [CAMPAIGN] Error syncing campaign level:', err);
+          });
+        } else {
+          console.warn('⚠️ [CAMPAIGN] Cannot sync - user or userId not available:', { user, hasUserId: !!user?.userId });
         }
       } catch (err) {
-        console.warn('Could not sync campaign level to server:', err);
+        console.error('❌ [CAMPAIGN] Exception while syncing campaign level to server:', err);
       }
 
       // Show level up message with confirmation button

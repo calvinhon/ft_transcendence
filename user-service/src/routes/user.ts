@@ -135,10 +135,27 @@ const db = new sqlite3.Database(dbPath, (err) => {
         theme_preference TEXT DEFAULT 'dark',
         notification_settings TEXT DEFAULT '{}',
         privacy_settings TEXT DEFAULT '{}',
+        campaign_level INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    
+    // Add campaign_level column if it doesn't exist (for existing databases)
+    db.run(`ALTER TABLE user_profiles ADD COLUMN campaign_level INTEGER DEFAULT 1`, (err: Error | null) => {
+      if (err && !err.message.includes('duplicate column')) {
+        console.error('Error adding campaign_level column:', err);
+      } else {
+        // Update existing rows that might have NULL campaign_level
+        db.run(`UPDATE user_profiles SET campaign_level = 1 WHERE campaign_level IS NULL`, (updateErr: Error | null) => {
+          if (updateErr) {
+            console.error('Error updating NULL campaign_level values:', updateErr);
+          } else {
+            console.log('Successfully migrated campaign_level column');
+          }
+        });
+      }
+    });
 
     // Create friends table
     db.run(`
@@ -193,21 +210,20 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                   reply.status(500).send({ error: 'Database error' });
                   reject(err);
                 } else {
-                  reply.send({
-                    id: this.lastID,
-                    user_id: parseInt(userId),
-                    display_name: null,
-                    avatar_url: null,
-                    bio: null,
-                    country: null,
-                    preferred_language: 'en',
-                    theme_preference: 'dark',
-                    notification_settings: '{}',
-                    privacy_settings: '{}',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  });
-                  resolve();
+                  // Query the newly created profile to get all default values
+                  db.get(
+                    'SELECT * FROM user_profiles WHERE user_id = ?',
+                    [userId],
+                    (err: Error | null, newProfile: UserProfile) => {
+                      if (err) {
+                        reply.status(500).send({ error: 'Database error' });
+                        reject(err);
+                      } else {
+                        reply.send(newProfile);
+                        resolve();
+                      }
+                    }
+                  );
                 }
               }
             );
@@ -235,49 +251,6 @@ async function routes(fastify: FastifyInstance): Promise<void> {
          bio = COALESCE(?, bio),
          country = COALESCE(?, country),
          preferred_language = COALESCE(?, preferred_language),
-
-    // Update game stats (wins, total_games, xp, level, etc)
-    fastify.post<{
-      Params: { userId: string };
-      Body: {
-        wins?: number;
-        total_games?: number;
-        xp?: number;
-        level?: number;
-        winRate?: number;
-        lost?: number;
-        [key: string]: any;
-      };
-    }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: any }>, reply: FastifyReply) => {
-      const { userId } = request.params;
-      const { wins, total_games, xp, level, winRate, lost } = request.body;
-
-      // Build dynamic SQL for only provided fields
-      const fields = [];
-      const values = [];
-      if (typeof wins === 'number') { fields.push('wins = ?'); values.push(wins); }
-      if (typeof total_games === 'number') { fields.push('total_games = ?'); values.push(total_games); }
-      if (typeof xp === 'number') { fields.push('xp = ?'); values.push(xp); }
-      if (typeof level === 'number') { fields.push('level = ?'); values.push(level); }
-      if (typeof winRate === 'number') { fields.push('winRate = ?'); values.push(winRate); }
-      if (typeof lost === 'number') { fields.push('lost = ?'); values.push(lost); }
-      fields.push('updated_at = CURRENT_TIMESTAMP');
-      values.push(userId);
-
-      if (fields.length === 1) {
-        // Only updated_at, nothing to update
-        return reply.status(400).send({ error: 'No stats provided' });
-      }
-
-      const sql = 'UPDATE user_profiles SET ' + fields.join(', ') + ' WHERE user_id = ?';
-      db.run(sql, values, function(this: sqlite3.RunResult, err: Error | null) {
-        if (err) {
-          reply.status(500).send({ error: 'Database error', details: err });
-        } else {
-          reply.send({ message: 'Game stats updated successfully' });
-        }
-      });
-    });
          theme_preference = COALESCE(?, theme_preference),
          updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
@@ -292,6 +265,55 @@ async function routes(fastify: FastifyInstance): Promise<void> {
           }
         }
       );
+    });
+  });
+
+  // Update game stats (wins, total_games, xp, level, campaign_level, etc)
+  fastify.post<{
+    Params: { userId: string };
+    Body: {
+      wins?: number;
+      total_games?: number;
+      xp?: number;
+      level?: number;
+      campaign_level?: number;
+      winRate?: number;
+      lost?: number;
+      [key: string]: any;
+    };
+  }>('/game/update-stats/:userId', async (request, reply) => {
+    const { userId } = request.params;
+    const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
+
+    // Build dynamic SQL for only provided fields
+    const fields: string[] = [];
+    const values: any[] = [];
+    if (typeof wins === 'number') { fields.push('wins = ?'); values.push(wins); }
+    if (typeof total_games === 'number') { fields.push('total_games = ?'); values.push(total_games); }
+    if (typeof xp === 'number') { fields.push('xp = ?'); values.push(xp); }
+    if (typeof level === 'number') { fields.push('level = ?'); values.push(level); }
+    if (typeof campaign_level === 'number') { fields.push('campaign_level = ?'); values.push(campaign_level); }
+    if (typeof winRate === 'number') { fields.push('winRate = ?'); values.push(winRate); }
+    if (typeof lost === 'number') { fields.push('lost = ?'); values.push(lost); }
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(userId);
+
+    if (fields.length === 1) {
+      // Only updated_at, nothing to update
+      return reply.status(400).send({ error: 'No stats provided' });
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const sql = 'UPDATE user_profiles SET ' + fields.join(', ') + ' WHERE user_id = ?';
+      db.run(sql, values, function(this: sqlite3.RunResult, err: Error | null) {
+        if (err) {
+          reply.status(500).send({ error: 'Database error', details: err });
+          reject(err);
+        } else {
+          reply.send({ message: 'Game stats updated successfully' });
+          resolve();
+        }
+      });
     });
   });
 
