@@ -10,6 +10,8 @@ interface User {
 interface GameState {
   leftPaddle: { y: number; speed: number };
   rightPaddle: { y: number; speed: number };
+  leftPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 1
+  rightPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 2
   ball: { x: number; y: number; vx: number; vy: number };
   leftScore: number;
   rightScore: number;
@@ -76,6 +78,12 @@ export class GameManager {
     }
 
     console.log(`✅ [GM#${this.instanceId}] Starting game...`);
+    
+    // Apply game settings from the server if provided
+    if (message.gameSettings) {
+      console.log(`🎮 [GM#${this.instanceId}] Applying gameSettings from server:`, message.gameSettings);
+      this.gameSettings = { ...this.gameSettings, ...message.gameSettings };
+    }
     
     // Example: set isPlaying, initialize game state, start input handler
     this.isPlaying = true;
@@ -282,9 +290,15 @@ export class GameManager {
         this.keys[e.key] = true;
         this.lastKeyPressTime[e.key] = Date.now();
         
+        // Define all game control keys
+        const gameControlKeys = [
+          'w', 's', 'q', 'a', 'e', 'd',  // Team 1 keys
+          'u', 'j', 'i', 'k', 'o', 'l',  // Team 2 keys
+          'arrowup', 'arrowdown'          // Alternative keys
+        ];
+        
         // Prevent default behavior for game control keys
-        if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown' || 
-            e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        if (gameControlKeys.includes(key) || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -307,9 +321,15 @@ export class GameManager {
         delete this.lastKeyPressTime[key];
         delete this.lastKeyPressTime[e.key];
         
+        // Define all game control keys
+        const gameControlKeys = [
+          'w', 's', 'q', 'a', 'e', 'd',  // Team 1 keys
+          'u', 'j', 'i', 'k', 'o', 'l',  // Team 2 keys
+          'arrowup', 'arrowdown'          // Alternative keys
+        ];
+        
         // Prevent default behavior for game control keys
-        if (key === 'w' || key === 's' || key === 'arrowup' || key === 'arrowdown' ||
-            e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        if (gameControlKeys.includes(key) || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -599,51 +619,172 @@ export class GameManager {
     }
     this.inputInterval = setInterval(() => {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
-        // Check for opposing keys and prioritize the most recently pressed
-        const upPressed = this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp'];
-        const downPressed = this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
         
-        // If both keys are pressed, use the most recently pressed one
-        if (upPressed && downPressed) {
-          const upTime = Math.max(
-            this.lastKeyPressTime['w'] || 0,
-            this.lastKeyPressTime['arrowup'] || 0,
-            this.lastKeyPressTime['ArrowUp'] || 0
-          );
-          const downTime = Math.max(
-            this.lastKeyPressTime['s'] || 0,
-            this.lastKeyPressTime['arrowdown'] || 0,
-            this.lastKeyPressTime['ArrowDown'] || 0
-          );
-          
-          if (downTime > upTime) {
-            // Down was pressed more recently
-            this.websocket.send(JSON.stringify({
-              type: 'movePaddle',
-              direction: 'down'
-            }));
-          } else {
-            // Up was pressed more recently (or same time)
-            this.websocket.send(JSON.stringify({
-              type: 'movePaddle',
-              direction: 'up'
-            }));
-          }
-        } else if (upPressed) {
-          // Only up is pressed
-          this.websocket.send(JSON.stringify({
-            type: 'movePaddle',
-            direction: 'up'
-          }));
-        } else if (downPressed) {
-          // Only down is pressed
-          this.websocket.send(JSON.stringify({
-            type: 'movePaddle',
-            direction: 'down'
-          }));
+        // Handle different game modes
+        if (this.gameSettings.gameMode === 'arcade') {
+          // Arcade mode: Team vs Team with multiple players per side
+          this.handleArcadeInputs();
+        } else {
+          // Co-op/Campaign mode: Single player controls (original logic)
+          this.handleSinglePlayerInputs();
         }
       }
     }, 16); // ~60fps
+  }
+
+  private handleSinglePlayerInputs(): void {
+    // Original co-op/campaign input handling
+    const upPressed = this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp'];
+    const downPressed = this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
+    
+    // If both keys are pressed, use the most recently pressed one
+    if (upPressed && downPressed) {
+      const upTime = Math.max(
+        this.lastKeyPressTime['w'] || 0,
+        this.lastKeyPressTime['arrowup'] || 0,
+        this.lastKeyPressTime['ArrowUp'] || 0
+      );
+      const downTime = Math.max(
+        this.lastKeyPressTime['s'] || 0,
+        this.lastKeyPressTime['arrowdown'] || 0,
+        this.lastKeyPressTime['ArrowDown'] || 0
+      );
+      
+      if (downTime > upTime) {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          direction: 'down'
+        }));
+      } else {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          direction: 'up'
+        }));
+      }
+    } else if (upPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        direction: 'up'
+      }));
+    } else if (downPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        direction: 'down'
+      }));
+    }
+  }
+
+  private handleArcadeInputs(): void {
+    // Arcade mode: Multiple players with team-based controls
+    // Team 1 players: Q/A, W/S, E/D (+ Arrow keys as alternative)
+    // Team 2 players: U/J, I/K, O/L
+    
+    const app = (window as any).app;
+    
+    // Get SELECTED players only (highlighted in party list)
+    // If no local players are set up, assume single player controlling team 1
+    let team1Players: any[] = [];
+    let team2Players: any[] = [];
+    
+    if (app && app.localPlayers && app.selectedPlayerIds) {
+      const selectedPlayers = app.localPlayers.filter((p: any) => 
+        app.selectedPlayerIds.has(p.id?.toString())
+      );
+      
+      // Get players assigned to each team from selected players
+      team1Players = selectedPlayers.filter((p: any) => p.team === 1);
+      team2Players = selectedPlayers.filter((p: any) => p.team === 2);
+    } else {
+      // Fallback: Single player arcade mode - host controls team 1
+      console.log('🎮 [ARCADE-INPUT] No local players setup, using single-player arcade mode');
+      team1Players = [{ id: 1, team: 1 }]; // Virtual player for input handling
+      team2Players = []; // Bot controls team 2
+    }
+    
+    // Team 1 key mappings (left side)
+    const team1Keys = [
+      { up: 'q', down: 'a' },  // Player 1
+      { up: 'w', down: 's' },  // Player 2
+      { up: 'e', down: 'd' }   // Player 3
+    ];
+    
+    // Team 2 key mappings (right side)
+    const team2Keys = [
+      { up: 'u', down: 'j' },  // Player 1
+      { up: 'i', down: 'k' },  // Player 2
+      { up: 'o', down: 'l' }   // Player 3
+    ];
+    
+    // Handle Team 1 inputs (left paddle)
+    let team1Direction: 'up' | 'down' | null = null;
+    let team1PaddleIndex = 0;
+    
+    // Check Arrow keys as alternative control (works for any Team 1 player - controls first paddle)
+    const arrowUpPressed = this.keys['arrowup'] || this.keys['ArrowUp'];
+    const arrowDownPressed = this.keys['arrowdown'] || this.keys['ArrowDown'];
+    
+    if (arrowUpPressed && !arrowDownPressed && team1Players.length > 0) {
+      team1Direction = 'up';
+      team1PaddleIndex = 0; // Arrow keys control first paddle
+    } else if (arrowDownPressed && !arrowUpPressed && team1Players.length > 0) {
+      team1Direction = 'down';
+      team1PaddleIndex = 0; // Arrow keys control first paddle
+    } else {
+      // Check team-specific keys - each player controls their own paddle
+      for (let i = 0; i < team1Players.length && i < 3; i++) {
+        const keyMap = team1Keys[i];
+        const upPressed = this.keys[keyMap.up] || this.keys[keyMap.up.toUpperCase()];
+        const downPressed = this.keys[keyMap.down] || this.keys[keyMap.down.toUpperCase()];
+        
+        if (upPressed && !downPressed) {
+          team1Direction = 'up';
+          team1PaddleIndex = i;
+          break; // First player to press takes control
+        } else if (downPressed && !upPressed) {
+          team1Direction = 'down';
+          team1PaddleIndex = i;
+          break;
+        }
+      }
+    }
+    
+    if (team1Direction) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 1, // Team 1 / Left side
+        paddleIndex: team1PaddleIndex, // Which paddle (0, 1, or 2)
+        direction: team1Direction
+      }));
+    }
+    
+    // Handle Team 2 inputs (right paddle) - each player controls their own paddle
+    let team2Direction: 'up' | 'down' | null = null;
+    let team2PaddleIndex = 0;
+    
+    for (let i = 0; i < team2Players.length && i < 3; i++) {
+      const keyMap = team2Keys[i];
+      const upPressed = this.keys[keyMap.up] || this.keys[keyMap.up.toUpperCase()];
+      const downPressed = this.keys[keyMap.down] || this.keys[keyMap.down.toUpperCase()];
+      
+      if (upPressed && !downPressed) {
+        team2Direction = 'up';
+        team2PaddleIndex = i;
+        break; // First player to press takes control
+      } else if (downPressed && !upPressed) {
+        team2Direction = 'down';
+        team2PaddleIndex = i;
+        break;
+      }
+    }
+    
+    if (team2Direction) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 2, // Team 2 / Right side
+        paddleIndex: team2PaddleIndex, // Which paddle (0, 1, or 2)
+        direction: team2Direction
+      }));
+    }
   }
 
   private updateGameFromBackend(backendState: any): void {
@@ -661,8 +802,8 @@ export class GameManager {
     // Convert backend game state format to frontend format
     if (backendState.ball && backendState.paddles && backendState.scores) {
       const frontendState: GameState = {
-        leftPaddle: { y: backendState.paddles.player1.y, speed: 0 },
-        rightPaddle: { y: backendState.paddles.player2.y, speed: 0 },
+        leftPaddle: { y: backendState.paddles.player1?.y ?? 250, speed: 0 },
+        rightPaddle: { y: backendState.paddles.player2?.y ?? 250, speed: 0 },
         ball: { 
           x: backendState.ball.x, 
           y: backendState.ball.y, 
@@ -678,6 +819,14 @@ export class GameManager {
         paddleWidth: 10,
         ballRadius: 5
       };
+      
+      // Handle multiple paddles for arcade mode if backend sends them
+      if (backendState.paddles.team1 && Array.isArray(backendState.paddles.team1)) {
+        frontendState.leftPaddles = backendState.paddles.team1.map((p: any) => ({ y: p.y, speed: 0 }));
+      }
+      if (backendState.paddles.team2 && Array.isArray(backendState.paddles.team2)) {
+        frontendState.rightPaddles = backendState.paddles.team2.map((p: any) => ({ y: p.y, speed: 0 }));
+      }
       
       this.gameState = frontendState;
       this.render();
@@ -712,11 +861,27 @@ export class GameManager {
     this.ctx.shadowColor = '#77e6ff';
     this.ctx.shadowBlur = 10;
     
-    // Left paddle
-    this.ctx.fillRect(50, this.gameState.leftPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    // Draw left side paddles
+    if (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) {
+      // Multiple paddles for arcade mode
+      this.gameState.leftPaddles.forEach((paddle, index) => {
+        this.ctx.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+      });
+    } else {
+      // Single paddle for co-op/campaign mode
+      this.ctx.fillRect(50, this.gameState.leftPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    }
     
-    // Right paddle  
-    this.ctx.fillRect(this.canvas.width - 60, this.gameState.rightPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    // Draw right side paddles
+    if (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0) {
+      // Multiple paddles for arcade mode
+      this.gameState.rightPaddles.forEach((paddle, index) => {
+        this.ctx.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+      });
+    } else {
+      // Single paddle for co-op/campaign mode
+      this.ctx.fillRect(this.canvas.width - 60, this.gameState.rightPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+    }
     
     // Draw ball with trailing effect based on speed
     this.drawBallWithTrail();
@@ -987,6 +1152,13 @@ export class GameManager {
       return; // Campaign mode handles its own UI and navigation
     }
     
+    // Handle arcade mode completion
+    if (this.gameSettings.gameMode === 'arcade') {
+      console.log('🕹️ [ARCADE] Handling arcade game end');
+      this.handleArcadeGameEnd(result);
+      return; // Arcade mode handles its own UI and navigation
+    }
+    
     // Regular game end handling
     // Determine winner message
     const authManager = (window as any).authManager;
@@ -1121,17 +1293,39 @@ export class GameManager {
     }
 
     console.log('✅ [GameManager.startBotMatch] Guard passed - proceeding with bot match');
-    console.log('GameManager: Starting bot match');
-  // error to stopGame() here
-    // Check if this is CO-OP mode (campaign mode)
+    console.log('GameManager: Starting bot match with mode:', this.gameSettings.gameMode);
+    
+    // Check game mode and start appropriate match type
     if (this.gameSettings.gameMode === 'coop') {
       console.log('🎯 [CAMPAIGN] CO-OP mode detected, starting campaign game');
       await this.startCampaignGame();
+    } else if (this.gameSettings.gameMode === 'arcade') {
+      console.log('🕹️ [ARCADE] ARCADE mode detected, starting arcade match');
+      await this.startArcadeMatch();
     } else {
+      // Default or other modes
+      console.log('🎮 [GAME] Starting standard bot match');
       this.startBotMatchWithSettings(false);
     }
     
     console.log('🏁 [GameManager.startBotMatch] === COMPLETED ===');
+  }
+
+  // Start arcade mode (classic match with score to win)
+  public async startArcadeMatch(): Promise<void> {
+    console.log('🕹️ [ARCADE] Starting arcade mode');
+    this.isCampaignMode = false; // Arcade is NOT campaign mode
+    
+    console.log(`🕹️ [ARCADE] Score to win: ${this.gameSettings.scoreToWin || 5}`);
+    
+    // Ensure canvas exists
+    this.ensureCanvasInitialized();
+    
+    // Update arcade UI to show controls
+    this.updateArcadeUI();
+    
+    // Start the arcade match
+    await this.startArcadeMatchWithSettings();
   }
 
   // Start campaign mode (progressive difficulty against AI)
@@ -1148,6 +1342,129 @@ export class GameManager {
     this.updateCampaignLevelSettings();
     this.updateCampaignUI();
     this.startCampaignMatch();
+  }
+
+  // Start arcade match with custom settings
+  private async startArcadeMatchWithSettings(): Promise<void> {
+    console.log('🕹️ [ARCADE] Starting arcade match with settings');
+    
+    // Check if user is logged in
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    if (!user || !user.userId) {
+      alert('You must be logged in to play. Redirecting to login page.');
+      // Redirect to login page
+      const gameScreen = document.getElementById('game-screen');
+      const loginScreen = document.getElementById('login-screen');
+      if (gameScreen && loginScreen) {
+        gameScreen.classList.remove('active');
+        loginScreen.classList.add('active');
+      }
+      return;
+    }
+
+    // Ensure canvas is initialized for arcade matches
+    this.ensureCanvasInitialized();
+
+    // Update UI to show game starting
+    const waitingMsg = document.getElementById('waiting-message');
+    if (waitingMsg) waitingMsg.classList.remove('hidden');
+    
+    try {
+      // Connect to game server for arcade match
+      await this.connectToArcadeGameServer();
+    } catch (error) {
+      console.error('🕹️ [ARCADE] Failed to start arcade match:', error);
+      if (waitingMsg) waitingMsg.classList.add('hidden');
+      alert('Failed to start arcade match. Please try again.');
+      this.isPlaying = false;
+      this.stopGame();
+      return;
+    }
+  }
+
+  private async connectToArcadeGameServer(): Promise<void> {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
+    
+    return new Promise((resolve, reject) => {
+      // Close any existing websocket first
+      if (this.websocket) {
+        try {
+          this.websocket.onmessage = null as any;
+          this.websocket.onopen = null as any;
+          this.websocket.onclose = null as any;
+          this.websocket.onerror = null as any;
+          this.websocket.close();
+        } catch (e) {
+          console.warn('🕹️ [ARCADE] Error closing existing websocket', e);
+        }
+        this.websocket = null;
+      }
+
+      this.websocket = new WebSocket(wsUrl);
+
+      this.websocket.onopen = () => {
+        console.log('🕹️ [ARCADE] Connected to game server for arcade match');
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        
+        if (!user || !user.userId) {
+          console.error('🕹️ [ARCADE] No valid user logged in!');
+          reject(new Error('No valid user'));
+          return;
+        }
+
+        // Get selected players count for each team
+        const app = (window as any).app;
+        let team1Count = 1; // Default to 1
+        let team2Count = 1; // Default to 1
+        
+        if (app && app.localPlayers && app.selectedPlayerIds) {
+          const selectedPlayers = app.localPlayers.filter((p: any) => 
+            app.selectedPlayerIds.has(p.id?.toString())
+          );
+          team1Count = selectedPlayers.filter((p: any) => p.team === 1).length || 1;
+          team2Count = selectedPlayers.filter((p: any) => p.team === 2).length || 1;
+        }
+
+        // Send arcade match request with score to win and player counts
+        if (this.websocket) {
+          const arcadeRequest = {
+            type: 'userConnect',
+            userId: user.userId,
+            username: user.username,
+            gameMode: 'arcade',
+            scoreToWin: this.gameSettings.scoreToWin || 5,
+            team1PlayerCount: team1Count,
+            team2PlayerCount: team2Count
+          };
+          console.log('🕹️ [ARCADE] Sending match request:', arcadeRequest);
+          this.websocket.send(JSON.stringify(arcadeRequest));
+        }
+        resolve();
+      };
+
+      // Attach the message handler
+      if (this.websocket && this.boundHandleGameMessage) {
+        this.websocket.onmessage = this.boundHandleGameMessage;
+      }
+
+      this.websocket.onclose = () => {
+        console.log('🕹️ [ARCADE] Game server connection closed');
+        this.resetFindMatch();
+        this.isPlaying = false;
+        if (this.inputInterval) {
+          clearInterval(this.inputInterval);
+          this.inputInterval = null;
+        }
+      };
+
+      this.websocket.onerror = (error) => {
+        console.error('🕹️ [ARCADE] WebSocket error:', error);
+        reject(error);
+      };
+    });
   }
 
   private async startBotMatchWithSettings(isCampaign: boolean): Promise<void> {
@@ -1525,6 +1842,71 @@ export class GameManager {
     }
   }
 
+  private updateArcadeUI(): void {
+    // Show arcade mode controls hint
+    const app = (window as any).app;
+    if (!app || !app.localPlayers || !app.selectedPlayerIds) return;
+    
+    // Get SELECTED players only (highlighted in party list)
+    const selectedPlayers = app.localPlayers.filter((p: any) => 
+      app.selectedPlayerIds.has(p.id?.toString())
+    );
+    
+    const team1Players = selectedPlayers.filter((p: any) => p.team === 1);
+    const team2Players = selectedPlayers.filter((p: any) => p.team === 2);
+    
+    // Create or update controls display
+    let controlsDisplay = document.getElementById('arcade-controls-display');
+    if (!controlsDisplay) {
+      controlsDisplay = document.createElement('div');
+      controlsDisplay.id = 'arcade-controls-display';
+      controlsDisplay.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: #77e6ff;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: 'Orbitron', sans-serif;
+        z-index: 100;
+        border: 1px solid #77e6ff;
+        box-shadow: 0 0 20px rgba(119, 230, 255, 0.3);
+      `;
+      document.body.appendChild(controlsDisplay);
+    }
+    
+    const team1KeyHints = ['Q/A', 'W/S', 'E/D'];
+    const team2KeyHints = ['U/J', 'I/K', 'O/L'];
+    
+    let team1Text = `<span style="color: #77e6ff;">TEAM 1:</span> `;
+    team1Players.forEach((player: any, idx: number) => {
+      if (idx < 3) {
+        team1Text += `${player.username} (${team1KeyHints[idx]}) `;
+      }
+    });
+    if (team1Players.length > 0) {
+      team1Text += `<span style="color: #aaa; font-size: 12px;">or ↑/↓</span>`;
+    }
+    
+    let team2Text = `<span style="color: #e94560;">TEAM 2:</span> `;
+    team2Players.forEach((player: any, idx: number) => {
+      if (idx < 3) {
+        team2Text += `${player.username} (${team2KeyHints[idx]}) `;
+      }
+    });
+    
+    controlsDisplay.innerHTML = `
+      <div style="display: flex; gap: 30px; align-items: center;">
+        <div>${team1Text}</div>
+        <div style="color: #fff;">|</div>
+        <div>${team2Text}</div>
+      </div>
+    `;
+  }
+
   public progressToNextLevel(): void {
     if (!this.isCampaignMode) return;
 
@@ -1656,15 +2038,15 @@ export class GameManager {
     }
   }
   
-  // Clean up all campaign modals (called when navigating away from game screen)
+  // Clean up all game modals (called when navigating away from game screen)
   public cleanupCampaignModals(): void {
-    const modalIds = ['level-up-message', 'campaign-complete-message', 'retry-message'];
+    const modalIds = ['level-up-message', 'campaign-complete-message', 'retry-message', 'arcade-result-message', 'arcade-controls-display'];
     modalIds.forEach(id => {
       const modal = document.getElementById(id);
       if (modal) {
         // Remove from DOM (this also removes all event listeners)
         modal.remove();
-        console.log(`🎯 [CAMPAIGN] Removed modal: ${id}`);
+        console.log(`� [GAME] Removed modal: ${id}`);
       }
     });
     
@@ -1672,12 +2054,14 @@ export class GameManager {
     const orphanedModals = document.querySelectorAll('[style*="z-index: 10000"]');
     orphanedModals.forEach((modal) => {
       const element = modal as HTMLElement;
-      // Check if it's a campaign modal by checking content
+      // Check if it's a game modal by checking content
       if (element.textContent?.includes('LEVEL UP') || 
           element.textContent?.includes('CAMPAIGN COMPLETE') || 
-          element.textContent?.includes('TRY AGAIN')) {
+          element.textContent?.includes('TRY AGAIN') ||
+          element.textContent?.includes('VICTORY') ||
+          element.textContent?.includes('DEFEAT')) {
         element.remove();
-        console.log('🎯 [CAMPAIGN] Removed orphaned campaign modal');
+        console.log('� [GAME] Removed orphaned game modal');
       }
     });
   }
@@ -1935,6 +2319,89 @@ export class GameManager {
         this.restartCampaignLevel();
       }, 3000);
     }
+  }
+
+  // Handle arcade mode game end
+  private handleArcadeGameEnd(gameData: any): void {
+    console.log('🕹️ [ARCADE] Game ended with data:', gameData);
+    
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    
+    if (!user) return;
+    
+    // Check if player won
+    const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = winnerId === user.userId;
+    
+    // Get final scores
+    const scores = gameData.scores || { player1: 0, player2: 0 };
+    const finalScoreText = `${scores.player1} - ${scores.player2}`;
+    
+    // Show result message
+    this.showArcadeResultMessage(playerWon, finalScoreText);
+    
+    // Reset UI after delay
+    setTimeout(() => {
+      this.resetFindMatch();
+      
+      // Close websocket
+      if (this.websocket) {
+        this.websocket.close();
+        this.websocket = null;
+      }
+      
+      // Navigate back to play config
+      const app = (window as any).app;
+      if (app && app.router) {
+        app.router.navigate('play-config');
+      }
+    }, 3000);
+  }
+
+  private showArcadeResultMessage(playerWon: boolean, scoreText: string): void {
+    const message = document.createElement('div');
+    message.id = 'arcade-result-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${playerWon ? 'rgba(119, 230, 255, 0.95)' : 'rgba(233, 69, 96, 0.95)'};
+      color: #ffffff;
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 3px solid ${playerWon ? '#77e6ff' : '#ff6b8a'};
+      box-shadow: 0 0 40px ${playerWon ? 'rgba(119, 230, 255, 0.6)' : 'rgba(233, 69, 96, 0.6)'};
+      min-width: 400px;
+    `;
+    message.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">
+        ${playerWon ? '🎉' : '😔'}
+      </div>
+      <div style="color: #ffffff; margin-bottom: 15px;">
+        ${playerWon ? 'VICTORY!' : 'DEFEAT'}
+      </div>
+      <div style="font-size: 24px; margin-top: 10px; color: rgba(255, 255, 255, 0.9);">
+        Final Score: ${scoreText}
+      </div>
+      <div style="font-size: 16px; margin-top: 20px; color: rgba(255, 255, 255, 0.8);">
+        ${playerWon ? 'Well played! 🏆' : 'Better luck next time!'}
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 3000);
   }
 
   private showRetryMessage(): void {

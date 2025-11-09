@@ -15,6 +15,10 @@ export class App {
   handleGameModeChange(tab: HTMLElement): void {
     const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
     if (!mode) return;
+    
+    // Update the game settings with the new mode
+    this.gameSettings.gameMode = mode;
+    
     // Remove active from all tabs
     document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -1345,6 +1349,12 @@ export class App {
     console.log('✅ [App.startGame] Guards passed - proceeding with game start');
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
+
+    // Sync game settings with GameManager before starting
+    if (gameManager && typeof gameManager.setGameSettings === 'function') {
+      console.log('🎮 [App.startGame] Syncing game settings to GameManager');
+      gameManager.setGameSettings(this.gameSettings);
+    }
 
     // Update game UI with player information
     this.updateGameUI();
