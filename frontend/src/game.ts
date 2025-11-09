@@ -599,15 +599,44 @@ export class GameManager {
     }
     this.inputInterval = setInterval(() => {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
-        // Send individual paddle movement messages based on current key state
-        if (this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp']) {
+        // Check for opposing keys and prioritize the most recently pressed
+        const upPressed = this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp'];
+        const downPressed = this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
+        
+        // If both keys are pressed, use the most recently pressed one
+        if (upPressed && downPressed) {
+          const upTime = Math.max(
+            this.lastKeyPressTime['w'] || 0,
+            this.lastKeyPressTime['arrowup'] || 0,
+            this.lastKeyPressTime['ArrowUp'] || 0
+          );
+          const downTime = Math.max(
+            this.lastKeyPressTime['s'] || 0,
+            this.lastKeyPressTime['arrowdown'] || 0,
+            this.lastKeyPressTime['ArrowDown'] || 0
+          );
+          
+          if (downTime > upTime) {
+            // Down was pressed more recently
+            this.websocket.send(JSON.stringify({
+              type: 'movePaddle',
+              direction: 'down'
+            }));
+          } else {
+            // Up was pressed more recently (or same time)
+            this.websocket.send(JSON.stringify({
+              type: 'movePaddle',
+              direction: 'up'
+            }));
+          }
+        } else if (upPressed) {
+          // Only up is pressed
           this.websocket.send(JSON.stringify({
             type: 'movePaddle',
             direction: 'up'
           }));
-        }
-        
-        if (this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown']) {
+        } else if (downPressed) {
+          // Only down is pressed
           this.websocket.send(JSON.stringify({
             type: 'movePaddle',
             direction: 'down'
