@@ -24,15 +24,12 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
 import { Scene } from "@babylonjs/core/scene.js";
 import { HtmlMeshRenderer, HtmlMesh } from "@babylonjs/addons";
 
-// Get the canvas element from the DOM.
-const app = document.querySelector("#app")!;
-app.innerHTML = "";
+const root = document.querySelector("#root")!;
+const app = document.querySelector<HTMLDivElement>("#app")!;
 const canvas = document.createElement("canvas");
-// canvas.height = innerHeight;
-// canvas.width = innerWidth;
 canvas.style.height = `100%`;
 canvas.style.width = `100%`;
-app.append(canvas);
+root.append(canvas);
 
 // Associate a Babylon Engine to it.
 const engine = new Engine(canvas);
@@ -73,11 +70,7 @@ let htmlMesh = new HtmlMesh(scene, "htmlMesh");
 
 ImportMeshAsync(roomGlb, scene).then((res) => {
   // console.log(res);
-  let content = document.createElement("div");
-  content.style.height = "100%";
-  content.style.width = "100%";
-  content.innerHTML = `<h1>Hi</h1> `;
-  htmlMesh.setContent(content, 4, 3.8);
+  htmlMesh.setContent(app as HTMLElement, 4, 3.8);
   htmlMesh.rotation.y = Math.PI / 2;
   htmlMesh.scalingDeterminant = 0.075;
 
