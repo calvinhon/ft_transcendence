@@ -2,11 +2,28 @@
   "name": "game-service",
   "version": "1.0.0",
   "description": "Game microservice for Transcendence Pong",
-  "main": "server.js",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:js": "nodemon server.js",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "type-check": "tsc --noEmit"
+  },
   "dependencies": {
-    "fastify": "^4.24.3",
     "@fastify/cors": "^8.4.0",
     "@fastify/websocket": "^8.3.1",
+    "fastify": "^4.24.3",
     "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.1",
+    "@types/sqlite3": "^3.1.11",
+    "@types/ws": "^8.18.1",
+    "rimraf": "^6.0.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }

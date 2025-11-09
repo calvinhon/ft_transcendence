@@ -1,16 +1,35 @@
-# auth-service/Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install npm explicitly (usually included, but for Alpine, ensure latest)
-RUN apk add --no-cache npm
-
+# Copy package files
 COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install ALL dependencies (including devDependencies for TypeScript compilation)
 RUN npm install
 
-COPY . .
+# Copy source code and shared types
+COPY src/ ./src/
+# COPY ../shared/ ./shared/
+
+# Build TypeScript
+RUN npm run build
+
+# Remove devDependencies after build
+RUN npm prune --production
+
+# Create and set permissions for database directory
+RUN mkdir -p /app/database && chown -R node:node /app/database
+
+# Copy database directory
+COPY database/ ./database/
+RUN chown -R node:node ./database
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Switch to non-root user
+USER node
+
+# Start using compiled JavaScript
+CMD ["node", "dist/server.js"]

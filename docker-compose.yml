@@ -1,23 +1,16 @@
 services:
   nginx:
-    image: nginx:alpine
+    build: ./frontend
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend:/usr/share/nginx/html
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - auth-service
       - game-service
       - tournament-service
       - user-service
-    networks:
-      - transcendence-network
-
-  frontend:
-    build: ./frontend
-    volumes:
-      - ./frontend:/app
+      - hardhat-node
     networks:
       - transcendence-network
 
@@ -30,6 +23,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=auth-service
+      - NODE_ENV=development
     networks:
       - transcendence-network
 
@@ -69,6 +63,26 @@ services:
     networks:
       - transcendence-network
 
+  hardhat-node:
+    build: ./blockchain
+    container_name: hardhat-node
+    ports:
+      - "8545:8545"
+    volumes:
+      - hardhat-data:/app/data
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
+    env_file:
+      - .env
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   transcendence-network:
     driver: bridge
@@ -78,3 +92,4 @@ volumes:
   games-db:
   tournaments-db:
   users-db:
+  hardhat-data:
