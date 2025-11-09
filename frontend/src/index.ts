@@ -1,14 +1,14 @@
 // frontend/src/index.ts - Main entry point
-// import './app';
-// import './auth';
-// import './game';
-// import './match';
-// import './tournament';
-// import './profile';
-// import './leaderboard';
-// import './chat';
-// import './blockchain';
-// import './error-tracker';
+import "./app";
+import "./auth";
+import "./game";
+import "./match";
+import "./tournament";
+import "./profile";
+import "./leaderboard";
+import "./chat";
+import "./blockchain";
+import "./error-tracker";
 
 import roomGlb from "../assets/Room/Room.glb";
 
@@ -45,8 +45,8 @@ const camera = new ArcRotateCamera(
   "camera",
   0,
   0,
-  10,
-  new Vector3(0, 0, 40),
+  1,
+  new Vector3(-10, 0, 0),
   scene
 );
 
@@ -57,6 +57,7 @@ const camera = new ArcRotateCamera(
 
 // This attaches the camera to the canvas
 camera.attachControl(canvas, true);
+camera.fov = 0.2;
 
 // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 const light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
@@ -70,24 +71,25 @@ scene.clearColor = new Color4(0.05, 0.1, 0.15, 0);
 const htmlMeshRenderer = new HtmlMeshRenderer(scene);
 let htmlMesh = new HtmlMesh(scene, "htmlMesh");
 
-ImportMeshAsync(roomGlb, scene, { pluginExtension: ".glb" }).then((res) => {
+ImportMeshAsync(roomGlb, scene).then((res) => {
   // console.log(res);
   let content = document.createElement("div");
-  content.innerHTML = `<h1>Hi</h1>`;
-  content.style.fontSize = "10rem";
-  content.style.backgroundColor = "white";
-  content.style.color = "black";
   content.style.height = "100%";
   content.style.width = "100%";
-  htmlMesh.setContent(content, 15, 15);
-  htmlMesh.position = res.meshes[2].position;
-  htmlMesh.rotation.y = Math.PI;
-  camera.setTarget(htmlMesh.position);
+  content.innerHTML = `<h1>Hi</h1> `;
+  htmlMesh.setContent(content, 4, 3.8);
+  htmlMesh.rotation.y = Math.PI / 2;
+  htmlMesh.scalingDeterminant = 0.075;
 
-  // res.meshes[2].addChild(htmlMesh);
-  res.meshes[2].isVisible = false;
-  // res.meshes[1].isVisible = false;
-  // res.meshes[0].isVisible = false;
+  res.meshes.forEach((mesh) => {
+    if (mesh.name == "Monitor_Screen") {
+      htmlMesh.position = mesh.position;
+      htmlMesh.position.x -= 0.075;
+      htmlMesh.position.y += 0.1;
+      mesh.isVisible = false;
+    }
+  });
+  camera.setTarget(htmlMesh.position);
 });
 
 // // Render every frame
