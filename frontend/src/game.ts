@@ -160,6 +160,7 @@ export class GameManager {
   private keys: KeyState = {};
   // private chatSocket: WebSocket | null = null;
   private inputInterval: ReturnType<typeof setInterval> | null = null;
+  private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -681,24 +682,100 @@ export class GameManager {
     
     const app = (window as any).app;
     
-    // Get SELECTED players only (highlighted in party list)
-    // If no local players are set up, assume single player controlling team 1
+    // Debug logging (only log once)
+    if (!app) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    if (!app.localPlayers) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app.localPlayers not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    if (!app.selectedPlayerIds) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app.selectedPlayerIds not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    
+    // Log once on first successful check
+    if (!this.arcadeInputWarningShown) {
+      console.log('🎮 [ARCADE-INPUT] ✅ Setup complete');
+      console.log('🎮 [ARCADE-INPUT] localPlayers count:', app.localPlayers.length);tea
+      console.log('🎮 [ARCADE-INPUT] selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+      this.arcadeInputWarningShown = true;
+    }
+    
+    // Build team player lists including host if selected
     let team1Players: any[] = [];
     let team2Players: any[] = [];
     
-    if (app && app.localPlayers && app.selectedPlayerIds) {
-      const selectedPlayers = app.localPlayers.filter((p: any) => 
-        app.selectedPlayerIds.has(p.id?.toString())
-      );
-      
-      // Get players assigned to each team from selected players
-      team1Players = selectedPlayers.filter((p: any) => p.team === 1);
-      team2Players = selectedPlayers.filter((p: any) => p.team === 2);
-    } else {
-      // Fallback: Single player arcade mode - host controls team 1
-      console.log('🎮 [ARCADE-INPUT] No local players setup, using single-player arcade mode');
-      team1Players = [{ id: 1, team: 1 }]; // Virtual player for input handling
-      team2Players = []; // Bot controls team 2
+    // Check if host is selected
+    const authManager = (window as any).authManager;
+    const hostUser = authManager?.getCurrentUser();
+    const hostCard = document.getElementById('host-player-card');
+    const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                           hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+    
+    if (isHostSelected) {
+      // Host is always first in Team 1
+      team1Players.push({
+        userId: hostUser.userId,
+        username: hostUser.username,
+        id: hostUser.userId.toString(),
+        team: 1,
+        paddleIndex: 0
+      });
+    }
+    
+    // Get SELECTED local players (highlighted in party list)
+    const selectedPlayers = app.localPlayers.filter((p: any) => 
+      app.selectedPlayerIds.has(p.id?.toString())
+    );
+    
+    // Add local players to their teams
+    const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+    const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+    
+    localTeam1.forEach((p: any) => {
+      team1Players.push({
+        ...p,
+        paddleIndex: team1Players.length
+      });
+    });
+    
+    localTeam2.forEach((p: any) => {
+      team2Players.push({
+        ...p,
+        paddleIndex: team2Players.length
+      });
+    });
+    
+    // Check if AI is selected and add to appropriate team
+    const aiCard = document.getElementById('ai-player-card');
+    if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
+      const inTeam2 = aiCard.closest('#team2-list') !== null;
+      if (inTeam2) {
+        team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
+      } else {
+        team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+      }
+    }
+    
+    // Log team composition for debugging
+    if (team1Players.length === 0 && team2Players.length === 0) {
+      console.warn('🎮 [ARCADE-INPUT] ⚠️ NO PLAYERS IN EITHER TEAM!');
+      console.log('🎮 [ARCADE-INPUT] isHostSelected:', isHostSelected);
+      console.log('🎮 [ARCADE-INPUT] hostCard active?', hostCard?.classList.contains('active'));
+      console.log('🎮 [ARCADE-INPUT] selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+      return; // Don't process input if no players
     }
     
     // Team 1 key mappings (left side)
@@ -749,12 +826,14 @@ export class GameManager {
     }
     
     if (team1Direction) {
-      this.websocket?.send(JSON.stringify({
+      const message = {
         type: 'movePaddle',
         playerId: 1, // Team 1 / Left side
         paddleIndex: team1PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team1Direction
-      }));
+      };
+      console.log('🎮 [ARCADE-INPUT] 📤 Sending Team 1 move:', message);
+      this.websocket?.send(JSON.stringify(message));
     }
     
     // Handle Team 2 inputs (right paddle) - each player controls their own paddle
@@ -778,12 +857,14 @@ export class GameManager {
     }
     
     if (team2Direction) {
-      this.websocket?.send(JSON.stringify({
+      const message = {
         type: 'movePaddle',
         playerId: 2, // Team 2 / Right side
         paddleIndex: team2PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team2Direction
-      }));
+      };
+      console.log('🎮 [ARCADE-INPUT] 📤 Sending Team 2 move:', message);
+      this.websocket?.send(JSON.stringify(message));
     }
   }
 
@@ -1415,31 +1496,132 @@ export class GameManager {
           return;
         }
 
-        // Get selected players count for each team
+        // Get selected players and their team assignments
         const app = (window as any).app;
-        let team1Count = 1; // Default to 1
-        let team2Count = 1; // Default to 1
+        let team1Players: any[] = [];
+        let team2Players: any[] = [];
         
+        // First, check if host player is selected - host is ALWAYS first in team 1
+        const hostCard = document.getElementById('host-player-card');
+        const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                               app.selectedPlayerIds && app.selectedPlayerIds.has(user.userId.toString());
+        
+        if (isHostSelected) {
+          const hostPlayer = {
+            userId: user.userId,
+            username: user.username,
+            id: user.userId.toString(),
+            team: 1,
+            paddleIndex: 0 // Host is always first paddle in team 1
+          };
+          team1Players.push(hostPlayer);
+          console.log('🕹️ [ARCADE] Host added to Team 1 as first player (paddle 0) - Keys: Q/A + Arrows');
+        }
+        
+        // Then add local players based on their team assignments
         if (app && app.localPlayers && app.selectedPlayerIds) {
           const selectedPlayers = app.localPlayers.filter((p: any) => 
             app.selectedPlayerIds.has(p.id?.toString())
           );
-          team1Count = selectedPlayers.filter((p: any) => p.team === 1).length || 1;
-          team2Count = selectedPlayers.filter((p: any) => p.team === 2).length || 1;
+          
+          // Separate by team
+          const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+          const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+          
+          // Add local team 1 players AFTER host
+          localTeam1.forEach((p: any) => {
+            team1Players.push({
+              userId: p.userId,
+              username: p.username,
+              id: p.id,
+              team: 1,
+              paddleIndex: team1Players.length // Assign sequential paddle index
+            });
+          });
+          
+          // Add team 2 players
+          localTeam2.forEach((p: any) => {
+            team2Players.push({
+              userId: p.userId,
+              username: p.username,
+              id: p.id,
+              team: 2,
+              paddleIndex: team2Players.length // Assign sequential paddle index
+            });
+          });
+          
+          console.log('🕹️ [ARCADE] Team 1 players:', team1Players.map((p, i) => `${i}: ${p.username}`));
+          console.log('🕹️ [ARCADE] Team 2 players:', team2Players.map((p, i) => `${i}: ${p.username}`));
         }
+        
+        // Check if AI player is selected
+        const aiCard = document.getElementById('ai-player-card');
+        if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds && app.selectedPlayerIds.has('ai-player')) {
+          // Determine AI team from DOM position
+          const inTeam2 = aiCard.closest('#team2-list') !== null;
+          
+          const aiPlayer = {
+            userId: 0,
+            username: 'Bot',
+            id: 'ai-player',
+            team: inTeam2 ? 2 : 1,
+            paddleIndex: inTeam2 ? team2Players.length : team1Players.length
+          };
+          
+          if (inTeam2) {
+            team2Players.push(aiPlayer);
+            console.log('🕹️ [ARCADE] AI added to Team 2 at index', aiPlayer.paddleIndex);
+          } else {
+            team1Players.push(aiPlayer);
+            console.log('🕹️ [ARCADE] AI added to Team 1 at index', aiPlayer.paddleIndex);
+          }
+        }
+        
+        // Ensure at least 1 player per team (defaults)
+        const team1Count = Math.max(1, team1Players.length);
+        const team2Count = Math.max(1, team2Players.length);
 
-        // Send arcade match request with score to win and player counts
+        // Get all game settings from app
+        const gameSettings = app?.gameSettings || this.gameSettings;
+        
+        // Determine AI difficulty based on minimum player level
+        // For now, use the configured difficulty, but could be enhanced to check player stats
+        const aiDifficulty = gameSettings.aiDifficulty || 'medium';
+
+        // Send arcade match request with complete player information
         if (this.websocket) {
           const arcadeRequest = {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
             gameMode: 'arcade',
-            scoreToWin: this.gameSettings.scoreToWin || 5,
+            // Game settings
+            aiDifficulty: aiDifficulty,
+            ballSpeed: gameSettings.ballSpeed || 'medium',
+            paddleSpeed: gameSettings.paddleSpeed || 'medium',
+            powerupsEnabled: gameSettings.powerupsEnabled || false,
+            accelerateOnHit: gameSettings.accelerateOnHit || false,
+            scoreToWin: gameSettings.scoreToWin || 5,
+            // Team player counts
             team1PlayerCount: team1Count,
-            team2PlayerCount: team2Count
+            team2PlayerCount: team2Count,
+            // Detailed player information for each team
+            team1Players: team1Players.map((p, index) => ({
+              userId: p.userId,
+              username: p.username,
+              paddleIndex: index, // 0, 1, or 2
+              isBot: p.userId === 0 // Mark AI players
+            })),
+            team2Players: team2Players.map((p, index) => ({
+              userId: p.userId,
+              username: p.username,
+              paddleIndex: index, // 0, 1, or 2
+              isBot: p.userId === 0 // Mark AI players
+            }))
           };
-          console.log('🕹️ [ARCADE] Sending match request:', arcadeRequest);
+          console.log('🕹️ [ARCADE] Sending match request with full player info:', arcadeRequest);
+          console.log('🕹️ [ARCADE] Team 1 (LEFT SIDE):', arcadeRequest.team1Players);
+          console.log('🕹️ [ARCADE] Team 2 (RIGHT SIDE):', arcadeRequest.team2Players);
           this.websocket.send(JSON.stringify(arcadeRequest));
         }
         resolve();
