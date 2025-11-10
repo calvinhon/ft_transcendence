@@ -33,6 +33,8 @@ interface Paddle {
 interface Paddles {
   player1: Paddle;
   player2: Paddle;
+  team1?: Paddle[]; // Multiple paddles for arcade mode
+  team2?: Paddle[]; // Multiple paddles for arcade mode
 }
 
 interface Scores {
@@ -61,6 +63,8 @@ interface GameSettings {
   powerupsEnabled: boolean;
   accelerateOnHit: boolean;
   scoreToWin: number;
+  team1PlayerCount?: number; // Number of players on team 1
+  team2PlayerCount?: number; // Number of players on team 2
 }
 
 interface JoinGameMessage extends WebSocketMessage {
@@ -73,6 +77,8 @@ interface JoinGameMessage extends WebSocketMessage {
 interface MovePaddleMessage extends WebSocketMessage {
   type: 'movePaddle';
   direction: 'up' | 'down';
+  playerId?: number; // 1 for team1/left, 2 for team2/right
+  paddleIndex?: number; // Index of paddle in team (0, 1, 2)
 }
 
 interface GameRecord {
@@ -237,10 +243,40 @@ class PongGame {
       dy: (Math.random() - 0.5) * this.ballSpeed 
     };
     
+    // Initialize paddles (single paddle for co-op, multiple for arcade)
     this.paddles = {
       player1: { y: 250, x: 50 },
       player2: { y: 250, x: 750 }
     };
+    
+    // Initialize multiple paddles for arcade mode
+    if (this.gameSettings.gameMode === 'arcade') {
+      const team1Count = this.gameSettings.team1PlayerCount || 1;
+      const team2Count = this.gameSettings.team2PlayerCount || 1;
+      
+      // Create evenly spaced paddles for team 1 (left side)
+      this.paddles.team1 = [];
+      const team1Spacing = 600 / (team1Count + 1); // Distribute paddles across height
+      for (let i = 0; i < team1Count; i++) {
+        this.paddles.team1.push({
+          x: 50,
+          y: team1Spacing * (i + 1) - 50 // Center each paddle in its section
+        });
+      }
+      
+      // Create evenly spaced paddles for team 2 (right side)
+      this.paddles.team2 = [];
+      const team2Spacing = 600 / (team2Count + 1);
+      for (let i = 0; i < team2Count; i++) {
+        this.paddles.team2.push({
+          x: 750,
+          y: team2Spacing * (i + 1) - 50
+        });
+      }
+      
+      console.log(`🕹️ [GAME-${this.gameId}] Initialized arcade mode with ${team1Count} vs ${team2Count} paddles`);
+    }
+    
     this.scores = { player1: 0, player2: 0 };
     this.gameState = 'playing';
     this.maxScore = this.gameSettings.scoreToWin;
@@ -304,9 +340,7 @@ class PongGame {
 
   moveBotPaddle(): void {
     // AI behavior based on difficulty setting
-    const botPaddle = this.paddles.player2;
     const ballY = this.ball.y;
-    const paddleCenter = botPaddle.y + 50;
     
     // Adjust AI parameters based on difficulty
     let moveSpeed: number;
@@ -337,10 +371,28 @@ class PongGame {
     
     if (reactionDelay) return; // Sometimes bot doesn't react
     
-    if (paddleCenter < ballY - errorMargin && botPaddle.y < 500) {
-      botPaddle.y = Math.min(500, botPaddle.y + moveSpeed); // Move down
-    } else if (paddleCenter > ballY + errorMargin && botPaddle.y > 0) {
-      botPaddle.y = Math.max(0, botPaddle.y - moveSpeed); // Move up
+    // Handle arcade mode with multiple paddles
+    if (this.gameSettings.gameMode === 'arcade' && this.paddles.team2 && this.paddles.team2.length > 0) {
+      // Move all bot paddles in arcade mode
+      this.paddles.team2.forEach((botPaddle) => {
+        const paddleCenter = botPaddle.y + 50;
+        
+        if (paddleCenter < ballY - errorMargin && botPaddle.y < 500) {
+          botPaddle.y = Math.min(500, botPaddle.y + moveSpeed); // Move down
+        } else if (paddleCenter > ballY + errorMargin && botPaddle.y > 0) {
+          botPaddle.y = Math.max(0, botPaddle.y - moveSpeed); // Move up
+        }
+      });
+    } else {
+      // Co-op mode: single bot paddle
+      const botPaddle = this.paddles.player2;
+      const paddleCenter = botPaddle.y + 50;
+      
+      if (paddleCenter < ballY - errorMargin && botPaddle.y < 500) {
+        botPaddle.y = Math.min(500, botPaddle.y + moveSpeed); // Move down
+      } else if (paddleCenter > ballY + errorMargin && botPaddle.y > 0) {
+        botPaddle.y = Math.max(0, botPaddle.y - moveSpeed); // Move up
+      }
     }
   }
 
@@ -355,40 +407,81 @@ class PongGame {
       this.ball.dy = -this.ball.dy;
     }
 
-    // Ball collision with paddles
-    if (this.ball.x <= 60 && this.ball.y >= this.paddles.player1.y &&
-        this.ball.y <= this.paddles.player1.y + 100) {
-      // Calculate hit position on paddle (0 = top, 1 = bottom)
-      const hitPos = (this.ball.y - this.paddles.player1.y) / 100;
-      // Angle proportional to hit position: middle = 0°, edges = ±90°
-      const angle = (hitPos - 0.5) * Math.PI / 2; // -90° to +90°
-
-      const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
-      this.ball.dx = Math.abs(speed) * Math.cos(angle);
-      this.ball.dy = speed * Math.sin(angle);
-
-      if (this.accelerateOnHit) {
-        this.ball.dx *= 1.1; // Increase speed by 10%
-        this.ball.dy *= 1.1;
+    // Ball collision with left side paddles (team1 or player1)
+    let leftHit = false;
+    if (this.ball.x <= 60) {
+      // Check arcade mode paddles
+      if (this.paddles.team1 && this.paddles.team1.length > 0) {
+        for (const paddle of this.paddles.team1) {
+          if (this.ball.y >= paddle.y && this.ball.y <= paddle.y + 100) {
+            const hitPos = (this.ball.y - paddle.y) / 100;
+            const angle = (hitPos - 0.5) * Math.PI / 2;
+            const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+            this.ball.dx = Math.abs(speed) * Math.cos(angle);
+            this.ball.dy = speed * Math.sin(angle);
+            if (this.accelerateOnHit) {
+              this.ball.dx *= 1.1;
+              this.ball.dy *= 1.1;
+            }
+            leftHit = true;
+            break;
+          }
+        }
+      } else {
+        // Co-op mode: single paddle
+        if (this.ball.y >= this.paddles.player1.y && this.ball.y <= this.paddles.player1.y + 100) {
+          const hitPos = (this.ball.y - this.paddles.player1.y) / 100;
+          const angle = (hitPos - 0.5) * Math.PI / 2;
+          const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+          this.ball.dx = Math.abs(speed) * Math.cos(angle);
+          this.ball.dy = speed * Math.sin(angle);
+          if (this.accelerateOnHit) {
+            this.ball.dx *= 1.1;
+            this.ball.dy *= 1.1;
+          }
+          leftHit = true;
+        }
       }
     }
 
-    if (this.ball.x >= (740) && this.ball.y >= this.paddles.player2.y &&
-        this.ball.y <= this.paddles.player2.y + 100) {
-      // Calculate hit position on paddle (0 = top, 1 = bottom)
-      const hitPos = (this.ball.y - this.paddles.player2.y) / 100;
-      // Angle proportional to hit position: middle = 180°, edges = 90° to 270°
-      const angle = Math.PI + (hitPos - 0.5) * Math.PI / 2; // 90° to 270°
-
-      const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
-      this.ball.dx = Math.abs(speed) * Math.cos(angle);
-      this.ball.dy = speed * Math.sin(angle);
-
-      if (this.accelerateOnHit) {
-        this.ball.dx *= 1.1; // Increase speed by 10%
-        this.ball.dy *= 1.1;
+    // Ball collision with right side paddles (team2 or player2)
+    let rightHit = false;
+    if (this.ball.x >= 740) {
+      // Check arcade mode paddles
+      if (this.paddles.team2 && this.paddles.team2.length > 0) {
+        for (const paddle of this.paddles.team2) {
+          if (this.ball.y >= paddle.y && this.ball.y <= paddle.y + 100) {
+            const hitPos = (this.ball.y - paddle.y) / 100;
+            const angle = Math.PI + (hitPos - 0.5) * Math.PI / 2;
+            const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+            this.ball.dx = Math.abs(speed) * Math.cos(angle);
+            this.ball.dy = speed * Math.sin(angle);
+            if (this.accelerateOnHit) {
+              this.ball.dx *= 1.1;
+              this.ball.dy *= 1.1;
+            }
+            rightHit = true;
+            break;
+          }
+        }
+      } else {
+        // Co-op mode: single paddle
+        if (this.ball.y >= this.paddles.player2.y && this.ball.y <= this.paddles.player2.y + 100) {
+          const hitPos = (this.ball.y - this.paddles.player2.y) / 100;
+          const angle = Math.PI + (hitPos - 0.5) * Math.PI / 2;
+          const speed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+          this.ball.dx = Math.abs(speed) * Math.cos(angle);
+          this.ball.dy = speed * Math.sin(angle);
+          if (this.accelerateOnHit) {
+            this.ball.dx *= 1.1;
+            this.ball.dy *= 1.1;
+          }
+          rightHit = true;
+        }
       }
-    }    // Scoring
+    }
+
+    // Scoring
     if (this.ball.x < 0) {
       this.scores.player2++;
       this.resetBall();
@@ -417,10 +510,38 @@ class PongGame {
     }, 100);
   }
 
-  movePaddle(playerId: number, direction: 'up' | 'down'): void {
-    console.log('🏓 [MOVEPLADDLE] Called with playerId:', playerId, 'direction:', direction);
+  movePaddle(playerId: number, direction: 'up' | 'down', paddleIndex?: number): void {
+    console.log('🏓 [MOVEPLADDLE] Called with playerId:', playerId, 'direction:', direction, 'paddleIndex:', paddleIndex);
     console.log('🏓 [MOVEPLADDLE] player1.userId:', this.player1.userId, 'player2.userId:', this.player2.userId);
+    console.log('🏓 [MOVEPLADDLE] gameMode:', this.gameSettings.gameMode);
     
+    // Handle arcade mode with multiple paddles
+    if (this.gameSettings.gameMode === 'arcade' && paddleIndex !== undefined) {
+      const team = playerId === 1 ? 'team1' : 'team2';
+      const paddles = this.paddles[team];
+      
+      if (!paddles || !paddles[paddleIndex]) {
+        console.log('🏓 [MOVEPLADDLE] Invalid paddle index:', paddleIndex, 'for team:', team);
+        return;
+      }
+      
+      const paddle = paddles[paddleIndex];
+      const oldY = paddle.y;
+      const moveSpeed = this.paddleSpeed;
+      
+      if (direction === 'up' && paddle.y > 0) {
+        paddle.y = Math.max(0, paddle.y - moveSpeed);
+        console.log(`🏓 [MOVEPLADDLE] ⬆️ Team ${team} paddle ${paddleIndex} moved UP from ${oldY} to ${paddle.y}`);
+      } else if (direction === 'down' && paddle.y < 500) {
+        paddle.y = Math.min(500, paddle.y + moveSpeed);
+        console.log(`🏓 [MOVEPLADDLE] ⬇️ Team ${team} paddle ${paddleIndex} moved DOWN from ${oldY} to ${paddle.y}`);
+      } else {
+        console.log(`🏓 [MOVEPLADDLE] ❌ Movement blocked for team ${team} paddle ${paddleIndex}`);
+      }
+      return;
+    }
+    
+    // Handle co-op mode with single paddle
     const paddle = playerId === this.player1.userId ? 'player1' : 'player2';
     console.log('🏓 [MOVEPLADDLE] Determined paddle:', paddle);
     
@@ -603,10 +724,40 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
             console.log('🔵 [WS-MESSAGE] Processing userConnect');
             // Track user as online when they connect with authentication
             addOnlineUser(data.userId, data.username, connection.socket);
-            connection.socket.send(JSON.stringify({
-              type: 'connectionAck',
-              message: 'You are now tracked as online'
-            }));
+            
+            // Check if this is a game mode request (arcade or coop)
+            if (data.gameMode) {
+              console.log('🎮 [USER-CONNECT] Game mode detected:', data.gameMode);
+              
+              // Prepare game settings
+              const gameSettings: GameSettings = {
+                gameMode: data.gameMode || 'arcade',
+                aiDifficulty: data.aiDifficulty || 'medium',
+                ballSpeed: data.ballSpeed || 'medium',
+                paddleSpeed: data.paddleSpeed || 'medium',
+                powerupsEnabled: data.powerupsEnabled || false,
+                accelerateOnHit: data.accelerateOnHit || false,
+                scoreToWin: data.scoreToWin || 5,
+                team1PlayerCount: data.team1PlayerCount || 1,
+                team2PlayerCount: data.team2PlayerCount || 1
+              };
+              
+              console.log('🎮 [USER-CONNECT] Starting game with settings:', gameSettings);
+              
+              // Start the bot game directly
+              handleJoinBotGame(connection.socket, {
+                type: 'joinBotGame',
+                userId: data.userId,
+                username: data.username,
+                gameSettings: gameSettings
+              });
+            } else {
+              // Just acknowledge connection
+              connection.socket.send(JSON.stringify({
+                type: 'connectionAck',
+                message: 'You are now tracked as online'
+              }));
+            }
             break;
           case 'joinGame':
             console.log('🔵 [WS-MESSAGE] Processing joinGame');
@@ -832,7 +983,15 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
         const playerId = game.player1.socket === socket ? 
           game.player1.userId : game.player2.userId;
         console.log('🎮 [HANDLE-MOVE] Found game', gameId, 'for player', playerId, 'direction:', data.direction);
-        game.movePaddle(playerId, data.direction);
+        
+        // Pass paddleIndex for arcade mode
+        if (data.paddleIndex !== undefined) {
+          console.log('🎮 [HANDLE-MOVE] Arcade mode - paddleIndex:', data.paddleIndex);
+          game.movePaddle(data.playerId || playerId, data.direction, data.paddleIndex);
+        } else {
+          game.movePaddle(playerId, data.direction);
+        }
+        
         console.log('🎮 [HANDLE-MOVE] Paddle movement executed for player', playerId);
         return; // Found the game, no need to continue
       }

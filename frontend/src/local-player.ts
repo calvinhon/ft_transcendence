@@ -67,58 +67,7 @@ export function setupLocalPlayerLoginModal(app: any) {
     console.log('[LocalPlayer] Duplicate check - Host:', { email: hostEmail, username: hostUsername, userId: hostUserId });
     console.log('[LocalPlayer] Duplicate check - Input email:', email);
     
-    let duplicate = false;
-    let duplicateReason = '';
-    
-    // Check against host player
-    if (hostEmail && (hostEmail === email || hostUsername === email)) {
-      duplicate = true;
-      duplicateReason = 'Host player is already using this email/username';
-    }
-    
-    // Check against local players array
-    if (!duplicate && app.localPlayers) {
-      app.localPlayers.forEach((player: any) => {
-        if (player.email === email || player.username === email) {
-          duplicate = true;
-          duplicateReason = `Player ${player.username} is already using this email/username`;
-        }
-      });
-    }
-    
-    // Also check DOM elements as backup (in case localPlayers array is out of sync)
-    if (!duplicate) {
-      const team1List = document.getElementById('team1-list');
-      const team2List = document.getElementById('team2-list');
-      
-      if (team1List) {
-        team1List.querySelectorAll('.player-card.local-player').forEach(card => {
-          const cardEmail = (card as HTMLElement).dataset.email;
-          if (cardEmail && cardEmail === email) {
-            duplicate = true;
-            duplicateReason = 'This player is already in TEAM 1';
-          }
-        });
-      }
-      if (team2List) {
-        team2List.querySelectorAll('.player-card.local-player').forEach(card => {
-          const cardEmail = (card as HTMLElement).dataset.email;
-          if (cardEmail && cardEmail === email) {
-            duplicate = true;
-            duplicateReason = 'This player is already in TEAM 2';
-          }
-        });
-      }
-    }
-    
-    if (duplicate) {
-      error!.textContent = duplicateReason || 'This player is already added.';
-      error!.style.display = 'block';
-      console.warn('⚠️ [LocalPlayer] Duplicate detected:', duplicateReason);
-      isSubmittingLogin = false;  // Reset guard
-      return;
-    }
-    
+    // First, try to authenticate to get the actual user info
     const authManager = (window as any).authManager;
     if (!authManager) {
       error!.textContent = 'Auth system not available.';
@@ -130,24 +79,34 @@ export function setupLocalPlayerLoginModal(app: any) {
     
     console.log('[LocalPlayer] Attempting authentication...');
     
+    // Save the host's token AND currentUser before authenticating local player
+    const hostToken = localStorage.getItem('token');
+    const savedHostUser = authManager.getCurrentUser();
+    console.log('[LocalPlayer] Saved host token and user for restoration:', savedHostUser);
+    
     try {
       const result = await authManager.login(email, password);
       console.log('[LocalPlayer] Auth result:', result.success ? '✅ Success' : '❌ Failed', result);
-      console.log('[LocalPlayer] result.success:', result.success);
-      console.log('[LocalPlayer] result.data:', result.data);
-      console.log('[LocalPlayer] Checking condition: result.success && result.data =', result.success && result.data);
       
-      if (result.success && result.data) {
-      console.log('[LocalPlayer] ✅ Entered success block!');
-      if (!app.localPlayers) app.localPlayers = [];
-      // Add to correct team
-      let addPlayerTeam = 1;
-      if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+      // CRITICAL: Restore the host's token AND currentUser immediately after local player auth
+      if (hostToken) {
+        localStorage.setItem('token', hostToken);
+        console.log('[LocalPlayer] ✅ Restored host token to localStorage');
+      }
+      if (savedHostUser && authManager.setCurrentUser) {
+        authManager.currentUser = savedHostUser;
+        console.log('[LocalPlayer] ✅ Restored host currentUser');
+      }
       
-      console.log('[LocalPlayer] Creating player object...');
-      console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));
+      if (!result.success || !result.data) {
+        error!.textContent = result.error || 'Login failed.';
+        error!.style.display = 'block';
+        console.error('❌ [LocalPlayer] Login failed:', result.error);
+        isSubmittingLogin = false;  // Reset guard on error
+        return;
+      }
       
-      // Extract user data from nested structure (result.data.user)
+      // Extract user data from nested structure
       const userData = result.data.user || result.data.data || result.data;
       console.log('[LocalPlayer] Extracted userData:', userData);
       
@@ -155,13 +114,86 @@ export function setupLocalPlayerLoginModal(app: any) {
         throw new Error('User data is missing userId. Please check the response structure.');
       }
       
+      const loginUserId = userData.userId.toString();
+      const loginUsername = userData.username;
+      const loginEmail = userData.email;
+      
+      console.log('[LocalPlayer] Authenticated user data:', { userId: loginUserId, username: loginUsername, email: loginEmail });
+      
+      // Now check for duplicates using the actual authenticated user data
+      let duplicate = false;
+      let duplicateReason = '';
+      
+      // Check against host player by userId, email, and username
+      // Only check if host data is actually available
+      if (hostUserId && loginUserId && hostUserId === loginUserId) {
+        duplicate = true;
+        duplicateReason = 'This is the host player account. Host cannot be added as local player.';
+        console.log('[LocalPlayer] Duplicate: userId match with host');
+      } else if (hostEmail && loginEmail && hostEmail.toLowerCase() === loginEmail.toLowerCase()) {
+        duplicate = true;
+        duplicateReason = 'Host player is already using this email';
+        console.log('[LocalPlayer] Duplicate: email match with host');
+      } else if (hostUsername && loginUsername && hostUsername.toLowerCase() === loginUsername.toLowerCase()) {
+        duplicate = true;
+        duplicateReason = 'Host player is already using this username';
+        console.log('[LocalPlayer] Duplicate: username match with host');
+      }
+      
+      // Check against local players array
+      if (!duplicate && app.localPlayers && app.localPlayers.length > 0) {
+        console.log('[LocalPlayer] Checking against', app.localPlayers.length, 'existing local players');
+        app.localPlayers.forEach((player: any, index: number) => {
+          console.log(`[LocalPlayer] Checking player ${index}:`, { 
+            userId: player.userId, 
+            username: player.username, 
+            email: player.email 
+          });
+          
+          if (player.userId?.toString() === loginUserId) {
+            duplicate = true;
+            duplicateReason = `Player ${player.username} is already added`;
+            console.log('[LocalPlayer] Duplicate: userId match with existing player');
+          } else if (player.email && loginEmail && player.email.toLowerCase() === loginEmail.toLowerCase()) {
+            duplicate = true;
+            duplicateReason = `Player with email ${loginEmail} is already added`;
+            console.log('[LocalPlayer] Duplicate: email match with existing player');
+          } else if (player.username && loginUsername && player.username.toLowerCase() === loginUsername.toLowerCase()) {
+            duplicate = true;
+            duplicateReason = `Player ${loginUsername} is already added`;
+            console.log('[LocalPlayer] Duplicate: username match with existing player');
+          }
+        });
+      }
+      
+      if (duplicate) {
+        console.warn('⚠️ [LocalPlayer] Duplicate detected:', duplicateReason);
+        error!.textContent = duplicateReason || 'This player is already added.';
+        error!.style.display = 'block';
+        isSubmittingLogin = false;  // Reset guard
+        return;
+      }
+      
+      console.log('[LocalPlayer] ✅ No duplicates found, proceeding to add player');
+      
+      // Prepare to add the player
+      if (!app.localPlayers) app.localPlayers = [];
+      
+      // Add to correct team
+      let addPlayerTeam = 1;
+      if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+      
+      console.log('[LocalPlayer] Creating player object...');
+      console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));
+
+      
       const playerObj = {
         id: userData.userId.toString(),
         username: userData.username,
         isCurrentUser: false,
         userId: userData.userId,
         token: result.data.token || '',
-        email: userData.email || email,
+        email: userData.email || loginEmail,
         team: addPlayerTeam  // Store which team this player belongs to
       };        console.log('[LocalPlayer] Adding player to TEAM', addPlayerTeam, '- Player:', playerObj);
       
@@ -206,12 +238,7 @@ export function setupLocalPlayerLoginModal(app: any) {
         app.updateGamePartyDisplay();
         console.log('[LocalPlayer] ✅ Party display updated with new player');
       }, 50);
-    } else {
-      error!.textContent = result.error || 'Login failed.';
-      error!.style.display = 'block';
-      console.error('❌ [LocalPlayer] Login failed:', result.error);
-      isSubmittingLogin = false;  // Reset guard on error
-    }
+      
     } catch (err) {
       console.error('❌ [LocalPlayer] Exception during login:', err);
       error!.textContent = 'An error occurred during login: ' + (err as Error).message;
@@ -546,12 +573,27 @@ export function setupLocalPlayerRegisterModal(app: any) {
     
     console.log('[LocalPlayer] Attempting registration...');
     
+    // Save the host's token AND currentUser before registering local player
+    const hostToken = localStorage.getItem('token');
+    const savedHostUser = authManager.getCurrentUser();
+    console.log('[LocalPlayer] Saved host token and user for restoration:', savedHostUser);
+    
     try {
       const result = await authManager.register(username, email, password);
       console.log('[LocalPlayer] Registration result:', result.success ? '✅ Success' : '❌ Failed', result);
       console.log('[LocalPlayer] result.success:', result.success);
       console.log('[LocalPlayer] result.data:', result.data);
       console.log('[LocalPlayer] Checking condition: result.success && result.data =', result.success && result.data);
+      
+      // CRITICAL: Restore the host's token AND currentUser immediately after local player registration
+      if (hostToken) {
+        localStorage.setItem('token', hostToken);
+        console.log('[LocalPlayer] ✅ Restored host token to localStorage');
+      }
+      if (savedHostUser && authManager.setCurrentUser) {
+        authManager.currentUser = savedHostUser;
+        console.log('[LocalPlayer] ✅ Restored host currentUser');
+      }
       
       if (result.success && result.data) {
       console.log('[LocalPlayer] ✅ Entered register success block!');
