@@ -87,15 +87,33 @@ export function setupLocalPlayerLoginModal(app: any) {
     try {
       const result = await authManager.login(email, password);
       console.log('[LocalPlayer] Auth result:', result.success ? '✅ Success' : '❌ Failed', result);
+      console.log('[LocalPlayer] Current authManager.currentUser after login:', authManager.currentUser);
       
       // CRITICAL: Restore the host's token AND currentUser immediately after local player auth
       if (hostToken) {
         localStorage.setItem('token', hostToken);
         console.log('[LocalPlayer] ✅ Restored host token to localStorage');
       }
-      if (savedHostUser && authManager.setCurrentUser) {
+      if (savedHostUser) {
+        console.log('[LocalPlayer] Restoring host user from:', authManager.currentUser?.username, 'to:', savedHostUser.username);
         authManager.currentUser = savedHostUser;
-        console.log('[LocalPlayer] ✅ Restored host currentUser');
+        console.log('[LocalPlayer] ✅ Restored host currentUser:', savedHostUser.username);
+        console.log('[LocalPlayer] Verification - authManager.currentUser is now:', authManager.currentUser?.username);
+        
+        // CRITICAL: Immediately update all host player name elements in the DOM
+        // to ensure they display the correct host username, not the local player's
+        const hostPlayerNames = [
+          document.getElementById('host-player-name'),           // Arcade mode
+          document.getElementById('host-player-name-coop'),      // Coop mode
+          document.getElementById('host-player-name-tournament') // Tournament mode
+        ];
+        
+        hostPlayerNames.forEach(element => {
+          if (element) {
+            element.textContent = savedHostUser.username;
+            console.log('[LocalPlayer] ✅ Restored host name in element:', element.id, 'to:', savedHostUser.username);
+          }
+        });
       }
       
       if (!result.success || !result.data) {
@@ -179,9 +197,32 @@ export function setupLocalPlayerLoginModal(app: any) {
       // Prepare to add the player
       if (!app.localPlayers) app.localPlayers = [];
       
-      // Add to correct team
-      let addPlayerTeam = 1;
-      if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+      // Add to correct team (can be 1, 2, or 'tournament')
+      let addPlayerTeam: number | string = 1;
+      console.log('[LocalPlayer] window.addPlayerTeam value:', (window as any).addPlayerTeam);
+      if ((window as any).addPlayerTeam !== undefined) {
+        addPlayerTeam = (window as any).addPlayerTeam;
+      }
+      console.log('[LocalPlayer] Using addPlayerTeam:', addPlayerTeam);
+      
+      // If adding from tournament mode, randomly assign to team 1 or 2 for arcade compatibility
+      if (addPlayerTeam === 'tournament') {
+        // Count existing players in each team to balance them
+        const team1Count = app.localPlayers.filter((p: any) => p.team === 1).length + 1; // +1 for host
+        const team2Count = app.localPlayers.filter((p: any) => p.team === 2).length + 1; // +1 for AI
+        
+        // Assign to team with fewer players, or random if equal
+        if (team1Count < team2Count) {
+          addPlayerTeam = 1;
+        } else if (team2Count < team1Count) {
+          addPlayerTeam = 2;
+        } else {
+          // Equal teams - randomly assign
+          addPlayerTeam = Math.random() < 0.5 ? 1 : 2;
+        }
+        console.log('[LocalPlayer] Tournament player assigned to team', addPlayerTeam, 
+                    '(Team 1:', team1Count, '| Team 2:', team2Count, ')');
+      }
       
       console.log('[LocalPlayer] Creating player object...');
       console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));
@@ -195,10 +236,12 @@ export function setupLocalPlayerLoginModal(app: any) {
         token: result.data.token || '',
         email: userData.email || loginEmail,
         team: addPlayerTeam  // Store which team this player belongs to
-      };        console.log('[LocalPlayer] Adding player to TEAM', addPlayerTeam, '- Player:', playerObj);
+      };
+      console.log('[LocalPlayer] Created player object with team:', playerObj.team, '- Full player:', playerObj);
       
       // Add player to localPlayers array
       app.localPlayers.push(playerObj);
+      console.log('[LocalPlayer] Total localPlayers count:', app.localPlayers.length);
       
       // Mark player as selected (highlighted)
       const playerId = playerObj.id;
@@ -592,7 +635,22 @@ export function setupLocalPlayerRegisterModal(app: any) {
       }
       if (savedHostUser && authManager.setCurrentUser) {
         authManager.currentUser = savedHostUser;
-        console.log('[LocalPlayer] ✅ Restored host currentUser');
+        console.log('[LocalPlayer] ✅ Restored host currentUser:', savedHostUser.username);
+        
+        // CRITICAL: Immediately update all host player name elements in the DOM
+        // to ensure they display the correct host username, not the local player's
+        const hostPlayerNames = [
+          document.getElementById('host-player-name'),           // Arcade mode
+          document.getElementById('host-player-name-coop'),      // Coop mode
+          document.getElementById('host-player-name-tournament') // Tournament mode
+        ];
+        
+        hostPlayerNames.forEach(element => {
+          if (element) {
+            element.textContent = savedHostUser.username;
+            console.log('[LocalPlayer] ✅ Restored host name in element:', element.id);
+          }
+        });
       }
       
       if (result.success && result.data) {
@@ -600,7 +658,9 @@ export function setupLocalPlayerRegisterModal(app: any) {
       if (!app.localPlayers) app.localPlayers = [];
       // Add to correct team
       let addPlayerTeam = 1;
-      if ((window as any).addPlayerTeam) addPlayerTeam = (window as any).addPlayerTeam;
+      if ((window as any).addPlayerTeam !== undefined) {
+        addPlayerTeam = (window as any).addPlayerTeam;
+      }
       
       console.log('[LocalPlayer] Creating player object for registration...');
       console.log('[LocalPlayer] Full result.data structure:', JSON.stringify(result.data, null, 2));

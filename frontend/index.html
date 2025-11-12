@@ -283,7 +283,63 @@
                 </div>
                 <div class="column-content">
                   <div id="game-party-list" class="players-list">
-                    <div class="teams-row" style="display: flex; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
+                    <!-- COOP MODE: Single party frame (shown by default for coop) -->
+                    <div id="coop-party-frame" class="coop-party-frame" style="display: block;">
+                      <div class="party-list">
+                        <div id="host-player-card-coop" class="player-card host-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-crown"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name" id="host-player-name-coop">Loading...</div>
+                            <span class="role-badge host">HOST</span>
+                          </div>
+                        </div>
+                        
+                        <div id="ai-player-card-coop" class="player-card ai-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-robot"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name">AI</div>
+                            <span class="role-badge ai">AI</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TOURNAMENT MODE: Single party frame with host + add player -->
+                    <div id="tournament-party-frame" class="tournament-party-frame" style="display: none;">
+                      <div class="party-list">
+                        <div id="host-player-card-tournament" class="player-card host-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-crown"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name" id="host-player-name-tournament">Loading...</div>
+                            <span class="role-badge host">HOST</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Local players will be injected here -->
+                        <div id="tournament-local-players" class="local-players"></div>
+                        
+                        <!-- Add Player button -->
+                        <button
+                          id="add-tournament-player-btn"
+                          class="add-player-btn"
+                          aria-controls="add-player-modal"
+                          aria-haspopup="dialog"
+                          title="Add local player"
+                        >
+                          <i class="fas fa-user-plus"></i>
+                          <span>Add Player</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- ARCADE MODE: Team-based layout -->
+                    <div class="teams-row" id="teams-row" style="display: none; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
                         <!-- TEAM 1 Section -->
                         <div class="team-section" id="team1-section">
                           <div class="team-title">TEAM 1</div>
@@ -322,7 +378,7 @@
                         <div class="team-section" id="team2-section">
                             <div class="team-title">TEAM 2</div>
                             <div class="team-list" id="team2-list">
-                              <div id="ai-player-card" class="player-card ai-player active">
+                              <div id="ai-player-card" class="player-card ai-player">
                                 <div class="player-avatar">
                                   <i class="fas fa-robot"></i>
                                 </div>

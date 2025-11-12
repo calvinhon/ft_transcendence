@@ -177,7 +177,7 @@ export class GameManager {
   // Start false by default; set to true when entering campaign via startCampaignGame or startBotMatchWithSettings
   private isCampaignMode: boolean = false;
   private currentCampaignLevel: number = 1;
-  private maxCampaignLevel: number = 10;
+  private maxCampaignLevel: number = 21; //Maximum level one can reach
 
   constructor() {
     // Assign unique instance ID
@@ -705,14 +705,6 @@ export class GameManager {
       return;
     }
     
-    // Log once on first successful check
-    if (!this.arcadeInputWarningShown) {
-      console.log('🎮 [ARCADE-INPUT] ✅ Setup complete');
-      console.log('🎮 [ARCADE-INPUT] localPlayers count:', app.localPlayers.length);tea
-      console.log('🎮 [ARCADE-INPUT] selectedPlayerIds:', Array.from(app.selectedPlayerIds));
-      this.arcadeInputWarningShown = true;
-    }
-    
     // Build team player lists including host if selected
     let team1Players: any[] = [];
     let team2Players: any[] = [];
@@ -724,6 +716,13 @@ export class GameManager {
     const isHostSelected = hostCard && hostCard.classList.contains('active') && 
                            hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
     
+    // Log detailed player detection info every frame
+    console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
+    console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+    console.log('  - hostUser:', hostUser);
+    console.log('  - isHostSelected:', isHostSelected);
+    console.log('  - hostCard active?', hostCard?.classList.contains('active'));
+    
     if (isHostSelected) {
       // Host is always first in Team 1
       team1Players.push({
@@ -733,12 +732,15 @@ export class GameManager {
         team: 1,
         paddleIndex: 0
       });
+      console.log('  - ✅ Added host to Team 1:', hostUser.username);
     }
     
     // Get SELECTED local players (highlighted in party list)
     const selectedPlayers = app.localPlayers.filter((p: any) => 
       app.selectedPlayerIds.has(p.id?.toString())
     );
+    
+    console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
     
     // Add local players to their teams
     const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
@@ -769,12 +771,12 @@ export class GameManager {
       }
     }
     
+    console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    
     // Log team composition for debugging
     if (team1Players.length === 0 && team2Players.length === 0) {
-      console.warn('🎮 [ARCADE-INPUT] ⚠️ NO PLAYERS IN EITHER TEAM!');
-      console.log('🎮 [ARCADE-INPUT] isHostSelected:', isHostSelected);
-      console.log('🎮 [ARCADE-INPUT] hostCard active?', hostCard?.classList.contains('active'));
-      console.log('🎮 [ARCADE-INPUT] selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+      console.error('🎮 [ARCADE-INPUT] ❌ NO PLAYERS IN EITHER TEAM!');
       return; // Don't process input if no players
     }
     

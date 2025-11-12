@@ -44,6 +44,11 @@ export class App {
     playerCard.className = 'player-card local-player';
     playerCard.dataset.playerId = player.id;
     playerCard.dataset.email = player.email || ''; // Store email for duplicate checking
+    
+    // Make player card draggable in arcade mode
+    playerCard.draggable = true;
+    playerCard.dataset.team = (player as any).team || '1';
+    
     playerCard.innerHTML = [
       '<div class="player-avatar"><i class="fas fa-home"></i></div>',
       '<div class="player-info">',
@@ -54,6 +59,11 @@ export class App {
         `<button class="remove-btn" type="button"><i class="fas fa-times"></i></button>`,
       '</div>'
     ].join('');
+    
+    // Add drag event listeners
+    playerCard.addEventListener('dragstart', this.handleDragStart.bind(this));
+    playerCard.addEventListener('dragend', this.handleDragEnd.bind(this));
+    
     // Remove button event
     playerCard.querySelector('.remove-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -70,7 +80,56 @@ export class App {
   updateGamePartyDisplay(): void {
     const team1List = document.getElementById('team1-list');
     const team2List = document.getElementById('team2-list');
-    if (!team1List || !team2List) return;
+    const tournamentLocalContainer = document.getElementById('tournament-local-players');
+    
+    console.log('[updateGamePartyDisplay] Current mode:', this.gameSettings.gameMode);
+    console.log('[updateGamePartyDisplay] Tournament container exists:', !!tournamentLocalContainer);
+    console.log('[updateGamePartyDisplay] Local players count:', this.localPlayers.length);
+    
+    // Clear tournament local players if it exists
+    if (tournamentLocalContainer) {
+      tournamentLocalContainer.innerHTML = '';
+      console.log('[updateGamePartyDisplay] Cleared tournament local container');
+    }
+
+    // Check current game mode to determine which container to update
+    const currentMode = this.gameSettings.gameMode;
+    
+    // If we're in tournament mode, show ALL local players (from any mode)
+    if (currentMode === 'tournament' && tournamentLocalContainer) {
+      console.log('[updateGamePartyDisplay] Adding ALL local players to tournament container');
+      
+      // CRITICAL: Ensure host name is correct before updating players
+      const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
+      const authManager = (window as any).authManager;
+      if (hostPlayerNameTournament && authManager && authManager.getCurrentUser()) {
+        const currentUsername = authManager.getCurrentUser().username;
+        console.log('[updateGamePartyDisplay] Ensuring tournament host name is:', currentUsername);
+        hostPlayerNameTournament.textContent = currentUsername;
+      }
+      
+      this.localPlayers.forEach((player, index) => {
+        const playerCard = this.createPlayerCard(player);
+        const playerId = player.id?.toString();
+        console.log(`[updateGamePartyDisplay] Adding player ${index}:`, player.username, 'ID:', playerId);
+        tournamentLocalContainer.appendChild(playerCard);
+        
+        // Restore highlight if this player is selected
+        if (playerId && this.selectedPlayerIds.has(playerId)) {
+          playerCard.classList.add('active');
+        } else {
+          playerCard.classList.remove('active');
+        }
+      });
+      console.log('[updateGamePartyDisplay] Tournament container children count:', tournamentLocalContainer.children.length);
+      return;
+    }
+
+    // If we're not in arcade mode (coop or mode without team lists), return early
+    if (!team1List || !team2List) {
+      console.log('[updateGamePartyDisplay] Not in arcade mode, returning early');
+      return;
+    }
 
     // Clear local players from both teams (keep host and AI)
     const team1LocalContainer = document.getElementById('team1-local-players');
@@ -92,8 +151,14 @@ export class App {
       }
     }
 
-    // Add local players to their respective teams
+    // Add local players to their respective teams (arcade mode only - filter out tournament players)
     this.localPlayers.forEach(player => {
+      // Skip tournament players in arcade mode
+      if ((player as any).team === 'tournament') {
+        console.log('[updateGamePartyDisplay] Skipping tournament player in arcade mode:', player.username);
+        return;
+      }
+      
       const playerCard = this.createPlayerCard(player);
       const playerId = player.id?.toString();
       
@@ -288,6 +353,11 @@ export class App {
     
     // Initialize local players with current user
     this.initializeLocalPlayers();
+    
+    // Initialize coop mode as default (ensure party list is visible)
+    console.log('[App.init] Setting up default coop mode');
+    this.gameSettings.gameMode = 'coop';
+    this.setupCoopMode();
 
     // Check authentication and update chat visibility
     await this.checkExistingLogin();
@@ -735,6 +805,17 @@ export class App {
       }
     }
 
+    // When navigating away from play-config, hide all party frames
+    if (screenName !== 'play-config') {
+      const coopPartyFrame = document.getElementById('coop-party-frame');
+      const tournamentPartyFrame = document.getElementById('tournament-party-frame');
+      const teamsRow = document.getElementById('teams-row');
+      
+      if (coopPartyFrame) coopPartyFrame.style.display = 'none';
+      if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
+      if (teamsRow) teamsRow.style.display = 'none';
+    }
+
     // Set body data attribute for CSS targeting
     document.body.setAttribute('data-current-screen', screenName);
 
@@ -907,15 +988,13 @@ export class App {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     const token = localStorage.getItem('token') || '';
-    if (user) {
-      this.localPlayers = [{
-        id: user.userId.toString(),
-        username: user.username,
-        isCurrentUser: true,
-        userId: user.userId,
-        token: token
-      }];
-    }
+    
+    // IMPORTANT: Do NOT add the host user to localPlayers array
+    // The host is displayed separately in the host-player-card elements
+    // localPlayers should only contain additional local players that are added via the "Add Player" button
+    console.log('[App] Initializing localPlayers array (empty - host is not a local player)');
+    this.localPlayers = [];
+    
     this.updateLocalPlayersDisplay();
   }
 
@@ -974,8 +1053,11 @@ export class App {
     // Update host player display with username
     const hostPlayerName = document.getElementById('host-player-name');
     const authManager = (window as any).authManager;
+    console.log('[updatePlayersForMode] mode:', mode, 'authManager.currentUser:', authManager?.currentUser);
     if (hostPlayerName && authManager && authManager.getCurrentUser()) {
-      hostPlayerName.textContent = authManager.getCurrentUser().username;
+      const currentUsername = authManager.getCurrentUser().username;
+      console.log('[updatePlayersForMode] Setting arcade host name to:', currentUsername);
+      hostPlayerName.textContent = currentUsername;
     }
 
     // Handle mode-specific player setup
@@ -1048,21 +1130,40 @@ export class App {
   }
 
   private setupCoopMode(): void {
-    // CO-OP mode: Ensure HOST and AI are active by default
-    const hostPlayerCard = document.getElementById('host-player-card');
-    const aiPlayerCard = document.getElementById('ai-player-card');
+    // CO-OP mode: Show single party frame with HOST and AI
+    const coopPartyFrame = document.getElementById('coop-party-frame');
+    const tournamentPartyFrame = document.getElementById('tournament-party-frame');
+    const teamsRow = document.getElementById('teams-row');
     
-    if (hostPlayerCard) {
-      hostPlayerCard.classList.add('active');
+    // Show coop frame, hide others
+    if (coopPartyFrame) coopPartyFrame.style.display = 'block';
+    if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
+    if (teamsRow) teamsRow.style.display = 'none';
+    
+    // Activate host and AI cards in coop frame
+    const hostPlayerCardCoop = document.getElementById('host-player-card-coop');
+    const aiPlayerCardCoop = document.getElementById('ai-player-card-coop');
+    const hostPlayerNameCoop = document.getElementById('host-player-name-coop');
+    
+    // Update host name in coop frame
+    const authManager = (window as any).authManager;
+    console.log('[setupCoopMode] authManager.currentUser:', authManager?.currentUser);
+    if (hostPlayerNameCoop && authManager && authManager.getCurrentUser()) {
+      const currentUsername = authManager.getCurrentUser().username;
+      console.log('[setupCoopMode] Setting host name to:', currentUsername);
+      hostPlayerNameCoop.textContent = currentUsername;
+    }
+    
+    if (hostPlayerCardCoop) {
+      hostPlayerCardCoop.classList.add('active');
       // persist host selection
       try {
-        const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
       } catch (e) { /* ignore */ }
     }
-    if (aiPlayerCard) {
-      aiPlayerCard.classList.add('active');
+    if (aiPlayerCardCoop) {
+      aiPlayerCardCoop.classList.add('active');
       this.selectedPlayerIds.add('ai-player');
     }
     
@@ -1083,28 +1184,44 @@ export class App {
   }
 
   private setupTournamentMode(): void {
-    // Tournament mode: Allow adding players, show add player buttons
-    const addPlayerButtons = document.querySelectorAll('.add-player-btn');
-    addPlayerButtons.forEach(btn => {
-      (btn as HTMLElement).style.display = 'flex';
-    });
+    // Tournament mode: Show single party frame with host + add player button
+    const coopPartyFrame = document.getElementById('coop-party-frame');
+    const tournamentPartyFrame = document.getElementById('tournament-party-frame');
+    const teamsRow = document.getElementById('teams-row');
     
-    // Clear any default selections - let user choose
-    const hostPlayerCard = document.getElementById('host-player-card');
-    const aiPlayerCard = document.getElementById('ai-player-card');
+    // Hide coop frame and teams, show tournament frame
+    if (coopPartyFrame) coopPartyFrame.style.display = 'none';
+    if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'block';
+    if (teamsRow) teamsRow.style.display = 'none';
     
-    if (hostPlayerCard) {
-      hostPlayerCard.classList.remove('active');
-      // remove persisted host selection
+    // Update host player name in tournament frame
+    const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
+    const authManager = (window as any).authManager;
+    console.log('[setupTournamentMode] authManager.currentUser:', authManager?.currentUser);
+    if (hostPlayerNameTournament && authManager && authManager.getCurrentUser()) {
+      const currentUsername = authManager.getCurrentUser().username;
+      console.log('[setupTournamentMode] Setting host name to:', currentUsername);
+      hostPlayerNameTournament.textContent = currentUsername;
+    }
+    
+    // Set host as active and selected by default
+    const hostPlayerCardTournament = document.getElementById('host-player-card-tournament');
+    if (hostPlayerCardTournament) {
+      hostPlayerCardTournament.classList.add('active');
       try {
-        const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.delete(String(user.userId));
+        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
       } catch (e) { /* ignore */ }
     }
-    if (aiPlayerCard) {
-      aiPlayerCard.classList.remove('active');
-      this.selectedPlayerIds.delete('ai-player');
+    
+    // Show the add player button for tournament mode
+    const addTournamentPlayerBtn = document.getElementById('add-tournament-player-btn');
+    if (addTournamentPlayerBtn) {
+      addTournamentPlayerBtn.style.display = 'flex';
+      
+      // Attach event listener for tournament add player button
+      addTournamentPlayerBtn.removeEventListener('click', this.handleAddTournamentPlayer);
+      addTournamentPlayerBtn.addEventListener('click', this.handleAddTournamentPlayer.bind(this));
     }
     
     // Hide CO-OP campaign progress UI
@@ -1112,27 +1229,50 @@ export class App {
     if (coopProgress) {
       coopProgress.style.display = 'none';
     }
+    
+    // Display local players that were added in arcade mode (they should appear in tournament too)
+    this.updateGamePartyDisplay();
   }
 
+  private handleAddTournamentPlayer = (e: Event) => {
+    e.stopPropagation();
+    console.log('[handleAddTournamentPlayer] Setting addPlayerTeam to "tournament"');
+    (window as any).addPlayerTeam = 'tournament'; // Mark as tournament mode (not arcade team)
+    showLocalPlayerLoginModal();
+  };
+
   private setupArcadeMode(): void {
+    // Arcade mode: Show team-based layout
+    const coopPartyFrame = document.getElementById('coop-party-frame');
+    const tournamentPartyFrame = document.getElementById('tournament-party-frame');
+    const teamsRow = document.getElementById('teams-row');
+    
+    // Hide coop and tournament frames, show teams
+    if (coopPartyFrame) coopPartyFrame.style.display = 'none';
+    if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
+    if (teamsRow) teamsRow.style.display = 'flex';
+    
     // Arcade mode: Allow adding players, show add player buttons
     const addPlayerButtons = document.querySelectorAll('.add-player-btn');
     addPlayerButtons.forEach(btn => {
       (btn as HTMLElement).style.display = 'flex';
     });
 
-    // Clear any default selections - let user choose
+    // Keep host selected by default (as per requirement)
     const hostPlayerCard = document.getElementById('host-player-card');
     const aiPlayerCard = document.getElementById('ai-player-card');
 
+    // Ensure host is active by default in arcade mode
     if (hostPlayerCard) {
-      hostPlayerCard.classList.remove('active');
+      hostPlayerCard.classList.add('active');
       try {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.delete(String(user.userId));
+        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
       } catch (e) { /* ignore */ }
     }
+    
+    // Remove AI player selection in arcade mode
     if (aiPlayerCard) {
       aiPlayerCard.classList.remove('active');
       this.selectedPlayerIds.delete('ai-player');
@@ -1144,8 +1284,36 @@ export class App {
       coopProgress.style.display = 'none';
     }
 
+    // Setup drag-and-drop for team lists
+    this.setupDragAndDrop();
+
     // Re-attach add player button listeners for arcade mode
     this.setupAddPlayerButtons();
+  }
+
+  private setupDragAndDrop(): void {
+    const team1List = document.getElementById('team1-list');
+    const team2List = document.getElementById('team2-list');
+    
+    if (!team1List || !team2List) {
+      console.warn('[DragDrop] Team lists not found');
+      return;
+    }
+    
+    // Remove old event listeners by cloning and replacing
+    const team1Clone = team1List.cloneNode(true) as HTMLElement;
+    const team2Clone = team2List.cloneNode(true) as HTMLElement;
+    team1List.parentNode?.replaceChild(team1Clone, team1List);
+    team2List.parentNode?.replaceChild(team2Clone, team2List);
+    
+    // Add drop zone event listeners to both team lists
+    [team1Clone, team2Clone].forEach(list => {
+      list.addEventListener('dragover', this.handleDragOver.bind(this));
+      list.addEventListener('dragleave', this.handleDragLeave.bind(this));
+      list.addEventListener('drop', this.handleDrop.bind(this));
+    });
+    
+    console.log('[DragDrop] Setup complete for team lists');
   }
 
   private invitePlayer(playerId: string, playerName: string): void {
@@ -1153,6 +1321,91 @@ export class App {
     console.log(`Inviting player ${playerName} (${playerId}) to game`);
     // For now, just show a notification
   showToast(`Invitation sent to ${playerName}!`, 'info');
+  }
+
+  // Drag and Drop handlers for arcade mode team management
+  private draggedElement: HTMLElement | null = null;
+  
+  private handleDragStart(e: DragEvent): void {
+    const target = e.target as HTMLElement;
+    this.draggedElement = target;
+    target.classList.add('dragging');
+    
+    const playerId = target.dataset.playerId;
+    if (e.dataTransfer && playerId) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', playerId);
+    }
+    
+    console.log('[DragDrop] Started dragging player:', playerId);
+  }
+  
+  private handleDragEnd(e: DragEvent): void {
+    const target = e.target as HTMLElement;
+    target.classList.remove('dragging');
+    this.draggedElement = null;
+    
+    // Remove drag-over styling from all team lists
+    document.querySelectorAll('.team-list').forEach(list => {
+      list.classList.remove('drag-over');
+    });
+    
+    console.log('[DragDrop] Drag ended');
+  }
+  
+  private handleDragOver(e: DragEvent): void {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    
+    const target = e.currentTarget as HTMLElement;
+    target.classList.add('drag-over');
+  }
+  
+  private handleDragLeave(e: DragEvent): void {
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over');
+  }
+  
+  private handleDrop(e: DragEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over');
+    
+    const playerId = e.dataTransfer?.getData('text/plain');
+    if (!playerId || !this.draggedElement) {
+      console.warn('[DragDrop] No player ID or dragged element');
+      return;
+    }
+    
+    // Determine which team this list belongs to
+    const teamListId = target.id; // 'team1-list' or 'team2-list'
+    const newTeam = teamListId === 'team1-list' ? 1 : 2;
+    
+    console.log('[DragDrop] Dropping player', playerId, 'into team', newTeam);
+    
+    // Find the player in localPlayers array and update their team
+    const player = this.localPlayers.find(p => p.id === playerId);
+    if (player) {
+      const oldTeam = (player as any).team || 1;
+      if (oldTeam === newTeam) {
+        console.log('[DragDrop] Player already in this team');
+        return;
+      }
+      
+      (player as any).team = newTeam;
+      console.log('[DragDrop] Updated player team from', oldTeam, 'to', newTeam);
+      
+      // Update the display
+      this.updateGamePartyDisplay();
+      
+      showToast(`${player.username} moved to Team ${newTeam}`, 'success');
+    } else {
+      console.warn('[DragDrop] Player not found in localPlayers:', playerId);
+    }
   }
 
   changeScoreToWin(delta: number): void {
@@ -1290,7 +1543,7 @@ export class App {
 
       // CRITICAL: Check if we're inside the party container to avoid processing
       // clicks that bubble up from outside
-      const isInsideParty = card.closest('#game-party-list, #team1-list, #team2-list');
+      const isInsideParty = card.closest('#game-party-list, #team1-list, #team2-list, #coop-party-frame, #tournament-party-frame');
       if (!isInsideParty) {
         console.debug('[App] Click outside party container, ignoring');
         return;
@@ -1313,8 +1566,8 @@ export class App {
 
       // Determine player type for togglePlayerSelection
       let playerType = 'local';
-      if (card.id === 'host-player-card' || card.classList.contains('host-player')) playerType = 'host';
-      else if (card.id === 'ai-player-card' || card.classList.contains('ai-player')) playerType = 'ai';
+      if (card.id === 'host-player-card' || card.id === 'host-player-card-coop' || card.id === 'host-player-card-tournament' || card.classList.contains('host-player')) playerType = 'host';
+      else if (card.id === 'ai-player-card' || card.id === 'ai-player-card-coop' || card.classList.contains('ai-player')) playerType = 'ai';
 
       // Delegate to the App's selection logic so logs and state updates run once
       try {
