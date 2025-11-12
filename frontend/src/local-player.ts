@@ -656,10 +656,30 @@ export function setupLocalPlayerRegisterModal(app: any) {
       if (result.success && result.data) {
       console.log('[LocalPlayer] ✅ Entered register success block!');
       if (!app.localPlayers) app.localPlayers = [];
-      // Add to correct team
-      let addPlayerTeam = 1;
+      
+      // Add to correct team (can be 1, 2, or 'tournament')
+      let addPlayerTeam: number | string = 1;
       if ((window as any).addPlayerTeam !== undefined) {
         addPlayerTeam = (window as any).addPlayerTeam;
+      }
+      
+      // If adding from tournament mode, randomly assign to team 1 or 2 for arcade compatibility
+      if (addPlayerTeam === 'tournament') {
+        // Count existing players in each team to balance them
+        const team1Count = app.localPlayers.filter((p: any) => p.team === 1).length + 1; // +1 for host
+        const team2Count = app.localPlayers.filter((p: any) => p.team === 2).length + 1; // +1 for AI
+        
+        // Assign to team with fewer players, or random if equal
+        if (team1Count < team2Count) {
+          addPlayerTeam = 1;
+        } else if (team2Count < team1Count) {
+          addPlayerTeam = 2;
+        } else {
+          // Equal teams - randomly assign
+          addPlayerTeam = Math.random() < 0.5 ? 1 : 2;
+        }
+        console.log('[LocalPlayer] Tournament player (registration) assigned to team', addPlayerTeam, 
+                    '(Team 1:', team1Count, '| Team 2:', team2Count, ')');
       }
       
       console.log('[LocalPlayer] Creating player object for registration...');

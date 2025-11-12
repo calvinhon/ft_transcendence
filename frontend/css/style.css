@@ -2253,11 +2253,15 @@ html {
   transform: rotate(3deg);
 }
 
-.player-card.local-player {
+.player-card.local-player,
+.player-card.host-player,
+.player-card.ai-player {
   cursor: grab;
 }
 
-.player-card.local-player:active {
+.player-card.local-player:active,
+.player-card.host-player:active,
+.player-card.ai-player:active {
   cursor: grabbing;
 }
 

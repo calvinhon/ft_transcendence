@@ -10,7 +10,6 @@ import { setupLocalPlayerRegisterModal, showLocalPlayerRegisterModal, setupLocal
 
 
 export class App {
-  private addPlayerButtonsInitialized: boolean = false;
   // Handles game mode tab click and initialization
   handleGameModeChange(tab: HTMLElement): void {
     const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
@@ -289,13 +288,16 @@ export class App {
   }
 
   setupAddPlayerButtons() {
-    if (this.addPlayerButtonsInitialized) return;
-    this.addPlayerButtonsInitialized = true;
+    console.log('[App] Setting up add player buttons...');
 
     // TEAM 1 add player button
     const addTeam1Btn = document.getElementById('add-team1-player-btn');
     if (addTeam1Btn) {
-      addTeam1Btn.addEventListener('click', () => {
+      // Remove old listener by cloning
+      const newBtn1 = addTeam1Btn.cloneNode(true) as HTMLElement;
+      addTeam1Btn.parentNode?.replaceChild(newBtn1, addTeam1Btn);
+      
+      newBtn1.addEventListener('click', () => {
         console.log('🎮 [App] TEAM 1 Add Player button clicked');
         (window as any).addPlayerTeam = 1;
         console.log('[App] Set addPlayerTeam = 1, calling showLocalPlayerLoginModal()');
@@ -309,7 +311,11 @@ export class App {
     // TEAM 2 add player button
     const addTeam2Btn = document.getElementById('add-team2-player-btn');
     if (addTeam2Btn) {
-      addTeam2Btn.addEventListener('click', () => {
+      // Remove old listener by cloning
+      const newBtn2 = addTeam2Btn.cloneNode(true) as HTMLElement;
+      addTeam2Btn.parentNode?.replaceChild(newBtn2, addTeam2Btn);
+      
+      newBtn2.addEventListener('click', () => {
         console.log('🎮 [App] TEAM 2 Add Player button clicked');
         (window as any).addPlayerTeam = 2;
         console.log('[App] Set addPlayerTeam = 2, calling showLocalPlayerLoginModal()');
@@ -1286,9 +1292,30 @@ export class App {
 
     // Setup drag-and-drop for team lists
     this.setupDragAndDrop();
+    
+    // Setup drag for host and AI AFTER team lists are set up
+    this.setupHostAndAIDrag();
 
     // Re-attach add player button listeners for arcade mode
     this.setupAddPlayerButtons();
+  }
+  
+  private setupHostAndAIDrag(): void {
+    // Make host draggable (re-query after potential DOM updates)
+    const hostPlayerCard = document.getElementById('host-player-card');
+    if (hostPlayerCard) {
+      hostPlayerCard.addEventListener('dragstart', this.handleDragStart.bind(this));
+      hostPlayerCard.addEventListener('dragend', this.handleDragEnd.bind(this));
+      console.log('[DragDrop] Host player drag listeners attached');
+    }
+    
+    // Make AI draggable (re-query after potential DOM updates)
+    const aiPlayerCard = document.getElementById('ai-player-card');
+    if (aiPlayerCard) {
+      aiPlayerCard.addEventListener('dragstart', this.handleDragStart.bind(this));
+      aiPlayerCard.addEventListener('dragend', this.handleDragEnd.bind(this));
+      console.log('[DragDrop] AI player drag listeners attached');
+    }
   }
 
   private setupDragAndDrop(): void {
@@ -1300,14 +1327,9 @@ export class App {
       return;
     }
     
-    // Remove old event listeners by cloning and replacing
-    const team1Clone = team1List.cloneNode(true) as HTMLElement;
-    const team2Clone = team2List.cloneNode(true) as HTMLElement;
-    team1List.parentNode?.replaceChild(team1Clone, team1List);
-    team2List.parentNode?.replaceChild(team2Clone, team2List);
-    
     // Add drop zone event listeners to both team lists
-    [team1Clone, team2Clone].forEach(list => {
+    // Note: We bind each time but the handlers are idempotent
+    [team1List, team2List].forEach(list => {
       list.addEventListener('dragover', this.handleDragOver.bind(this));
       list.addEventListener('dragleave', this.handleDragLeave.bind(this));
       list.addEventListener('drop', this.handleDrop.bind(this));
@@ -1384,10 +1406,32 @@ export class App {
     // Determine which team this list belongs to
     const teamListId = target.id; // 'team1-list' or 'team2-list'
     const newTeam = teamListId === 'team1-list' ? 1 : 2;
+    const targetTeamList = document.getElementById(teamListId);
     
     console.log('[DragDrop] Dropping player', playerId, 'into team', newTeam);
     
-    // Find the player in localPlayers array and update their team
+    // Handle special cases: host and AI players
+    if (playerId === 'host-player' || playerId === 'ai-player') {
+      const cardElement = this.draggedElement;
+      const currentParent = cardElement.parentElement;
+      const currentTeam = currentParent?.id === 'team1-list' ? 1 : 2;
+      
+      if (currentTeam === newTeam) {
+        console.log('[DragDrop] Player already in this team');
+        return;
+      }
+      
+      // Move the card to the new team list (at the beginning)
+      if (targetTeamList) {
+        targetTeamList.insertBefore(cardElement, targetTeamList.firstChild);
+        const playerName = playerId === 'host-player' ? 'Host' : 'AI';
+        showToast(`${playerName} moved to Team ${newTeam}`, 'success');
+        console.log(`[DragDrop] Moved ${playerName} to Team ${newTeam}`);
+      }
+      return;
+    }
+    
+    // Handle regular local players
     const player = this.localPlayers.find(p => p.id === playerId);
     if (player) {
       const oldTeam = (player as any).team || 1;
