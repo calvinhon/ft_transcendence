@@ -820,6 +820,10 @@ export class App {
       if (coopPartyFrame) coopPartyFrame.style.display = 'none';
       if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
       if (teamsRow) teamsRow.style.display = 'none';
+    } else {
+      // When navigating TO play-config, show the party frame for the current mode
+      console.log('[showScreenDirect] Showing party frame for mode:', this.gameSettings.gameMode);
+      this.updatePlayersForMode(this.gameSettings.gameMode);
     }
 
     // Set body data attribute for CSS targeting

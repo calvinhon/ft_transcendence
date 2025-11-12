@@ -7,11 +7,19 @@ interface User {
   email?: string;
 }
 
+interface PaddlePlayer {
+  y: number;
+  speed: number;
+  username?: string;
+  userId?: number;
+  color?: string;
+}
+
 interface GameState {
   leftPaddle: { y: number; speed: number };
   rightPaddle: { y: number; speed: number };
-  leftPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 1
-  rightPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 2
+  leftPaddles?: Array<PaddlePlayer>; // Multiple paddles for team 1 with player info
+  rightPaddles?: Array<PaddlePlayer>; // Multiple paddles for team 2 with player info
   ball: { x: number; y: number; vx: number; vy: number };
   leftScore: number;
   rightScore: number;
@@ -161,6 +169,10 @@ export class GameManager {
   // private chatSocket: WebSocket | null = null;
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
+  
+  // Store player info for arcade mode
+  private team1Players: any[] = [];
+  private team2Players: any[] = [];
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -774,6 +786,10 @@ export class GameManager {
     console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
     console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
     
+    // Store player information for rendering
+    this.team1Players = team1Players;
+    this.team2Players = team2Players;
+    
     // Log team composition for debugging
     if (team1Players.length === 0 && team2Players.length === 0) {
       console.error('🎮 [ARCADE-INPUT] ❌ NO PLAYERS IN EITHER TEAM!');
@@ -905,10 +921,28 @@ export class GameManager {
       
       // Handle multiple paddles for arcade mode if backend sends them
       if (backendState.paddles.team1 && Array.isArray(backendState.paddles.team1)) {
-        frontendState.leftPaddles = backendState.paddles.team1.map((p: any) => ({ y: p.y, speed: 0 }));
+        frontendState.leftPaddles = backendState.paddles.team1.map((p: any, index: number) => {
+          const playerInfo = this.team1Players[index];
+          return {
+            y: p.y,
+            speed: 0,
+            username: playerInfo?.username,
+            userId: playerInfo?.userId,
+            color: playerInfo?.color
+          };
+        });
       }
       if (backendState.paddles.team2 && Array.isArray(backendState.paddles.team2)) {
-        frontendState.rightPaddles = backendState.paddles.team2.map((p: any) => ({ y: p.y, speed: 0 }));
+        frontendState.rightPaddles = backendState.paddles.team2.map((p: any, index: number) => {
+          const playerInfo = this.team2Players[index];
+          return {
+            y: p.y,
+            speed: 0,
+            username: playerInfo?.username,
+            userId: playerInfo?.userId,
+            color: playerInfo?.color
+          };
+        });
       }
       
       this.gameState = frontendState;
@@ -940,29 +974,69 @@ export class GameManager {
     this.ctx.stroke();
     
     // Draw paddles with cyberpunk style
-    this.ctx.fillStyle = '#77e6ff';
-    this.ctx.shadowColor = '#77e6ff';
-    this.ctx.shadowBlur = 10;
+    // Default color for single paddle modes
+    const defaultColor = '#77e6ff';
+    
+    // Color palette for arcade mode (vibrant, distinct colors)
+    const paddleColors = [
+      '#77e6ff', // Cyan (default)
+      '#ff77e6', // Pink/Magenta
+      '#77ff77', // Green
+      '#ffff77', // Yellow
+      '#ff7777'  // Red/Orange
+    ];
     
     // Draw left side paddles
     if (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) {
-      // Multiple paddles for arcade mode
+      // Multiple paddles for arcade mode - each with different color
       this.gameState.leftPaddles.forEach((paddle, index) => {
-        this.ctx.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        const color = paddle.color || paddleColors[index % paddleColors.length];
+        this.ctx!.fillStyle = color;
+        this.ctx!.shadowColor = color;
+        this.ctx!.shadowBlur = 10;
+        this.ctx!.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        
+        // Draw player name on the LEFT side of paddle (outside edge)
+        if (paddle.username) {
+          this.ctx!.shadowBlur = 0;
+          this.ctx!.fillStyle = color;
+          this.ctx!.font = 'bold 14px "Courier New", monospace';
+          this.ctx!.textAlign = 'right';
+          this.ctx!.fillText(paddle.username, 45, paddle.y + this.gameState.paddleHeight / 2 + 5);
+        }
       });
     } else {
       // Single paddle for co-op/campaign mode
+      this.ctx.fillStyle = defaultColor;
+      this.ctx.shadowColor = defaultColor;
+      this.ctx.shadowBlur = 10;
       this.ctx.fillRect(50, this.gameState.leftPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
     }
     
     // Draw right side paddles
     if (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0) {
-      // Multiple paddles for arcade mode
+      // Multiple paddles for arcade mode - each with different color
       this.gameState.rightPaddles.forEach((paddle, index) => {
-        this.ctx.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        const color = paddle.color || paddleColors[index % paddleColors.length];
+        this.ctx!.fillStyle = color;
+        this.ctx!.shadowColor = color;
+        this.ctx!.shadowBlur = 10;
+        this.ctx!.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        
+        // Draw player name on the RIGHT side of paddle (outside edge)
+        if (paddle.username) {
+          this.ctx!.shadowBlur = 0;
+          this.ctx!.fillStyle = color;
+          this.ctx!.font = 'bold 14px "Courier New", monospace';
+          this.ctx!.textAlign = 'left';
+          this.ctx!.fillText(paddle.username, this.canvas.width - 45, paddle.y + this.gameState.paddleHeight / 2 + 5);
+        }
       });
     } else {
       // Single paddle for co-op/campaign mode
+      this.ctx.fillStyle = defaultColor;
+      this.ctx.shadowColor = defaultColor;
+      this.ctx.shadowBlur = 10;
       this.ctx.fillRect(this.canvas.width - 60, this.gameState.rightPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
     }
     
@@ -1096,30 +1170,67 @@ export class GameManager {
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     this.ctx.fillRect(0, 0, this.canvas.width, 80);
 
-    // Get user information (you might want to pass this as parameters or store in gameState)
+    // Get user information
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     
-    // Player names and levels (these could be passed from game server)
-	const leftPlayerName = user?.username || 'Player 1';
-	const rightPlayerName = 'AI Bot';
+    // Check if we're in arcade mode (multiple paddles)
+    const isArcadeMode = (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) ||
+                         (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0);
+    
+    // Player names and levels
+    let leftPlayerName: string;
+    let rightPlayerName: string;
+    let leftPlayerLevel: number;
+    let rightPlayerLevel: number;
+    
+    if (isArcadeMode) {
+      // Arcade mode: Show team names with average levels
+      leftPlayerName = 'Team 1';
+      rightPlayerName = 'Team 2';
+      
+      // Calculate average level for Team 1
+      if (this.team1Players.length > 0) {
+        const totalLevel = this.team1Players.reduce((sum, player) => {
+          // Try to get level from player object
+          const playerLevel = player.level || player.profileLevel || 1;
+          return sum + playerLevel;
+        }, 0);
+        leftPlayerLevel = Math.round(totalLevel / this.team1Players.length);
+      } else {
+        leftPlayerLevel = 1;
+      }
+      
+      // Calculate average level for Team 2
+      if (this.team2Players.length > 0) {
+        const totalLevel = this.team2Players.reduce((sum, player) => {
+          // Try to get level from player object
+          const playerLevel = player.level || player.profileLevel || 1;
+          return sum + playerLevel;
+        }, 0);
+        rightPlayerLevel = Math.round(totalLevel / this.team2Players.length);
+      } else {
+        rightPlayerLevel = 1;
+      }
+    } else {
+      // Co-op/Campaign mode: Show player names
+      leftPlayerName = user?.username || 'Player 1';
+      rightPlayerName = 'AI Bot';
+      
+      // Try to read player level from user profile
+      const userLevelFromProfile = (() => {
+        const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+        if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+        if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+        return null;
+      })();
 
-	// Try to read player level from user profile (supports number or numeric string)
-	const userLevelFromProfile = (() => {
-	  const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
-	  if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
-	  if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
-	  return null;
-	})();
+      leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+      rightPlayerLevel = leftPlayerLevel;
+    }
 
-	// Left player level comes from user profile when available, otherwise fallback
-	const leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
-
-	// AI level starts with the user's level (can be adjusted later based on difficulty)
-	const rightPlayerLevel = leftPlayerLevel;
-
-	// Use getter to respect current game settings and campaign adjustments
-	const targetScore = this.getScoreToWin();
+    // Use getter to respect current game settings and campaign adjustments
+    const targetScore = this.getScoreToWin();
 
     // Left player info
     this.drawPlayerInfoSection(
@@ -1128,7 +1239,7 @@ export class GameManager {
       leftPlayerName,
       leftPlayerLevel,
       this.gameState.leftScore,
-      '👤', // icon
+      isArcadeMode ? '👥' : '👤', // icon
       'left'
     );
 
@@ -1139,17 +1250,20 @@ export class GameManager {
       rightPlayerName,
       rightPlayerLevel,
       this.gameState.rightScore,
-      '🤖', // icon
+      isArcadeMode ? '👥' : '🤖', // icon
       'right'
     );
 
-    // Center info - "First to X" or campaign level
+    // Center info - "First to X" or campaign level or team matchup
     this.ctx.font = 'bold 16px Arial';
     this.ctx.fillStyle = '#ffffff';
     this.ctx.textAlign = 'center';
     
     if (this.isCampaignMode) {
       this.ctx.fillText(`Campaign Level ${this.currentCampaignLevel} - First to ${targetScore}`, this.canvas.width / 2, 30);
+    } else if (isArcadeMode) {
+      // Show Team vs Team with levels
+      this.ctx.fillText(`Team 1 (Lvl ${leftPlayerLevel}) vs Team 2 (Lvl ${rightPlayerLevel}) - First to ${targetScore}`, this.canvas.width / 2, 30);
     } else {
       this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     }
@@ -1176,6 +1290,9 @@ export class GameManager {
 
     this.ctx.save();
     
+    // Check if this is a team name (for arcade mode)
+    const isTeam = name.startsWith('Team ');
+    
     // Draw player icon
     this.ctx.font = '20px Arial';
     this.ctx.fillStyle = '#77e6ff';
@@ -1189,10 +1306,12 @@ export class GameManager {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(name, x + 30, y - 2);
       
-      // Draw level
-      this.ctx.font = '12px Arial';
-      this.ctx.fillStyle = '#aaaaaa';
-      this.ctx.fillText(`Level ${level}`, x + 30, y + 15);
+      // Draw level (skip for teams in arcade mode)
+      if (!isTeam) {
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#aaaaaa';
+        this.ctx.fillText(`Level ${level}`, x + 30, y + 15);
+      }
       
     } else {
       this.ctx.textAlign = 'right';
@@ -1203,10 +1322,12 @@ export class GameManager {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(name, x - 30, y - 2);
       
-      // Draw level
-      this.ctx.font = '12px Arial';
-      this.ctx.fillStyle = '#aaaaaa';
-      this.ctx.fillText(`Level ${level}`, x - 30, y + 15);
+      // Draw level (skip for teams in arcade mode)
+      if (!isTeam) {
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#aaaaaa';
+        this.ctx.fillText(`Level ${level}`, x - 30, y + 15);
+      }
     }
 
     this.ctx.restore();
