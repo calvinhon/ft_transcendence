@@ -996,13 +996,13 @@ export class GameManager {
         this.ctx!.shadowBlur = 10;
         this.ctx!.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
         
-        // Draw player name on the LEFT side of paddle (outside edge)
+        // Draw player name on the RIGHT side of paddle (towards center)
         if (paddle.username) {
           this.ctx!.shadowBlur = 0;
           this.ctx!.fillStyle = color;
           this.ctx!.font = 'bold 14px "Courier New", monospace';
-          this.ctx!.textAlign = 'right';
-          this.ctx!.fillText(paddle.username, 45, paddle.y + this.gameState.paddleHeight / 2 + 5);
+          this.ctx!.textAlign = 'left';
+          this.ctx!.fillText(paddle.username, 65, paddle.y + this.gameState.paddleHeight / 2 + 5);
         }
       });
     } else {
@@ -1023,13 +1023,13 @@ export class GameManager {
         this.ctx!.shadowBlur = 10;
         this.ctx!.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
         
-        // Draw player name on the RIGHT side of paddle (outside edge)
+        // Draw player name on the LEFT side of paddle (towards center)
         if (paddle.username) {
           this.ctx!.shadowBlur = 0;
           this.ctx!.fillStyle = color;
           this.ctx!.font = 'bold 14px "Courier New", monospace';
-          this.ctx!.textAlign = 'left';
-          this.ctx!.fillText(paddle.username, this.canvas.width - 45, paddle.y + this.gameState.paddleHeight / 2 + 5);
+          this.ctx!.textAlign = 'right';
+          this.ctx!.fillText(paddle.username, this.canvas.width - 65, paddle.y + this.gameState.paddleHeight / 2 + 5);
         }
       });
     } else {
@@ -1048,6 +1048,9 @@ export class GameManager {
     
     // Draw all player information and UI elements on canvas
     this.drawPlayerInfo();
+    
+    // Draw control keys for arcade mode
+    this.drawArcadeControls();
   }
 
   private drawBallWithTrail(): void {
@@ -1263,7 +1266,7 @@ export class GameManager {
       this.ctx.fillText(`Campaign Level ${this.currentCampaignLevel} - First to ${targetScore}`, this.canvas.width / 2, 30);
     } else if (isArcadeMode) {
       // Show Team vs Team with levels
-      this.ctx.fillText(`Team 1 (Lvl ${leftPlayerLevel}) vs Team 2 (Lvl ${rightPlayerLevel}) - First to ${targetScore}`, this.canvas.width / 2, 30);
+      this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     } else {
       this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     }
@@ -1330,6 +1333,115 @@ export class GameManager {
       }
     }
 
+    this.ctx.restore();
+  }
+
+  private drawArcadeControls(): void {
+    if (!this.ctx || !this.canvas || !this.gameState) return;
+    
+    // Check if we're in arcade mode
+    const isArcadeMode = (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) ||
+                         (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0);
+    
+    if (!isArcadeMode) return; // Only show controls in arcade mode
+    
+    this.ctx.save();
+    
+    // Draw semi-transparent background at the bottom
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(0, this.canvas.height - 80, this.canvas.width, 80);
+    
+    // Color palette matching paddles
+    const paddleColors = [
+      '#77e6ff', // Cyan
+      '#ff77e6', // Pink/Magenta
+      '#77ff77', // Green
+      '#ffff77', // Yellow
+      '#ff7777'  // Red/Orange
+    ];
+    
+    // Team 1 controls (left side)
+    const team1Keys = [
+      { label: 'Q/A', description: 'Player 1' },
+      { label: 'W/S', description: 'Player 2' },
+      { label: 'E/D', description: 'Player 3' }
+    ];
+    
+    // Team 2 controls (right side)
+    const team2Keys = [
+      { label: 'U/J', description: 'Player 1' },
+      { label: 'I/K', description: 'Player 2' },
+      { label: 'O/L', description: 'Player 3' }
+    ];
+    
+    const startY = this.canvas.height - 60;
+    const lineHeight = 20;
+    
+    // Draw Team 1 controls (left side)
+    this.ctx.textAlign = 'left';
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillText('TEAM 1 CONTROLS:', 20, startY - 5);
+    
+    for (let i = 0; i < Math.min(this.team1Players.length, 3); i++) {
+      const player = this.team1Players[i];
+      const color = paddleColors[i % paddleColors.length];
+      const yPos = startY + 15 + (i * lineHeight);
+      
+      // Draw colored indicator
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(20, yPos - 10, 8, 12);
+      
+      // Draw player name and keys
+      this.ctx.font = 'bold 11px Arial';
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(player.username, 35, yPos);
+      
+      this.ctx.font = '11px Arial';
+      this.ctx.fillStyle = '#aaaaaa';
+      this.ctx.fillText(`- ${team1Keys[i].label}`, 35 + this.ctx.measureText(player.username).width + 5, yPos);
+    }
+    
+    // Add arrow keys alternative for Team 1
+    if (this.team1Players.length > 0) {
+      const arrowY = startY + 15 + (Math.min(this.team1Players.length, 3) * lineHeight);
+      this.ctx.font = '10px Arial';
+      this.ctx.fillStyle = '#666666';
+      this.ctx.fillText('(Arrow Keys: Player 1)', 20, arrowY);
+    }
+    
+    // Draw Team 2 controls (right side)
+    this.ctx.textAlign = 'right';
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillText('TEAM 2 CONTROLS:', this.canvas.width - 20, startY - 5);
+    
+    for (let i = 0; i < Math.min(this.team2Players.length, 3); i++) {
+      const player = this.team2Players[i];
+      const color = paddleColors[i % paddleColors.length];
+      const yPos = startY + 15 + (i * lineHeight);
+      
+      // Measure text widths for right alignment
+      this.ctx.font = 'bold 11px Arial';
+      const nameWidth = this.ctx.measureText(player.username).width;
+      this.ctx.font = '11px Arial';
+      const keysText = `${team2Keys[i].label} - `;
+      const keysWidth = this.ctx.measureText(keysText).width;
+      
+      // Draw colored indicator
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(this.canvas.width - 28, yPos - 10, 8, 12);
+      
+      // Draw keys and player name
+      this.ctx.font = '11px Arial';
+      this.ctx.fillStyle = '#aaaaaa';
+      this.ctx.fillText(keysText, this.canvas.width - 35, yPos);
+      
+      this.ctx.font = 'bold 11px Arial';
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(player.username, this.canvas.width - 35 - keysWidth, yPos);
+    }
+    
     this.ctx.restore();
   }
 
@@ -1520,7 +1632,14 @@ export class GameManager {
     console.log('🕹️ [ARCADE] Starting arcade mode');
     this.isCampaignMode = false; // Arcade is NOT campaign mode
     
-    console.log(`🕹️ [ARCADE] Score to win: ${this.gameSettings.scoreToWin || 5}`);
+    // Sync settings from app before starting
+    const app = (window as any).app;
+    if (app && app.gameSettings) {
+      this.gameSettings = { ...this.gameSettings, ...app.gameSettings };
+      console.log('🕹️ [ARCADE] Synced game settings from app:', this.gameSettings);
+    }
+    
+    console.log(`🕹️ [ARCADE] Score to win: ${this.gameSettings.scoreToWin}`);
     
     // Ensure canvas exists
     this.ensureCanvasInitialized();
