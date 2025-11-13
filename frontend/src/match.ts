@@ -48,6 +48,9 @@ export class MatchManager {
   private localPlayers: LocalPlayer[] = []; // For same browser/computer players
   private searchInterval: NodeJS.Timeout | null = null;
   private selectedOpponent: SelectedOpponent | null = null;
+  // Guard to prevent duplicate bot-match starts
+  private isStartingBotMatch: boolean = false;
+  private startBotTimeoutId: number | null = null;
 
   constructor() {
     console.log('MatchManager: Constructor called');
@@ -112,16 +115,19 @@ export class MatchManager {
     }
 
     // Handle different modes
-    switch (mode) {
-      case 'bot':
-        console.log('MatchManager: Starting bot match');
-        this.startBotMatch();
-        break;
-      case 'opponents':
-        console.log('MatchManager: Showing opponent selection');
-        this.showOpponentSelection();
-        break;
-    }
+    // switch (mode) {
+    //   case 'bot':
+    //     console.log('MatchManager: Starting bot match');
+    //     // Only trigger bot match if not already started by game.ts
+    //     if (!(window as any).gameManager?.isBotMatchActive) {
+    //       this.startBotMatch();
+    //     }
+    //     break;
+    //   case 'opponents':
+    //     console.log('MatchManager: Showing opponent selection');
+    //     this.showOpponentSelection();
+    //     break;
+    // }
   }
 
   private showOpponentSelection(): void {
@@ -293,15 +299,48 @@ export class MatchManager {
   }
 
   private startBotMatch(): void {
+    // Prevent duplicate starts (rapid clicks / overlapping flow)
+    if (this.isStartingBotMatch) {
+      console.debug('MatchManager: startBotMatch already in progress, ignoring duplicate');
+      return;
+    }
+
+    // Also guard if GameManager already playing or starting
+    const gm = (window as any).gameManager;
+    if (gm && (gm.isPlaying || (gm as any).isStartingMatch)) {
+      console.debug('MatchManager: GameManager already playing/starting; ignoring bot start');
+      return;
+    }
+
+    this.isStartingBotMatch = true;
+    // safety timeout to clear guard if start never completes
+    if (this.startBotTimeoutId) {
+      clearTimeout(this.startBotTimeoutId);
+    }
+    this.startBotTimeoutId = window.setTimeout(() => {
+      console.warn('MatchManager: startBotMatch timeout - clearing start guard');
+      this.isStartingBotMatch = false;
+      this.startBotTimeoutId = null;
+      this.showModeSelection();
+    }, 8000);
+
     this.showGameStatus('Bot Match', 'Starting game against AI opponent...');
     // Create immediate bot match
-    const gameManager = (window as any).gameManager;
-    if (gameManager && typeof gameManager.startBotMatch === 'function') {
+    if (gm && typeof gm.startBotMatch === 'function') {
       console.log('Starting bot match via GameManager');
-      gameManager.startBotMatch();
+      try {
+        gm.startBotMatch();
+      } catch (err) {
+        console.error('MatchManager: startBotMatch threw', err);
+        this.isStartingBotMatch = false;
+        if (this.startBotTimeoutId) { clearTimeout(this.startBotTimeoutId); this.startBotTimeoutId = null; }
+        this.showModeSelection();
+      }
     } else {
       console.error('GameManager not available or startBotMatch method not found');
-      console.log('Available GameManager methods:', gameManager ? Object.keys(gameManager) : 'GameManager not found');
+      console.log('Available GameManager methods:', gm ? Object.keys(gm) : 'GameManager not found');
+      this.isStartingBotMatch = false;
+      if (this.startBotTimeoutId) { clearTimeout(this.startBotTimeoutId); this.startBotTimeoutId = null; }
       this.showModeSelection();
     }
   }
@@ -562,9 +601,14 @@ export class MatchManager {
 
   private cancelSearch(): void {
     // Cancel any ongoing search
+    // Prefer asking GameManager to stop the current search/match so it can
+    // clean up sockets/intervals properly instead of closing sockets directly.
     const gameManager = (window as any).gameManager;
-    if (gameManager && gameManager.websocket) {
-      gameManager.websocket.close();
+    if (gameManager && typeof gameManager.stopGame === 'function') {
+      gameManager.stopGame();
+    } else if (gameManager && gameManager.websocket) {
+      // Fallback: if stopGame not available, close the socket
+      try { gameManager.websocket.close(); } catch (e) { /* ignore */ }
     }
     
     // Clear intervals
@@ -579,6 +623,12 @@ export class MatchManager {
 
   // Called when game starts successfully
   public onGameStart(): void {
+    // Clear any start guard (bot match started)
+    if (this.isStartingBotMatch) {
+      this.isStartingBotMatch = false;
+      if (this.startBotTimeoutId) { clearTimeout(this.startBotTimeoutId); this.startBotTimeoutId = null; }
+    }
+
     // Hide all match panels when game starts
     const matchSelection = document.getElementById('match-selection');
     const onlinePlayersPanel = document.getElementById('online-players-panel');

@@ -36,23 +36,54 @@ check-compose:
 	fi
 
 clean:
-	@echo "🧹 Stopping and cleaning old containers..."
+	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."
 	@if [ -f docker-compose.yml ]; then \
-		docker compose down --remove-orphans; \
+		if docker compose version >/dev/null 2>&1; then \
+			docker compose down --rmi all --volumes --remove-orphans; \
+			docker compose rm -f >/dev/null 2>&1 || true; \
+		elif command -v docker-compose >/dev/null 2>&1; then \
+			docker-compose down --rmi all --volumes --remove-orphans; \
+			docker-compose rm -f >/dev/null 2>&1 || true; \
+		else \
+			echo "❌ Docker Compose not found. Cannot clean."; \
+			exit 1; \
+		fi; \
+		PROJECT=$$(basename "$$(pwd)"); \
+		CONTAINERS=$$(docker ps -a --filter "label=com.docker.compose.project=$$PROJECT" -q 2>/dev/null || true); \
+		if [ -n "$$CONTAINERS" ]; then docker rm -f $$CONTAINERS >/dev/null 2>&1 || true; fi; \
+		echo "✅ Complete removal done for compose project: $$PROJECT"; \
 	else \
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
 up:
-	@echo "🚀 Running docker compose up --build..."
-	docker compose up --build -d
+	@echo "🚀 Running docker compose up --build --no-cache..."
+	docker compose build --no-cache
+	docker compose up -d
 
 open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
 		open http://localhost:80; \
-	elif command -v wslview >/dev/null 2>&1; then \
-		wslview http://localhost:80; \
+	elif echo "$(OS)" | grep -q "MINGW\|MSYS"; then \
+		if command -v firefox >/dev/null 2>&1; then \
+			start firefox http://localhost:80; \
+		else \
+			start http://localhost:80; \
+		fi \
+	elif grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then \
+		echo "🪟 Detected WSL environment, using Windows browser..."; \
+		if command -v wslview >/dev/null 2>&1; then \
+			wslview http://localhost:80 2>/dev/null || \
+			(echo "⚠️  wslview failed, trying cmd.exe fallback..." && \
+			cmd.exe /c start http://localhost:80 2>/dev/null || \
+			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."); \
+		else \
+			cmd.exe /c start http://localhost:80 2>/dev/null || \
+			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+		fi \
 	elif command -v xdg-open >/dev/null 2>&1; then \
 		xdg-open http://localhost:80; \
 	else \

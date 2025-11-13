@@ -2,16 +2,15 @@
   "name": "frontend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Frontend for Transcendence Pong Game",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
     "clean": "rimraf dist",
     "prebuild": "npm run clean"
   },
+  "dependencies": {},
   "devDependencies": {
-    "rimraf": "^3.0.2",
-    "typescript": "^5.9.3",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9",
+    "rimraf": "^3.0.2"
   }
 }

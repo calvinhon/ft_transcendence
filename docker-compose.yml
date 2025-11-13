@@ -10,7 +10,7 @@ services:
       - game-service
       - tournament-service
       - user-service
-      - blockchain-service
+      - hardhat-node
     networks:
       - transcendence-network
 

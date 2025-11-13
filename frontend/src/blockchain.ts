@@ -28,11 +28,11 @@ export class BlockchainManager {
         this.displayBlockchainRankings(rankings);
       } else {
         const error = await response.text();
-        alert(`Failed to load blockchain rankings: ${error}`);
+          showToast(`Failed to load blockchain rankings: ${error}`, 'error');
       }
     } catch (error) {
       console.error('Blockchain rankings error:', error);
-      alert('Failed to load blockchain rankings: Network error');
+        showToast('Failed to load blockchain rankings: Network error', 'error');
     }
   }
 
@@ -40,7 +40,7 @@ export class BlockchainManager {
     const container = document.getElementById('blockchain-rankings');
     if (!container) {
       // Create a modal or section to display rankings
-      alert(`Blockchain Rankings:\n${JSON.stringify(rankings, null, 2)}`);
+        showToast(`Blockchain Rankings:\n${JSON.stringify(rankings, null, 2)}`, 'info');
       return;
     }
 
