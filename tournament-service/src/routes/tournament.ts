@@ -856,36 +856,6 @@ async function routes(fastify: FastifyInstance): Promise<void> {
       );
     });
   });
-  
-  // Get tournament match by ID
-  fastify.get<{
-    Params: { matchId: string };
-  }>('/match/:matchId', async (request: FastifyRequest<{ Params: { matchId: string } }>, reply: FastifyReply) => {
-    const { matchId } = request.params;
-    
-    return new Promise<void>((resolve, reject) => {
-      db.get(
-        'SELECT * FROM tournament_matches WHERE id = ?',
-        [matchId],
-        (err: Error | null, match: TournamentMatch | undefined) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-            return;
-          }
-          
-          if (!match) {
-            reply.status(404).send({ error: 'Match not found' });
-            resolve();
-            return;
-          }
-          
-          reply.send(match);
-          resolve();
-        }
-      );
-    });
-  });
 }
 
 export default routes;
