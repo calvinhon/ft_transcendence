@@ -71,8 +71,19 @@ open:
 		else \
 			start http://localhost:80; \
 		fi \
-	elif command -v wslview >/dev/null 2>&1; then \
-		wslview http://localhost:80; \
+	elif grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then \
+		echo "🪟 Detected WSL environment, using Windows browser..."; \
+		if command -v wslview >/dev/null 2>&1; then \
+			wslview http://localhost:80 2>/dev/null || \
+			(echo "⚠️  wslview failed, trying cmd.exe fallback..." && \
+			cmd.exe /c start http://localhost:80 2>/dev/null || \
+			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."); \
+		else \
+			cmd.exe /c start http://localhost:80 2>/dev/null || \
+			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+		fi \
 	elif command -v xdg-open >/dev/null 2>&1; then \
 		xdg-open http://localhost:80; \
 	else \

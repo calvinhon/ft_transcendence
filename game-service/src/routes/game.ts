@@ -409,7 +409,7 @@ class PongGame {
 
     // Ball collision with left side paddles (team1 or player1)
     let leftHit = false;
-    if (this.ball.x <= 60) {
+    if (this.ball.x <= 60 && this.ball.x >=50) {
       // Check arcade mode paddles
       if (this.paddles.team1 && this.paddles.team1.length > 0) {
         for (const paddle of this.paddles.team1) {
@@ -446,7 +446,7 @@ class PongGame {
 
     // Ball collision with right side paddles (team2 or player2)
     let rightHit = false;
-    if (this.ball.x >= 740) {
+    if (this.ball.x >= 740 && this.ball.x <= 750) {
       // Check arcade mode paddles
       if (this.paddles.team2 && this.paddles.team2.length > 0) {
         for (const paddle of this.paddles.team2) {

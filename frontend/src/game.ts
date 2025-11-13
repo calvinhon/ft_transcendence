@@ -7,11 +7,19 @@ interface User {
   email?: string;
 }
 
+interface PaddlePlayer {
+  y: number;
+  speed: number;
+  username?: string;
+  userId?: number;
+  color?: string;
+}
+
 interface GameState {
   leftPaddle: { y: number; speed: number };
   rightPaddle: { y: number; speed: number };
-  leftPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 1
-  rightPaddles?: Array<{ y: number; speed: number }>; // Multiple paddles for team 2
+  leftPaddles?: Array<PaddlePlayer>; // Multiple paddles for team 1 with player info
+  rightPaddles?: Array<PaddlePlayer>; // Multiple paddles for team 2 with player info
   ball: { x: number; y: number; vx: number; vy: number };
   leftScore: number;
   rightScore: number;
@@ -160,6 +168,11 @@ export class GameManager {
   private keys: KeyState = {};
   // private chatSocket: WebSocket | null = null;
   private inputInterval: ReturnType<typeof setInterval> | null = null;
+  private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
+  
+  // Store player info for arcade mode
+  private team1Players: any[] = [];
+  private team2Players: any[] = [];
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -176,7 +189,7 @@ export class GameManager {
   // Start false by default; set to true when entering campaign via startCampaignGame or startBotMatchWithSettings
   private isCampaignMode: boolean = false;
   private currentCampaignLevel: number = 1;
-  private maxCampaignLevel: number = 10;
+  private maxCampaignLevel: number = 21; //Maximum level one can reach
 
   constructor() {
     // Assign unique instance ID
@@ -681,24 +694,106 @@ export class GameManager {
     
     const app = (window as any).app;
     
-    // Get SELECTED players only (highlighted in party list)
-    // If no local players are set up, assume single player controlling team 1
+    // Debug logging (only log once)
+    if (!app) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    if (!app.localPlayers) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app.localPlayers not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    if (!app.selectedPlayerIds) {
+      if (!this.arcadeInputWarningShown) {
+        console.log('🎮 [ARCADE-INPUT] ❌ app.selectedPlayerIds not found');
+        this.arcadeInputWarningShown = true;
+      }
+      return;
+    }
+    
+    // Build team player lists including host if selected
     let team1Players: any[] = [];
     let team2Players: any[] = [];
     
-    if (app && app.localPlayers && app.selectedPlayerIds) {
-      const selectedPlayers = app.localPlayers.filter((p: any) => 
-        app.selectedPlayerIds.has(p.id?.toString())
-      );
-      
-      // Get players assigned to each team from selected players
-      team1Players = selectedPlayers.filter((p: any) => p.team === 1);
-      team2Players = selectedPlayers.filter((p: any) => p.team === 2);
-    } else {
-      // Fallback: Single player arcade mode - host controls team 1
-      console.log('🎮 [ARCADE-INPUT] No local players setup, using single-player arcade mode');
-      team1Players = [{ id: 1, team: 1 }]; // Virtual player for input handling
-      team2Players = []; // Bot controls team 2
+    // Check if host is selected
+    const authManager = (window as any).authManager;
+    const hostUser = authManager?.getCurrentUser();
+    const hostCard = document.getElementById('host-player-card');
+    const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                           hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+    
+    // Log detailed player detection info every frame
+    console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
+    console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+    console.log('  - hostUser:', hostUser);
+    console.log('  - isHostSelected:', isHostSelected);
+    console.log('  - hostCard active?', hostCard?.classList.contains('active'));
+    
+    if (isHostSelected) {
+      // Host is always first in Team 1
+      team1Players.push({
+        userId: hostUser.userId,
+        username: hostUser.username,
+        id: hostUser.userId.toString(),
+        team: 1,
+        paddleIndex: 0
+      });
+      console.log('  - ✅ Added host to Team 1:', hostUser.username);
+    }
+    
+    // Get SELECTED local players (highlighted in party list)
+    const selectedPlayers = app.localPlayers.filter((p: any) => 
+      app.selectedPlayerIds.has(p.id?.toString())
+    );
+    
+    console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
+    
+    // Add local players to their teams
+    const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+    const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+    
+    localTeam1.forEach((p: any) => {
+      team1Players.push({
+        ...p,
+        paddleIndex: team1Players.length
+      });
+    });
+    
+    localTeam2.forEach((p: any) => {
+      team2Players.push({
+        ...p,
+        paddleIndex: team2Players.length
+      });
+    });
+    
+    // Check if AI is selected and add to appropriate team
+    const aiCard = document.getElementById('ai-player-card');
+    if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
+      const inTeam2 = aiCard.closest('#team2-list') !== null;
+      if (inTeam2) {
+        team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
+      } else {
+        team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+      }
+    }
+    
+    console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    
+    // Store player information for rendering
+    this.team1Players = team1Players;
+    this.team2Players = team2Players;
+    
+    // Log team composition for debugging
+    if (team1Players.length === 0 && team2Players.length === 0) {
+      console.error('🎮 [ARCADE-INPUT] ❌ NO PLAYERS IN EITHER TEAM!');
+      return; // Don't process input if no players
     }
     
     // Team 1 key mappings (left side)
@@ -749,12 +844,14 @@ export class GameManager {
     }
     
     if (team1Direction) {
-      this.websocket?.send(JSON.stringify({
+      const message = {
         type: 'movePaddle',
         playerId: 1, // Team 1 / Left side
         paddleIndex: team1PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team1Direction
-      }));
+      };
+      console.log('🎮 [ARCADE-INPUT] 📤 Sending Team 1 move:', message);
+      this.websocket?.send(JSON.stringify(message));
     }
     
     // Handle Team 2 inputs (right paddle) - each player controls their own paddle
@@ -778,12 +875,14 @@ export class GameManager {
     }
     
     if (team2Direction) {
-      this.websocket?.send(JSON.stringify({
+      const message = {
         type: 'movePaddle',
         playerId: 2, // Team 2 / Right side
         paddleIndex: team2PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team2Direction
-      }));
+      };
+      console.log('🎮 [ARCADE-INPUT] 📤 Sending Team 2 move:', message);
+      this.websocket?.send(JSON.stringify(message));
     }
   }
 
@@ -822,10 +921,28 @@ export class GameManager {
       
       // Handle multiple paddles for arcade mode if backend sends them
       if (backendState.paddles.team1 && Array.isArray(backendState.paddles.team1)) {
-        frontendState.leftPaddles = backendState.paddles.team1.map((p: any) => ({ y: p.y, speed: 0 }));
+        frontendState.leftPaddles = backendState.paddles.team1.map((p: any, index: number) => {
+          const playerInfo = this.team1Players[index];
+          return {
+            y: p.y,
+            speed: 0,
+            username: playerInfo?.username,
+            userId: playerInfo?.userId,
+            color: playerInfo?.color
+          };
+        });
       }
       if (backendState.paddles.team2 && Array.isArray(backendState.paddles.team2)) {
-        frontendState.rightPaddles = backendState.paddles.team2.map((p: any) => ({ y: p.y, speed: 0 }));
+        frontendState.rightPaddles = backendState.paddles.team2.map((p: any, index: number) => {
+          const playerInfo = this.team2Players[index];
+          return {
+            y: p.y,
+            speed: 0,
+            username: playerInfo?.username,
+            userId: playerInfo?.userId,
+            color: playerInfo?.color
+          };
+        });
       }
       
       this.gameState = frontendState;
@@ -857,29 +974,69 @@ export class GameManager {
     this.ctx.stroke();
     
     // Draw paddles with cyberpunk style
-    this.ctx.fillStyle = '#77e6ff';
-    this.ctx.shadowColor = '#77e6ff';
-    this.ctx.shadowBlur = 10;
+    // Default color for single paddle modes
+    const defaultColor = '#77e6ff';
+    
+    // Color palette for arcade mode (vibrant, distinct colors)
+    const paddleColors = [
+      '#77e6ff', // Cyan (default)
+      '#ff77e6', // Pink/Magenta
+      '#77ff77', // Green
+      '#ffff77', // Yellow
+      '#ff7777'  // Red/Orange
+    ];
     
     // Draw left side paddles
     if (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) {
-      // Multiple paddles for arcade mode
+      // Multiple paddles for arcade mode - each with different color
       this.gameState.leftPaddles.forEach((paddle, index) => {
-        this.ctx.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        const color = paddle.color || paddleColors[index % paddleColors.length];
+        this.ctx!.fillStyle = color;
+        this.ctx!.shadowColor = color;
+        this.ctx!.shadowBlur = 10;
+        this.ctx!.fillRect(50, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        
+        // Draw player name on the RIGHT side of paddle (towards center)
+        if (paddle.username) {
+          this.ctx!.shadowBlur = 0;
+          this.ctx!.fillStyle = color;
+          this.ctx!.font = 'bold 14px "Courier New", monospace';
+          this.ctx!.textAlign = 'left';
+          this.ctx!.fillText(paddle.username, 65, paddle.y + this.gameState.paddleHeight / 2 + 5);
+        }
       });
     } else {
       // Single paddle for co-op/campaign mode
+      this.ctx.fillStyle = defaultColor;
+      this.ctx.shadowColor = defaultColor;
+      this.ctx.shadowBlur = 10;
       this.ctx.fillRect(50, this.gameState.leftPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
     }
     
     // Draw right side paddles
     if (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0) {
-      // Multiple paddles for arcade mode
+      // Multiple paddles for arcade mode - each with different color
       this.gameState.rightPaddles.forEach((paddle, index) => {
-        this.ctx.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        const color = paddle.color || paddleColors[index % paddleColors.length];
+        this.ctx!.fillStyle = color;
+        this.ctx!.shadowColor = color;
+        this.ctx!.shadowBlur = 10;
+        this.ctx!.fillRect(this.canvas.width - 60, paddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
+        
+        // Draw player name on the LEFT side of paddle (towards center)
+        if (paddle.username) {
+          this.ctx!.shadowBlur = 0;
+          this.ctx!.fillStyle = color;
+          this.ctx!.font = 'bold 14px "Courier New", monospace';
+          this.ctx!.textAlign = 'right';
+          this.ctx!.fillText(paddle.username, this.canvas.width - 65, paddle.y + this.gameState.paddleHeight / 2 + 5);
+        }
       });
     } else {
       // Single paddle for co-op/campaign mode
+      this.ctx.fillStyle = defaultColor;
+      this.ctx.shadowColor = defaultColor;
+      this.ctx.shadowBlur = 10;
       this.ctx.fillRect(this.canvas.width - 60, this.gameState.rightPaddle.y, this.gameState.paddleWidth, this.gameState.paddleHeight);
     }
     
@@ -891,6 +1048,9 @@ export class GameManager {
     
     // Draw all player information and UI elements on canvas
     this.drawPlayerInfo();
+    
+    // Draw control keys for arcade mode
+    this.drawArcadeControls();
   }
 
   private drawBallWithTrail(): void {
@@ -1013,30 +1173,67 @@ export class GameManager {
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     this.ctx.fillRect(0, 0, this.canvas.width, 80);
 
-    // Get user information (you might want to pass this as parameters or store in gameState)
+    // Get user information
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     
-    // Player names and levels (these could be passed from game server)
-	const leftPlayerName = user?.username || 'Player 1';
-	const rightPlayerName = 'AI Bot';
+    // Check if we're in arcade mode (multiple paddles)
+    const isArcadeMode = (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) ||
+                         (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0);
+    
+    // Player names and levels
+    let leftPlayerName: string;
+    let rightPlayerName: string;
+    let leftPlayerLevel: number;
+    let rightPlayerLevel: number;
+    
+    if (isArcadeMode) {
+      // Arcade mode: Show team names with average levels
+      leftPlayerName = 'Team 1';
+      rightPlayerName = 'Team 2';
+      
+      // Calculate average level for Team 1
+      if (this.team1Players.length > 0) {
+        const totalLevel = this.team1Players.reduce((sum, player) => {
+          // Try to get level from player object
+          const playerLevel = player.level || player.profileLevel || 1;
+          return sum + playerLevel;
+        }, 0);
+        leftPlayerLevel = Math.round(totalLevel / this.team1Players.length);
+      } else {
+        leftPlayerLevel = 1;
+      }
+      
+      // Calculate average level for Team 2
+      if (this.team2Players.length > 0) {
+        const totalLevel = this.team2Players.reduce((sum, player) => {
+          // Try to get level from player object
+          const playerLevel = player.level || player.profileLevel || 1;
+          return sum + playerLevel;
+        }, 0);
+        rightPlayerLevel = Math.round(totalLevel / this.team2Players.length);
+      } else {
+        rightPlayerLevel = 1;
+      }
+    } else {
+      // Co-op/Campaign mode: Show player names
+      leftPlayerName = user?.username || 'Player 1';
+      rightPlayerName = 'AI Bot';
+      
+      // Try to read player level from user profile
+      const userLevelFromProfile = (() => {
+        const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+        if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+        if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+        return null;
+      })();
 
-	// Try to read player level from user profile (supports number or numeric string)
-	const userLevelFromProfile = (() => {
-	  const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
-	  if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
-	  if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
-	  return null;
-	})();
+      leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+      rightPlayerLevel = leftPlayerLevel;
+    }
 
-	// Left player level comes from user profile when available, otherwise fallback
-	const leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
-
-	// AI level starts with the user's level (can be adjusted later based on difficulty)
-	const rightPlayerLevel = leftPlayerLevel;
-
-	// Use getter to respect current game settings and campaign adjustments
-	const targetScore = this.getScoreToWin();
+    // Use getter to respect current game settings and campaign adjustments
+    const targetScore = this.getScoreToWin();
 
     // Left player info
     this.drawPlayerInfoSection(
@@ -1045,7 +1242,7 @@ export class GameManager {
       leftPlayerName,
       leftPlayerLevel,
       this.gameState.leftScore,
-      '👤', // icon
+      isArcadeMode ? '👥' : '👤', // icon
       'left'
     );
 
@@ -1056,17 +1253,20 @@ export class GameManager {
       rightPlayerName,
       rightPlayerLevel,
       this.gameState.rightScore,
-      '🤖', // icon
+      isArcadeMode ? '👥' : '🤖', // icon
       'right'
     );
 
-    // Center info - "First to X" or campaign level
+    // Center info - "First to X" or campaign level or team matchup
     this.ctx.font = 'bold 16px Arial';
     this.ctx.fillStyle = '#ffffff';
     this.ctx.textAlign = 'center';
     
     if (this.isCampaignMode) {
       this.ctx.fillText(`Campaign Level ${this.currentCampaignLevel} - First to ${targetScore}`, this.canvas.width / 2, 30);
+    } else if (isArcadeMode) {
+      // Show Team vs Team with levels
+      this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     } else {
       this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     }
@@ -1093,6 +1293,9 @@ export class GameManager {
 
     this.ctx.save();
     
+    // Check if this is a team name (for arcade mode)
+    const isTeam = name.startsWith('Team ');
+    
     // Draw player icon
     this.ctx.font = '20px Arial';
     this.ctx.fillStyle = '#77e6ff';
@@ -1106,10 +1309,12 @@ export class GameManager {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(name, x + 30, y - 2);
       
-      // Draw level
-      this.ctx.font = '12px Arial';
-      this.ctx.fillStyle = '#aaaaaa';
-      this.ctx.fillText(`Level ${level}`, x + 30, y + 15);
+      // Draw level (skip for teams in arcade mode)
+      if (!isTeam) {
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#aaaaaa';
+        this.ctx.fillText(`Level ${level}`, x + 30, y + 15);
+      }
       
     } else {
       this.ctx.textAlign = 'right';
@@ -1120,12 +1325,123 @@ export class GameManager {
       this.ctx.fillStyle = '#ffffff';
       this.ctx.fillText(name, x - 30, y - 2);
       
-      // Draw level
-      this.ctx.font = '12px Arial';
-      this.ctx.fillStyle = '#aaaaaa';
-      this.ctx.fillText(`Level ${level}`, x - 30, y + 15);
+      // Draw level (skip for teams in arcade mode)
+      if (!isTeam) {
+        this.ctx.font = '12px Arial';
+        this.ctx.fillStyle = '#aaaaaa';
+        this.ctx.fillText(`Level ${level}`, x - 30, y + 15);
+      }
     }
 
+    this.ctx.restore();
+  }
+
+  private drawArcadeControls(): void {
+    if (!this.ctx || !this.canvas || !this.gameState) return;
+    
+    // Check if we're in arcade mode
+    const isArcadeMode = (this.gameState.leftPaddles && this.gameState.leftPaddles.length > 0) ||
+                         (this.gameState.rightPaddles && this.gameState.rightPaddles.length > 0);
+    
+    if (!isArcadeMode) return; // Only show controls in arcade mode
+    
+    this.ctx.save();
+    
+    // Draw semi-transparent background at the bottom
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(0, this.canvas.height - 80, this.canvas.width, 80);
+    
+    // Color palette matching paddles
+    const paddleColors = [
+      '#77e6ff', // Cyan
+      '#ff77e6', // Pink/Magenta
+      '#77ff77', // Green
+      '#ffff77', // Yellow
+      '#ff7777'  // Red/Orange
+    ];
+    
+    // Team 1 controls (left side)
+    const team1Keys = [
+      { label: 'Q/A', description: 'Player 1' },
+      { label: 'W/S', description: 'Player 2' },
+      { label: 'E/D', description: 'Player 3' }
+    ];
+    
+    // Team 2 controls (right side)
+    const team2Keys = [
+      { label: 'U/J', description: 'Player 1' },
+      { label: 'I/K', description: 'Player 2' },
+      { label: 'O/L', description: 'Player 3' }
+    ];
+    
+    const startY = this.canvas.height - 60;
+    const lineHeight = 20;
+    
+    // Draw Team 1 controls (left side)
+    this.ctx.textAlign = 'left';
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillText('TEAM 1 CONTROLS:', 20, startY - 5);
+    
+    for (let i = 0; i < Math.min(this.team1Players.length, 3); i++) {
+      const player = this.team1Players[i];
+      const color = paddleColors[i % paddleColors.length];
+      const yPos = startY + 15 + (i * lineHeight);
+      
+      // Draw colored indicator
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(20, yPos - 10, 8, 12);
+      
+      // Draw player name and keys
+      this.ctx.font = 'bold 11px Arial';
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(player.username, 35, yPos);
+      
+      this.ctx.font = '11px Arial';
+      this.ctx.fillStyle = '#aaaaaa';
+      this.ctx.fillText(`- ${team1Keys[i].label}`, 35 + this.ctx.measureText(player.username).width + 5, yPos);
+    }
+    
+    // Add arrow keys alternative for Team 1
+    if (this.team1Players.length > 0) {
+      const arrowY = startY + 15 + (Math.min(this.team1Players.length, 3) * lineHeight);
+      this.ctx.font = '10px Arial';
+      this.ctx.fillStyle = '#666666';
+      this.ctx.fillText('(Arrow Keys: Player 1)', 20, arrowY);
+    }
+    
+    // Draw Team 2 controls (right side)
+    this.ctx.textAlign = 'right';
+    this.ctx.font = 'bold 12px Arial';
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillText('TEAM 2 CONTROLS:', this.canvas.width - 20, startY - 5);
+    
+    for (let i = 0; i < Math.min(this.team2Players.length, 3); i++) {
+      const player = this.team2Players[i];
+      const color = paddleColors[i % paddleColors.length];
+      const yPos = startY + 15 + (i * lineHeight);
+      
+      // Measure text widths for right alignment
+      this.ctx.font = 'bold 11px Arial';
+      const nameWidth = this.ctx.measureText(player.username).width;
+      this.ctx.font = '11px Arial';
+      const keysText = `${team2Keys[i].label} - `;
+      const keysWidth = this.ctx.measureText(keysText).width;
+      
+      // Draw colored indicator
+      this.ctx.fillStyle = color;
+      this.ctx.fillRect(this.canvas.width - 28, yPos - 10, 8, 12);
+      
+      // Draw keys and player name
+      this.ctx.font = '11px Arial';
+      this.ctx.fillStyle = '#aaaaaa';
+      this.ctx.fillText(keysText, this.canvas.width - 35, yPos);
+      
+      this.ctx.font = 'bold 11px Arial';
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(player.username, this.canvas.width - 35 - keysWidth, yPos);
+    }
+    
     this.ctx.restore();
   }
 
@@ -1316,7 +1632,14 @@ export class GameManager {
     console.log('🕹️ [ARCADE] Starting arcade mode');
     this.isCampaignMode = false; // Arcade is NOT campaign mode
     
-    console.log(`🕹️ [ARCADE] Score to win: ${this.gameSettings.scoreToWin || 5}`);
+    // Sync settings from app before starting
+    const app = (window as any).app;
+    if (app && app.gameSettings) {
+      this.gameSettings = { ...this.gameSettings, ...app.gameSettings };
+      console.log('🕹️ [ARCADE] Synced game settings from app:', this.gameSettings);
+    }
+    
+    console.log(`🕹️ [ARCADE] Score to win: ${this.gameSettings.scoreToWin}`);
     
     // Ensure canvas exists
     this.ensureCanvasInitialized();
@@ -1415,31 +1738,132 @@ export class GameManager {
           return;
         }
 
-        // Get selected players count for each team
+        // Get selected players and their team assignments
         const app = (window as any).app;
-        let team1Count = 1; // Default to 1
-        let team2Count = 1; // Default to 1
+        let team1Players: any[] = [];
+        let team2Players: any[] = [];
         
+        // First, check if host player is selected - host is ALWAYS first in team 1
+        const hostCard = document.getElementById('host-player-card');
+        const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                               app.selectedPlayerIds && app.selectedPlayerIds.has(user.userId.toString());
+        
+        if (isHostSelected) {
+          const hostPlayer = {
+            userId: user.userId,
+            username: user.username,
+            id: user.userId.toString(),
+            team: 1,
+            paddleIndex: 0 // Host is always first paddle in team 1
+          };
+          team1Players.push(hostPlayer);
+          console.log('🕹️ [ARCADE] Host added to Team 1 as first player (paddle 0) - Keys: Q/A + Arrows');
+        }
+        
+        // Then add local players based on their team assignments
         if (app && app.localPlayers && app.selectedPlayerIds) {
           const selectedPlayers = app.localPlayers.filter((p: any) => 
             app.selectedPlayerIds.has(p.id?.toString())
           );
-          team1Count = selectedPlayers.filter((p: any) => p.team === 1).length || 1;
-          team2Count = selectedPlayers.filter((p: any) => p.team === 2).length || 1;
+          
+          // Separate by team
+          const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+          const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+          
+          // Add local team 1 players AFTER host
+          localTeam1.forEach((p: any) => {
+            team1Players.push({
+              userId: p.userId,
+              username: p.username,
+              id: p.id,
+              team: 1,
+              paddleIndex: team1Players.length // Assign sequential paddle index
+            });
+          });
+          
+          // Add team 2 players
+          localTeam2.forEach((p: any) => {
+            team2Players.push({
+              userId: p.userId,
+              username: p.username,
+              id: p.id,
+              team: 2,
+              paddleIndex: team2Players.length // Assign sequential paddle index
+            });
+          });
+          
+          console.log('🕹️ [ARCADE] Team 1 players:', team1Players.map((p, i) => `${i}: ${p.username}`));
+          console.log('🕹️ [ARCADE] Team 2 players:', team2Players.map((p, i) => `${i}: ${p.username}`));
         }
+        
+        // Check if AI player is selected
+        const aiCard = document.getElementById('ai-player-card');
+        if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds && app.selectedPlayerIds.has('ai-player')) {
+          // Determine AI team from DOM position
+          const inTeam2 = aiCard.closest('#team2-list') !== null;
+          
+          const aiPlayer = {
+            userId: 0,
+            username: 'Bot',
+            id: 'ai-player',
+            team: inTeam2 ? 2 : 1,
+            paddleIndex: inTeam2 ? team2Players.length : team1Players.length
+          };
+          
+          if (inTeam2) {
+            team2Players.push(aiPlayer);
+            console.log('🕹️ [ARCADE] AI added to Team 2 at index', aiPlayer.paddleIndex);
+          } else {
+            team1Players.push(aiPlayer);
+            console.log('🕹️ [ARCADE] AI added to Team 1 at index', aiPlayer.paddleIndex);
+          }
+        }
+        
+        // Ensure at least 1 player per team (defaults)
+        const team1Count = Math.max(1, team1Players.length);
+        const team2Count = Math.max(1, team2Players.length);
 
-        // Send arcade match request with score to win and player counts
+        // Get all game settings from app
+        const gameSettings = app?.gameSettings || this.gameSettings;
+        
+        // Determine AI difficulty based on minimum player level
+        // For now, use the configured difficulty, but could be enhanced to check player stats
+        const aiDifficulty = gameSettings.aiDifficulty || 'medium';
+
+        // Send arcade match request with complete player information
         if (this.websocket) {
           const arcadeRequest = {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
             gameMode: 'arcade',
-            scoreToWin: this.gameSettings.scoreToWin || 5,
+            // Game settings
+            aiDifficulty: aiDifficulty,
+            ballSpeed: gameSettings.ballSpeed || 'medium',
+            paddleSpeed: gameSettings.paddleSpeed || 'medium',
+            powerupsEnabled: gameSettings.powerupsEnabled || false,
+            accelerateOnHit: gameSettings.accelerateOnHit || false,
+            scoreToWin: gameSettings.scoreToWin || 5,
+            // Team player counts
             team1PlayerCount: team1Count,
-            team2PlayerCount: team2Count
+            team2PlayerCount: team2Count,
+            // Detailed player information for each team
+            team1Players: team1Players.map((p, index) => ({
+              userId: p.userId,
+              username: p.username,
+              paddleIndex: index, // 0, 1, or 2
+              isBot: p.userId === 0 // Mark AI players
+            })),
+            team2Players: team2Players.map((p, index) => ({
+              userId: p.userId,
+              username: p.username,
+              paddleIndex: index, // 0, 1, or 2
+              isBot: p.userId === 0 // Mark AI players
+            }))
           };
-          console.log('🕹️ [ARCADE] Sending match request:', arcadeRequest);
+          console.log('🕹️ [ARCADE] Sending match request with full player info:', arcadeRequest);
+          console.log('🕹️ [ARCADE] Team 1 (LEFT SIDE):', arcadeRequest.team1Players);
+          console.log('🕹️ [ARCADE] Team 2 (RIGHT SIDE):', arcadeRequest.team2Players);
           this.websocket.send(JSON.stringify(arcadeRequest));
         }
         resolve();
