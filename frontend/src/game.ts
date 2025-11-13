@@ -1933,9 +1933,13 @@ export class GameManager {
           if (gameSettings.gameMode === 'tournament' && app && app.currentTournamentMatch) {
             arcadeRequest.tournamentId = app.currentTournamentMatch.tournamentId;
             arcadeRequest.tournamentMatchId = app.currentTournamentMatch.matchId;
+            arcadeRequest.player2Id = app.currentTournamentMatch.player2Id;
+            arcadeRequest.player2Name = app.currentTournamentMatch.player2Name;
             console.log('🏆 [TOURNAMENT] Added tournament IDs to game creation:', {
               tournamentId: arcadeRequest.tournamentId,
-              matchId: arcadeRequest.tournamentMatchId
+              matchId: arcadeRequest.tournamentMatchId,
+              player2Id: arcadeRequest.player2Id,
+              player2Name: arcadeRequest.player2Name
             });
           }
           

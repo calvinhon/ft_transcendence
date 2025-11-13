@@ -825,10 +825,13 @@ export class TournamentManager {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to record match result');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('🏆 [TOURNAMENT] Failed to record match result:', errorData);
+        throw new Error(errorData.error || 'Failed to record match result');
       }
 
-      console.log('Match result recorded successfully');
+      const result = await response.json();
+      console.log('🏆 [TOURNAMENT] Match result recorded successfully:', result);
       showToast('Match result recorded', 'success');
       
       // Wait a moment for backend to process next round creation
@@ -851,13 +854,14 @@ export class TournamentManager {
         // If tournament is finished, record on blockchain
         if (details.tournament.status === 'finished' && details.tournament.winner_id) {
           showToast(`Tournament complete! Winner: ${this.participantMap[details.tournament.winner_id]}`, 'success');
-          await this.recordOnBlockchain(tournamentId, details.tournament.winner_id);
+          // Don't auto-record on blockchain - user can manually click button in modal
         }
       }
       
     } catch (error) {
-      console.error('Record match result error:', error);
-      showToast('Failed to record match result', 'error');
+      console.error('🏆 [TOURNAMENT] Record match result error:', error);
+      showToast(`Error: ${error instanceof Error ? error.message : 'Failed to record result'}`, 'error');
+      throw error;
     }
   }
 
