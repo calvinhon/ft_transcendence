@@ -86,7 +86,7 @@ services:
   blockchain-service:
     build: ./blockchain-service
     ports:
-      - "3005:3001"
+      - "3005:3000"
     environment:
       - PORT=3000
       - SERVICE_NAME=blockchain-service
@@ -96,6 +96,16 @@ services:
     depends_on:
       hardhat-node:
         condition: service_healthy
+    networks:
+      - transcendence-network
+
+  party-service:
+    build: ./party-service
+    ports:
+      - "3006:3000"
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=party-service
     networks:
       - transcendence-network
 
