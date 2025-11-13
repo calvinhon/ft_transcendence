@@ -1041,9 +1041,22 @@ export class App {
     siblings.forEach(sibling => sibling.classList.remove('active'));
     button.classList.add('active');
 
-    // Update settings (example: update gameSettings)
-    if (setting in this.gameSettings) {
-      (this.gameSettings as any)[setting] = value;
+    // Convert hyphenated setting names to camelCase for gameSettings object
+    const settingMap: { [key: string]: string } = {
+      'ai-difficulty': 'aiDifficulty',
+      'ball-speed': 'ballSpeed',
+      'paddle-speed': 'paddleSpeed',
+      'powerups-enabled': 'powerupsEnabled',
+      'accelerate-on-hit': 'accelerateOnHit',
+      'gameMode': 'gameMode'
+    };
+    
+    const settingKey = settingMap[setting] || setting;
+
+    // Update settings
+    if (settingKey in this.gameSettings) {
+      (this.gameSettings as any)[settingKey] = value;
+      console.log(`⚙️ [SETTINGS] Updated ${settingKey} to ${value}`, this.gameSettings);
     }
 
     // Optionally trigger UI updates if needed
@@ -1087,8 +1100,9 @@ export class App {
         break;
     }
     
-    // Initialize the game party display
+    // Initialize the game party display and sync score
     this.updateGamePartyDisplay();
+    this.updateScoreDisplay(); // Sync score display with gameSettings
   }
 
   private populateOnlinePlayers(): void {
@@ -1457,9 +1471,8 @@ export class App {
   }
 
   changeScoreToWin(delta: number): void {
-    if (this.gameSettings.gameMode !== 'arcade') return;
-
-    const currentScore = this.gameSettings.scoreToWin || 5;
+    // Allow score changes in all modes
+    const currentScore = this.gameSettings.scoreToWin || 3;
     const newScore = Math.max(1, Math.min(21, currentScore + delta)); // Limit between 1 and 21
     
     this.gameSettings.scoreToWin = newScore;
@@ -1471,11 +1484,20 @@ export class App {
     }
   }
 
+  // Sync score display with gameSettings
+  updateScoreDisplay(): void {
+    const scoreDisplay = document.getElementById('score-value');
+    if (scoreDisplay && this.gameSettings.scoreToWin !== undefined) {
+      scoreDisplay.textContent = this.gameSettings.scoreToWin.toString();
+    }
+  }
+
   updatePlayConfigUI(): void {
     // Update settings display based on current settings
     this.updateLocalPlayersDisplay();
     this.updateGamePartyDisplay();
     this.initializePlayerSelection();
+    this.updateScoreDisplay(); // Sync score display
   }
 
   // showAddPlayerDialog is deprecated - now using showLocalPlayerLoginModal from local-player.ts

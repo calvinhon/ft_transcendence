@@ -170,6 +170,9 @@ export class GameManager {
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
   
+  // Countdown state
+  private countdownValue: number | null = null;
+  
   // Store player info for arcade mode
   private team1Players: any[] = [];
   private team2Players: any[] = [];
@@ -545,16 +548,8 @@ export class GameManager {
             if (this.isCampaignMode) {
               gameSettings = this.getCampaignLevelSettings();
             } else {
-              const app = (window as any).app;
-              gameSettings = app?.gameSettings || {
-                gameMode: 'coop',
-                aiDifficulty: 'easy',
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerupsEnabled: false,
-                accelerateOnHit: false,
-                scoreToWin: 5
-              };
+              // Use GameManager's own settings (already synced from app)
+              gameSettings = this.gameSettings;
             }
             console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
             this.websocket.send(JSON.stringify({
@@ -887,13 +882,14 @@ export class GameManager {
   }
 
   private updateGameFromBackend(backendState: any): void {
-    // Don't update game state if paused or not playing
+    // Don't update game state if paused
     if (this.isPaused) {
       // console.log(`🎮 [GM#${this.instanceId}] Ignoring game state - game is paused`);
       return;
     }
     
-    if (!this.isPlaying) {
+    // Allow updates during countdown
+    if (!this.isPlaying && backendState.gameState !== 'countdown') {
       console.log(`⚠️ [GM#${this.instanceId}] Ignoring game state - game is not playing`);
       return;
     }
@@ -946,6 +942,18 @@ export class GameManager {
       }
       
       this.gameState = frontendState;
+      
+      // Store countdown value if in countdown state
+      if (backendState.gameState === 'countdown' && backendState.countdownValue !== undefined) {
+        this.countdownValue = backendState.countdownValue;
+      } else if (backendState.gameState === 'playing') {
+        // Clear countdown when game starts
+        this.countdownValue = null;
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+        }
+      }
+      
       this.render();
       
       // No longer need to update HTML UI elements - everything is rendered on canvas
@@ -955,6 +963,41 @@ export class GameManager {
   private updateScoreDisplay(): void {
     // This method is no longer needed since we're rendering everything on canvas
     // All UI updates are now handled in the render() method
+  }
+
+  private drawCountdownOverlay(value: number): void {
+    if (!this.ctx || !this.canvas) return;
+    
+    // Draw very light semi-transparent overlay (barely visible to keep game bright)
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw countdown text with subtle glow effect
+    this.ctx.shadowColor = '#77e6ff';
+    this.ctx.shadowBlur = 8;
+    this.ctx.fillStyle = 'rgba(119, 230, 255, 0.9)'; // Less bright cyan
+    this.ctx.font = 'bold 60px "Courier New", monospace'; // Even smaller font
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    const text = value > 0 ? value.toString() : 'GO!';
+    this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+    
+    // Add "GET READY" text above countdown (smaller and less bright)
+    if (value > 0) {
+      this.ctx.font = 'bold 20px "Courier New", monospace';
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      this.ctx.shadowBlur = 5;
+      this.ctx.fillText('GET READY', this.canvas.width / 2, this.canvas.height / 2 - 50);
+    }
+    
+    // Reset shadow
+    this.ctx.shadowBlur = 0;
+  }
+
+  private hideCountdown(): void {
+    // Countdown is hidden by normal render() calls
+    // This method exists for clarity and future enhancements
   }
 
   private render(): void {
@@ -1051,6 +1094,11 @@ export class GameManager {
     
     // Draw control keys for arcade mode
     this.drawArcadeControls();
+    
+    // Draw countdown overlay if active (drawn last so it's on top)
+    if (this.countdownValue !== null) {
+      this.drawCountdownOverlay(this.countdownValue);
+    }
   }
 
   private drawBallWithTrail(): void {

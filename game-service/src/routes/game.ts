@@ -47,7 +47,8 @@ interface GameState {
   ball: Ball;
   paddles: Paddles;
   scores: Scores;
-  gameState: 'playing' | 'finished';
+  gameState: 'countdown' | 'playing' | 'finished';
+  countdownValue?: number; // Only present when gameState is 'countdown'
 }
 
 interface WebSocketMessage {
@@ -93,6 +94,9 @@ interface GameRecord {
   winner_id?: number;
   player1_name?: string;
   player2_name?: string;
+  game_mode?: string;
+  team1_players?: string;
+  team2_players?: string;
 }
 
 interface GameStats {
@@ -126,21 +130,57 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Error opening database:', err);
   } else {
     console.log('Connected to Games SQLite database');
-    // Create games table
+    // Create games table with support for arcade mode
     db.run(`
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         player1_id INTEGER NOT NULL,
         player2_id INTEGER NOT NULL,
-        player1_sc
-		ore INTEGER DEFAULT 0,
+        player1_score INTEGER DEFAULT 0,
         player2_score INTEGER DEFAULT 0,
         status TEXT DEFAULT 'active',
         started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         finished_at DATETIME,
-        winner_id INTEGER
+        winner_id INTEGER,
+        game_mode TEXT DEFAULT 'coop',
+        team1_players TEXT,
+        team2_players TEXT
       )
     `);
+    
+    // Migrate existing database: Add new columns if they don't exist
+    db.all("PRAGMA table_info(games)", (err, columns: any[]) => {
+      if (!err && columns) {
+        const columnNames = columns.map(col => col.name);
+        
+        // Add game_mode column if it doesn't exist
+        if (!columnNames.includes('game_mode')) {
+          console.log('📦 [DB-MIGRATION] Adding game_mode column...');
+          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'coop'", (err) => {
+            if (err) console.error('Failed to add game_mode column:', err);
+            else console.log('✅ [DB-MIGRATION] game_mode column added');
+          });
+        }
+        
+        // Add team1_players column if it doesn't exist
+        if (!columnNames.includes('team1_players')) {
+          console.log('📦 [DB-MIGRATION] Adding team1_players column...');
+          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err) => {
+            if (err) console.error('Failed to add team1_players column:', err);
+            else console.log('✅ [DB-MIGRATION] team1_players column added');
+          });
+        }
+        
+        // Add team2_players column if it doesn't exist
+        if (!columnNames.includes('team2_players')) {
+          console.log('📦 [DB-MIGRATION] Adding team2_players column...');
+          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err) => {
+            if (err) console.error('Failed to add team2_players column:', err);
+            else console.log('✅ [DB-MIGRATION] team2_players column added');
+          });
+        }
+      }
+    });
 
     db.run(`
       CREATE TABLE IF NOT EXISTS game_events (
@@ -198,11 +238,14 @@ class PongGame {
   ball: Ball;
   paddles: Paddles;
   scores: Scores;
-  gameState: 'playing' | 'finished';
+  gameState: 'countdown' | 'playing' | 'finished';
   maxScore: number;
   lastStateTime: number;
   isPaused: boolean;
   private gameInterval?: NodeJS.Timeout;
+  countdownValue: number;
+  private countdownInterval?: NodeJS.Timeout;
+  ballFrozen: boolean; // Flag to freeze ball movement during countdown
   
   // Game settings
   gameSettings: GameSettings;
@@ -278,36 +321,65 @@ class PongGame {
     }
     
     this.scores = { player1: 0, player2: 0 };
-    this.gameState = 'playing';
+    this.gameState = 'countdown';
+    this.countdownValue = 3;
+    this.ballFrozen = true; // Freeze ball during initial countdown
     this.maxScore = this.gameSettings.scoreToWin;
     this.lastStateTime = 0;
     this.isPaused = false;
     
     console.log(`🎮 [GAME-${this.gameId}] Created with settings:`, this.gameSettings);
     
-    this.startGameLoop();
+    this.startCountdown();
   }
 
   private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 3;
-      case 'medium': return 5;
-      case 'fast': return 7;
-      default: return 5;
+      case 'slow': return 4;     // Slow and easy to track
+      case 'medium': return 8;   // Standard speed
+      case 'fast': return 15;    // Very fast and intense!
+      default: return 8;
     }
   }
 
   private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 5;
-      case 'medium': return 8;
-      case 'fast': return 12;
-      default: return 8;
+      case 'slow': return 8;      // Slower response
+      case 'medium': return 14;   // Standard response
+      case 'fast': return 25;     // Super responsive and intense!
+      default: return 14;
     }
   }
 
   private getInitialBallDirection(): number {
     return Math.random() > 0.5 ? 1 : -1;
+  }
+
+  startCountdown(): void {
+    console.log(`⏱️ [GAME-${this.gameId}] Starting countdown from 3...`);
+    
+    // Broadcast initial countdown state
+    this.broadcastGameState();
+    
+    this.countdownInterval = setInterval(() => {
+      this.countdownValue--;
+      console.log(`⏱️ [GAME-${this.gameId}] Countdown: ${this.countdownValue}`);
+      
+      if (this.countdownValue <= 0) {
+        // Countdown finished, start the game
+        if (this.countdownInterval) {
+          clearInterval(this.countdownInterval);
+        }
+        this.gameState = 'playing';
+        this.ballFrozen = false; // Unfreeze ball movement
+        console.log(`🎮 [GAME-${this.gameId}] GO! Game started!`);
+        this.broadcastGameState(); // Send "GO!" state
+        this.startGameLoop();
+      } else {
+        // Broadcast countdown update
+        this.broadcastGameState();
+      }
+    }, 1000); // Update every second
   }
 
   startGameLoop(): void {
@@ -319,8 +391,8 @@ class PongGame {
         return;
       }
       
-      // Don't update game logic if paused, but still broadcast current state
-      if (!this.isPaused) {
+      // Don't update game logic if paused or in countdown, but still broadcast current state
+      if (!this.isPaused && this.gameState === 'playing') {
         // If player2 is bot, move bot paddle
         if (this.player2.userId === 0) {
           this.moveBotPaddle();
@@ -354,19 +426,19 @@ class PongGame {
         errorMargin = 50; // Large error margin
         break;
       case 'medium':
-        moveSpeed = 3;
+        moveSpeed = 4;
         reactionDelay = Math.random() > 0.8; // 20% chance bot doesn't react
-        errorMargin = 30; // Medium error margin
+        errorMargin = 25; // Medium error margin
         break;
       case 'hard':
-        moveSpeed = 5;
-        reactionDelay = Math.random() > 0.95; // 5% chance bot doesn't react
-        errorMargin = 10; // Small error margin
+        moveSpeed = 8; // Much faster movement!
+        reactionDelay = Math.random() > 0.98; // Only 2% chance bot doesn't react (nearly perfect)
+        errorMargin = 5; // Very small error margin (nearly perfect aim)
         break;
       default:
-        moveSpeed = 3;
+        moveSpeed = 4;
         reactionDelay = Math.random() > 0.8;
-        errorMargin = 30;
+        errorMargin = 25;
     }
     
     if (reactionDelay) return; // Sometimes bot doesn't react
@@ -398,6 +470,9 @@ class PongGame {
 
   updateBall(): void {
     if (this.gameState !== 'playing') return;
+    
+    // Don't move ball if frozen (during countdown after score)
+    if (this.ballFrozen) return;
 
     this.ball.x += this.ball.dx;
     this.ball.y += this.ball.dy;
@@ -420,8 +495,12 @@ class PongGame {
             this.ball.dx = Math.abs(speed) * Math.cos(angle);
             this.ball.dy = speed * Math.sin(angle);
             if (this.accelerateOnHit) {
-              this.ball.dx *= 1.1;
-              this.ball.dy *= 1.1;
+              // Increase speed by 15% on each hit (more noticeable)
+              const oldSpeed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+              this.ball.dx *= 1.15;
+              this.ball.dy *= 1.15;
+              const newSpeed = Math.sqrt(this.ball.dx * this.ball.dx + this.ball.dy * this.ball.dy);
+              console.log(`⚡ [GAME-${this.gameId}] Ball accelerated! ${oldSpeed.toFixed(1)} → ${newSpeed.toFixed(1)}`);
             }
             leftHit = true;
             break;
@@ -436,8 +515,9 @@ class PongGame {
           this.ball.dx = Math.abs(speed) * Math.cos(angle);
           this.ball.dy = speed * Math.sin(angle);
           if (this.accelerateOnHit) {
-            this.ball.dx *= 1.1;
-            this.ball.dy *= 1.1;
+            // Increase speed by 15% on each hit (more noticeable)
+            this.ball.dx *= 1.15;
+            this.ball.dy *= 1.15;
           }
           leftHit = true;
         }
@@ -457,8 +537,9 @@ class PongGame {
             this.ball.dx = Math.abs(speed) * Math.cos(angle);
             this.ball.dy = speed * Math.sin(angle);
             if (this.accelerateOnHit) {
-              this.ball.dx *= 1.1;
-              this.ball.dy *= 1.1;
+              // Increase speed by 15% on each hit (more noticeable)
+              this.ball.dx *= 1.15;
+              this.ball.dy *= 1.15;
             }
             rightHit = true;
             break;
@@ -473,8 +554,9 @@ class PongGame {
           this.ball.dx = Math.abs(speed) * Math.cos(angle);
           this.ball.dy = speed * Math.sin(angle);
           if (this.accelerateOnHit) {
-            this.ball.dx *= 1.1;
-            this.ball.dy *= 1.1;
+            // Increase speed by 15% on each hit (more noticeable)
+            this.ball.dx *= 1.15;
+            this.ball.dy *= 1.15;
           }
           rightHit = true;
         }
@@ -484,10 +566,10 @@ class PongGame {
     // Scoring
     if (this.ball.x < 0) {
       this.scores.player2++;
-      this.resetBall();
+      this.resetBall('right'); // Ball goes to player on right (player2 scored)
     } else if (this.ball.x > 800) {
       this.scores.player1++;
-      this.resetBall();
+      this.resetBall('left'); // Ball goes to player on left (player1 scored)
     }
 
     // Check win condition
@@ -496,18 +578,41 @@ class PongGame {
     }
   }
 
-  resetBall(): void {
+  resetBall(direction?: 'left' | 'right'): void {
+    // Freeze ball briefly and reset to center
+    this.ballFrozen = true;
+    
+    // Determine ball direction based on who was scored against
+    let ballDirectionX: number;
+    if (direction === 'left') {
+      // Ball goes left (toward player1 who was scored against)
+      ballDirectionX = -this.ballSpeed;
+    } else if (direction === 'right') {
+      // Ball goes right (toward player2 who was scored against)
+      ballDirectionX = this.ballSpeed;
+    } else {
+      // Random direction for game start
+      ballDirectionX = this.getInitialBallDirection() * this.ballSpeed;
+    }
+    
     this.ball = { 
       x: 400, 
       y: 300, 
-      dx: this.getInitialBallDirection() * this.ballSpeed, 
+      dx: ballDirectionX, 
       dy: (Math.random() - 0.5) * this.ballSpeed 
     };
     
-    // Add a short pause when ball resets to make game feel more natural
+    console.log(`🏓 [GAME-${this.gameId}] Ball reset${direction ? ' toward ' + direction : ''}. Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
+    
+    // Brief delay without countdown overlay - just freeze ball for 1 second
     setTimeout(() => {
-      console.log(`🏓 [GAME-${this.gameId}] Ball reset. Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
-    }, 100);
+      this.ballFrozen = false;
+      console.log(`🎮 [GAME-${this.gameId}] Ball unfrozen!`);
+      this.broadcastGameState();
+    }, 1000); // 1 second delay
+    
+    // Broadcast current state immediately (ball at center, frozen)
+    this.broadcastGameState();
   }
 
   movePaddle(playerId: number, direction: 'up' | 'down', paddleIndex?: number): void {
@@ -588,6 +693,11 @@ class PongGame {
       scores: this.scores,
       gameState: this.gameState
     };
+
+    // Add countdown value if in countdown state
+    if (this.gameState === 'countdown') {
+      gameState.countdownValue = this.countdownValue;
+    }
 
     // DEBUG LOG: Print game state every time it's broadcast
     console.log('🔴 [GAME-STATE] Broadcasting game state:', JSON.stringify(gameState));
@@ -743,13 +853,17 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
               };
               
               console.log('🎮 [USER-CONNECT] Starting game with settings:', gameSettings);
+              console.log('🎮 [USER-CONNECT] Team 1 players:', data.team1Players);
+              console.log('🎮 [USER-CONNECT] Team 2 players:', data.team2Players);
               
-              // Start the bot game directly
+              // Start the bot game directly with team player data
               handleJoinBotGame(connection.socket, {
                 type: 'joinBotGame',
                 userId: data.userId,
                 username: data.username,
-                gameSettings: gameSettings
+                gameSettings: gameSettings,
+                team1Players: data.team1Players,
+                team2Players: data.team2Players
               });
             } else {
               // Just acknowledge connection
@@ -827,10 +941,14 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
         matchTimers.delete(player2.socket);
       }
 
-      // Create game in database
+      // Create game in database with game mode and team info
+      const gameMode = data.gameSettings?.gameMode || 'coop';
+      const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
+      const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+      
       db.run(
-        'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
-        [player1.userId, player2.userId],
+        'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
+        [player1.userId, player2.userId, gameMode, team1Players, team2Players],
         function(this: sqlite3.RunResult, err: Error | null) {
           if (!err) {
             const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
@@ -876,9 +994,14 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
             username: 'Bot',
             socket: dummySocket
           };
+          
+          const gameMode = data.gameSettings?.gameMode || 'coop';
+          const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
+          const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+          
           db.run(
-            'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
-            [player1.userId, player2.userId],
+            'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
+            [player1.userId, player2.userId, gameMode, team1Players, team2Players],
             function(this: sqlite3.RunResult, err: Error | null) {
               if (!err) {
                 const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
@@ -930,10 +1053,14 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       socket: dummySocket
     };
 
-    // Create game in database
+    // Create game in database with game mode and team info
+    const gameMode = data.gameSettings?.gameMode || 'coop';
+    const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
+    const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+    
     db.run(
-      'INSERT INTO games (player1_id, player2_id) VALUES (?, ?)',
-      [player1.userId, player2.userId],
+      'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
+      [player1.userId, player2.userId, gameMode, team1Players, team2Players],
       function(this: sqlite3.RunResult, err: Error | null) {
         if (!err) {
           const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);

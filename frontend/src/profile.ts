@@ -43,6 +43,7 @@ interface RecentGame {
   score: string;
   date: string;
   duration: number;
+  gameMode?: string;
 }
 
 export class ProfileManager {
@@ -298,8 +299,19 @@ export class ProfileManager {
             result = 'loss';
           }
           
-          // Determine opponent name
-          const opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+          // Determine opponent name - for arcade mode, show team info
+          let opponentName: string;
+          if (game.game_mode === 'arcade' && game.team2_players) {
+            try {
+              const team2 = JSON.parse(game.team2_players);
+              const teamNames = team2.map((p: any) => p.username).join(', ');
+              opponentName = `Team 2 (${teamNames})`;
+            } catch (e) {
+              opponentName = 'Team 2';
+            }
+          } else {
+            opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+          }
           
           return {
             id: game.id,
@@ -307,7 +319,8 @@ export class ProfileManager {
             result: result,
             score: `${playerScore}-${opponentScore}`,
             date: game.finished_at || game.started_at,
-            duration: 0 // Not provided by API
+            duration: 0, // Not provided by API
+            gameMode: game.game_mode || 'coop'
           };
         });
         
@@ -353,10 +366,20 @@ export class ProfileManager {
         dateDisplay = date.toLocaleDateString();
       }
       
+      // Format game mode display
+      let gameModeDisplay = 'Co-op';
+      if (game.gameMode === 'arcade') {
+        gameModeDisplay = 'Arcade';
+      } else if (game.gameMode === 'tournament') {
+        gameModeDisplay = 'Tournament';
+      } else if (game.gameMode === 'coop') {
+        gameModeDisplay = 'Co-op';
+      }
+      
       return `
         <div class="activity-row">
           <span>${dateDisplay}</span>
-          <span>Campaign</span>
+          <span>${gameModeDisplay}</span>
           <span>${this.escapeHtml(game.opponent)}</span>
           <span class="result-${game.result}">${game.result.charAt(0).toUpperCase() + game.result.slice(1)}</span>
           <span>${game.score}</span>
