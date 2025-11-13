@@ -5,6 +5,7 @@ import { setupLocalPlayerRegisterModal } from './local-player';
 import { AuthManager } from './auth';
 import { GameManager } from './game';
 import { ProfileManager } from './profile';
+import { TournamentManager } from './tournament';
 
 console.log('🚀 [MAIN] main.ts executing... BUILD VERSION 3.0 - PROFILE FIX');
 
@@ -35,6 +36,13 @@ if (!(window as any).profileManager) {
   (window as any).profileManager = new ProfileManager();
 } else {
   console.warn('⚠️ [MAIN] ProfileManager already exists, skipping');
+}
+
+if (!(window as any).tournamentManager) {
+  console.log('✅ [MAIN] Creating TournamentManager');
+  (window as any).tournamentManager = new TournamentManager();
+} else {
+  console.warn('⚠️ [MAIN] TournamentManager already exists, skipping');
 }
 
 // ...initialize app, bind UI, etc...

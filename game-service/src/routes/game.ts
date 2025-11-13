@@ -130,7 +130,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('Error opening database:', err);
   } else {
     console.log('Connected to Games SQLite database');
-    // Create games table with support for arcade mode
+    // Create games table with support for arcade mode and tournament tracking
     db.run(`
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,7 +144,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
         winner_id INTEGER,
         game_mode TEXT DEFAULT 'coop',
         team1_players TEXT,
-        team2_players TEXT
+        team2_players TEXT,
+        tournament_id INTEGER,
+        tournament_match_id INTEGER
       )
     `);
     
@@ -177,6 +179,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
           db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err) => {
             if (err) console.error('Failed to add team2_players column:', err);
             else console.log('✅ [DB-MIGRATION] team2_players column added');
+          });
+        }
+        
+        // Add tournament_id column if it doesn't exist
+        if (!columnNames.includes('tournament_id')) {
+          console.log('📦 [DB-MIGRATION] Adding tournament_id column...');
+          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err) => {
+            if (err) console.error('Failed to add tournament_id column:', err);
+            else console.log('✅ [DB-MIGRATION] tournament_id column added');
+          });
+        }
+        
+        // Add tournament_match_id column if it doesn't exist
+        if (!columnNames.includes('tournament_match_id')) {
+          console.log('📦 [DB-MIGRATION] Adding tournament_match_id column...');
+          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err) => {
+            if (err) console.error('Failed to add tournament_match_id column:', err);
+            else console.log('✅ [DB-MIGRATION] tournament_match_id column added');
           });
         }
       }
@@ -945,10 +965,12 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       const gameMode = data.gameSettings?.gameMode || 'coop';
       const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
       const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+      const tournamentId = data.tournamentId || null;
+      const tournamentMatchId = data.tournamentMatchId || null;
       
       db.run(
-        'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
-        [player1.userId, player2.userId, gameMode, team1Players, team2Players],
+        'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players, tournament_id, tournament_match_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [player1.userId, player2.userId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId],
         function(this: sqlite3.RunResult, err: Error | null) {
           if (!err) {
             const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
@@ -998,10 +1020,12 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
           const gameMode = data.gameSettings?.gameMode || 'coop';
           const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
           const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+          const tournamentId = data.tournamentId || null;
+          const tournamentMatchId = data.tournamentMatchId || null;
           
           db.run(
-            'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
-            [player1.userId, player2.userId, gameMode, team1Players, team2Players],
+            'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players, tournament_id, tournament_match_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [player1.userId, player2.userId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId],
             function(this: sqlite3.RunResult, err: Error | null) {
               if (!err) {
                 const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
@@ -1041,26 +1065,57 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       socket: socket
     };
 
-    // Create immediate bot match without waiting
-    const dummySocket = {
-      readyState: WebSocket.OPEN,
-      send: () => {} // No-op
-    } as unknown as WebSocket;
+    // Check if this is a tournament match with two real players
+    let player2: GamePlayer;
     
-    const player2: GamePlayer = {
-      userId: 0,
-      username: 'Bot',
-      socket: dummySocket
-    };
+    if (data.gameSettings?.gameMode === 'tournament' && data.player2Id && data.player2Id !== 0) {
+      // Tournament match: player2 is also a real player (local)
+      // In tournament mode, both players control their paddles locally on the same machine
+      console.log('🏆 [TOURNAMENT] Creating tournament match with player2 ID:', data.player2Id);
+      
+      // Create a dummy socket for player2 since they're on the same machine
+      const dummySocket = {
+        readyState: WebSocket.OPEN,
+        send: () => {} // No-op since both players share the same connection
+      } as unknown as WebSocket;
+      
+      player2 = {
+        userId: data.player2Id,
+        username: data.player2Name || `Player ${data.player2Id}`,
+        socket: dummySocket
+      };
+    } else {
+      // Regular bot match
+      const dummySocket = {
+        readyState: WebSocket.OPEN,
+        send: () => {} // No-op
+      } as unknown as WebSocket;
+      
+      player2 = {
+        userId: 0,
+        username: 'Bot',
+        socket: dummySocket
+      };
+    }
 
     // Create game in database with game mode and team info
     const gameMode = data.gameSettings?.gameMode || 'coop';
     const team1Players = data.team1Players ? JSON.stringify(data.team1Players) : null;
     const team2Players = data.team2Players ? JSON.stringify(data.team2Players) : null;
+    const tournamentId = data.tournamentId || null;
+    const tournamentMatchId = data.tournamentMatchId || null;
+    
+    console.log('🎮 [GAME-CREATE] Creating game:', {
+      player1Id: player1.userId,
+      player2Id: player2.userId,
+      gameMode,
+      tournamentId,
+      tournamentMatchId
+    });
     
     db.run(
-      'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players) VALUES (?, ?, ?, ?, ?)',
-      [player1.userId, player2.userId, gameMode, team1Players, team2Players],
+      'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players, tournament_id, tournament_match_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [player1.userId, player2.userId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId],
       function(this: sqlite3.RunResult, err: Error | null) {
         if (!err) {
           const game = new PongGame(player1, player2, this.lastID!, data.gameSettings);
@@ -1078,18 +1133,18 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
           };
           console.log('🎮 [BOT-GAME] Sending gameStart message:', startMessage);
           player1.socket.send(JSON.stringify(startMessage));
-          console.log('🎮 [BOT-GAME] Bot game started immediately for:', player1.username);
+          console.log('🎮 [BOT-GAME] Game started for:', player1.username, 'vs', player2.username);
           
         // --- Fix: Also send initial gameState after gameStart ---
           setTimeout(() => {
             game.broadcastGameState();
         }, 100);
       } else {
-        console.error('Failed to create bot game:', err);
-        // --- Fix: Send error message to frontend if bot match creation fails ---
+        console.error('Failed to create game:', err);
+        // --- Fix: Send error message to frontend if match creation fails ---
         socket.send(JSON.stringify({
           type: 'error',
-          message: 'Failed to start bot match. Please try again.<Backend>'
+          message: 'Failed to start match. Please try again.<Backend>'
         }));
       }
     }

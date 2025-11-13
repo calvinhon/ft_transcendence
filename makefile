@@ -2,9 +2,22 @@
 
 OS := $(shell uname)
 
-.PHONY: start check-docker check-compose clean up open stop
+.PHONY: start check-docker check-compose clean up open stop restart rebuild
 
 start: check-docker check-compose clean up open
+
+restart: check-docker check-compose
+	@echo "🔄 Restarting services without rebuild..."
+	docker compose down
+	docker compose up -d
+	@echo "✅ Services restarted!"
+
+rebuild: check-docker check-compose
+	@echo "🔨 Rebuilding and restarting services..."
+	docker compose down
+	docker compose build
+	docker compose up -d
+	@echo "✅ Services rebuilt and started!"
 
 check-docker:
 	@echo "🔍 Checking Docker Desktop..."

@@ -1264,20 +1264,32 @@ export class GameManager {
         rightPlayerLevel = 1;
       }
     } else {
-      // Co-op/Campaign mode: Show player names
-      leftPlayerName = user?.username || 'Player 1';
-      rightPlayerName = 'AI Bot';
+      // Co-op/Campaign/Tournament mode: Show player names
+      const app = (window as any).app;
+      const tournamentMatch = app?.currentTournamentMatch;
       
-      // Try to read player level from user profile
-      const userLevelFromProfile = (() => {
-        const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
-        if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
-        if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
-        return null;
-      })();
+      if (tournamentMatch && tournamentMatch.player1Name && tournamentMatch.player2Name) {
+        // Tournament mode: Use player names from match data
+        leftPlayerName = tournamentMatch.player1Name;
+        rightPlayerName = tournamentMatch.player2Name;
+        leftPlayerLevel = 1; // Can enhance later with actual player levels
+        rightPlayerLevel = 1;
+      } else {
+        // Co-op/Campaign mode: Show player vs AI
+        leftPlayerName = user?.username || 'Player 1';
+        rightPlayerName = 'AI Bot';
+        
+        // Try to read player level from user profile
+        const userLevelFromProfile = (() => {
+          const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+          if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+          if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+          return null;
+        })();
 
-      leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
-      rightPlayerLevel = leftPlayerLevel;
+        leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+        rightPlayerLevel = leftPlayerLevel;
+      }
     }
 
     // Use getter to respect current game settings and campaign adjustments
@@ -1521,6 +1533,13 @@ export class GameManager {
       console.log('🕹️ [ARCADE] Handling arcade game end');
       this.handleArcadeGameEnd(result);
       return; // Arcade mode handles its own UI and navigation
+    }
+
+    // Handle tournament mode completion
+    if (this.gameSettings.gameMode === 'tournament') {
+      console.log('🏆 [TOURNAMENT] Handling tournament game end');
+      this.handleTournamentGameEnd(result);
+      return; // Tournament mode handles its own UI and navigation
     }
     
     // Regular game end handling
@@ -1880,7 +1899,7 @@ export class GameManager {
 
         // Send arcade match request with complete player information
         if (this.websocket) {
-          const arcadeRequest = {
+          const arcadeRequest: any = {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
@@ -1909,6 +1928,17 @@ export class GameManager {
               isBot: p.userId === 0 // Mark AI players
             }))
           };
+          
+          // Add tournament information if this is a tournament match
+          if (gameSettings.gameMode === 'tournament' && app && app.currentTournamentMatch) {
+            arcadeRequest.tournamentId = app.currentTournamentMatch.tournamentId;
+            arcadeRequest.tournamentMatchId = app.currentTournamentMatch.matchId;
+            console.log('🏆 [TOURNAMENT] Added tournament IDs to game creation:', {
+              tournamentId: arcadeRequest.tournamentId,
+              matchId: arcadeRequest.tournamentMatchId
+            });
+          }
+          
           console.log('🕹️ [ARCADE] Sending match request with full player info:', arcadeRequest);
           console.log('🕹️ [ARCADE] Team 1 (LEFT SIDE):', arcadeRequest.team1Players);
           console.log('🕹️ [ARCADE] Team 2 (RIGHT SIDE):', arcadeRequest.team2Players);
@@ -2164,9 +2194,9 @@ export class GameManager {
   public getBallSpeedValue(): number {
     switch (this.gameSettings.ballSpeed) {
       case 'slow': return 3;
-      case 'medium': return 5;
+      case 'medium': return 4;
       case 'fast': return 7;
-      default: return 5;
+      default: return 4;
     }
   }
 
@@ -2863,6 +2893,121 @@ export class GameManager {
       </div>
       <div style="font-size: 16px; margin-top: 20px; color: rgba(255, 255, 255, 0.8);">
         ${playerWon ? 'Well played! 🏆' : 'Better luck next time!'}
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 3000);
+  }
+
+  private handleTournamentGameEnd(gameData: any): void {
+    console.log('🏆 [TOURNAMENT] Game ended with data:', gameData);
+    
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    
+    if (!user) return;
+    
+    const app = (window as any).app;
+    const tournamentMatch = app?.currentTournamentMatch;
+    
+    if (!tournamentMatch) {
+      console.error('🏆 [TOURNAMENT] No tournament match data found');
+      return;
+    }
+    
+    // Determine winner
+    const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = winnerId === user.userId;
+    
+    // Get final scores
+    const scores = gameData.scores || { player1: 0, player2: 0 };
+    const finalScoreText = `${scores.player1} - ${scores.player2}`;
+    
+    // Record match result via tournament manager
+    const tournamentManager = (window as any).tournamentManager;
+    if (tournamentManager && tournamentManager.recordMatchResult) {
+      tournamentManager.recordMatchResult(
+        tournamentMatch.tournamentId,
+        tournamentMatch.matchId,
+        winnerId,
+        scores.player1,
+        scores.player2
+      ).then(() => {
+        console.log('🏆 [TOURNAMENT] Match result recorded');
+        
+        // Clear current tournament match to prevent replay
+        if (app) {
+          app.currentTournamentMatch = null;
+        }
+        
+        // Show result message
+        this.showTournamentResultMessage(playerWon, finalScoreText);
+        
+        // Reset UI and navigate back after delay
+        setTimeout(() => {
+          this.resetFindMatch();
+          
+          // Close websocket
+          if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+          }
+          
+          // Navigate back to play config
+          if (app && app.router) {
+            app.router.navigate('play-config');
+          }
+          
+          // Show tournament bracket again
+          if (tournamentManager && tournamentManager.viewTournament) {
+            tournamentManager.viewTournament(tournamentMatch.tournamentId);
+          }
+        }, 3000);
+      }).catch((error: any) => {
+        console.error('🏆 [TOURNAMENT] Failed to record match result:', error);
+      });
+    }
+  }
+
+  private showTournamentResultMessage(playerWon: boolean, scoreText: string): void {
+    const message = document.createElement('div');
+    message.id = 'tournament-result-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${playerWon ? 'rgba(255, 215, 0, 0.95)' : 'rgba(233, 69, 96, 0.95)'};
+      color: ${playerWon ? '#1a1a1a' : '#ffffff'};
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 3px solid ${playerWon ? '#ffd700' : '#ff6b8a'};
+      box-shadow: 0 0 40px ${playerWon ? 'rgba(255, 215, 0, 0.6)' : 'rgba(233, 69, 96, 0.6)'};
+      min-width: 400px;
+    `;
+    message.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">
+        ${playerWon ? '🏆' : '😔'}
+      </div>
+      <div style="margin-bottom: 15px;">
+        ${playerWon ? 'MATCH WON!' : 'MATCH LOST'}
+      </div>
+      <div style="font-size: 24px; margin-top: 10px; opacity: 0.9;">
+        Final Score: ${scoreText}
+      </div>
+      <div style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
+        ${playerWon ? 'Advancing to next round! 🚀' : 'Tournament continues...'}
       </div>
     `;
     

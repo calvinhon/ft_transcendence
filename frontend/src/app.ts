@@ -247,7 +247,7 @@ export class App {
     paddleSpeed: 'medium',
     powerupsEnabled: false,
     accelerateOnHit: false,
-    scoreToWin: 3
+    scoreToWin: 5
   };
   private localPlayers: LocalPlayer[] = [];
   // Persisted set of selected player ids (used to restore highlights after re-renders)
@@ -1672,6 +1672,27 @@ export class App {
     console.log('✅ [App.startGame] Guards passed - proceeding with game start');
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
+
+    // TOURNAMENT MODE: Check if creating new tournament or playing existing match
+    if (this.gameSettings.gameMode === 'tournament') {
+      // If currentTournamentMatch exists, we're playing a match (not creating)
+      if ((this as any).currentTournamentMatch) {
+        console.log('🏆 [App.startGame] Tournament MATCH mode - starting actual game');
+        // Continue to game start below (don't return)
+      } else {
+        // No match data means user clicked "Start Game" to CREATE a tournament
+        console.log('🏆 [App.startGame] Tournament CREATE mode - opening tournament creation modal');
+        const tournamentManager = (window as any).tournamentManager;
+        if (tournamentManager && typeof tournamentManager.openCreateTournamentModal === 'function') {
+          tournamentManager.openCreateTournamentModal();
+        } else {
+          console.error('TournamentManager not available');
+          showToast('Tournament system not available', 'error');
+        }
+        console.log('🏁 [App.startGame] === COMPLETED (Tournament modal opened) ===');
+        return;
+      }
+    }
 
     // Sync game settings with GameManager before starting
     if (gameManager && typeof gameManager.setGameSettings === 'function') {
