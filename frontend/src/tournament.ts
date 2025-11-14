@@ -1290,30 +1290,47 @@ export class TournamentManager {
   }
 
   public async recordMatchResult(tournamentId: number, matchId: number, winnerId: number, player1Score: number, player2Score: number): Promise<void> {
+    console.log('🏆 [RECORD] ========== RECORDING MATCH RESULT ==========');
+    console.log('🏆 [RECORD] Input parameters:', {
+      tournamentId,
+      matchId,
+      winnerId,
+      player1Score,
+      player2Score
+    });
+    
     try {
       const authManager = (window as any).authManager;
+      
+      const requestBody = {
+        matchId,
+        winnerId,
+        player1Score,
+        player2Score
+      };
+      
+      console.log('🏆 [RECORD] Sending to backend:', requestBody);
+      
       const response = await fetch(`${this.baseURL}/match/result`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...authManager.getAuthHeaders()
         },
-        body: JSON.stringify({
-          matchId,
-          winnerId,
-          player1Score,
-          player2Score
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log('🏆 [RECORD] Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('🏆 [TOURNAMENT] Failed to record match result:', errorData);
+        console.error('🏆 [RECORD] Failed to record match result:', errorData);
         throw new Error(errorData.error || 'Failed to record match result');
       }
 
       const result = await response.json();
-      console.log('🏆 [TOURNAMENT] Match result recorded successfully:', result);
+      console.log('🏆 [RECORD] Backend response:', result);
+      console.log('✅ [RECORD] Match result recorded successfully');
       showToast('Match result recorded', 'success');
       
       // Wait a moment for backend to process next round creation
