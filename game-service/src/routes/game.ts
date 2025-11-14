@@ -306,14 +306,14 @@ class PongGame {
       dy: (Math.random() - 0.5) * this.ballSpeed 
     };
     
-    // Initialize paddles (single paddle for co-op, multiple for arcade)
+    // Initialize paddles (single paddle for co-op, multiple for arcade/tournament)
     this.paddles = {
       player1: { y: 250, x: 50 },
       player2: { y: 250, x: 750 }
     };
     
-    // Initialize multiple paddles for arcade mode
-    if (this.gameSettings.gameMode === 'arcade') {
+    // Initialize multiple paddles for arcade mode and tournament mode
+    if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
       const team1Count = this.gameSettings.team1PlayerCount || 1;
       const team2Count = this.gameSettings.team2PlayerCount || 1;
       
@@ -337,7 +337,7 @@ class PongGame {
         });
       }
       
-      console.log(`🕹️ [GAME-${this.gameId}] Initialized arcade mode with ${team1Count} vs ${team2Count} paddles`);
+      console.log(`🕹️ [GAME-${this.gameId}] Initialized ${this.gameSettings.gameMode} mode with ${team1Count} vs ${team2Count} paddles`);
     }
     
     this.scores = { player1: 0, player2: 0 };
@@ -640,8 +640,8 @@ class PongGame {
     console.log('🏓 [MOVEPLADDLE] player1.userId:', this.player1.userId, 'player2.userId:', this.player2.userId);
     console.log('🏓 [MOVEPLADDLE] gameMode:', this.gameSettings.gameMode);
     
-    // Handle arcade mode with multiple paddles
-    if (this.gameSettings.gameMode === 'arcade' && paddleIndex !== undefined) {
+    // Handle arcade mode and tournament mode with multiple paddles
+    if ((this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') && paddleIndex !== undefined) {
       const team = playerId === 1 ? 'team1' : 'team2';
       const paddles = this.paddles[team];
       

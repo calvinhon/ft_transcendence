@@ -1864,11 +1864,12 @@ html {
 /* ---------- Profile Screen - Unified Layout ---------- */
 .profile-container {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: var(--space);
+  padding: calc(var(--space) * 2) var(--space);
   background: var(--bg-primary);
+  overflow-y: auto;
 }
 
 /* Top Control Bar */
@@ -3077,6 +3078,7 @@ html {
   max-width: 95vw;
   width: fit-content;
   position: relative;
+  margin: calc(var(--space-lg) * 2) auto var(--space-lg) auto;
 }
 
 .profile-title {

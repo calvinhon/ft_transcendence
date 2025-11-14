@@ -242,8 +242,17 @@ export class TournamentManager {
       return;
     }
 
+    // Generate default tournament name if not provided
+    let tournamentName = formData.get('tournament-name') as string;
+    if (!tournamentName || tournamentName.trim() === '') {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      tournamentName = `${user.username}'s Tournament - ${dateStr} ${timeStr}`;
+    }
+
     const tournamentData = {
-      name: formData.get('tournament-name') as string,
+      name: tournamentName,
       description: formData.get('tournament-description') as string || '',
       maxParticipants: parseInt(formData.get('max-participants') as string) || 8,
       createdBy: user.userId,

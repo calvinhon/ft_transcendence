@@ -112,10 +112,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
         user_id INTEGER NOT NULL,
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         eliminated_at DATETIME,
+        final_rank INTEGER,
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id),
         UNIQUE(tournament_id, user_id)
       )
     `);
+    
+    // Add final_rank column if it doesn't exist (for existing databases)
+    db.run(`ALTER TABLE tournament_participants ADD COLUMN final_rank INTEGER`, (err: any) => {
+      // Ignore error if column already exists - this is expected for new databases
+    });
 
     // Create tournament matches table
     db.run(`
@@ -616,11 +622,74 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                 const winners = completedMatches.map(m => m.winner_id);
 
                 if (winners.length === 1) {
-                  // Tournament finished
-                  fastify.log.info({ tournamentId: match.tournament_id, winnerId: winners[0] }, '[CHECK NEXT ROUND] Tournament finished');
+                  // Tournament finished - calculate and store final rankings
+                  const tournamentId = match.tournament_id;
+                  const winnerId = winners[0];
+                  
+                  fastify.log.info({ tournamentId, winnerId }, '[CHECK NEXT ROUND] Tournament finished - calculating rankings');
+                  
+                  // Update tournament status
                   db.run(
                     'UPDATE tournaments SET status = "finished", finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
-                    [winners[0], match.tournament_id]
+                    [winnerId, tournamentId],
+                    (err: Error | null) => {
+                      if (err) {
+                        fastify.log.error({ err }, '[CHECK NEXT ROUND] Failed to update tournament status');
+                        return;
+                      }
+                      
+                      // Calculate rankings based on elimination rounds
+                      // Winner gets rank 1
+                      db.run(
+                        'UPDATE tournament_participants SET final_rank = 1 WHERE tournament_id = ? AND user_id = ?',
+                        [tournamentId, winnerId],
+                        (err: Error | null) => {
+                          if (err) {
+                            fastify.log.error({ err }, '[RANKINGS] Failed to set winner rank');
+                          }
+                        }
+                      );
+                      
+                      // Get all matches to determine elimination rounds for other participants
+                      db.all(
+                        `SELECT round, player1_id, player2_id, winner_id 
+                         FROM tournament_matches 
+                         WHERE tournament_id = ? AND status = 'completed' AND winner_id IS NOT NULL
+                         ORDER BY round DESC`,
+                        [tournamentId],
+                        (err: Error | null, matches: any[]) => {
+                          if (err) {
+                            fastify.log.error({ err }, '[RANKINGS] Failed to get matches for ranking');
+                            return;
+                          }
+                          
+                          const maxRound = Math.max(...matches.map(m => m.round));
+                          
+                          // Assign ranks based on elimination round (later rounds = better placement)
+                          matches.forEach(match => {
+                            const loser = match.winner_id === match.player1_id ? match.player2_id : match.player1_id;
+                            
+                            // Calculate rank: final = 1st, semi-final = 2nd-3rd, quarter-final = 4th-7th, etc.
+                            // Rank range for each round: 2^(maxRound - round + 1) to 2^(maxRound - round + 2) - 1
+                            const rankRangeStart = Math.pow(2, maxRound - match.round) + 1;
+                            
+                            db.run(
+                              `UPDATE tournament_participants 
+                               SET final_rank = ? 
+                               WHERE tournament_id = ? AND user_id = ? AND final_rank IS NULL`,
+                              [rankRangeStart, tournamentId, loser],
+                              (err: Error | null) => {
+                                if (err) {
+                                  fastify.log.error({ err, loser, rank: rankRangeStart }, '[RANKINGS] Failed to set participant rank');
+                                } else {
+                                  fastify.log.info({ loser, rank: rankRangeStart, round: match.round }, '[RANKINGS] Set participant rank');
+                                }
+                              }
+                            );
+                          });
+                        }
+                      );
+                    }
                   );
                 } else if (winners.length > 1) {
                   // Create next round matches

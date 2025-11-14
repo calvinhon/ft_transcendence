@@ -629,8 +629,8 @@ export class GameManager {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
         
         // Handle different game modes
-        if (this.gameSettings.gameMode === 'arcade') {
-          // Arcade mode: Team vs Team with multiple players per side
+        if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
+          // Arcade mode and Tournament mode: Team vs Team with multiple players per side
           this.handleArcadeInputs();
         } else {
           // Co-op/Campaign mode: Single player controls (original logic)
@@ -1931,7 +1931,7 @@ export class GameManager {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
-            gameMode: 'arcade',
+            gameMode: gameSettings.gameMode || 'arcade', // Use actual game mode (could be 'tournament')
             // Game settings
             aiDifficulty: aiDifficulty,
             ballSpeed: gameSettings.ballSpeed || 'medium',
