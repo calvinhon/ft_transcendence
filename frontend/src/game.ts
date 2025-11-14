@@ -170,6 +170,9 @@ export class GameManager {
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
   
+  // Countdown state
+  private countdownValue: number | null = null;
+  
   // Store player info for arcade mode
   private team1Players: any[] = [];
   private team2Players: any[] = [];
@@ -545,16 +548,8 @@ export class GameManager {
             if (this.isCampaignMode) {
               gameSettings = this.getCampaignLevelSettings();
             } else {
-              const app = (window as any).app;
-              gameSettings = app?.gameSettings || {
-                gameMode: 'coop',
-                aiDifficulty: 'easy',
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerupsEnabled: false,
-                accelerateOnHit: false,
-                scoreToWin: 5
-              };
+              // Use GameManager's own settings (already synced from app)
+              gameSettings = this.gameSettings;
             }
             console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
             this.websocket.send(JSON.stringify({
@@ -634,8 +629,8 @@ export class GameManager {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
         
         // Handle different game modes
-        if (this.gameSettings.gameMode === 'arcade') {
-          // Arcade mode: Team vs Team with multiple players per side
+        if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
+          // Arcade mode and Tournament mode: Team vs Team with multiple players per side
           this.handleArcadeInputs();
         } else {
           // Co-op/Campaign mode: Single player controls (original logic)
@@ -721,71 +716,99 @@ export class GameManager {
     let team1Players: any[] = [];
     let team2Players: any[] = [];
     
-    // Check if host is selected
-    const authManager = (window as any).authManager;
-    const hostUser = authManager?.getCurrentUser();
-    const hostCard = document.getElementById('host-player-card');
-    const isHostSelected = hostCard && hostCard.classList.contains('active') && 
-                           hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+    // Check if this is a tournament match
+    const isTournament = app.gameSettings?.gameMode === 'tournament' && app.currentTournamentMatch;
     
-    // Log detailed player detection info every frame
-    console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
-    console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
-    console.log('  - hostUser:', hostUser);
-    console.log('  - isHostSelected:', isHostSelected);
-    console.log('  - hostCard active?', hostCard?.classList.contains('active'));
-    
-    if (isHostSelected) {
-      // Host is always first in Team 1
+    if (isTournament) {
+      // Tournament mode: Both players control locally
+      const match = app.currentTournamentMatch;
+      
+      console.log('🏆 [TOURNAMENT-INPUT] Tournament match mode detected');
+      console.log('🏆 [TOURNAMENT-INPUT] Player 1 (left/Team1):', match.player1Name, '- Controls: W/S or Arrow keys');
+      console.log('🏆 [TOURNAMENT-INPUT] Player 2 (right/Team2):', match.player2Name, '- Controls: U/J');
+      
+      // Player 1 on Team 1 (left side)
       team1Players.push({
-        userId: hostUser.userId,
-        username: hostUser.username,
-        id: hostUser.userId.toString(),
+        userId: match.player1Id,
+        username: match.player1Name,
         team: 1,
         paddleIndex: 0
       });
-      console.log('  - ✅ Added host to Team 1:', hostUser.username);
-    }
-    
-    // Get SELECTED local players (highlighted in party list)
-    const selectedPlayers = app.localPlayers.filter((p: any) => 
-      app.selectedPlayerIds.has(p.id?.toString())
-    );
-    
-    console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
-    
-    // Add local players to their teams
-    const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
-    const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
-    
-    localTeam1.forEach((p: any) => {
-      team1Players.push({
-        ...p,
-        paddleIndex: team1Players.length
-      });
-    });
-    
-    localTeam2.forEach((p: any) => {
+      
+      // Player 2 on Team 2 (right side)  
       team2Players.push({
-        ...p,
-        paddleIndex: team2Players.length
+        userId: match.player2Id,
+        username: match.player2Name,
+        team: 2,
+        paddleIndex: 0
       });
-    });
-    
-    // Check if AI is selected and add to appropriate team
-    const aiCard = document.getElementById('ai-player-card');
-    if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
-      const inTeam2 = aiCard.closest('#team2-list') !== null;
-      if (inTeam2) {
-        team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
-      } else {
-        team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+    } else {
+      // Regular arcade mode: Use selected players
+      // Check if host is selected
+      const authManager = (window as any).authManager;
+      const hostUser = authManager?.getCurrentUser();
+      const hostCard = document.getElementById('host-player-card');
+      const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                             hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+      
+      // Log detailed player detection info every frame
+      console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
+      console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+      console.log('  - hostUser:', hostUser);
+      console.log('  - isHostSelected:', isHostSelected);
+      console.log('  - hostCard active?', hostCard?.classList.contains('active'));
+      
+      if (isHostSelected) {
+        // Host is always first in Team 1
+        team1Players.push({
+          userId: hostUser.userId,
+          username: hostUser.username,
+          id: hostUser.userId.toString(),
+          team: 1,
+          paddleIndex: 0
+        });
+        console.log('  - ✅ Added host to Team 1:', hostUser.username);
       }
-    }
-    
-    console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    
+      
+      // Get SELECTED local players (highlighted in party list)
+      const selectedPlayers = app.localPlayers.filter((p: any) => 
+        app.selectedPlayerIds.has(p.id?.toString())
+      );
+      
+      console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
+      
+      // Add local players to their teams
+      const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+      const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+      
+      localTeam1.forEach((p: any) => {
+        team1Players.push({
+          ...p,
+          paddleIndex: team1Players.length
+        });
+      });
+      
+      localTeam2.forEach((p: any) => {
+        team2Players.push({
+          ...p,
+          paddleIndex: team2Players.length
+        });
+      });
+      
+      // Check if AI is selected and add to appropriate team
+      const aiCard = document.getElementById('ai-player-card');
+      if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
+        const inTeam2 = aiCard.closest('#team2-list') !== null;
+        if (inTeam2) {
+          team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
+        } else {
+          team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+        }
+      }
+      
+      console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+      console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    }    
     // Store player information for rendering
     this.team1Players = team1Players;
     this.team2Players = team2Players;
@@ -887,13 +910,14 @@ export class GameManager {
   }
 
   private updateGameFromBackend(backendState: any): void {
-    // Don't update game state if paused or not playing
+    // Don't update game state if paused
     if (this.isPaused) {
       // console.log(`🎮 [GM#${this.instanceId}] Ignoring game state - game is paused`);
       return;
     }
     
-    if (!this.isPlaying) {
+    // Allow updates during countdown
+    if (!this.isPlaying && backendState.gameState !== 'countdown') {
       console.log(`⚠️ [GM#${this.instanceId}] Ignoring game state - game is not playing`);
       return;
     }
@@ -946,6 +970,18 @@ export class GameManager {
       }
       
       this.gameState = frontendState;
+      
+      // Store countdown value if in countdown state
+      if (backendState.gameState === 'countdown' && backendState.countdownValue !== undefined) {
+        this.countdownValue = backendState.countdownValue;
+      } else if (backendState.gameState === 'playing') {
+        // Clear countdown when game starts
+        this.countdownValue = null;
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+        }
+      }
+      
       this.render();
       
       // No longer need to update HTML UI elements - everything is rendered on canvas
@@ -955,6 +991,41 @@ export class GameManager {
   private updateScoreDisplay(): void {
     // This method is no longer needed since we're rendering everything on canvas
     // All UI updates are now handled in the render() method
+  }
+
+  private drawCountdownOverlay(value: number): void {
+    if (!this.ctx || !this.canvas) return;
+    
+    // Draw very light semi-transparent overlay (barely visible to keep game bright)
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw countdown text with subtle glow effect
+    this.ctx.shadowColor = '#77e6ff';
+    this.ctx.shadowBlur = 8;
+    this.ctx.fillStyle = 'rgba(119, 230, 255, 0.9)'; // Less bright cyan
+    this.ctx.font = 'bold 60px "Courier New", monospace'; // Even smaller font
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    const text = value > 0 ? value.toString() : 'GO!';
+    this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+    
+    // Add "GET READY" text above countdown (smaller and less bright)
+    if (value > 0) {
+      this.ctx.font = 'bold 20px "Courier New", monospace';
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      this.ctx.shadowBlur = 5;
+      this.ctx.fillText('GET READY', this.canvas.width / 2, this.canvas.height / 2 - 50);
+    }
+    
+    // Reset shadow
+    this.ctx.shadowBlur = 0;
+  }
+
+  private hideCountdown(): void {
+    // Countdown is hidden by normal render() calls
+    // This method exists for clarity and future enhancements
   }
 
   private render(): void {
@@ -1051,6 +1122,11 @@ export class GameManager {
     
     // Draw control keys for arcade mode
     this.drawArcadeControls();
+    
+    // Draw countdown overlay if active (drawn last so it's on top)
+    if (this.countdownValue !== null) {
+      this.drawCountdownOverlay(this.countdownValue);
+    }
   }
 
   private drawBallWithTrail(): void {
@@ -1216,20 +1292,32 @@ export class GameManager {
         rightPlayerLevel = 1;
       }
     } else {
-      // Co-op/Campaign mode: Show player names
-      leftPlayerName = user?.username || 'Player 1';
-      rightPlayerName = 'AI Bot';
+      // Co-op/Campaign/Tournament mode: Show player names
+      const app = (window as any).app;
+      const tournamentMatch = app?.currentTournamentMatch;
       
-      // Try to read player level from user profile
-      const userLevelFromProfile = (() => {
-        const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
-        if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
-        if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
-        return null;
-      })();
+      if (tournamentMatch && tournamentMatch.player1Name && tournamentMatch.player2Name) {
+        // Tournament mode: Use player names from match data
+        leftPlayerName = tournamentMatch.player1Name;
+        rightPlayerName = tournamentMatch.player2Name;
+        leftPlayerLevel = 1; // Can enhance later with actual player levels
+        rightPlayerLevel = 1;
+      } else {
+        // Co-op/Campaign mode: Show player vs AI
+        leftPlayerName = user?.username || 'Player 1';
+        rightPlayerName = 'AI Bot';
+        
+        // Try to read player level from user profile
+        const userLevelFromProfile = (() => {
+          const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+          if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+          if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+          return null;
+        })();
 
-      leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
-      rightPlayerLevel = leftPlayerLevel;
+        leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+        rightPlayerLevel = leftPlayerLevel;
+      }
     }
 
     // Use getter to respect current game settings and campaign adjustments
@@ -1473,6 +1561,13 @@ export class GameManager {
       console.log('🕹️ [ARCADE] Handling arcade game end');
       this.handleArcadeGameEnd(result);
       return; // Arcade mode handles its own UI and navigation
+    }
+
+    // Handle tournament mode completion
+    if (this.gameSettings.gameMode === 'tournament') {
+      console.log('🏆 [TOURNAMENT] Handling tournament game end');
+      this.handleTournamentGameEnd(result);
+      return; // Tournament mode handles its own UI and navigation
     }
     
     // Regular game end handling
@@ -1832,11 +1927,11 @@ export class GameManager {
 
         // Send arcade match request with complete player information
         if (this.websocket) {
-          const arcadeRequest = {
+          const arcadeRequest: any = {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
-            gameMode: 'arcade',
+            gameMode: gameSettings.gameMode || 'arcade', // Use actual game mode (could be 'tournament')
             // Game settings
             aiDifficulty: aiDifficulty,
             ballSpeed: gameSettings.ballSpeed || 'medium',
@@ -1861,6 +1956,21 @@ export class GameManager {
               isBot: p.userId === 0 // Mark AI players
             }))
           };
+          
+          // Add tournament information if this is a tournament match
+          if (gameSettings.gameMode === 'tournament' && app && app.currentTournamentMatch) {
+            arcadeRequest.tournamentId = app.currentTournamentMatch.tournamentId;
+            arcadeRequest.tournamentMatchId = app.currentTournamentMatch.matchId;
+            arcadeRequest.player2Id = app.currentTournamentMatch.player2Id;
+            arcadeRequest.player2Name = app.currentTournamentMatch.player2Name;
+            console.log('🏆 [TOURNAMENT] Added tournament IDs to game creation:', {
+              tournamentId: arcadeRequest.tournamentId,
+              matchId: arcadeRequest.tournamentMatchId,
+              player2Id: arcadeRequest.player2Id,
+              player2Name: arcadeRequest.player2Name
+            });
+          }
+          
           console.log('🕹️ [ARCADE] Sending match request with full player info:', arcadeRequest);
           console.log('🕹️ [ARCADE] Team 1 (LEFT SIDE):', arcadeRequest.team1Players);
           console.log('🕹️ [ARCADE] Team 2 (RIGHT SIDE):', arcadeRequest.team2Players);
@@ -2116,9 +2226,9 @@ export class GameManager {
   public getBallSpeedValue(): number {
     switch (this.gameSettings.ballSpeed) {
       case 'slow': return 3;
-      case 'medium': return 5;
+      case 'medium': return 4;
       case 'fast': return 7;
-      default: return 5;
+      default: return 4;
     }
   }
 
@@ -2815,6 +2925,121 @@ export class GameManager {
       </div>
       <div style="font-size: 16px; margin-top: 20px; color: rgba(255, 255, 255, 0.8);">
         ${playerWon ? 'Well played! 🏆' : 'Better luck next time!'}
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 3000);
+  }
+
+  private handleTournamentGameEnd(gameData: any): void {
+    console.log('🏆 [TOURNAMENT] Game ended with data:', gameData);
+    
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    
+    if (!user) return;
+    
+    const app = (window as any).app;
+    const tournamentMatch = app?.currentTournamentMatch;
+    
+    if (!tournamentMatch) {
+      console.error('🏆 [TOURNAMENT] No tournament match data found');
+      return;
+    }
+    
+    // Determine winner
+    const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = winnerId === user.userId;
+    
+    // Get final scores
+    const scores = gameData.scores || { player1: 0, player2: 0 };
+    const finalScoreText = `${scores.player1} - ${scores.player2}`;
+    
+    // Record match result via tournament manager
+    const tournamentManager = (window as any).tournamentManager;
+    if (tournamentManager && tournamentManager.recordMatchResult) {
+      tournamentManager.recordMatchResult(
+        tournamentMatch.tournamentId,
+        tournamentMatch.matchId,
+        winnerId,
+        scores.player1,
+        scores.player2
+      ).then(() => {
+        console.log('🏆 [TOURNAMENT] Match result recorded');
+        
+        // Clear current tournament match to prevent replay
+        if (app) {
+          app.currentTournamentMatch = null;
+        }
+        
+        // Show result message
+        this.showTournamentResultMessage(playerWon, finalScoreText);
+        
+        // Reset UI and navigate back after delay
+        setTimeout(() => {
+          this.resetFindMatch();
+          
+          // Close websocket
+          if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+          }
+          
+          // Navigate back to play config
+          if (app && app.router) {
+            app.router.navigate('play-config');
+          }
+          
+          // Show tournament bracket again
+          if (tournamentManager && tournamentManager.viewTournament) {
+            tournamentManager.viewTournament(tournamentMatch.tournamentId);
+          }
+        }, 3000);
+      }).catch((error: any) => {
+        console.error('🏆 [TOURNAMENT] Failed to record match result:', error);
+      });
+    }
+  }
+
+  private showTournamentResultMessage(playerWon: boolean, scoreText: string): void {
+    const message = document.createElement('div');
+    message.id = 'tournament-result-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${playerWon ? 'rgba(255, 215, 0, 0.95)' : 'rgba(233, 69, 96, 0.95)'};
+      color: ${playerWon ? '#1a1a1a' : '#ffffff'};
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 3px solid ${playerWon ? '#ffd700' : '#ff6b8a'};
+      box-shadow: 0 0 40px ${playerWon ? 'rgba(255, 215, 0, 0.6)' : 'rgba(233, 69, 96, 0.6)'};
+      min-width: 400px;
+    `;
+    message.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">
+        ${playerWon ? '🏆' : '😔'}
+      </div>
+      <div style="margin-bottom: 15px;">
+        ${playerWon ? 'MATCH WON!' : 'MATCH LOST'}
+      </div>
+      <div style="font-size: 24px; margin-top: 10px; opacity: 0.9;">
+        Final Score: ${scoreText}
+      </div>
+      <div style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
+        ${playerWon ? 'Advancing to next round! 🚀' : 'Tournament continues...'}
       </div>
     `;
     
