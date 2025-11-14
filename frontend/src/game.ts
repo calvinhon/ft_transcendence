@@ -3017,22 +3017,28 @@ export class GameManager {
         beforeSwap: { player1: scores.player1, player2: scores.player2 },
         afterSwap: { player1: actualPlayer1Score, player2: actualPlayer2Score }
       });
-      
-      // CRITICAL FIX: Determine winner based on the swapped scores
-      // After swapping scores, the winner is whoever has the higher score in the original player positions
-      if (actualPlayer1Score > actualPlayer2Score) {
-        actualWinnerId = originalPlayer1Id;
-      } else {
-        actualWinnerId = originalPlayer2Id;
-      }
-      
-      console.log('🔄 [TOURNAMENT] Recalculated winner based on swapped scores:', {
-        gameWinnerId: gameWinnerId,
-        actualWinnerId: actualWinnerId,
-        player1Score: actualPlayer1Score,
-        player2Score: actualPlayer2Score
-      });
     }
+    
+    // CRITICAL FIX: Always determine winner based on the FINAL scores and original player IDs
+    // Don't trust the game's winnerId because it's based on displayed positions
+    if (actualPlayer1Score > actualPlayer2Score) {
+      actualWinnerId = originalPlayer1Id;
+    } else if (actualPlayer2Score > actualPlayer1Score) {
+      actualWinnerId = originalPlayer2Id;
+    } else {
+      // Tie - this shouldn't happen in tournament mode, but default to game's winner
+      console.warn('🏆 [TOURNAMENT] WARNING: Tie score detected! Using game winner ID:', gameWinnerId);
+      actualWinnerId = gameWinnerId;
+    }
+    
+    console.log('🏆 [TOURNAMENT] Winner determination:', {
+      gameReportedWinner: gameWinnerId,
+      player1Score: actualPlayer1Score,
+      player2Score: actualPlayer2Score,
+      calculatedWinnerId: actualWinnerId,
+      isOriginalPlayer1: actualWinnerId === originalPlayer1Id,
+      isOriginalPlayer2: actualWinnerId === originalPlayer2Id
+    });
     
     console.log('🏆 [TOURNAMENT] Final result to record:', {
       tournamentId: tournamentMatch.tournamentId,
