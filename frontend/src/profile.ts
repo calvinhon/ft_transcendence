@@ -308,34 +308,31 @@ export class ProfileManager {
           let opponentName: string;
           
           if (game.game_mode === 'tournament' && game.tournament_match_id) {
-            // For tournament games, fetch opponent name from tournament match
-            try {
-              const matchResponse = await fetch(`/api/tournament/match/${game.tournament_match_id}`, {
-                headers: authManager.getAuthHeaders()
-              });
-              
-              if (matchResponse.ok) {
-                const matchData = await matchResponse.json();
-                // Determine which player is the opponent
-                const tournamentOpponentId = matchData.player1_id === userId ? matchData.player2_id : matchData.player1_id;
-                
-                // Fetch opponent username
-                const profileResponse = await fetch(`/api/auth/profile/${tournamentOpponentId}`, {
+            // For tournament games, use the game table's opponent info directly
+            // The game table stores the ACTUAL players who played (after drag-and-drop)
+            // Tournament match table stores ORIGINAL positions, which may differ
+            if (opponentId === 0) {
+              opponentName = 'AI';
+            } else if (game.player1_name && game.player2_name) {
+              // Use the names from the game record
+              opponentName = isPlayer1 ? game.player2_name : game.player1_name;
+            } else {
+              // Fallback: fetch opponent profile by ID from game table
+              try {
+                const profileResponse = await fetch(`/api/auth/profile/${opponentId}`, {
                   headers: authManager.getAuthHeaders()
                 });
                 
                 if (profileResponse.ok) {
                   const profileData = await profileResponse.json();
-                  opponentName = profileData.data?.username || `User ${tournamentOpponentId}`;
+                  opponentName = profileData.data?.username || `User ${opponentId}`;
                 } else {
-                  opponentName = `User ${tournamentOpponentId}`;
+                  opponentName = `User ${opponentId}`;
                 }
-              } else {
-                opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+              } catch (e) {
+                console.error('Error fetching opponent profile:', e);
+                opponentName = `Player ${opponentId}`;
               }
-            } catch (e) {
-              console.error('Error fetching tournament opponent:', e);
-              opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
             }
           } else if (game.game_mode === 'arcade' && game.team2_players) {
             try {

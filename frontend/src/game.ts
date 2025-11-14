@@ -3008,23 +3008,35 @@ export class GameManager {
     if (werePlayersSwapped) {
       // Players were swapped for display, need to map back to original IDs
       console.log('🔄 [TOURNAMENT] Players were swapped, mapping back to original IDs');
+      console.log('🔄 [TOURNAMENT] Understanding the swap:');
+      console.log('  - Displayed LEFT (player1) is actually:', originalPlayer2Id);
+      console.log('  - Displayed RIGHT (player2) is actually:', originalPlayer1Id);
+      console.log('  - Game scores.player1 (LEFT) is originalPlayer2 score:', scores.player1);
+      console.log('  - Game scores.player2 (RIGHT) is originalPlayer1 score:', scores.player2);
       
       // Swap the scores back to match original player order
       actualPlayer1Score = scores.player2;
       actualPlayer2Score = scores.player1;
       
-      console.log('🔄 [TOURNAMENT] Swapped scores:', {
-        beforeSwap: { player1: scores.player1, player2: scores.player2 },
-        afterSwap: { player1: actualPlayer1Score, player2: actualPlayer2Score }
+      console.log('🔄 [TOURNAMENT] After remapping to original positions:', {
+        originalPlayer1Score: actualPlayer1Score,
+        originalPlayer2Score: actualPlayer2Score
       });
+    } else {
+      console.log('✅ [TOURNAMENT] No swap - players in original positions');
+      console.log('  - LEFT (player1) is originalPlayer1:', originalPlayer1Id);
+      console.log('  - RIGHT (player2) is originalPlayer2:', originalPlayer2Id);
+      console.log('  - Scores match original positions');
     }
     
     // CRITICAL FIX: Always determine winner based on the FINAL scores and original player IDs
     // Don't trust the game's winnerId because it's based on displayed positions
     if (actualPlayer1Score > actualPlayer2Score) {
       actualWinnerId = originalPlayer1Id;
+      console.log('🏆 Winner is originalPlayer1 (higher score):', originalPlayer1Id);
     } else if (actualPlayer2Score > actualPlayer1Score) {
       actualWinnerId = originalPlayer2Id;
+      console.log('🏆 Winner is originalPlayer2 (higher score):', originalPlayer2Id);
     } else {
       // Tie - this shouldn't happen in tournament mode, but default to game's winner
       console.warn('🏆 [TOURNAMENT] WARNING: Tie score detected! Using game winner ID:', gameWinnerId);
