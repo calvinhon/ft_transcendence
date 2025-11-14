@@ -2932,6 +2932,117 @@ html {
   font-weight: 600;
 }
 
+/* Drag and Drop Styles for Tournament Matches */
+.match-players-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.match-player-slot {
+  flex: 1;
+  min-height: 90px;
+  padding: 8px;
+  border: 2px dashed transparent;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.match-player-slot.drag-over {
+  border-color: var(--accent);
+  background: rgba(77, 230, 255, 0.15);
+  box-shadow: 0 0 20px rgba(77, 230, 255, 0.3);
+}
+
+.side-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 6px;
+  background: rgba(77, 230, 255, 0.08);
+  border-radius: 8px;
+}
+
+.side-icon {
+  font-size: 1.2rem;
+}
+
+.side-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.side-controls {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.draggable-player {
+  cursor: move;
+  user-select: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.draggable-player::after {
+  content: '⋮⋮';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(77, 230, 255, 0.4);
+  font-size: 1rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.draggable-player:hover::after {
+  opacity: 1;
+}
+
+.draggable-player:hover {
+  background: rgba(77, 230, 255, 0.15) !important;
+  border-color: var(--accent) !important;
+  transform: scale(1.02);
+  cursor: grab;
+}
+
+.draggable-player:active {
+  cursor: grabbing;
+}
+
+.draggable-player.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.drag-hint {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 /* ---------- Blockchain Styles ---------- */
 .blockchain-panel {
     position: fixed;

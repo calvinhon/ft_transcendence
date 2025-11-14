@@ -1959,15 +1959,20 @@ export class GameManager {
           
           // Add tournament information if this is a tournament match
           if (gameSettings.gameMode === 'tournament' && app && app.currentTournamentMatch) {
+            // CRITICAL FIX: Always send player1 as the game's player1, regardless of who initiated
+            // This ensures game winner IDs match tournament player IDs correctly
+            arcadeRequest.userId = app.currentTournamentMatch.player1Id;
+            arcadeRequest.username = app.currentTournamentMatch.player1Name;
             arcadeRequest.tournamentId = app.currentTournamentMatch.tournamentId;
             arcadeRequest.tournamentMatchId = app.currentTournamentMatch.matchId;
             arcadeRequest.player2Id = app.currentTournamentMatch.player2Id;
             arcadeRequest.player2Name = app.currentTournamentMatch.player2Name;
-            console.log('🏆 [TOURNAMENT] Added tournament IDs to game creation:', {
+            console.log('🏆 [TOURNAMENT] Fixed player mapping for game creation:', {
+              gamePlayer1: arcadeRequest.userId, // Always tournament player1
+              gamePlayer2: arcadeRequest.player2Id, // Always tournament player2
               tournamentId: arcadeRequest.tournamentId,
               matchId: arcadeRequest.tournamentMatchId,
-              player2Id: arcadeRequest.player2Id,
-              player2Name: arcadeRequest.player2Name
+              currentUser: user.userId
             });
           }
           
@@ -2939,12 +2944,16 @@ export class GameManager {
   }
 
   private handleTournamentGameEnd(gameData: any): void {
+    console.log('🏆 [TOURNAMENT] ========== GAME END HANDLER ==========');
     console.log('🏆 [TOURNAMENT] Game ended with data:', gameData);
     
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     
-    if (!user) return;
+    if (!user) {
+      console.error('🏆 [TOURNAMENT] No user logged in');
+      return;
+    }
     
     const app = (window as any).app;
     const tournamentMatch = app?.currentTournamentMatch;
@@ -2954,13 +2963,83 @@ export class GameManager {
       return;
     }
     
-    // Determine winner
-    const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = winnerId === user.userId;
+    console.log('🏆 [TOURNAMENT] Tournament match data:', {
+      matchId: tournamentMatch.matchId,
+      player1Id: tournamentMatch.player1Id,
+      player2Id: tournamentMatch.player2Id,
+      player1Name: tournamentMatch.player1Name,
+      player2Name: tournamentMatch.player2Name,
+      originalPlayer1Id: tournamentMatch.originalPlayer1Id,
+      originalPlayer2Id: tournamentMatch.originalPlayer2Id
+    });
     
-    // Get final scores
+    // Get the winner from game (this is based on displayed positions)
+    const gameWinnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = gameWinnerId === user.userId;
+    
+    // Get final scores (based on displayed positions)
     const scores = gameData.scores || { player1: 0, player2: 0 };
     const finalScoreText = `${scores.player1} - ${scores.player2}`;
+    
+    console.log('🏆 [TOURNAMENT] Game result:', {
+      gameWinnerId,
+      gameScores: scores,
+      currentUserId: user.userId,
+      playerWon
+    });
+    
+    // Map back to original tournament player IDs if sides were swapped
+    const originalPlayer1Id = tournamentMatch.originalPlayer1Id || tournamentMatch.player1Id;
+    const originalPlayer2Id = tournamentMatch.originalPlayer2Id || tournamentMatch.player2Id;
+    const werePlayersSwapped = tournamentMatch.player1Id !== originalPlayer1Id;
+    
+    console.log('🏆 [TOURNAMENT] Player mapping:', {
+      displayedPlayer1: tournamentMatch.player1Id,
+      displayedPlayer2: tournamentMatch.player2Id,
+      originalPlayer1: originalPlayer1Id,
+      originalPlayer2: originalPlayer2Id,
+      werePlayersSwapped
+    });
+    
+    let actualWinnerId = gameWinnerId;
+    let actualPlayer1Score = scores.player1;
+    let actualPlayer2Score = scores.player2;
+    
+    if (werePlayersSwapped) {
+      // Players were swapped for display, need to map back to original IDs
+      console.log('🔄 [TOURNAMENT] Players were swapped, mapping back to original IDs');
+      
+      // The game winner is correct (it's a userId), no need to swap
+      // But we need to swap the scores back to match original player order
+      actualPlayer1Score = scores.player2;
+      actualPlayer2Score = scores.player1;
+      
+      console.log('🔄 [TOURNAMENT] Swapped scores:', {
+        beforeSwap: { player1: scores.player1, player2: scores.player2 },
+        afterSwap: { player1: actualPlayer1Score, player2: actualPlayer2Score }
+      });
+    }
+    
+    console.log('🏆 [TOURNAMENT] Final result to record:', {
+      tournamentId: tournamentMatch.tournamentId,
+      matchId: tournamentMatch.matchId,
+      winnerId: actualWinnerId,
+      originalPlayer1Id: originalPlayer1Id,
+      originalPlayer2Id: originalPlayer2Id,
+      player1Score: actualPlayer1Score,
+      player2Score: actualPlayer2Score
+    });
+    
+    // Verify winner is one of the original players
+    if (actualWinnerId !== originalPlayer1Id && actualWinnerId !== originalPlayer2Id) {
+      console.error('🚨 [TOURNAMENT] CRITICAL ERROR: Winner ID does not match any original player!', {
+        winnerId: actualWinnerId,
+        originalPlayer1Id,
+        originalPlayer2Id
+      });
+      alert('Error: Invalid winner ID. Please report this bug.');
+      return;
+    }
     
     // Record match result via tournament manager
     const tournamentManager = (window as any).tournamentManager;
@@ -2968,11 +3047,11 @@ export class GameManager {
       tournamentManager.recordMatchResult(
         tournamentMatch.tournamentId,
         tournamentMatch.matchId,
-        winnerId,
-        scores.player1,
-        scores.player2
+        actualWinnerId,
+        actualPlayer1Score,
+        actualPlayer2Score
       ).then(() => {
-        console.log('🏆 [TOURNAMENT] Match result recorded');
+        console.log('✅ [TOURNAMENT] Match result recorded successfully');
         
         // Clear current tournament match to prevent replay
         if (app) {
@@ -3003,9 +3082,14 @@ export class GameManager {
           }
         }, 3000);
       }).catch((error: any) => {
-        console.error('🏆 [TOURNAMENT] Failed to record match result:', error);
+        console.error('🚨 [TOURNAMENT] Failed to record match result:', error);
+        alert('Failed to record match result: ' + (error.message || 'Unknown error'));
       });
+    } else {
+      console.error('🚨 [TOURNAMENT] Tournament manager or recordMatchResult not available');
     }
+    
+    console.log('🏆 [TOURNAMENT] ========== END HANDLER COMPLETE ==========');
   }
 
   private showTournamentResultMessage(playerWon: boolean, scoreText: string): void {
