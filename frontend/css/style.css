@@ -59,11 +59,12 @@ html {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: auto;
+  min-height: 100vh;
   transform-origin: top left;
   background: var(--bg-primary); /* Unified black background */
-  min-height: 100vh;
   visibility: hidden; /* Hide all screens by default */
+  overflow-y: auto;
 }
 
 /* Make sure text remains crisp during zoom */
@@ -1867,7 +1868,7 @@ html {
   align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: calc(var(--space) * 2) var(--space);
+  padding: 40px var(--space) var(--space) var(--space);
   background: var(--bg-primary);
   overflow-y: auto;
 }
@@ -3078,7 +3079,7 @@ html {
   max-width: 95vw;
   width: fit-content;
   position: relative;
-  margin: calc(var(--space-lg) * 2) auto var(--space-lg) auto;
+  margin: 30px auto;
 }
 
 .profile-title {
