@@ -716,71 +716,99 @@ export class GameManager {
     let team1Players: any[] = [];
     let team2Players: any[] = [];
     
-    // Check if host is selected
-    const authManager = (window as any).authManager;
-    const hostUser = authManager?.getCurrentUser();
-    const hostCard = document.getElementById('host-player-card');
-    const isHostSelected = hostCard && hostCard.classList.contains('active') && 
-                           hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+    // Check if this is a tournament match
+    const isTournament = app.gameSettings?.gameMode === 'tournament' && app.currentTournamentMatch;
     
-    // Log detailed player detection info every frame
-    console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
-    console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
-    console.log('  - hostUser:', hostUser);
-    console.log('  - isHostSelected:', isHostSelected);
-    console.log('  - hostCard active?', hostCard?.classList.contains('active'));
-    
-    if (isHostSelected) {
-      // Host is always first in Team 1
+    if (isTournament) {
+      // Tournament mode: Both players control locally
+      const match = app.currentTournamentMatch;
+      
+      console.log('🏆 [TOURNAMENT-INPUT] Tournament match mode detected');
+      console.log('🏆 [TOURNAMENT-INPUT] Player 1 (left/Team1):', match.player1Name, '- Controls: W/S or Arrow keys');
+      console.log('🏆 [TOURNAMENT-INPUT] Player 2 (right/Team2):', match.player2Name, '- Controls: U/J');
+      
+      // Player 1 on Team 1 (left side)
       team1Players.push({
-        userId: hostUser.userId,
-        username: hostUser.username,
-        id: hostUser.userId.toString(),
+        userId: match.player1Id,
+        username: match.player1Name,
         team: 1,
         paddleIndex: 0
       });
-      console.log('  - ✅ Added host to Team 1:', hostUser.username);
-    }
-    
-    // Get SELECTED local players (highlighted in party list)
-    const selectedPlayers = app.localPlayers.filter((p: any) => 
-      app.selectedPlayerIds.has(p.id?.toString())
-    );
-    
-    console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
-    
-    // Add local players to their teams
-    const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
-    const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
-    
-    localTeam1.forEach((p: any) => {
-      team1Players.push({
-        ...p,
-        paddleIndex: team1Players.length
-      });
-    });
-    
-    localTeam2.forEach((p: any) => {
+      
+      // Player 2 on Team 2 (right side)  
       team2Players.push({
-        ...p,
-        paddleIndex: team2Players.length
+        userId: match.player2Id,
+        username: match.player2Name,
+        team: 2,
+        paddleIndex: 0
       });
-    });
-    
-    // Check if AI is selected and add to appropriate team
-    const aiCard = document.getElementById('ai-player-card');
-    if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
-      const inTeam2 = aiCard.closest('#team2-list') !== null;
-      if (inTeam2) {
-        team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
-      } else {
-        team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+    } else {
+      // Regular arcade mode: Use selected players
+      // Check if host is selected
+      const authManager = (window as any).authManager;
+      const hostUser = authManager?.getCurrentUser();
+      const hostCard = document.getElementById('host-player-card');
+      const isHostSelected = hostCard && hostCard.classList.contains('active') && 
+                             hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+      
+      // Log detailed player detection info every frame
+      console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
+      console.log('  - selectedPlayerIds:', Array.from(app.selectedPlayerIds));
+      console.log('  - hostUser:', hostUser);
+      console.log('  - isHostSelected:', isHostSelected);
+      console.log('  - hostCard active?', hostCard?.classList.contains('active'));
+      
+      if (isHostSelected) {
+        // Host is always first in Team 1
+        team1Players.push({
+          userId: hostUser.userId,
+          username: hostUser.username,
+          id: hostUser.userId.toString(),
+          team: 1,
+          paddleIndex: 0
+        });
+        console.log('  - ✅ Added host to Team 1:', hostUser.username);
       }
-    }
-    
-    console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    
+      
+      // Get SELECTED local players (highlighted in party list)
+      const selectedPlayers = app.localPlayers.filter((p: any) => 
+        app.selectedPlayerIds.has(p.id?.toString())
+      );
+      
+      console.log('  - Selected local players:', selectedPlayers.map((p: any) => `${p.username} (team ${p.team})`));
+      
+      // Add local players to their teams
+      const localTeam1 = selectedPlayers.filter((p: any) => p.team === 1);
+      const localTeam2 = selectedPlayers.filter((p: any) => p.team === 2);
+      
+      localTeam1.forEach((p: any) => {
+        team1Players.push({
+          ...p,
+          paddleIndex: team1Players.length
+        });
+      });
+      
+      localTeam2.forEach((p: any) => {
+        team2Players.push({
+          ...p,
+          paddleIndex: team2Players.length
+        });
+      });
+      
+      // Check if AI is selected and add to appropriate team
+      const aiCard = document.getElementById('ai-player-card');
+      if (aiCard && aiCard.classList.contains('active') && app.selectedPlayerIds.has('ai-player')) {
+        const inTeam2 = aiCard.closest('#team2-list') !== null;
+        if (inTeam2) {
+          team2Players.push({ userId: 0, username: 'Bot', team: 2, paddleIndex: team2Players.length });
+        } else {
+          team1Players.push({ userId: 0, username: 'Bot', team: 1, paddleIndex: team1Players.length });
+        }
+      }
+      
+      console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+      console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
+    }    
     // Store player information for rendering
     this.team1Players = team1Players;
     this.team2Players = team2Players;

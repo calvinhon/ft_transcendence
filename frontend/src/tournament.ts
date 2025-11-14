@@ -161,7 +161,7 @@ export class TournamentManager {
     // Update host name
     const hostNameEl = document.getElementById('tournament-host-name');
     if (hostNameEl) {
-      hostNameEl.textContent = `${user.username} (Host)`;
+      hostNameEl.textContent = user.username;
     }
 
     // Get local players from app
@@ -777,27 +777,37 @@ export class TournamentManager {
       app.gameSettings = app.gameSettings || {};
       app.gameSettings.gameMode = 'tournament';
       
-      // Clear local players and add both tournament players
+      // Set up players for tournament match
+      // Player 1 is on Team 1 (left), Player 2 is on Team 2 (right)
       app.localPlayers = [];
+      app.selectedPlayerIds = new Set();
       
-      // Check if current user is one of the players
+      console.log('🏆 [Tournament] Setting up players for match');
+      console.log('🏆 [Tournament] Current user:', currentUser.userId);
+      console.log('🏆 [Tournament] Player 1:', player1Id, this.participantMap[player1Id]);
+      console.log('🏆 [Tournament] Player 2:', player2Id, this.participantMap[player2Id]);
+      
+      // Check if current user is player 1 or player 2
       const isPlayer1 = currentUser.userId === player1Id;
       const isPlayer2 = currentUser.userId === player2Id;
       
-      console.log('🏆 [Tournament] Current user check:', { 
-        currentUserId: currentUser.userId, 
-        isPlayer1, 
-        isPlayer2,
-        player1Id,
-        player2Id
-      });
-      
-      // If current user is not playing, add both as local players for spectator mode
-      // Or if both players are local, set them up properly
       if (!isPlayer1 && !isPlayer2) {
-        // Spectator mode - not implemented yet, just show error
+        // Spectator mode - not implemented yet
         showToast('You are not a participant in this match', 'error');
         return;
+      }
+      
+      // For local tournament matches, both players control locally
+      // Player 1 uses W/S keys (or Q/A), Player 2 uses U/J keys
+      if (isPlayer1) {
+        // Current user is player 1, they need another local player for player 2
+        // Check if player 2 is also a local player
+        const player2Local = app.localPlayers.find((p: any) => p.userId === player2Id);
+        if (!player2Local) {
+          showToast('Player 2 must be added as a local player for this match', 'info');
+          // For now, add player 2 as AI opponent
+          // TODO: Require both players to be logged in as local players
+        }
       }
 
       // Start the game
