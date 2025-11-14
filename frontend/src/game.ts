@@ -3009,14 +3009,28 @@ export class GameManager {
       // Players were swapped for display, need to map back to original IDs
       console.log('🔄 [TOURNAMENT] Players were swapped, mapping back to original IDs');
       
-      // The game winner is correct (it's a userId), no need to swap
-      // But we need to swap the scores back to match original player order
+      // Swap the scores back to match original player order
       actualPlayer1Score = scores.player2;
       actualPlayer2Score = scores.player1;
       
       console.log('🔄 [TOURNAMENT] Swapped scores:', {
         beforeSwap: { player1: scores.player1, player2: scores.player2 },
         afterSwap: { player1: actualPlayer1Score, player2: actualPlayer2Score }
+      });
+      
+      // CRITICAL FIX: Determine winner based on the swapped scores
+      // After swapping scores, the winner is whoever has the higher score in the original player positions
+      if (actualPlayer1Score > actualPlayer2Score) {
+        actualWinnerId = originalPlayer1Id;
+      } else {
+        actualWinnerId = originalPlayer2Id;
+      }
+      
+      console.log('🔄 [TOURNAMENT] Recalculated winner based on swapped scores:', {
+        gameWinnerId: gameWinnerId,
+        actualWinnerId: actualWinnerId,
+        player1Score: actualPlayer1Score,
+        player2Score: actualPlayer2Score
       });
     }
     
