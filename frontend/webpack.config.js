@@ -27,10 +27,10 @@ module.exports = {
       },
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
       {
-        test: /\.(gltf)$/,
+        test: /\.(gltf|ttf)$/,
         type: 'asset/resource',
         generator: {
           filename: 'assets/[name][ext]',

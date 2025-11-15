@@ -1,3 +1,22 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('../assets/fonts/VCR OSD Mono.ttf');
+}
+
+@font-face {
+  font-family: 'PixelCode';
+  src: url('../assets/fonts/PixelCode.ttf');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'PixelCode';
+  src: url('../assets/fonts/PixelCode-Bold.ttf');
+  font-weight: bold;
+}
+
 /* ---------- Theme tokens ---------- */
 :root {
   --bg-primary: #000000; /* Pure black background */
@@ -20,9 +39,8 @@
   --border: 1px solid rgba(255, 255, 255, 0.1);
 
   /* Unified Typography */
-  --font-primary: "Courier New", "Monaco", "Menlo", monospace;
-  --font-secondary: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    "Roboto", sans-serif;
+  --font-primary: 'PixelCode', monospace;
+  --font-secondary: 'VCR OSD Mono', monospace;
   --font-size-xs: 0.625rem; /* 10px */
   --font-size-sm: 0.75rem; /* 12px */
   --font-size-md: 0.875rem; /* 14px */
@@ -79,8 +97,8 @@ canvas:focus {
 /* ---------- Zoom Support ---------- */
 #app {
   /* Ensure the main app container supports zoom */
-  transform-origin: top left;
-  min-height: 100vh;
+  /* transform-origin: top left; */
+  height: 100%;
   position: relative;
 }
 
@@ -433,7 +451,7 @@ canvas:focus {
   border-radius: var(--radius-sm);
   background: var(--accent);
   color: #000000;
-  font-size: var(--font-size-md);
+  /* font-size: var(--font-size-md); */
   font-weight: 700;
   font-family: var(--font-primary);
   text-transform: uppercase;
