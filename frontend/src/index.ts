@@ -37,39 +37,34 @@ const engine = new Engine(canvas);
 // Create our first scene.
 const scene = new Scene(engine);
 
-// This creates and positions a free camera (non-mesh)
+// Create and position a free camera (non-mesh)
 const camera = new ArcRotateCamera(
   "camera",
   0,
   0,
   1,
-  new Vector3(-10, 0, 0),
+  new Vector3(0, 0, 2),
   scene
 );
 
-// camera.position = new Vector3(10, 10, 0);
+// Attach the camera to the canvas
 
-// This targets the camera to scene origin
-// camera.setTarget(Vector3.Zero());
-
-// This attaches the camera to the canvas
-camera.attachControl(canvas, true);
 camera.fov = 0.2;
 
-// This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+// Creates a light pointing to the sky
 const light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
 
-// Default intensity is 1. Let's dim the light a small amount
+// Reduce intensity
 light.intensity = 0.7;
 
+// Make scene transparent
 scene.clearColor = new Color4(0.05, 0.1, 0.15, 0);
 
-// The SAUCE
+// The SAUCE (Setup HTMLMesh)
 const htmlMeshRenderer = new HtmlMeshRenderer(scene);
 let htmlMesh = new HtmlMesh(scene, "htmlMesh");
 
 ImportMeshAsync(roomGlb, scene).then((res) => {
-  // console.log(res);
   htmlMesh.setContent(app as HTMLElement, 4, 3.8);
   htmlMesh.rotation.y = Math.PI / 2;
   htmlMesh.scalingDeterminant = 0.075;
@@ -82,12 +77,29 @@ ImportMeshAsync(roomGlb, scene).then((res) => {
       mesh.isVisible = false;
     }
   });
-  camera.setTarget(htmlMesh.position);
+  camera.setTarget(htmlMesh.position, true, false);
 });
 
-// // Render every frame
+let mouseX = innerWidth / 2;
+let mouseY = innerHeight / 2;
+
+document.addEventListener("mousemove", (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+// Render every frame
 engine.runRenderLoop(() => {
-  scene.render();
-});
+    // Normalize mouse position to a range of -1 to 1
+    const normalizedX = (mouseX - window.innerWidth / 2) / (window.innerWidth / 2);
+    const normalizedY = (mouseY - window.innerHeight / 2) / (window.innerHeight / 2);
 
-// console.log('Transcendence Frontend TypeScript initialized');
+    // Adjust camera rotation based on normalized mouse position
+    // You can change the sensitivity to control the speed
+    const sensitivity = 0.1;
+    camera.alpha = Math.PI - normalizedX * sensitivity;
+    // We add Math.PI / 2 to center the camera vertically
+    camera.beta = (Math.PI / 2) - (normalizedY * sensitivity);
+
+    scene.render();
+});
