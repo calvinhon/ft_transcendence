@@ -15,6 +15,7 @@ RUN npm install
 COPY src/ ./src/
 COPY css/ ./css/
 COPY index.html ./
+COPY assets/ ./assets/
 # COPY ../shared/ ./shared/
 
 # Build the application
@@ -23,10 +24,7 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Copy all built files to nginx
-COPY --from=builder /app/dist /usr/share/nginx/html/dist
-COPY --from=builder /app/index.html /usr/share/nginx/html/
-COPY --from=builder /app/css /usr/share/nginx/html/css
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf

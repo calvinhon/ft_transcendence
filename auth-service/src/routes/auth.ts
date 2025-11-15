@@ -35,7 +35,7 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
-const dbPath = path.join(__dirname, '../../database/auth.db');
+const dbPath = '/app/database/auth.db';
 
 // Initialize database
 const db = new sqlite3.Database(dbPath, (err) => {
