@@ -984,6 +984,24 @@ export class App {
     }
   }
 
+  // Helper to get the actual host user (not a local player)
+  private getHostUser(): { userId: number; username: string } | null {
+    const authManager = (window as any).authManager;
+    if (!authManager) return null;
+    
+    const currentUser = authManager.getCurrentUser();
+    if (!currentUser) return null;
+    
+    // Verify this user matches the stored token
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      // This is the host user (token holder)
+      return currentUser;
+    }
+    
+    return currentUser;
+  }
+
   updateHostPlayerDisplay(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -1171,19 +1189,18 @@ export class App {
     
     // Update host name in coop frame
     const authManager = (window as any).authManager;
-    console.log('[setupCoopMode] authManager.currentUser:', authManager?.currentUser);
-    if (hostPlayerNameCoop && authManager && authManager.getCurrentUser()) {
-      const currentUsername = authManager.getCurrentUser().username;
-      console.log('[setupCoopMode] Setting host name to:', currentUsername);
-      hostPlayerNameCoop.textContent = currentUsername;
+    const hostUser = this.getHostUser();
+    console.log('[setupCoopMode] hostUser:', hostUser);
+    if (hostPlayerNameCoop && hostUser) {
+      console.log('[setupCoopMode] Setting host name to:', hostUser.username);
+      hostPlayerNameCoop.textContent = hostUser.username;
     }
     
     if (hostPlayerCardCoop) {
       hostPlayerCardCoop.classList.add('active');
       // persist host selection
       try {
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     if (aiPlayerCardCoop) {
@@ -1220,12 +1237,11 @@ export class App {
     
     // Update host player name in tournament frame
     const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
-    const authManager = (window as any).authManager;
-    console.log('[setupTournamentMode] authManager.currentUser:', authManager?.currentUser);
-    if (hostPlayerNameTournament && authManager && authManager.getCurrentUser()) {
-      const currentUsername = authManager.getCurrentUser().username;
-      console.log('[setupTournamentMode] Setting host name to:', currentUsername);
-      hostPlayerNameTournament.textContent = currentUsername;
+    const hostUser = this.getHostUser();
+    console.log('[setupTournamentMode] hostUser:', hostUser);
+    if (hostPlayerNameTournament && hostUser) {
+      console.log('[setupTournamentMode] Setting host name to:', hostUser.username);
+      hostPlayerNameTournament.textContent = hostUser.username;
     }
     
     // Set host as active and selected by default
@@ -1233,8 +1249,7 @@ export class App {
     if (hostPlayerCardTournament) {
       hostPlayerCardTournament.classList.add('active');
       try {
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     
@@ -1290,9 +1305,8 @@ export class App {
     if (hostPlayerCard) {
       hostPlayerCard.classList.add('active');
       try {
-        const authManager = (window as any).authManager;
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        const hostUser = this.getHostUser();
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     

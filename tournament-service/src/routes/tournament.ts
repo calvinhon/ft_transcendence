@@ -542,28 +542,80 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   }>('/match/result', async (request: FastifyRequest<{ Body: MatchResultBody }>, reply: FastifyReply) => {
     const { matchId, winnerId, player1Score, player2Score } = request.body;
 
-    fastify.log.info({ matchId, winnerId, player1Score, player2Score }, '[MATCH RESULT] Received');
+    fastify.log.info('========== MATCH RESULT ENDPOINT ==========');
+    fastify.log.info({ 
+      matchId, 
+      winnerId, 
+      player1Score, 
+      player2Score,
+      body: request.body 
+    }, '[MATCH RESULT] Received request');
 
     if (!matchId || !winnerId || player1Score === undefined || player2Score === undefined) {
+      fastify.log.error({ matchId, winnerId, player1Score, player2Score }, '[MATCH RESULT] Missing required fields');
       return reply.status(400).send({ error: 'Missing required fields' });
     }
 
-    return new Promise<void>((resolve, reject) => {
-      db.run(
-        'UPDATE tournament_matches SET winner_id = ?, player1_score = ?, player2_score = ?, status = "completed", played_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [winnerId, player1Score, player2Score, matchId],
-        function(this: sqlite3.RunResult, err: Error | null) {
-          if (err) {
-            fastify.log.error(err, '[MATCH RESULT] Database error');
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else {
-            fastify.log.info({ matchId, changes: this.changes }, '[MATCH RESULT] Updated match');
-            // Check if we need to create next round matches
-            checkAndCreateNextRound(matchId);
-            reply.send({ message: 'Match result updated successfully' });
-            resolve();
+    // First, get the match details to see what we're updating
+    return new Promise<void>((resolvePromise, rejectPromise) => {
+      db.get(
+        'SELECT * FROM tournament_matches WHERE id = ?',
+        [matchId],
+        (err: Error | null, match: TournamentMatch) => {
+          if (err || !match) {
+            fastify.log.error({ err, matchId }, '[MATCH RESULT] Failed to get match details');
+            reply.status(404).send({ error: 'Match not found' });
+            rejectPromise(err || new Error('Match not found'));
+            return;
           }
+
+          fastify.log.info({
+            matchId: match.id,
+            currentPlayer1: match.player1_id,
+            currentPlayer2: match.player2_id,
+            currentWinner: match.winner_id,
+            currentStatus: match.status,
+            newWinner: winnerId,
+            newPlayer1Score: player1Score,
+            newPlayer2Score: player2Score
+          }, '[MATCH RESULT] Before update');
+
+          // Verify winner is one of the players
+          if (winnerId !== match.player1_id && winnerId !== match.player2_id) {
+            fastify.log.error({
+              winnerId,
+              player1Id: match.player1_id,
+              player2Id: match.player2_id
+            }, '[MATCH RESULT] Winner ID does not match either player!');
+            reply.status(400).send({ error: 'Invalid winner ID - must be one of the match players' });
+            rejectPromise(new Error('Invalid winner ID'));
+            return;
+          }
+
+          db.run(
+            'UPDATE tournament_matches SET winner_id = ?, player1_score = ?, player2_score = ?, status = "completed", played_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [winnerId, player1Score, player2Score, matchId],
+            function(this: sqlite3.RunResult, err: Error | null) {
+              if (err) {
+                fastify.log.error(err, '[MATCH RESULT] Database update error');
+                reply.status(500).send({ error: 'Database error' });
+                rejectPromise(err);
+              } else {
+                fastify.log.info({ 
+                  matchId, 
+                  changes: this.changes,
+                  winnerId,
+                  player1Score,
+                  player2Score
+                }, '[MATCH RESULT] Successfully updated match');
+                
+                // Check if we need to create next round matches
+                checkAndCreateNextRound(matchId);
+                reply.send({ message: 'Match result updated successfully' });
+                resolvePromise();
+              }
+            }
+          );
         }
       );
     });

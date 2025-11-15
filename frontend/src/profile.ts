@@ -284,6 +284,13 @@ export class ProfileManager {
       if (response.ok) {
         const apiGames: any[] = await response.json();
         console.log('[ProfileManager] Raw API games:', apiGames);
+        console.log('[ProfileManager] Total games returned:', apiGames.length);
+        console.log('[ProfileManager] Game modes breakdown:', {
+          coop: apiGames.filter(g => g.game_mode === 'coop').length,
+          arcade: apiGames.filter(g => g.game_mode === 'arcade').length,
+          tournament: apiGames.filter(g => g.game_mode === 'tournament').length,
+          other: apiGames.filter(g => !['coop', 'arcade', 'tournament'].includes(g.game_mode)).length
+        });
         
         // Process games and fetch tournament opponent names
         const games: RecentGame[] = [];
@@ -293,6 +300,19 @@ export class ProfileManager {
           const playerScore = isPlayer1 ? game.player1_score : game.player2_score;
           const opponentScore = isPlayer1 ? game.player2_score : game.player1_score;
           const opponentId = isPlayer1 ? game.player2_id : game.player1_id;
+          
+          console.log('[ProfileManager] Processing game:', {
+            gameId: game.id,
+            gameMode: game.game_mode,
+            tournamentMatchId: game.tournament_match_id,
+            userId: userId,
+            isPlayer1: isPlayer1,
+            player1_id: game.player1_id,
+            player2_id: game.player2_id,
+            opponentId: opponentId,
+            player1_name: game.player1_name,
+            player2_name: game.player2_name
+          });
           
           // Determine result
           let result: 'win' | 'loss' | 'draw';
@@ -307,35 +327,41 @@ export class ProfileManager {
           // Determine opponent name
           let opponentName: string;
           
+          console.log('[ProfileManager] Determining opponent name for game mode:', game.game_mode);
+          
           if (game.game_mode === 'tournament' && game.tournament_match_id) {
-            // For tournament games, fetch opponent name from tournament match
-            try {
-              const matchResponse = await fetch(`/api/tournament/match/${game.tournament_match_id}`, {
-                headers: authManager.getAuthHeaders()
-              });
-              
-              if (matchResponse.ok) {
-                const matchData = await matchResponse.json();
-                // Determine which player is the opponent
-                const tournamentOpponentId = matchData.player1_id === userId ? matchData.player2_id : matchData.player1_id;
-                
-                // Fetch opponent username
-                const profileResponse = await fetch(`/api/auth/profile/${tournamentOpponentId}`, {
+            // For tournament games, use the game table's opponent info directly
+            // The game table stores the ACTUAL players who played (after drag-and-drop)
+            // Tournament match table stores ORIGINAL positions, which may differ
+            console.log('[ProfileManager] Tournament game - opponentId:', opponentId);
+            
+            if (game.player1_name && game.player2_name) {
+              // Use the names from the game record (PRIORITY)
+              opponentName = isPlayer1 ? game.player2_name : game.player1_name;
+              console.log('[ProfileManager] Using name from game record:', opponentName);
+            } else if (opponentId === 0) {
+              opponentName = 'AI';
+              console.log('[ProfileManager] Opponent is AI (opponentId = 0)');
+            } else {
+              // Fallback: fetch opponent profile by ID from game table
+              console.log('[ProfileManager] Fetching opponent profile for ID:', opponentId);
+              try {
+                const profileResponse = await fetch(`/api/auth/profile/${opponentId}`, {
                   headers: authManager.getAuthHeaders()
                 });
                 
                 if (profileResponse.ok) {
                   const profileData = await profileResponse.json();
-                  opponentName = profileData.data?.username || `User ${tournamentOpponentId}`;
+                  opponentName = profileData.data?.username || `User ${opponentId}`;
+                  console.log('[ProfileManager] Fetched opponent name:', opponentName);
                 } else {
-                  opponentName = `User ${tournamentOpponentId}`;
+                  opponentName = `User ${opponentId}`;
+                  console.log('[ProfileManager] Profile fetch failed, using fallback:', opponentName);
                 }
-              } else {
-                opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+              } catch (e) {
+                console.error('Error fetching opponent profile:', e);
+                opponentName = `Player ${opponentId}`;
               }
-            } catch (e) {
-              console.error('Error fetching tournament opponent:', e);
-              opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
             }
           } else if (game.game_mode === 'arcade' && game.team2_players) {
             try {
