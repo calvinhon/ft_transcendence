@@ -107,7 +107,7 @@ canvas:focus {
   position: relative;
   transform-origin: top left;
   background: var(--bg-primary); /* Unified black background */
-  min-height: 100vh;
+  height: 100%;
 }
 
 /* Make sure text remains crisp during zoom */
