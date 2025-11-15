@@ -62,6 +62,8 @@ interface GameSettings {
   powerupsEnabled: boolean;
   accelerateOnHit: boolean;
   scoreToWin: number;
+  team1PlayerCount?: number;
+  team2PlayerCount?: number;
 }
 
 interface JoinGameMessage extends GameMessage {
@@ -1844,6 +1846,12 @@ export class GameManager {
     // IMPORTANT: Ensure gameMode is set to tournament
     this.gameSettings.gameMode = 'tournament';
     console.log('🏆 [TOURNAMENT] Force-set gameMode to tournament');
+    
+    // CRITICAL: Force team player counts to 1 for tournament mode
+    // This prevents backend from creating multiple paddles from previous arcade settings
+    this.gameSettings.team1PlayerCount = 1;
+    this.gameSettings.team2PlayerCount = 1;
+    console.log('🏆 [TOURNAMENT] Force-set team player counts to 1 for single-paddle mode');
     
     // CRITICAL FIX: Clear any leftover arcade paddle arrays before starting tournament
     // This prevents ghost paddles from previous arcade games
