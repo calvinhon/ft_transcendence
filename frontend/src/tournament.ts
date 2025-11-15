@@ -865,10 +865,9 @@ export class TournamentManager {
       app.gameSettings = app.gameSettings || {};
       app.gameSettings.gameMode = 'tournament';
       
-      // Set up players for tournament match
-      // Player 1 is on Team 1 (left), Player 2 is on Team 2 (right)
-      app.localPlayers = [];
-      app.selectedPlayerIds = new Set();
+      // DON'T clear localPlayers - preserve them for faster restart
+      // app.localPlayers should persist across matches
+      console.log('🏆 [Tournament] Preserving localPlayers for match restart');
       
       console.log('🏆 [Tournament] Setting up players for match');
       console.log('🏆 [Tournament] Current user:', currentUser.userId);
@@ -1099,9 +1098,9 @@ export class TournamentManager {
       app.gameSettings = app.gameSettings || {};
       app.gameSettings.gameMode = 'tournament';
       
-      // Set up players for tournament match
-      app.localPlayers = [];
-      app.selectedPlayerIds = new Set();
+      // DON'T clear localPlayers - preserve them for faster restart
+      // app.localPlayers should persist across matches
+      console.log('🏆 [Tournament] Preserving localPlayers for match restart');
       
       console.log('🏆 [Tournament] Setting up players for match');
       console.log('🏆 [Tournament] Current user:', currentUser.userId);
