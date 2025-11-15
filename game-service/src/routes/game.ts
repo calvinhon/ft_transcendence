@@ -463,9 +463,10 @@ class PongGame {
     
     if (reactionDelay) return; // Sometimes bot doesn't react
     
-    // Handle arcade mode with multiple paddles
-    if (this.gameSettings.gameMode === 'arcade' && this.paddles.team2 && this.paddles.team2.length > 0) {
-      // Move all bot paddles in arcade mode
+    // Handle arcade mode OR tournament mode with multiple paddles
+    if ((this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') && 
+        this.paddles.team2 && this.paddles.team2.length > 0) {
+      // Move all bot paddles in arcade/tournament mode
       this.paddles.team2.forEach((botPaddle) => {
         const paddleCenter = botPaddle.y + 50;
         
@@ -475,6 +476,11 @@ class PongGame {
           botPaddle.y = Math.max(0, botPaddle.y - moveSpeed); // Move up
         }
       });
+      
+      // For tournament mode, also sync the player2 paddle
+      if (this.gameSettings.gameMode === 'tournament' && this.paddles.team2[0]) {
+        this.paddles.player2.y = this.paddles.team2[0].y;
+      }
     } else {
       // Co-op mode: single bot paddle
       const botPaddle = this.paddles.player2;
@@ -698,6 +704,15 @@ class PongGame {
     
     // Only broadcast if paddle actually moved
     if (oldY !== this.paddles[paddle].y) {
+      // For tournament mode, sync the team array paddles with player paddles
+      if (this.gameSettings.gameMode === 'tournament') {
+        if (paddle === 'player1' && this.paddles.team1 && this.paddles.team1[0]) {
+          this.paddles.team1[0].y = this.paddles.player1.y;
+        } else if (paddle === 'player2' && this.paddles.team2 && this.paddles.team2[0]) {
+          this.paddles.team2[0].y = this.paddles.player2.y;
+        }
+      }
+      
       console.log('🏓 [MOVEPLADDLE] ✅ Broadcasting game state update - paddle moved', (this.paddles[paddle].y - oldY), 'pixels');
       this.broadcastGameState();
     } else {
@@ -1264,8 +1279,17 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
               // Enrich games with player names from user service
               const enrichedGames: GameRecord[] = [];
               
+              console.log(`[GAME-SERVICE] Enriching ${games.length} games for user ${userId}`);
+              
               for (const game of games) {
                 const enrichedGame = { ...game };
+                
+                console.log(`[GAME-SERVICE] Game ${game.id}:`, {
+                  player1_id: game.player1_id,
+                  player2_id: game.player2_id,
+                  game_mode: game.game_mode,
+                  tournament_match_id: (game as any).tournament_match_id
+                });
                 
                 // Fetch player names from user service
                 try {

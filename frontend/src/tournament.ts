@@ -1073,13 +1073,15 @@ export class TournamentManager {
     const currentUser = authManager?.getCurrentUser();
     
     if (app && app.startGame && currentUser) {
-      // Check if current user is one of the players
-      const isParticipant = currentUser.userId === leftPlayerId || currentUser.userId === rightPlayerId;
-      
-      if (!isParticipant) {
-        showToast('You are not a participant in this match', 'error');
-        return;
-      }
+      // In local multiplayer mode, the host can play any match
+      // No need to validate participation - host controls the tournament
+      console.log('🎮 [Tournament] Starting match:', {
+        currentUserId: currentUser.userId,
+        leftPlayerId,
+        rightPlayerId,
+        leftPlayerName,
+        rightPlayerName
+      });
 
       // Set tournament match data
       app.currentTournamentMatch = {
