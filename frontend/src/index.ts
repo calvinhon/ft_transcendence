@@ -28,8 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const root = document.querySelector("#root")!;
   const app = document.querySelector<HTMLDivElement>("#app")!;
   const canvas = document.createElement("canvas");
-  canvas.style.height = `100%`;
-  canvas.style.width = `100%`;
+  canvas.style.height = `100vh`;
+  canvas.style.width = `100vw`;
+  canvas.style.zIndex = "-1";
   root.append(canvas);
 
   // Associate a Babylon Engine to it.

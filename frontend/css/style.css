@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: 'VCR OSD Mono';
-  src: url('../assets/fonts/VCR OSD Mono.ttf');
+  font-family: "VCR OSD Mono";
+  src: url("../assets/fonts/VCR OSD Mono.ttf");
 }
 
 @font-face {
-  font-family: 'PixelCode';
-  src: url('../assets/fonts/PixelCode.ttf');
+  font-family: "PixelCode";
+  src: url("../assets/fonts/PixelCode.ttf");
   font-weight: normal;
 }
 
 @font-face {
-  font-family: 'PixelCode';
-  src: url('../assets/fonts/PixelCode-Bold.ttf');
+  font-family: "PixelCode";
+  src: url("../assets/fonts/PixelCode-Bold.ttf");
   font-weight: bold;
 }
 
@@ -39,8 +39,8 @@
   --border: 1px solid rgba(255, 255, 255, 0.1);
 
   /* Unified Typography */
-  --font-primary: 'PixelCode', monospace;
-  --font-secondary: 'VCR OSD Mono', monospace;
+  --font-primary: "PixelCode", monospace;
+  --font-secondary: "VCR OSD Mono", monospace;
   --font-size-xs: 0.625rem; /* 10px */
   --font-size-sm: 0.75rem; /* 12px */
   --font-size-md: 0.875rem; /* 14px */
@@ -56,6 +56,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: var(--font-primary);
 }
 
 html {
@@ -406,7 +407,7 @@ canvas:focus {
   color: var(--text);
   font-size: 12px;
   line-height: 1.5;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
 }
 
 .login-form {
@@ -769,7 +770,7 @@ canvas:focus {
   padding-top: var(--space-lg);
   border-top: 1px solid rgba(119, 230, 255, 0.3);
   color: var(--text-muted);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 14px;
@@ -783,7 +784,7 @@ canvas:focus {
   color: var(--primary);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;
@@ -936,7 +937,7 @@ canvas:focus {
   margin-bottom: var(--space-xs);
   padding-bottom: var(--space-xs);
   border-bottom: 1px solid rgba(119, 230, 255, 0.3);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -956,7 +957,7 @@ canvas:focus {
 
 .column-subtitle {
   margin-bottom: var(--space);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
@@ -982,7 +983,7 @@ canvas:focus {
   color: var(--text);
   font-weight: 600;
   font-size: 0.9rem;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -1108,7 +1109,7 @@ canvas:focus {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
 }
 
 .score-btn:hover {
@@ -1125,7 +1126,7 @@ canvas:focus {
   color: var(--accent);
   min-width: 40px;
   text-align: center;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-shadow: 0 0 8px var(--accent);
 }
 
@@ -1143,7 +1144,7 @@ canvas:focus {
   gap: 12px;
   cursor: pointer;
   color: var(--text-muted);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.9rem;
@@ -1190,7 +1191,7 @@ canvas:focus {
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 2px;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
@@ -1281,7 +1282,7 @@ canvas:focus {
 .mode-desc h4 {
   color: var(--accent);
   margin-bottom: 8px;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
 }
 
@@ -1401,7 +1402,7 @@ canvas:focus {
 .player-name {
   color: var(--text);
   font-weight: 600;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -1429,7 +1430,7 @@ canvas:focus {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;
@@ -1479,7 +1480,7 @@ canvas:focus {
   letter-spacing: 3px;
   font-family: var(--font-primary);
   text-align: center;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-weight: 700;
   text-align: center;
   text-shadow: 0 0 10px rgba(119, 230, 255, 0.8),
@@ -1530,7 +1531,7 @@ canvas:focus {
 
 .settings-group h3 {
   color: var(--primary);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 2px;
   font-size: 1.1rem;
@@ -1545,7 +1546,7 @@ canvas:focus {
   justify-content: space-between;
   padding: var(--space) 0;
   color: var(--text);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.9rem;
@@ -1636,7 +1637,7 @@ canvas:focus {
   justify-content: space-between;
   padding: var(--space) 0;
   color: var(--text);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.9rem;
@@ -1660,7 +1661,7 @@ canvas:focus {
   color: var(--accent);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1943,7 +1944,7 @@ canvas:focus {
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 2px;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
@@ -2034,7 +2035,7 @@ canvas:focus {
 .mode-desc h4 {
   margin: 0 0 8px 0;
   color: var(--accent);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -2212,7 +2213,7 @@ canvas:focus {
 .player-name {
   color: var(--text);
   font-weight: 600;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-size: clamp(0.7rem, 1vw, 0.9rem);
   white-space: nowrap;
   overflow: hidden;
@@ -2226,7 +2227,7 @@ canvas:focus {
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 700;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   white-space: nowrap; /* Prevent badge text wrapping */
 }
 
@@ -2262,7 +2263,7 @@ canvas:focus {
   justify-content: center;
   gap: 8px;
   font-weight: 600;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -2510,7 +2511,7 @@ canvas:focus {
 .contract-info p {
   margin: 8px 0;
   color: #ccc;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-size: 14px;
 }
 
@@ -3473,7 +3474,7 @@ body:has(#register-screen.active) #chat-widget {
   color: var(--text);
   font-weight: 700;
   font-size: 1.1rem;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
@@ -3482,7 +3483,7 @@ body:has(#register-screen.active) #chat-widget {
 .player-level {
   color: var(--text-muted);
   font-size: 0.9rem;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -3491,7 +3492,7 @@ body:has(#register-screen.active) #chat-widget {
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--accent);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
   min-width: 60px;
   text-align: center;
@@ -3549,7 +3550,7 @@ body:has(#register-screen.active) #chat-widget {
 
 .first-to-label {
   color: var(--text);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -3561,7 +3562,7 @@ body:has(#register-screen.active) #chat-widget {
   font-size: 2rem;
   font-weight: 700;
   color: var(--accent);
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
 }
 
@@ -3680,7 +3681,7 @@ body:has(#register-screen.active) #chat-widget {
   color: var(--text);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;

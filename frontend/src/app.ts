@@ -605,7 +605,6 @@ class SpiritualAscensionApp {
       color: var(--accent);
       padding: 8px 12px;
       border-radius: 6px;
-      font-family: 'Courier New', monospace;
       font-size: 14px;
       font-weight: 700;
       z-index: 10000;
