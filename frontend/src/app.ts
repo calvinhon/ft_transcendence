@@ -510,120 +510,13 @@ class SpiritualAscensionApp {
 
     // Global keyboard shortcuts
     this.setupKeyboardShortcuts();
-
-    // Zoom functionality
-    this.setupZoomControl();
   }
 
-  setupZoomControl(): void {
-    let currentZoom = 1.0;
-    const minZoom = 0.5;
-    const maxZoom = 3.0;
-    const zoomStep = 0.1;
 
-    // Handle Ctrl + Mouse Wheel for zoom
-    document.addEventListener(
-      "wheel",
-      (e: WheelEvent) => {
-        // Only zoom when Ctrl key is pressed
-        if (e.ctrlKey) {
-          e.preventDefault();
 
-          // Determine zoom direction
-          const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-          const newZoom = Math.max(
-            minZoom,
-            Math.min(maxZoom, currentZoom + delta)
-          );
 
-          if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            this.applyZoom(currentZoom);
-          }
-        }
-      },
-      { passive: false }
-    );
 
-    // Handle Ctrl + Plus/Minus for zoom (keyboard shortcuts)
-    document.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === "=" || e.key === "+") {
-          e.preventDefault();
-          const newZoom = Math.min(maxZoom, currentZoom + zoomStep);
-          if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            this.applyZoom(currentZoom);
-          }
-        } else if (e.key === "-") {
-          e.preventDefault();
-          const newZoom = Math.max(minZoom, currentZoom - zoomStep);
-          if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            this.applyZoom(currentZoom);
-          }
-        } else if (e.key === "0") {
-          e.preventDefault();
-          currentZoom = 1.0;
-          this.applyZoom(currentZoom);
-        }
-      }
-    });
-  }
 
-  applyZoom(zoomLevel: number): void {
-    const app = document.getElementById("app");
-    if (app) {
-      app.style.transform = `scale(${zoomLevel})`;
-      app.style.transformOrigin = "top left";
-
-      // Adjust body size to accommodate zoom
-      document.body.style.width = `${100 / zoomLevel}%`;
-      document.body.style.height = `${100 / zoomLevel}%`;
-
-      // Show zoom level indicator (optional)
-      this.showZoomIndicator(zoomLevel);
-    }
-  }
-
-  showZoomIndicator(zoomLevel: number): void {
-    // Remove existing indicator
-    const existingIndicator = document.getElementById("zoom-indicator");
-    if (existingIndicator) {
-      existingIndicator.remove();
-    }
-
-    // Create and show new indicator
-    const indicator = document.createElement("div");
-    indicator.id = "zoom-indicator";
-    indicator.textContent = `${Math.round(zoomLevel * 100)}%`;
-    indicator.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      color: var(--accent);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 700;
-      z-index: 10000;
-      border: 1px solid var(--accent);
-      box-shadow: 0 0 10px rgba(119, 230, 255, 0.3);
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    `;
-
-    document.body.appendChild(indicator);
-
-    // Auto-hide after 2 seconds
-    setTimeout(() => {
-      indicator.style.opacity = "0";
-      setTimeout(() => {
-        indicator.remove();
-      }, 300);
-    }, 2000);
-  }
 
   setupKeyboardShortcuts(): void {
     document.addEventListener("keydown", (e: KeyboardEvent) => {

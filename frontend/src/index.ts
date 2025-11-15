@@ -51,7 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Attach the camera to the canvas
 
-  camera.fov = 0.25;
+  const minFov = 0.15;
+  const maxFov = 0.4;
+  const initialFov = 0.25;
+  camera.fov = initialFov;
 
   // Creates a light pointing to the sky
   const light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
@@ -93,6 +96,34 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("mousemove", (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+  });
+
+  document.addEventListener("wheel", (e) => {
+    const zoomSensitivity = 0.0005;
+    camera.fov += e.deltaY * zoomSensitivity;
+    camera.fov = Math.max(minFov, Math.min(maxFov, camera.fov));
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      const zoomStep = 0.05;
+      switch (e.key) {
+        case "=":
+        case "+":
+          e.preventDefault();
+          camera.fov -= zoomStep;
+          break;
+        case "-":
+          e.preventDefault();
+          camera.fov += zoomStep;
+          break;
+        case "0":
+          e.preventDefault();
+          camera.fov = initialFov;
+          break;
+      }
+      camera.fov = Math.max(minFov, Math.min(maxFov, camera.fov));
+    }
   });
 
   // Render every frame
