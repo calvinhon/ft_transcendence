@@ -928,7 +928,7 @@ export class GameManager {
     );
 
     // Center info - "First to X"
-    this.ctx.font = "bold 16px Arial";
+    this.ctx.font = "bold 16px PixelCode";
     this.ctx.fillStyle = "#ffffff";
     this.ctx.textAlign = "center";
     this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
@@ -972,7 +972,7 @@ export class GameManager {
     this.ctx.save();
 
     // Draw player icon
-    this.ctx.font = "20px Arial";
+    this.ctx.font = "20px PixelCode";
     this.ctx.fillStyle = "#77e6ff";
 
     if (alignment === "left") {
@@ -980,12 +980,12 @@ export class GameManager {
       this.ctx.fillText(icon, x, y);
 
       // Draw name
-      this.ctx.font = "bold 14px Arial";
+      this.ctx.font = "bold 14px PixelCode";
       this.ctx.fillStyle = "#ffffff";
       this.ctx.fillText(name, x + 30, y - 2);
 
       // Draw level
-      this.ctx.font = "12px Arial";
+      this.ctx.font = "12px PixelCode";
       this.ctx.fillStyle = "#aaaaaa";
       this.ctx.fillText(`Level ${level}`, x + 30, y + 15);
     } else {
@@ -993,12 +993,12 @@ export class GameManager {
       this.ctx.fillText(icon, x, y);
 
       // Draw name
-      this.ctx.font = "bold 14px Arial";
+      this.ctx.font = "bold 14px PixelCode";
       this.ctx.fillStyle = "#ffffff";
       this.ctx.fillText(name, x - 30, y - 2);
 
       // Draw level
-      this.ctx.font = "12px Arial";
+      this.ctx.font = "12px PixelCode";
       this.ctx.fillStyle = "#aaaaaa";
       this.ctx.fillText(`Level ${level}`, x - 30, y + 15);
     }
