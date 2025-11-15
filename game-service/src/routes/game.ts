@@ -1073,6 +1073,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   function handleJoinBotGame(socket: WebSocket, data: JoinGameMessage): void {
     console.log('handleJoinBotGame called with:', data);
     console.log('Game settings received:', data.gameSettings);
+    console.log('🏆 [TOURNAMENT-CHECK] player2Id:', data.player2Id, 'player2Name:', data.player2Name, 'gameMode:', data.gameSettings?.gameMode);
     
     const player1: GamePlayer = {
       userId: data.userId,
@@ -1087,6 +1088,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       // Tournament match: player2 is also a real player (local)
       // In tournament mode, both players control their paddles locally on the same machine
       console.log('🏆 [TOURNAMENT] Creating tournament match with player2 ID:', data.player2Id);
+      console.log('🏆 [TOURNAMENT] Player 2 name:', data.player2Name);
       
       // Create a dummy socket for player2 since they're on the same machine
       const dummySocket = {
@@ -1177,19 +1179,25 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       console.log('🎮 [HANDLE-MOVE] Player2 socket === current socket:', game.player2.socket === socket);
       
       if (game.player1.socket === socket || game.player2.socket === socket) {
-        const playerId = game.player1.socket === socket ? 
+        // Determine which player this socket belongs to
+        const socketPlayerId = game.player1.socket === socket ? 
           game.player1.userId : game.player2.userId;
-        console.log('🎮 [HANDLE-MOVE] Found game', gameId, 'for player', playerId, 'direction:', data.direction);
+        console.log('🎮 [HANDLE-MOVE] Found game', gameId, 'for socket player', socketPlayerId, 'direction:', data.direction);
+        
+        // For tournament local multiplayer, use data.playerId to distinguish which paddle
+        // For other modes, use the socket-determined playerId
+        const targetPlayerId = data.playerId || socketPlayerId;
+        console.log('🎮 [HANDLE-MOVE] Target paddle playerId:', targetPlayerId, '(from data.playerId:', data.playerId, ')');
         
         // Pass paddleIndex for arcade mode
         if (data.paddleIndex !== undefined) {
           console.log('🎮 [HANDLE-MOVE] Arcade mode - paddleIndex:', data.paddleIndex);
-          game.movePaddle(data.playerId || playerId, data.direction, data.paddleIndex);
+          game.movePaddle(targetPlayerId, data.direction, data.paddleIndex);
         } else {
-          game.movePaddle(playerId, data.direction);
+          game.movePaddle(targetPlayerId, data.direction);
         }
         
-        console.log('🎮 [HANDLE-MOVE] Paddle movement executed for player', playerId);
+        console.log('🎮 [HANDLE-MOVE] Paddle movement executed for playerId', targetPlayerId);
         return; // Found the game, no need to continue
       }
     }

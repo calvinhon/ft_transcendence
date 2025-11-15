@@ -515,12 +515,27 @@ export class GameManager {
               
               console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
               
-              this.websocket.send(JSON.stringify({
-                type: 'joinBotGame', // fix here for bot game
+              // Prepare message with tournament player data if available
+              const message: any = {
+                type: 'joinBotGame',
                 userId: user.userId,
                 username: user.username,
                 gameSettings: gameSettings
-              }));
+              };
+              
+              // Add tournament player info for local multiplayer
+              if (this.currentTournamentMatch) {
+                message.player2Id = this.currentTournamentMatch.player2Id;
+                message.player2Name = this.currentTournamentMatch.player2Name;
+                message.tournamentId = this.currentTournamentMatch.tournamentId;
+                message.tournamentMatchId = this.currentTournamentMatch.matchId;
+                console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
+                  player2Id: message.player2Id,
+                  player2Name: message.player2Name
+                });
+              }
+              
+              this.websocket.send(JSON.stringify(message));
             }
           }, 100);
         }
@@ -572,12 +587,33 @@ export class GameManager {
               gameSettings = this.gameSettings;
             }
             console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
-            this.websocket.send(JSON.stringify({
+            
+            // Prepare message with tournament player data if available
+            const message: any = {
               type: 'joinBotGame',
               userId: user.userId,
               username: user.username,
               gameSettings: gameSettings
-            }));
+            };
+            
+            // Add tournament player info for local multiplayer
+            if (this.currentTournamentMatch) {
+              message.player2Id = this.currentTournamentMatch.player2Id;
+              message.player2Name = this.currentTournamentMatch.player2Name;
+              message.tournamentId = this.currentTournamentMatch.tournamentId;
+              message.tournamentMatchId = this.currentTournamentMatch.matchId;
+              console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
+                player2Id: message.player2Id,
+                player2Name: message.player2Name,
+                tournamentId: message.tournamentId,
+                matchId: message.tournamentMatchId,
+                gameMode: message.gameSettings.gameMode
+              });
+            } else {
+              console.log('⚠️ [TOURNAMENT] No currentTournamentMatch found!');
+            }
+            
+            this.websocket.send(JSON.stringify(message));
           }
           break;
         }
@@ -714,15 +750,16 @@ export class GameManager {
   }
 
   private handleTournamentInputs(): void {
-    // Tournament mode: Single player controls one paddle, AI controls the other
-    // This matches co-op mode behavior but with tournament settings
+    // Tournament mode: Local multiplayer - two players on the same keyboard
+    // Player 1 (left): W/S or Arrow keys
+    // Player 2 (right): U/J keys
     
-    // Player controls left paddle with W/S or Arrow keys
-    const upPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
-    const downPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
+    // Player 1 (left paddle) - W/S or Arrow keys
+    const p1UpPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
+    const p1DownPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
     
-    // If both keys are pressed, use the most recently pressed one
-    if (upPressed && downPressed) {
+    // Handle Player 1 input with priority for most recent key
+    if (p1UpPressed && p1DownPressed) {
       const upTime = Math.max(
         this.lastKeyPressTime['w'] || 0,
         this.lastKeyPressTime['W'] || 0,
@@ -747,16 +784,54 @@ export class GameManager {
           direction: 'up'
         }));
       }
-    } else if (upPressed) {
+    } else if (p1UpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
         direction: 'up'
       }));
-    } else if (downPressed) {
+    } else if (p1DownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
         direction: 'down'
+      }));
+    }
+    
+    // Player 2 (right paddle) - U/J keys
+    const p2UpPressed = this.keys['u'] || this.keys['U'];
+    const p2DownPressed = this.keys['j'] || this.keys['J'];
+    
+    // Handle Player 2 input
+    if (p2UpPressed && p2DownPressed) {
+      const upTime = this.lastKeyPressTime['u'] || this.lastKeyPressTime['U'] || 0;
+      const downTime = this.lastKeyPressTime['j'] || this.lastKeyPressTime['J'] || 0;
+      
+      // For player 2, we need to send a different command to control the right paddle
+      // We'll use playerId: 2 to indicate this is for player2/right paddle
+      if (downTime > upTime) {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          playerId: 2,
+          direction: 'down'
         }));
+      } else {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          playerId: 2,
+          direction: 'up'
+        }));
+      }
+    } else if (p2UpPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 2,
+        direction: 'up'
+      }));
+    } else if (p2DownPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 2,
+        direction: 'down'
+      }));
     }
   }
 
@@ -1334,39 +1409,37 @@ export class GameManager {
     let leftPlayerLevel: number;
     let rightPlayerLevel: number;
     
-    if (isArcadeMode) {
+    // Check tournament mode first (takes priority over arcade mode)
+    const app = (window as any).app;
+    const tournamentMatch = app?.currentTournamentMatch;
+    
+    if (tournamentMatch && tournamentMatch.player1Name && tournamentMatch.player2Name) {
+      // Tournament mode: Use player names from match data
+      leftPlayerName = tournamentMatch.player1Name;
+      rightPlayerName = tournamentMatch.player2Name;
+      leftPlayerLevel = 1; // Can enhance later with actual player levels
+      rightPlayerLevel = 1;
+    } else if (isArcadeMode) {
       // Arcade mode: Show team names (no levels needed for teams)
       leftPlayerName = 'Team 1';
       rightPlayerName = 'Team 2';
       leftPlayerLevel = 0; // Not displayed for teams
       rightPlayerLevel = 0; // Not displayed for teams
     } else {
-      // Co-op/Campaign/Tournament mode: Show player names
-      const app = (window as any).app;
-      const tournamentMatch = app?.currentTournamentMatch;
+      // Co-op/Campaign mode: Show player vs AI
+      leftPlayerName = user?.username || 'Player 1';
+      rightPlayerName = 'AI Bot';
       
-      if (tournamentMatch && tournamentMatch.player1Name && tournamentMatch.player2Name) {
-        // Tournament mode: Use player names from match data
-        leftPlayerName = tournamentMatch.player1Name;
-        rightPlayerName = tournamentMatch.player2Name;
-        leftPlayerLevel = 1; // Can enhance later with actual player levels
-        rightPlayerLevel = 1;
-      } else {
-        // Co-op/Campaign mode: Show player vs AI
-        leftPlayerName = user?.username || 'Player 1';
-        rightPlayerName = 'AI Bot';
-        
-        // Try to read player level from user profile
-        const userLevelFromProfile = (() => {
-          const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
-          if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
-          if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
-          return null;
-        })();
+      // Try to read player level from user profile
+      const userLevelFromProfile = (() => {
+        const maybeLevel = (user as any)?.level ?? (user as any)?.profileLevel ?? (user as any)?.profile?.level;
+        if (typeof maybeLevel === 'number') return Math.max(1, Math.floor(maybeLevel));
+        if (typeof maybeLevel === 'string' && !isNaN(parseInt(maybeLevel, 10))) return Math.max(1, parseInt(maybeLevel, 10));
+        return null;
+      })();
 
-        leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
-        rightPlayerLevel = leftPlayerLevel;
-      }
+      leftPlayerLevel = userLevelFromProfile ?? (this.isCampaignMode ? this.currentCampaignLevel : 1);
+      rightPlayerLevel = leftPlayerLevel;
     }
 
     // Use getter to respect current game settings and campaign adjustments
@@ -1853,20 +1926,41 @@ export class GameManager {
     this.gameSettings.team2PlayerCount = 1;
     console.log('🏆 [TOURNAMENT] Force-set team player counts to 1 for single-paddle mode');
     
-    // CRITICAL FIX: Clear any leftover arcade paddle arrays before starting tournament
-    // This prevents ghost paddles from previous arcade games
-    this.team1Players = [];
-    this.team2Players = [];
+    // Set up team player arrays with tournament player names for rendering
+    // These arrays are used to display player names on paddles
+    this.team1Players = [{
+      userId: match.player1Id,
+      username: match.player1Name,
+      team: 1,
+      paddleIndex: 0,
+      color: '#77e6ff' // Cyan for player 1
+    }];
+    
+    this.team2Players = [{
+      userId: match.player2Id,
+      username: match.player2Name,
+      team: 2,
+      paddleIndex: 0,
+      color: '#e94560' // Red/pink for player 2
+    }];
+    
+    console.log('🏆 [TOURNAMENT] Set up team players for paddle rendering:', {
+      team1: this.team1Players[0].username,
+      team2: this.team2Players[0].username
+    });
+    
+    // Clear gameState paddle arrays if they exist
     if (this.gameState) {
       this.gameState.leftPaddles = undefined;
       this.gameState.rightPaddles = undefined;
     }
-    console.log('🏆 [TOURNAMENT] Cleared leftover arcade paddle arrays for fresh tournament start');
+    console.log('🏆 [TOURNAMENT] Cleared gameState paddle arrays for fresh tournament start');
     
     // Ensure canvas exists
     this.ensureCanvasInitialized();
     
     // Connect to game server for tournament match
+    // Use bot game server connection which handles messages via connectionAck
     await this.connectToBotGameServer();
   }
 
@@ -2328,14 +2422,20 @@ export class GameManager {
     // Clear all key states
     this.keys = {};
     
-    // Clear team player data (arcade mode)
-    this.team1Players = [];
-    this.team2Players = [];
-    console.log(`🛑 [GM#${this.instanceId}] Cleared team player arrays`);
+    // Clear team player data for arcade mode only
+    // DON'T clear in tournament mode to preserve match state
+    if (this.gameSettings.gameMode !== 'tournament') {
+      this.team1Players = [];
+      this.team2Players = [];
+      console.log(`🛑 [GM#${this.instanceId}] Cleared team player arrays`);
+    } else {
+      console.log(`🛑 [GM#${this.instanceId}] Tournament mode - preserving team player arrays`);
+    }
     
     // Reset game mode to default to prevent mode conflicts
     // This ensures tournament mode starts fresh after arcade mode
-    console.log(`🛑 [GM#${this.instanceId}] Resetting game mode from '${this.gameSettings.gameMode}' to default 'coop'`);
+    const previousMode = this.gameSettings.gameMode;
+    console.log(`🛑 [GM#${this.instanceId}] Resetting game mode from '${previousMode}' to default 'coop'`);
     this.gameSettings.gameMode = 'coop';
     
     // If in campaign mode, exit campaign
@@ -2351,16 +2451,24 @@ export class GameManager {
     const app = (window as any).app;
     console.log(`🛑 [GM#${this.instanceId}] App exists:`, !!app, 'Router exists:', !!(app && app.router));
     
-    // Clear tournament match data
-    if (app && app.currentTournamentMatch) {
-      console.log(`🛑 [GM#${this.instanceId}] Clearing tournament match data`);
-      app.currentTournamentMatch = null;
-    }
-    
-    // Clear local tournament match data
-    if (this.currentTournamentMatch) {
-      console.log(`🛑 [GM#${this.instanceId}] Clearing local tournament match data`);
-      this.currentTournamentMatch = null;
+    // For tournament mode, preserve the match data so it can be restarted
+    // For other modes, clear the tournament match data
+    if (previousMode === 'tournament') {
+      console.log(`🛑 [GM#${this.instanceId}] Tournament mode - preserving tournament match data for restart`);
+      // Don't clear app.currentTournamentMatch or this.currentTournamentMatch
+      // This allows the player to restart from the tournament bracket
+    } else {
+      // Clear tournament match data for non-tournament modes
+      if (app && app.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Clearing tournament match data`);
+        app.currentTournamentMatch = null;
+      }
+      
+      // Clear local tournament match data
+      if (this.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Clearing local tournament match data`);
+        this.currentTournamentMatch = null;
+      }
     }
     
     // Reset app game settings to default as well
@@ -2370,8 +2478,23 @@ export class GameManager {
     }
     
     if (app && app.router && typeof app.router.navigate === 'function') {
-      console.log(`🛑 [GM#${this.instanceId}] Calling router.navigate('play-config')`);
-      app.router.navigate('play-config');
+      // If quitting from tournament mode, go back to view the tournament bracket
+      // The match remains in "pending" state and can be played again
+      if (previousMode === 'tournament' && this.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Returning to tournament bracket - match can be replayed`);
+        // Navigate to tournament screen and auto-open the bracket
+        app.router.navigate('tournament');
+        // After a brief delay, auto-open the bracket for this tournament
+        setTimeout(() => {
+          const tournamentManager = (window as any).tournamentManager;
+          if (tournamentManager && this.currentTournamentMatch) {
+            tournamentManager.viewTournament(this.currentTournamentMatch.tournamentId);
+          }
+        }, 100);
+      } else {
+        console.log(`🛑 [GM#${this.instanceId}] Calling router.navigate('play-config')`);
+        app.router.navigate('play-config');
+      }
       console.log(`🛑 [GM#${this.instanceId}] Navigation call completed`);
     } else {
       console.error(`🛑 [GM#${this.instanceId}] ERROR: Cannot navigate - app or router not available!`);
