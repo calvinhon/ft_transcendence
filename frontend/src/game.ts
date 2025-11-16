@@ -1111,7 +1111,18 @@ export class GameManager {
         }
       }
       
-      this.render();
+      // Use GameRenderer to render the game
+      if (this.renderer && this.gameState) {
+        this.renderer.render(
+          this.gameState,
+          this.isPaused,
+          this.countdownValue,
+          this.gameSettings,
+          this.isCampaignMode,
+          this.currentCampaignLevel,
+          this.currentTournamentMatch
+        );
+      }
       
       // No longer need to update HTML UI elements - everything is rendered on canvas
     }
