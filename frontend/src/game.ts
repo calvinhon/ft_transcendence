@@ -1,6 +1,11 @@
 // Stub file - game module
 // frontend/src/game.ts - TypeScript version of game manager
 
+import { InputHandler } from './game/InputHandler.js';
+import { GameRenderer } from './game/GameRenderer.js';
+import { WebSocketClient } from './game/WebSocketClient.js';
+import { CampaignMode } from './game/CampaignMode.js';
+
 interface User {
   userId: number;
   username: string;
@@ -164,6 +169,7 @@ export class GameManager {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
   private websocket: WebSocket | null = null;
+  private wsClient: WebSocketClient | null = null;
   private boundHandleGameMessage: ((event: MessageEvent) => void) | null = null;
   private gameState: GameState | null = null;
   public isPlaying: boolean = false;
@@ -173,6 +179,15 @@ export class GameManager {
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
   private lastModeLogTime: number = 0; // Track when we last logged the game mode
+  
+  // Input handler for keyboard controls
+  private inputHandler: InputHandler | null = null;
+  
+  // Renderer for canvas drawing
+  private renderer: GameRenderer;
+  
+  // Campaign mode manager
+  private campaignMode: CampaignMode;
   
   // Countdown state
   private countdownValue: number | null = null;
@@ -216,84 +231,35 @@ export class GameManager {
       throw new Error(`GameManager instance #${this.instanceId} rejected - only one instance allowed!`);
     }
     
+    // Initialize renderer
+    this.renderer = new GameRenderer('game-canvas');
+    
+    // Initialize campaign mode manager
+    this.campaignMode = new CampaignMode();
+    
+    // Initialize input handler
+    this.inputHandler = new InputHandler({
+      sendMessage: (message: any) => {
+        if (this.wsClient?.isConnected()) {
+          this.wsClient.send(message);
+        } else if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
+          // Fallback to old websocket if wsClient not ready
+          this.websocket.send(JSON.stringify(message));
+        }
+      },
+      getTeamPlayers: () => {
+        return {
+          team1: this.team1Players,
+          team2: this.team2Players
+        };
+      }
+    });
+    
     this.setupEventListeners();
     // Bind the message handler once so we can attach/detach it safely
     this.boundHandleGameMessage = this.handleGameMessage.bind(this);
     // Chat functionality removed
     // this.setupChat();
-  }
-
-  // Campaign progress persistence methods
-  private loadPlayerCampaignLevel(): number {
-    try {
-      const authManager = (window as any).authManager;
-      const user = authManager?.getCurrentUser();
-      
-      if (user && user.userId) {
-        // Sync from database asynchronously
-        this.syncCampaignLevelFromDatabase().then(() => {
-          console.log('🎯 [CAMPAIGN] Database sync completed');
-        }).catch(err => {
-          console.warn('Background sync failed:', err);
-        });
-        
-        const savedLevel = localStorage.getItem(`campaign_level_${user.userId}`);
-        if (savedLevel) {
-          const level = parseInt(savedLevel, 10);
-          if (level >= 1 && level <= this.maxCampaignLevel) {
-            console.log(`🎯 [CAMPAIGN] Loaded saved level ${level} for player ${user.username} (will sync with DB)`);
-            return level;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading campaign level:', error);
-    }
-    
-    console.log('🎯 [CAMPAIGN] No saved level found, starting at level 1');
-    return 1;
-  }
-  
-  // Sync campaign level from database to localStorage
-  private async syncCampaignLevelFromDatabase(): Promise<void> {
-    try {
-      const authManager = (window as any).authManager;
-      const user = authManager?.getCurrentUser();
-      const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
-      
-      if (user && user.userId) {
-        const response = await fetch(`/api/user/profile/${user.userId}`, { headers });
-        if (response.ok) {
-          const profile = await response.json();
-          const dbLevel = profile.campaign_level || 1; // Database level (default to 1 if not set)
-          const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
-          const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
-          
-          // Always sync to match database value (handles both upgrades and resets)
-          if (dbLevel !== localLevelNum) {
-            localStorage.setItem(`campaign_level_${user.userId}`, dbLevel.toString());
-            this.currentCampaignLevel = dbLevel;
-            console.log(`🎯 [CAMPAIGN] Synced level ${dbLevel} from database (was ${localLevelNum} in localStorage)`);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Could not sync campaign level from database:', error);
-    }
-  }
-
-  private savePlayerCampaignLevel(level: number): void {
-    try {
-      const authManager = (window as any).authManager;
-      const user = authManager?.getCurrentUser();
-      
-      if (user && user.userId) {
-        localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
-        console.log(`🎯 [CAMPAIGN] Saved level ${level} for player ${user.username}`);
-      }
-    } catch (error) {
-      console.error('Error saving campaign level:', error);
-    }
   }
 
   
@@ -463,7 +429,13 @@ export class GameManager {
     const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
     
     return new Promise((resolve, reject) => {
-      // Close any existing websocket first to avoid duplicate handlers/sockets
+      // Close any existing websocket clients
+      if (this.wsClient) {
+        this.wsClient.close();
+        this.wsClient = null;
+      }
+      
+      // Also close old websocket for backward compatibility
       if (this.websocket) {
         try {
           this.websocket.onmessage = null as any;
@@ -477,30 +449,29 @@ export class GameManager {
         this.websocket = null;
       }
 
-      this.websocket = new WebSocket(wsUrl);
+      // Create new WebSocketClient
+      this.wsClient = new WebSocketClient({
+        onOpen: () => {
+          console.log('Connected to game server');
+          const authManager = (window as any).authManager;
+          const user = authManager?.getCurrentUser();
+          console.log('Current user:', user);
+          if (!user || !user.userId) {
+            console.error('No valid user logged in!');
+            reject(new Error('No valid user'));
+            return;
+          }
 
-      this.websocket.onopen = () => {
-        console.log('Connected to game server');
-        const authManager = (window as any).authManager;
-        const user = authManager?.getCurrentUser();
-        console.log('Current user:', user);
-        if (!user || !user.userId) {
-          console.error('No valid user logged in!');
-          reject(new Error('No valid user'));
-          return;
-        }
-
-        // Send authentication
-        if (this.websocket) {
-          this.websocket.send(JSON.stringify({
+          // Send authentication
+          this.wsClient?.send({
             type: 'userConnect',
             userId: user.userId,
             username: user.username
-          }));
+          });
           
           // Request game match with game settings
           setTimeout(() => {
-            if (this.websocket) {
+            if (this.wsClient?.isConnected()) {
               // Get game settings from the app
               const app = (window as any).app;
               const gameSettings = app?.gameSettings || {
@@ -535,108 +506,120 @@ export class GameManager {
                 });
               }
               
-              this.websocket.send(JSON.stringify(message));
+              this.wsClient?.send(message);
             }
           }, 100);
+          
+          resolve();
+        },
+        
+        onMessage: (data: any) => {
+          // Route to existing message handler
+          this.handleGameMessageData(data);
+        },
+        
+        onClose: () => {
+          console.log('Game server connection closed');
+          this.resetFindMatch();
+          this.isPlaying = false;
+          if (this.inputInterval) {
+            clearInterval(this.inputInterval);
+            this.inputInterval = null;
+          }
+        },
+        
+        onError: (error) => {
+          console.error('Game server connection error:', error);
+          this.isPlaying = false;
+          this.resetFindMatch();  
+          reject(error);
         }
-        resolve();
-      };
+      });
 
-      // Attach the single bound message handler to ensure only one handler is called
-      if (this.websocket && this.boundHandleGameMessage) {
-        this.websocket.onmessage = this.boundHandleGameMessage;
-      }
-
-      this.websocket.onclose = () => {
-        console.log('Game server connection closed');
-        this.resetFindMatch();
-        this.isPlaying = false;
-        if (this.inputInterval) {
-          clearInterval(this.inputInterval);
-          this.inputInterval = null;
-        }
-      };
-
-      this.websocket.onerror = (error) => {
-        console.error('Game server connection error:', error);
-        this.isPlaying = false; // <-- Ensure game is not marked as playing
-        this.resetFindMatch();  
-        reject(error);
-
-      };
+      // Connect to server
+      this.wsClient.connect(wsUrl);
+      
+      // Keep reference to old websocket for backward compatibility
+      this.websocket = this.wsClient.getWebSocket();
     });
   }
 
+  // New method to handle parsed message data (called by WebSocketClient)
+  private handleGameMessageData(message: any): void {
+    console.log(`🎮 [GM#${this.instanceId}] Received message type:`, message.type, 'isPlaying:', this.isPlaying);
+    
+    switch (message.type) {
+      case 'connectionAck': {
+        console.log('Game connection acknowledged:', message.message);
+        // Send joinBotGame only after connectionAck
+        const authManager = (window as any).authManager;
+        const user = authManager?.getCurrentUser();
+        if (user && user.userId && this.wsClient?.isConnected()) {
+          let gameSettings: any;
+          if (this.isCampaignMode) {
+            gameSettings = this.campaignMode.getLevelSettings();
+          } else {
+            // Use GameManager's own settings (already synced from app)
+            gameSettings = this.gameSettings;
+          }
+          console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
+          
+          // Prepare message with tournament player data if available
+          const message: any = {
+            type: 'joinBotGame',
+            userId: user.userId,
+            username: user.username,
+            gameSettings: gameSettings
+          };
+          
+          // Add tournament player info for local multiplayer
+          if (this.currentTournamentMatch) {
+            message.player2Id = this.currentTournamentMatch.player2Id;
+            message.player2Name = this.currentTournamentMatch.player2Name;
+            message.tournamentId = this.currentTournamentMatch.tournamentId;
+            message.tournamentMatchId = this.currentTournamentMatch.matchId;
+            console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
+              player2Id: message.player2Id,
+              player2Name: message.player2Name,
+              tournamentId: message.tournamentId,
+              matchId: message.tournamentMatchId,
+              gameMode: message.gameSettings.gameMode
+            });
+          } else {
+            console.log('⚠️ [TOURNAMENT] No currentTournamentMatch found!');
+          }
+          
+          this.wsClient?.send(message);
+        }
+        break;
+      }
+      case 'waiting':
+        // console.log('Waiting for opponent:', message.message);
+        break;
+      case 'gameStart':
+        console.log('🎮 [GAME-MSG] gameStart received, current isPlaying:', this.isPlaying);
+        console.log('🎮 [GAME-MSG] Game starting:', message);
+        this.startGame(message);
+        break;
+      case 'gameState':
+        // console.log('🎮 [GAME-MSG] Game state update:', message);
+        this.updateGameFromBackend(message);
+        break;
+      case 'gameEnd':
+        console.log('🎮 [GAME-MSG] gameEnd received, current isPlaying:', this.isPlaying);
+        console.log('🎮 [GAME-MSG] Game ended:', message);
+        this.endGame(message);
+        break;
+      default:
+        // console.log('🎮 [GAME-MSG] Unknown message type:', message.type);
+    }
+  }
+
+  // Keep old handleGameMessage for backward compatibility
   private handleGameMessage(event: MessageEvent): void {
     try {
       const message: any = JSON.parse(event.data);
-      console.log(`🎮 [GM#${this.instanceId}] Received message type:`, message.type, 'isPlaying:', this.isPlaying);
-      
-      switch (message.type) {
-        case 'connectionAck': {
-          console.log('Game connection acknowledged:', message.message);
-          // Send joinBotGame only after connectionAck
-          const authManager = (window as any).authManager;
-          const user = authManager?.getCurrentUser();
-          if (user && user.userId && this.websocket) {
-            let gameSettings: any;
-            if (this.isCampaignMode) {
-              gameSettings = this.getCampaignLevelSettings();
-            } else {
-              // Use GameManager's own settings (already synced from app)
-              gameSettings = this.gameSettings;
-            }
-            console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
-            
-            // Prepare message with tournament player data if available
-            const message: any = {
-              type: 'joinBotGame',
-              userId: user.userId,
-              username: user.username,
-              gameSettings: gameSettings
-            };
-            
-            // Add tournament player info for local multiplayer
-            if (this.currentTournamentMatch) {
-              message.player2Id = this.currentTournamentMatch.player2Id;
-              message.player2Name = this.currentTournamentMatch.player2Name;
-              message.tournamentId = this.currentTournamentMatch.tournamentId;
-              message.tournamentMatchId = this.currentTournamentMatch.matchId;
-              console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
-                player2Id: message.player2Id,
-                player2Name: message.player2Name,
-                tournamentId: message.tournamentId,
-                matchId: message.tournamentMatchId,
-                gameMode: message.gameSettings.gameMode
-              });
-            } else {
-              console.log('⚠️ [TOURNAMENT] No currentTournamentMatch found!');
-            }
-            
-            this.websocket.send(JSON.stringify(message));
-          }
-          break;
-        }
-        case 'waiting':
-          // console.log('Waiting for opponent:', message.message);
-          break;
-        case 'gameStart':
-          console.log('🎮 [GAME-MSG] gameStart received, current isPlaying:', this.isPlaying);
-          console.log('🎮 [GAME-MSG] Game starting:', message);
-          this.startGame(message);
-          break;
-        case 'gameState':
-          // console.log('🎮 [GAME-MSG] Game state update:', message);
-          this.updateGameFromBackend(message);
-          break;
-        case 'gameEnd':
-          console.log('🎮 [GAME-MSG] gameEnd received, current isPlaying:', this.isPlaying);
-          console.log('🎮 [GAME-MSG] Game ended:', message);
-          this.endGame(message);
-          break;
-        default:
-          // console.log('🎮 [GAME-MSG] Unknown message type:', message.type);
-      }
+      this.handleGameMessageData(message);
     } catch (error) {
       console.error('Error parsing game message:', error);
     }
@@ -1969,14 +1952,15 @@ export class GameManager {
     console.log('🎯 [CAMPAIGN] Starting campaign mode');
     this.isCampaignMode = true;
     
-    // Load player's current campaign level instead of always starting at 1
-    this.currentCampaignLevel = this.loadPlayerCampaignLevel();
+    // Load player's current campaign level using CampaignMode manager
+    this.campaignMode.setActive(true);
+    this.currentCampaignLevel = this.campaignMode.getCurrentLevel();
     
     console.log(`🎯 [CAMPAIGN] Starting campaign at player's current level ${this.currentCampaignLevel}`);
     // Ensure canvas exists once when campaign starts
     this.ensureCanvasInitialized();
     this.updateCampaignLevelSettings();
-    this.updateCampaignUI();
+    this.campaignMode.updateUI();
     this.startCampaignMatch();
   }
 
@@ -2541,56 +2525,6 @@ export class GameManager {
     return this.gameSettings.scoreToWin;
   }
 
-  private getCampaignLevelSettings(): GameSettings {
-    const level = this.currentCampaignLevel;
-    
-    console.log(`🎯 [CAMPAIGN] Getting settings for level ${level} (host player level)`);
-    
-    // Calculate settings based on current level
-    let ballSpeed: 'slow' | 'medium' | 'fast';
-    if (level <= 3) ballSpeed = 'slow';
-    else if (level <= 6) ballSpeed = 'medium';
-    else ballSpeed = 'fast';
-    
-    // Paddle speed increases with level
-    let paddleSpeed: 'slow' | 'medium' | 'fast';
-    if (level <= 2) paddleSpeed = 'slow';
-    else if (level <= 5) paddleSpeed = 'medium';
-    else paddleSpeed = 'fast';
-    
-    // AI difficulty increases with level - directly tied to host player level
-    let aiDifficulty: 'easy' | 'medium' | 'hard';
-    if (level <= 3) aiDifficulty = 'easy';
-    else if (level <= 7) aiDifficulty = 'medium';
-    else aiDifficulty = 'hard';
-    
-    // Score to win increases slightly with level
-    const scoreToWin = Math.min(3 + Math.floor((level - 1) / 3), 5);
-    
-    // Enable accelerate on hit from level 4
-    const accelerateOnHit = level >= 4;
-    
-    const settings: GameSettings = {
-      gameMode: 'coop' as const,
-      aiDifficulty,
-      ballSpeed,
-      paddleSpeed,
-      powerupsEnabled: false, // Keep powerups disabled for campaign
-      accelerateOnHit,
-      scoreToWin
-    };
-    
-    console.log(`🎯 [CAMPAIGN] Level ${level} AI settings:`, {
-      aiDifficulty,
-      ballSpeed,
-      paddleSpeed,
-      scoreToWin,
-      accelerateOnHit
-    });
-    
-    return settings;
-  }
-
   public getCurrentCampaignLevel(): number {
     return this.currentCampaignLevel;
   }
@@ -2640,28 +2574,9 @@ export class GameManager {
     this.setGameSettings(newSettings);
     
     // Update UI to show current level
-    this.updateCampaignUI();
+    this.campaignMode.updateUI();
     
     console.log(`🎯 [CAMPAIGN] Level ${level} settings updated:`, newSettings);
-  }
-
-  private updateCampaignUI(): void {
-    // Update level display
-    const levelDisplay = document.getElementById('campaign-level-display');
-    const levelNumber = document.getElementById('current-level-number');
-    const progressBar = document.getElementById('campaign-progress-fill');
-    
-    if (levelDisplay && levelNumber) {
-      levelNumber.textContent = this.currentCampaignLevel.toString();
-      // Show the level display during campaign mode
-      levelDisplay.style.display = this.isCampaignMode ? 'block' : 'none';
-    }
-    
-    // Update level progress bar
-    if (progressBar) {
-      const progress = (this.currentCampaignLevel / this.maxCampaignLevel) * 100;
-      progressBar.style.width = `${progress}%`;
-    }
   }
 
   private updateArcadeUI(): void {
@@ -2991,7 +2906,7 @@ export class GameManager {
     console.log('🎯 [CAMPAIGN] Guards passed - Starting campaign match at level', this.currentCampaignLevel);
 
     // Update campaign UI to show current level
-    this.updateCampaignUI();
+    this.campaignMode.updateUI();
     
     // Check if user is logged in
     const authManager = (window as any).authManager;
@@ -3057,9 +2972,9 @@ export class GameManager {
         }
         if (this.isCampaignMode) {
           // Always reload the latest campaign level before starting the match
-          this.currentCampaignLevel = this.loadPlayerCampaignLevel();
+          this.currentCampaignLevel = this.campaignMode.getCurrentLevel();
           this.updateCampaignLevelSettings();
-          this.updateCampaignUI();
+          this.campaignMode.updateUI();
           console.log(`🎯 [CAMPAIGN] Synced campaign level from storage: ${this.currentCampaignLevel}`);
         }
 
@@ -3104,11 +3019,12 @@ export class GameManager {
 
   public endCampaign(): void {
     this.isCampaignMode = false;
+    this.campaignMode.setActive(false);
     this.currentCampaignLevel = 1;
     console.log('🎯 [CAMPAIGN] Campaign ended');
     
     // Update UI to hide campaign elements
-    this.updateCampaignUI();
+    this.campaignMode.updateUI();
     
     // Navigate back to play config
     const app = (window as any).app;
@@ -3130,16 +3046,36 @@ export class GameManager {
     
     if (playerWon && this.isCampaignMode) {
       console.log('🎯 [CAMPAIGN] Player won! Progressing to next level');
-      this.progressToNextLevel();
+      
+      // Check if campaign is complete
+      if (this.campaignMode.getCurrentLevel() >= this.campaignMode.getMaxLevel()) {
+        // Campaign completed!
+        this.campaignMode.showCompleteMessage();
+      } else {
+        // Progress to next level
+        this.campaignMode.progressToNextLevel();
+        this.currentCampaignLevel = this.campaignMode.getCurrentLevel();
+        
+        // Show level up message with callback to continue
+        this.campaignMode.showLevelUpMessage(() => {
+          // Update settings for new level and restart
+          this.updateCampaignLevelSettings();
+        });
+      }
     } else if (!playerWon && this.isCampaignMode) {
       console.log('🎯 [CAMPAIGN] Player lost. Restarting current level');
-      // Show retry message
-      this.showRetryMessage();
       
-      // Restart level after delay
-      setTimeout(() => {
-        this.restartCampaignLevel();
-      }, 3000);
+      // Show retry message with callbacks
+      this.campaignMode.showRetryMessage(
+        () => {
+          // Retry callback
+          this.restartCampaignLevel();
+        },
+        () => {
+          // Quit callback
+          this.endCampaign();
+        }
+      );
     }
   }
 
