@@ -2659,8 +2659,8 @@ export class GameManager {
       this.currentCampaignLevel++;
       console.log(`🎯 [CAMPAIGN] Level progressed from ${oldLevel} to ${this.currentCampaignLevel}`);
 
-      // Save the new level to localStorage
-      this.savePlayerCampaignLevel(this.currentCampaignLevel);
+      // DEPRECATED: This method is no longer used - campaign progression now handled by CampaignMode
+      // this.savePlayerCampaignLevel(this.currentCampaignLevel);
 
       // Update campaign level in backend database
       try {
