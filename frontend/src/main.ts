@@ -1,4 +1,6 @@
 // App entry point and initialization
+import '@fortawesome/fontawesome-free/css/all.css';
+import '../css/style.css';
 import { Router } from './router';
 import { handleHostLogin, handleHostRegister } from './host-auth';
 import { setupLocalPlayerRegisterModal } from './local-player';

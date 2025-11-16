@@ -4,10 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>ft_transcendence</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
   </head>
   <body>
     <div id="root"></div>
@@ -15,7 +11,7 @@
       <div id="login-screen" class="screen active">
         <div class="login-container">
           <div class="login-panel">
-            <h1 class="text-3xl">Login</h1>
+            <h1 class="text-3xl text-white">Login</h1>
             <div class="login-form-container">
               <form id="login-form" class="login-form">
                 <input
@@ -31,7 +27,7 @@
                   required
                   class="login-input"
                 />
-                <button type="submit" class="login-btn text-3xl">LOGIN</button>
+                <button type="submit" class="login-btn">LOGIN</button>
               </form>
               <div class="login-links">
                 <a href="#" id="forgot-password-link" class="login-link"
@@ -661,36 +657,36 @@
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="stats-section">
-                <h4 class="section-title">Tournament Rankings</h4>
-                <div class="activity-table">
-                  <div class="activity-row activity-header">
-                    <span>Tournament</span>
-                    <span>Date</span>
-                    <span>Rank</span>
-                    <span>Participants</span>
-                    <span>Status</span>
-                  </div>
-                  <div id="profile-tournament-rankings" class="activity-list">
-                    <!-- Dynamic tournament ranking items will be inserted here -->
-                    <div
-                      class="empty-state"
-                      style="padding: 20px; text-align: center; color: #aaa"
-                    >
-                      <p>No tournament history yet</p>
+                <div class="stats-section">
+                  <h4 class="section-title">Tournament Rankings</h4>
+                  <div class="activity-table">
+                    <div class="activity-row activity-header">
+                      <span>Tournament</span>
+                      <span>Date</span>
+                      <span>Rank</span>
+                      <span>Participants</span>
+                      <span>Status</span>
+                    </div>
+                    <div id="profile-tournament-rankings" class="activity-list">
+                      <!-- Dynamic tournament ranking items will be inserted here -->
+                      <div
+                        class="empty-state"
+                        style="padding: 20px; text-align: center; color: #aaa"
+                      >
+                        <p>No tournament history yet</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <button
+                id="back-to-main-profile-bottom-btn"
+                class="back-btn-simple back-btn-bottom"
+              >
+                <span style="color: inherit">◀</span> <span>Back</span>
+              </button>
             </div>
-            <button
-              id="back-to-main-profile-bottom-btn"
-              class="back-btn-simple back-btn-bottom"
-            >
-              <span style="color: inherit">◀</span> <span>Back</span>
-            </button>
           </div>
         </div>
       </div>
@@ -752,5 +748,6 @@
         </div>
       </div>
     </div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
