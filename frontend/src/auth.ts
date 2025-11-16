@@ -37,7 +37,7 @@ export class AuthManager {
   private token: string | null;
 
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.token = sessionStorage.getItem('token');
     
     // If we have a token, verify it on startup
     if (this.token) {
@@ -74,8 +74,8 @@ export class AuthManager {
         console.log('Token set:', !!this.token);
         
         if (this.token) {
-          localStorage.setItem('token', this.token);
-          console.log('Token saved to localStorage');
+          sessionStorage.setItem('token', this.token);
+          console.log('Token saved to sessionStorage');
         }
         
         // Handle both possible response formats
@@ -117,7 +117,7 @@ export class AuthManager {
       
       if (response.ok && data.success) {
         this.token = data.token;
-        localStorage.setItem('token', this.token);
+        sessionStorage.setItem('token', this.token);
         this.currentUser = { 
           userId: data.user.userId, 
           username: data.user.username,
@@ -128,7 +128,7 @@ export class AuthManager {
         // Clear any existing auth data on failed login
         this.token = null;
         this.currentUser = null;
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         return { success: false, error: (data as any).error || 'Login failed' };
       }
     } catch (error) {
@@ -198,7 +198,7 @@ export class AuthManager {
   logout(): void {
     this.token = null;
     this.currentUser = null;
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   }
 
   getAuthHeaders(): Record<string, string> {
@@ -214,5 +214,5 @@ export class AuthManager {
   }
 }
 
-// Global auth manager instance
-(window as any).authManager = new AuthManager();
+// Note: AuthManager is now created in main.ts to ensure proper initialization order
+// DO NOT create it here as it causes duplicate instances

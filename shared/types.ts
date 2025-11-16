@@ -174,16 +174,6 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
-// Chat Types
-export interface ChatMessage {
-  id?: number;
-  user_id: number;
-  username: string;
-  message: string;
-  timestamp: string;
-  room?: string;
-}
-
 // Online User Types
 export interface OnlineUser {
   user_id: number | string;

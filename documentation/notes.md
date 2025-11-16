@@ -9,4 +9,4 @@ Meeting notes on Monday 29 Sept 2025
 6) Tournament in profile showing: number of tournaments, 3 columns, ranking on each tournament, ranking on the recent three tournaments,
 7) We dont need Leaderboard
 8) We dont need Online chat
-9)
+

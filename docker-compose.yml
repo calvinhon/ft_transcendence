@@ -10,7 +10,7 @@ services:
       - game-service
       - tournament-service
       - user-service
-      - blockchain-service
+      - hardhat-node
     networks:
       - transcendence-network
 
@@ -82,22 +82,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  blockchain-service:
-    build: ./blockchain-service
-    ports:
-      - "3005:3001"
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=blockchain-service
-      - BLOCKCHAIN_RPC_URL=http://hardhat-node:8545
-      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
-      - PRIVATE_KEY=${PRIVATE_KEY}
-    depends_on:
-      hardhat-node:
-        condition: service_healthy
-    networks:
-      - transcendence-network
 
 networks:
   transcendence-network:
