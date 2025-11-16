@@ -84,7 +84,7 @@ html {
   left: 0;
   width: 100%;
   height: 100vh;
-  background: var(--bg-primary); /* Unified black background */
+  /* background: var(--bg-primary); */
   visibility: hidden; /* Hide all screens by default */
   overflow-y: auto;
 }
@@ -105,7 +105,8 @@ html {
   transform-origin: center center;
   width: 100%;
   min-height: 100vh;
-  background: var(--bg-primary); /* Unified black background */
+  /* Unified black background */
+  /* background: var(--bg-primary);  */
   display: flex;
   align-items: center;
   justify-content: center;
