@@ -257,6 +257,13 @@ export function setupLocalPlayerLoginModal(app: any) {
       hideLocalPlayerLoginModal();
       console.log('🎉 [LocalPlayer] Login successful, modal hidden via hideLocalPlayerLoginModal()');
       
+      // CRITICAL: Ensure host user is restored BEFORE any navigation or display updates
+      console.log('[LocalPlayer] Final host user restoration before navigation/updates');
+      if (savedHostUser) {
+        authManager.currentUser = savedHostUser;
+        console.log('[LocalPlayer] Host currentUser restored to:', savedHostUser.username);
+      }
+      
       // Check current route before navigating
       const currentRoute = app.router ? app.router.getCurrentRoute() : 'unknown';
       console.log('[LocalPlayer] Current route:', currentRoute);
@@ -278,6 +285,27 @@ export function setupLocalPlayerLoginModal(app: any) {
       console.log('[LocalPlayer] Scheduling updateGamePartyDisplay in 50ms...');
       setTimeout(() => {
         console.log('[LocalPlayer] Executing updateGamePartyDisplay...');
+        
+        // CRITICAL: Re-verify host user before updating display (double check)
+        if (savedHostUser) {
+          console.log('[LocalPlayer] Double-checking host user before display update');
+          authManager.currentUser = savedHostUser;
+          
+          // Ensure all host name elements are correct
+          const hostPlayerNames = [
+            document.getElementById('host-player-name'),           // Arcade mode
+            document.getElementById('host-player-name-coop'),      // Coop mode
+            document.getElementById('host-player-name-tournament') // Tournament mode
+          ];
+          
+          hostPlayerNames.forEach(element => {
+            if (element) {
+              element.textContent = savedHostUser.username;
+              console.log('[LocalPlayer] Re-verified host name in element:', element.id);
+            }
+          });
+        }
+        
         app.updateGamePartyDisplay();
         console.log('[LocalPlayer] ✅ Party display updated with new player');
       }, 50);
@@ -720,6 +748,13 @@ export function setupLocalPlayerRegisterModal(app: any) {
       hideLocalPlayerRegisterModal();
       console.log('🎉 [LocalPlayer] Registration successful, modal hidden via hideLocalPlayerRegisterModal()');
       
+      // CRITICAL: Ensure host user is restored BEFORE any navigation or display updates
+      console.log('[LocalPlayer] Final host user restoration before navigation/updates (registration)');
+      if (savedHostUser) {
+        authManager.currentUser = savedHostUser;
+        console.log('[LocalPlayer] Host currentUser restored to:', savedHostUser.username);
+      }
+      
       // Check current route before navigating
       const currentRoute = app.router ? app.router.getCurrentRoute() : 'unknown';
       console.log('[LocalPlayer] Current route:', currentRoute);
@@ -741,6 +776,27 @@ export function setupLocalPlayerRegisterModal(app: any) {
       console.log('[LocalPlayer] Scheduling updateGamePartyDisplay in 50ms...');
       setTimeout(() => {
         console.log('[LocalPlayer] Executing updateGamePartyDisplay...');
+        
+        // CRITICAL: Re-verify host user before updating display (double check)
+        if (savedHostUser) {
+          console.log('[LocalPlayer] Double-checking host user before display update (registration)');
+          authManager.currentUser = savedHostUser;
+          
+          // Ensure all host name elements are correct
+          const hostPlayerNames = [
+            document.getElementById('host-player-name'),           // Arcade mode
+            document.getElementById('host-player-name-coop'),      // Coop mode
+            document.getElementById('host-player-name-tournament') // Tournament mode
+          ];
+          
+          hostPlayerNames.forEach(element => {
+            if (element) {
+              element.textContent = savedHostUser.username;
+              console.log('[LocalPlayer] Re-verified host name in element:', element.id, '(registration)');
+            }
+          });
+        }
+        
         app.updateGamePartyDisplay();
         console.log('[LocalPlayer] ✅ Party display updated with new player');
       }, 50);

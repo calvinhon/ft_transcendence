@@ -247,7 +247,7 @@ export class App {
     paddleSpeed: 'medium',
     powerupsEnabled: false,
     accelerateOnHit: false,
-    scoreToWin: 3
+    scoreToWin: 5
   };
   private localPlayers: LocalPlayer[] = [];
   // Persisted set of selected player ids (used to restore highlights after re-renders)
@@ -984,6 +984,24 @@ export class App {
     }
   }
 
+  // Helper to get the actual host user (not a local player)
+  private getHostUser(): { userId: number; username: string } | null {
+    const authManager = (window as any).authManager;
+    if (!authManager) return null;
+    
+    const currentUser = authManager.getCurrentUser();
+    if (!currentUser) return null;
+    
+    // Verify this user matches the stored token
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      // This is the host user (token holder)
+      return currentUser;
+    }
+    
+    return currentUser;
+  }
+
   updateHostPlayerDisplay(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -1041,9 +1059,22 @@ export class App {
     siblings.forEach(sibling => sibling.classList.remove('active'));
     button.classList.add('active');
 
-    // Update settings (example: update gameSettings)
-    if (setting in this.gameSettings) {
-      (this.gameSettings as any)[setting] = value;
+    // Convert hyphenated setting names to camelCase for gameSettings object
+    const settingMap: { [key: string]: string } = {
+      'ai-difficulty': 'aiDifficulty',
+      'ball-speed': 'ballSpeed',
+      'paddle-speed': 'paddleSpeed',
+      'powerups-enabled': 'powerupsEnabled',
+      'accelerate-on-hit': 'accelerateOnHit',
+      'gameMode': 'gameMode'
+    };
+    
+    const settingKey = settingMap[setting] || setting;
+
+    // Update settings
+    if (settingKey in this.gameSettings) {
+      (this.gameSettings as any)[settingKey] = value;
+      console.log(`⚙️ [SETTINGS] Updated ${settingKey} to ${value}`, this.gameSettings);
     }
 
     // Optionally trigger UI updates if needed
@@ -1087,8 +1118,9 @@ export class App {
         break;
     }
     
-    // Initialize the game party display
+    // Initialize the game party display and sync score
     this.updateGamePartyDisplay();
+    this.updateScoreDisplay(); // Sync score display with gameSettings
   }
 
   private populateOnlinePlayers(): void {
@@ -1157,19 +1189,18 @@ export class App {
     
     // Update host name in coop frame
     const authManager = (window as any).authManager;
-    console.log('[setupCoopMode] authManager.currentUser:', authManager?.currentUser);
-    if (hostPlayerNameCoop && authManager && authManager.getCurrentUser()) {
-      const currentUsername = authManager.getCurrentUser().username;
-      console.log('[setupCoopMode] Setting host name to:', currentUsername);
-      hostPlayerNameCoop.textContent = currentUsername;
+    const hostUser = this.getHostUser();
+    console.log('[setupCoopMode] hostUser:', hostUser);
+    if (hostPlayerNameCoop && hostUser) {
+      console.log('[setupCoopMode] Setting host name to:', hostUser.username);
+      hostPlayerNameCoop.textContent = hostUser.username;
     }
     
     if (hostPlayerCardCoop) {
       hostPlayerCardCoop.classList.add('active');
       // persist host selection
       try {
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     if (aiPlayerCardCoop) {
@@ -1206,12 +1237,11 @@ export class App {
     
     // Update host player name in tournament frame
     const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
-    const authManager = (window as any).authManager;
-    console.log('[setupTournamentMode] authManager.currentUser:', authManager?.currentUser);
-    if (hostPlayerNameTournament && authManager && authManager.getCurrentUser()) {
-      const currentUsername = authManager.getCurrentUser().username;
-      console.log('[setupTournamentMode] Setting host name to:', currentUsername);
-      hostPlayerNameTournament.textContent = currentUsername;
+    const hostUser = this.getHostUser();
+    console.log('[setupTournamentMode] hostUser:', hostUser);
+    if (hostPlayerNameTournament && hostUser) {
+      console.log('[setupTournamentMode] Setting host name to:', hostUser.username);
+      hostPlayerNameTournament.textContent = hostUser.username;
     }
     
     // Set host as active and selected by default
@@ -1219,8 +1249,7 @@ export class App {
     if (hostPlayerCardTournament) {
       hostPlayerCardTournament.classList.add('active');
       try {
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     
@@ -1276,9 +1305,8 @@ export class App {
     if (hostPlayerCard) {
       hostPlayerCard.classList.add('active');
       try {
-        const authManager = (window as any).authManager;
-        const user = authManager?.getCurrentUser();
-        if (user && user.userId) this.selectedPlayerIds.add(String(user.userId));
+        const hostUser = this.getHostUser();
+        if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
     
@@ -1457,9 +1485,8 @@ export class App {
   }
 
   changeScoreToWin(delta: number): void {
-    if (this.gameSettings.gameMode !== 'arcade') return;
-
-    const currentScore = this.gameSettings.scoreToWin || 5;
+    // Allow score changes in all modes
+    const currentScore = this.gameSettings.scoreToWin || 3;
     const newScore = Math.max(1, Math.min(21, currentScore + delta)); // Limit between 1 and 21
     
     this.gameSettings.scoreToWin = newScore;
@@ -1471,11 +1498,20 @@ export class App {
     }
   }
 
+  // Sync score display with gameSettings
+  updateScoreDisplay(): void {
+    const scoreDisplay = document.getElementById('score-value');
+    if (scoreDisplay && this.gameSettings.scoreToWin !== undefined) {
+      scoreDisplay.textContent = this.gameSettings.scoreToWin.toString();
+    }
+  }
+
   updatePlayConfigUI(): void {
     // Update settings display based on current settings
     this.updateLocalPlayersDisplay();
     this.updateGamePartyDisplay();
     this.initializePlayerSelection();
+    this.updateScoreDisplay(); // Sync score display
   }
 
   // showAddPlayerDialog is deprecated - now using showLocalPlayerLoginModal from local-player.ts
@@ -1650,6 +1686,27 @@ export class App {
     console.log('✅ [App.startGame] Guards passed - proceeding with game start');
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
+
+    // TOURNAMENT MODE: Check if creating new tournament or playing existing match
+    if (this.gameSettings.gameMode === 'tournament') {
+      // If currentTournamentMatch exists, we're playing a match (not creating)
+      if ((this as any).currentTournamentMatch) {
+        console.log('🏆 [App.startGame] Tournament MATCH mode - starting actual game');
+        // Continue to game start below (don't return)
+      } else {
+        // No match data means user clicked "Start Game" to CREATE a tournament
+        console.log('🏆 [App.startGame] Tournament CREATE mode - opening tournament creation modal');
+        const tournamentManager = (window as any).tournamentManager;
+        if (tournamentManager && typeof tournamentManager.openCreateTournamentModal === 'function') {
+          tournamentManager.openCreateTournamentModal();
+        } else {
+          console.error('TournamentManager not available');
+          showToast('Tournament system not available', 'error');
+        }
+        console.log('🏁 [App.startGame] === COMPLETED (Tournament modal opened) ===');
+        return;
+      }
+    }
 
     // Sync game settings with GameManager before starting
     if (gameManager && typeof gameManager.setGameSettings === 'function') {

@@ -43,6 +43,7 @@ interface RecentGame {
   score: string;
   date: string;
   duration: number;
+  gameMode?: string;
 }
 
 export class ProfileManager {
@@ -89,6 +90,9 @@ export class ProfileManager {
       
       // Load tournament count
       await this.loadTournamentCount(user.userId);
+      
+      // Load tournament rankings
+      await this.loadTournamentRankings(user.userId);
       
       console.log('[ProfileManager] Profile loading complete');
     } catch (error) {
@@ -280,13 +284,35 @@ export class ProfileManager {
       if (response.ok) {
         const apiGames: any[] = await response.json();
         console.log('[ProfileManager] Raw API games:', apiGames);
+        console.log('[ProfileManager] Total games returned:', apiGames.length);
+        console.log('[ProfileManager] Game modes breakdown:', {
+          coop: apiGames.filter(g => g.game_mode === 'coop').length,
+          arcade: apiGames.filter(g => g.game_mode === 'arcade').length,
+          tournament: apiGames.filter(g => g.game_mode === 'tournament').length,
+          other: apiGames.filter(g => !['coop', 'arcade', 'tournament'].includes(g.game_mode)).length
+        });
         
-        // Display up to 20 games, scrollable container will handle the overflow
-        const games: RecentGame[] = apiGames.slice(0, 20).map((game: any) => {
+        // Process games and fetch tournament opponent names
+        const games: RecentGame[] = [];
+        
+        for (const game of apiGames.slice(0, 20)) {
           const isPlayer1 = game.player1_id === userId;
           const playerScore = isPlayer1 ? game.player1_score : game.player2_score;
           const opponentScore = isPlayer1 ? game.player2_score : game.player1_score;
           const opponentId = isPlayer1 ? game.player2_id : game.player1_id;
+          
+          console.log('[ProfileManager] Processing game:', {
+            gameId: game.id,
+            gameMode: game.game_mode,
+            tournamentMatchId: game.tournament_match_id,
+            userId: userId,
+            isPlayer1: isPlayer1,
+            player1_id: game.player1_id,
+            player2_id: game.player2_id,
+            opponentId: opponentId,
+            player1_name: game.player1_name,
+            player2_name: game.player2_name
+          });
           
           // Determine result
           let result: 'win' | 'loss' | 'draw';
@@ -299,17 +325,66 @@ export class ProfileManager {
           }
           
           // Determine opponent name
-          const opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+          let opponentName: string;
           
-          return {
+          console.log('[ProfileManager] Determining opponent name for game mode:', game.game_mode);
+          
+          if (game.game_mode === 'tournament' && game.tournament_match_id) {
+            // For tournament games, use the game table's opponent info directly
+            // The game table stores the ACTUAL players who played (after drag-and-drop)
+            // Tournament match table stores ORIGINAL positions, which may differ
+            console.log('[ProfileManager] Tournament game - opponentId:', opponentId);
+            
+            if (game.player1_name && game.player2_name) {
+              // Use the names from the game record (PRIORITY)
+              opponentName = isPlayer1 ? game.player2_name : game.player1_name;
+              console.log('[ProfileManager] Using name from game record:', opponentName);
+            } else if (opponentId === 0) {
+              opponentName = 'AI';
+              console.log('[ProfileManager] Opponent is AI (opponentId = 0)');
+            } else {
+              // Fallback: fetch opponent profile by ID from game table
+              console.log('[ProfileManager] Fetching opponent profile for ID:', opponentId);
+              try {
+                const profileResponse = await fetch(`/api/auth/profile/${opponentId}`, {
+                  headers: authManager.getAuthHeaders()
+                });
+                
+                if (profileResponse.ok) {
+                  const profileData = await profileResponse.json();
+                  opponentName = profileData.data?.username || `User ${opponentId}`;
+                  console.log('[ProfileManager] Fetched opponent name:', opponentName);
+                } else {
+                  opponentName = `User ${opponentId}`;
+                  console.log('[ProfileManager] Profile fetch failed, using fallback:', opponentName);
+                }
+              } catch (e) {
+                console.error('Error fetching opponent profile:', e);
+                opponentName = `Player ${opponentId}`;
+              }
+            }
+          } else if (game.game_mode === 'arcade' && game.team2_players) {
+            try {
+              const team2 = JSON.parse(game.team2_players);
+              const teamNames = team2.map((p: any) => p.username).join(', ');
+              opponentName = `Team 2 (${teamNames})`;
+            } catch (e) {
+              opponentName = 'Team 2';
+            }
+          } else {
+            opponentName = opponentId === 0 ? 'AI' : game.player2_name || `Player ${opponentId}`;
+          }
+          
+          games.push({
             id: game.id,
             opponent: opponentName,
             result: result,
             score: `${playerScore}-${opponentScore}`,
             date: game.finished_at || game.started_at,
-            duration: 0 // Not provided by API
-          };
-        });
+            duration: 0, // Not provided by API
+            gameMode: game.game_mode || 'coop'
+          });
+        }
         
         console.log('[ProfileManager] Mapped games:', games);
         this.displayRecentGames(games);
@@ -353,10 +428,20 @@ export class ProfileManager {
         dateDisplay = date.toLocaleDateString();
       }
       
+      // Format game mode display
+      let gameModeDisplay = 'Co-op';
+      if (game.gameMode === 'arcade') {
+        gameModeDisplay = 'Arcade';
+      } else if (game.gameMode === 'tournament') {
+        gameModeDisplay = 'Tournament';
+      } else if (game.gameMode === 'coop') {
+        gameModeDisplay = 'Co-op';
+      }
+      
       return `
         <div class="activity-row">
           <span>${dateDisplay}</span>
-          <span>Campaign</span>
+          <span>${gameModeDisplay}</span>
           <span>${this.escapeHtml(game.opponent)}</span>
           <span class="result-${game.result}">${game.result.charAt(0).toUpperCase() + game.result.slice(1)}</span>
           <span>${game.score}</span>
@@ -389,6 +474,87 @@ export class ProfileManager {
     if (tournamentsEl) {
       tournamentsEl.textContent = count.toString();
     }
+  }
+  
+  private async loadTournamentRankings(userId: number): Promise<void> {
+    try {
+      const authManager = (window as any).authManager;
+      const response = await fetch(`${this.tournamentURL}/user/${userId}/rankings`, {
+        headers: authManager.getAuthHeaders()
+      });
+
+      if (response.ok) {
+        const rankings = await response.json();
+        this.displayTournamentRankings(rankings);
+      } else {
+        this.displayTournamentRankings([]);
+      }
+    } catch (error) {
+      console.error('Failed to load tournament rankings:', error);
+      this.displayTournamentRankings([]);
+    }
+  }
+  
+  private displayTournamentRankings(rankings: any[]): void {
+    const container = document.getElementById('profile-tournament-rankings');
+    if (!container) {
+      console.warn('[ProfileManager] Tournament rankings container not found!');
+      return;
+    }
+    
+    if (rankings.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="padding: 20px; text-align: center; color: #aaa;">
+          <p>No tournament history yet</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Display tournament rankings: Tournament, Date, Rank, Participants, Status
+    container.innerHTML = rankings.map(ranking => {
+      const date = new Date(ranking.date);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      let dateDisplay;
+      if (date.toDateString() === today.toDateString()) {
+        dateDisplay = 'Today';
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        dateDisplay = 'Yesterday';
+      } else {
+        dateDisplay = date.toLocaleDateString();
+      }
+      
+      // Format rank display
+      let rankDisplay = ranking.rank;
+      if (ranking.isWinner) {
+        rankDisplay = `🏆 ${rankDisplay}`;
+      } else if (ranking.rank === 1) {
+        rankDisplay = '🥇 1st';
+      } else if (ranking.rank === 2) {
+        rankDisplay = '🥈 2nd';
+      } else if (ranking.rank === 3) {
+        rankDisplay = '🥉 3rd';
+      } else if (ranking.rank !== '--') {
+        rankDisplay = `#${ranking.rank}`;
+      }
+      
+      // Status class for styling
+      let statusClass = 'status-' + ranking.status;
+      let statusDisplay = ranking.status.charAt(0).toUpperCase() + ranking.status.slice(1);
+      
+      return `
+        <div class="activity-row">
+          <span>${this.escapeHtml(ranking.tournamentName)}</span>
+          <span>${dateDisplay}</span>
+          <span style="font-weight: bold;">${rankDisplay}</span>
+          <span>${ranking.totalParticipants}</span>
+          <span class="${statusClass}">${statusDisplay}</span>
+        </div>
+      `;
+    }).join('');
   }
 
   private escapeHtml(text: string): string {

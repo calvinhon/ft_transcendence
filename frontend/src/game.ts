@@ -62,6 +62,8 @@ interface GameSettings {
   powerupsEnabled: boolean;
   accelerateOnHit: boolean;
   scoreToWin: number;
+  team1PlayerCount?: number;
+  team2PlayerCount?: number;
 }
 
 interface JoinGameMessage extends GameMessage {
@@ -96,6 +98,7 @@ export class GameManager {
     // Example: set isPlaying, initialize game state, start input handler
     this.isPlaying = true;
     this.isPaused = false;
+    console.log(`🎮 [GM#${this.instanceId}] ✅ Set isPlaying = true, gameMode:`, this.gameSettings.gameMode);
 
     // You may want to parse message.gameState or other fields
     this.gameState = message.gameState || null;
@@ -169,10 +172,17 @@ export class GameManager {
   // private chatSocket: WebSocket | null = null;
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
+  private lastModeLogTime: number = 0; // Track when we last logged the game mode
+  
+  // Countdown state
+  private countdownValue: number | null = null;
   
   // Store player info for arcade mode
   private team1Players: any[] = [];
   private team2Players: any[] = [];
+  
+  // Store tournament match data locally
+  private currentTournamentMatch: any = null;
   
   // Game settings
   private gameSettings: GameSettings = {
@@ -220,8 +230,10 @@ export class GameManager {
       const user = authManager?.getCurrentUser();
       
       if (user && user.userId) {
-        // Sync from database asynchronously (don't block)
-        this.syncCampaignLevelFromDatabase().catch(err => {
+        // Sync from database asynchronously
+        this.syncCampaignLevelFromDatabase().then(() => {
+          console.log('🎯 [CAMPAIGN] Database sync completed');
+        }).catch(err => {
           console.warn('Background sync failed:', err);
         });
         
@@ -229,7 +241,7 @@ export class GameManager {
         if (savedLevel) {
           const level = parseInt(savedLevel, 10);
           if (level >= 1 && level <= this.maxCampaignLevel) {
-            console.log(`🎯 [CAMPAIGN] Loaded saved level ${level} for player ${user.username}`);
+            console.log(`🎯 [CAMPAIGN] Loaded saved level ${level} for player ${user.username} (will sync with DB)`);
             return level;
           }
         }
@@ -253,15 +265,15 @@ export class GameManager {
         const response = await fetch(`/api/user/profile/${user.userId}`, { headers });
         if (response.ok) {
           const profile = await response.json();
-          if (profile.campaign_level && profile.campaign_level > 1) {
-            // Update localStorage with database value if it's higher
-            const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
-            const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
-            
-            if (profile.campaign_level > localLevelNum) {
-              localStorage.setItem(`campaign_level_${user.userId}`, profile.campaign_level.toString());
-              console.log(`🎯 [CAMPAIGN] Synced level ${profile.campaign_level} from database`);
-            }
+          const dbLevel = profile.campaign_level || 1; // Database level (default to 1 if not set)
+          const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+          const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
+          
+          // Always sync to match database value (handles both upgrades and resets)
+          if (dbLevel !== localLevelNum) {
+            localStorage.setItem(`campaign_level_${user.userId}`, dbLevel.toString());
+            this.currentCampaignLevel = dbLevel;
+            console.log(`🎯 [CAMPAIGN] Synced level ${dbLevel} from database (was ${localLevelNum} in localStorage)`);
           }
         }
       }
@@ -303,6 +315,11 @@ export class GameManager {
         this.keys[e.key] = true;
         this.lastKeyPressTime[e.key] = Date.now();
         
+        // Log tournament keys for debugging
+        if (this.gameSettings.gameMode === 'tournament' && ['w', 's', 'u', 'j'].includes(key)) {
+          console.log('[KEYBOARD] Tournament key pressed:', key, 'isPlaying:', this.isPlaying);
+        }
+        
         // Define all game control keys
         const gameControlKeys = [
           'w', 's', 'q', 'a', 'e', 'd',  // Team 1 keys
@@ -316,6 +333,12 @@ export class GameManager {
           e.stopPropagation();
           e.stopImmediatePropagation();
           return false;
+        }
+      } else if (!isInputFocused && !this.isPlaying) {
+        // Log if keys are pressed but game isn't playing
+        const key = e.key.toLowerCase();
+        if (['w', 's', 'u', 'j'].includes(key)) {
+          console.warn('[KEYBOARD] Key pressed but game not playing!', key, 'isPlaying:', this.isPlaying);
         }
       }
     }, true); // Use capture phase to get events before they're handled elsewhere
@@ -492,12 +515,27 @@ export class GameManager {
               
               console.log('🎮 [SETTINGS] Sending game settings to backend:', gameSettings);
               
-              this.websocket.send(JSON.stringify({
-                type: 'joinBotGame', // fix here for bot game
+              // Prepare message with tournament player data if available
+              const message: any = {
+                type: 'joinBotGame',
                 userId: user.userId,
                 username: user.username,
                 gameSettings: gameSettings
-              }));
+              };
+              
+              // Add tournament player info for local multiplayer
+              if (this.currentTournamentMatch) {
+                message.player2Id = this.currentTournamentMatch.player2Id;
+                message.player2Name = this.currentTournamentMatch.player2Name;
+                message.tournamentId = this.currentTournamentMatch.tournamentId;
+                message.tournamentMatchId = this.currentTournamentMatch.matchId;
+                console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
+                  player2Id: message.player2Id,
+                  player2Name: message.player2Name
+                });
+              }
+              
+              this.websocket.send(JSON.stringify(message));
             }
           }, 100);
         }
@@ -545,24 +583,37 @@ export class GameManager {
             if (this.isCampaignMode) {
               gameSettings = this.getCampaignLevelSettings();
             } else {
-              const app = (window as any).app;
-              gameSettings = app?.gameSettings || {
-                gameMode: 'coop',
-                aiDifficulty: 'easy',
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerupsEnabled: false,
-                accelerateOnHit: false,
-                scoreToWin: 5
-              };
+              // Use GameManager's own settings (already synced from app)
+              gameSettings = this.gameSettings;
             }
             console.log('🎮 [SETTINGS] Sending joinBotGame after connectionAck:', gameSettings);
-            this.websocket.send(JSON.stringify({
+            
+            // Prepare message with tournament player data if available
+            const message: any = {
               type: 'joinBotGame',
               userId: user.userId,
               username: user.username,
               gameSettings: gameSettings
-            }));
+            };
+            
+            // Add tournament player info for local multiplayer
+            if (this.currentTournamentMatch) {
+              message.player2Id = this.currentTournamentMatch.player2Id;
+              message.player2Name = this.currentTournamentMatch.player2Name;
+              message.tournamentId = this.currentTournamentMatch.tournamentId;
+              message.tournamentMatchId = this.currentTournamentMatch.matchId;
+              console.log('🏆 [TOURNAMENT] Sending tournament player data:', {
+                player2Id: message.player2Id,
+                player2Name: message.player2Name,
+                tournamentId: message.tournamentId,
+                matchId: message.tournamentMatchId,
+                gameMode: message.gameSettings.gameMode
+              });
+            } else {
+              console.log('⚠️ [TOURNAMENT] No currentTournamentMatch found!');
+            }
+            
+            this.websocket.send(JSON.stringify(message));
           }
           break;
         }
@@ -633,20 +684,31 @@ export class GameManager {
     this.inputInterval = setInterval(() => {
       if (this.websocket && this.websocket.readyState === WebSocket.OPEN && !this.isPaused) {
         
-        // Handle different game modes
-        if (this.gameSettings.gameMode === 'arcade') {
-          // Arcade mode: Team vs Team with multiple players per side
-          this.handleArcadeInputs();
-        } else {
-          // Co-op/Campaign mode: Single player controls (original logic)
-          this.handleSinglePlayerInputs();
+        // Log current mode for debugging (only once per second to avoid spam)
+        if (!this.lastModeLogTime || Date.now() - this.lastModeLogTime > 1000) {
+          console.log('🎮 [INPUT] Current gameMode:', this.gameSettings.gameMode);
+          this.lastModeLogTime = Date.now();
+        }
+        
+        // Route to mode-specific input handler
+        switch (this.gameSettings.gameMode) {
+          case 'tournament':
+            this.handleTournamentInputs();
+            break;
+          case 'arcade':
+            this.handleArcadeInputs();
+            break;
+          case 'coop':
+          default:
+            this.handleCoopInputs();
+            break;
         }
       }
     }, 16); // ~60fps
   }
 
-  private handleSinglePlayerInputs(): void {
-    // Original co-op/campaign input handling
+  private handleCoopInputs(): void {
+    // Co-op/Campaign mode: Single player controls
     const upPressed = this.keys['w'] || this.keys['arrowup'] || this.keys['ArrowUp'];
     const downPressed = this.keys['s'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
     
@@ -687,6 +749,92 @@ export class GameManager {
     }
   }
 
+  private handleTournamentInputs(): void {
+    // Tournament mode: Local multiplayer - two players on the same keyboard
+    // Player 1 (left): W/S or Arrow keys
+    // Player 2 (right): U/J keys
+    
+    // Player 1 (left paddle) - W/S or Arrow keys
+    const p1UpPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
+    const p1DownPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
+    
+    // Handle Player 1 input with priority for most recent key
+    if (p1UpPressed && p1DownPressed) {
+      const upTime = Math.max(
+        this.lastKeyPressTime['w'] || 0,
+        this.lastKeyPressTime['W'] || 0,
+        this.lastKeyPressTime['arrowup'] || 0,
+        this.lastKeyPressTime['ArrowUp'] || 0
+      );
+      const downTime = Math.max(
+        this.lastKeyPressTime['s'] || 0,
+        this.lastKeyPressTime['S'] || 0,
+        this.lastKeyPressTime['arrowdown'] || 0,
+        this.lastKeyPressTime['ArrowDown'] || 0
+      );
+      
+      if (downTime > upTime) {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          direction: 'down'
+        }));
+      } else {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          direction: 'up'
+        }));
+      }
+    } else if (p1UpPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        direction: 'up'
+      }));
+    } else if (p1DownPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        direction: 'down'
+      }));
+    }
+    
+    // Player 2 (right paddle) - U/J keys
+    const p2UpPressed = this.keys['u'] || this.keys['U'];
+    const p2DownPressed = this.keys['j'] || this.keys['J'];
+    
+    // Handle Player 2 input
+    if (p2UpPressed && p2DownPressed) {
+      const upTime = this.lastKeyPressTime['u'] || this.lastKeyPressTime['U'] || 0;
+      const downTime = this.lastKeyPressTime['j'] || this.lastKeyPressTime['J'] || 0;
+      
+      // For player 2, we need to send a different command to control the right paddle
+      // We'll use playerId: 2 to indicate this is for player2/right paddle
+      if (downTime > upTime) {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          playerId: 2,
+          direction: 'down'
+        }));
+      } else {
+        this.websocket?.send(JSON.stringify({
+          type: 'movePaddle',
+          playerId: 2,
+          direction: 'up'
+        }));
+      }
+    } else if (p2UpPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 2,
+        direction: 'up'
+      }));
+    } else if (p2DownPressed) {
+      this.websocket?.send(JSON.stringify({
+        type: 'movePaddle',
+        playerId: 2,
+        direction: 'down'
+      }));
+    }
+  }
+
   private handleArcadeInputs(): void {
     // Arcade mode: Multiple players with team-based controls
     // Team 1 players: Q/A, W/S, E/D (+ Arrow keys as alternative)
@@ -717,7 +865,7 @@ export class GameManager {
       return;
     }
     
-    // Build team player lists including host if selected
+    // Build team player lists from selected players
     let team1Players: any[] = [];
     let team2Players: any[] = [];
     
@@ -784,8 +932,7 @@ export class GameManager {
     }
     
     console.log('  - 🏀 Team 1 players:', team1Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));
-    
+    console.log('  - 🏀 Team 2 players:', team2Players.map((p: any) => `${p.username} [paddle ${p.paddleIndex}]`));    
     // Store player information for rendering
     this.team1Players = team1Players;
     this.team2Players = team2Players;
@@ -844,6 +991,7 @@ export class GameManager {
     }
     
     if (team1Direction) {
+      // Arcade mode always uses team numbers (1 = left team)
       const message = {
         type: 'movePaddle',
         playerId: 1, // Team 1 / Left side
@@ -875,6 +1023,7 @@ export class GameManager {
     }
     
     if (team2Direction) {
+      // Arcade mode always uses team numbers (2 = right team)
       const message = {
         type: 'movePaddle',
         playerId: 2, // Team 2 / Right side
@@ -887,13 +1036,14 @@ export class GameManager {
   }
 
   private updateGameFromBackend(backendState: any): void {
-    // Don't update game state if paused or not playing
+    // Don't update game state if paused
     if (this.isPaused) {
       // console.log(`🎮 [GM#${this.instanceId}] Ignoring game state - game is paused`);
       return;
     }
     
-    if (!this.isPlaying) {
+    // Allow updates during countdown
+    if (!this.isPlaying && backendState.gameState !== 'countdown') {
       console.log(`⚠️ [GM#${this.instanceId}] Ignoring game state - game is not playing`);
       return;
     }
@@ -919,8 +1069,26 @@ export class GameManager {
         ballRadius: 5
       };
       
-      // Handle multiple paddles for arcade mode if backend sends them
-      if (backendState.paddles.team1 && Array.isArray(backendState.paddles.team1)) {
+      // Clear any existing paddle arrays first to prevent leftover paddles from previous games
+      frontendState.leftPaddles = undefined;
+      frontendState.rightPaddles = undefined;
+      
+      // Handle multiple paddles for arcade mode OR tournament mode with team arrays
+      // Tournament uses team arrays but typically only 1 paddle per team
+      const useTeamArrays = (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') &&
+                            backendState.paddles.team1 && Array.isArray(backendState.paddles.team1);
+      
+      console.log('🎨 [RENDER] Paddle setup:', {
+        gameMode: this.gameSettings.gameMode,
+        useTeamArrays,
+        hasTeam1Array: backendState.paddles.team1 && Array.isArray(backendState.paddles.team1),
+        hasTeam2Array: backendState.paddles.team2 && Array.isArray(backendState.paddles.team2),
+        team1PlayersCount: this.team1Players.length,
+        team2PlayersCount: this.team2Players.length
+      });
+      
+      // Create paddles from team arrays (works for both arcade and tournament)
+      if (useTeamArrays && backendState.paddles.team1 && Array.isArray(backendState.paddles.team1)) {
         frontendState.leftPaddles = backendState.paddles.team1.map((p: any, index: number) => {
           const playerInfo = this.team1Players[index];
           return {
@@ -931,8 +1099,9 @@ export class GameManager {
             color: playerInfo?.color
           };
         });
+        console.log('🎨 [RENDER] Created left paddles:', frontendState.leftPaddles.length);
       }
-      if (backendState.paddles.team2 && Array.isArray(backendState.paddles.team2)) {
+      if (useTeamArrays && backendState.paddles.team2 && Array.isArray(backendState.paddles.team2)) {
         frontendState.rightPaddles = backendState.paddles.team2.map((p: any, index: number) => {
           const playerInfo = this.team2Players[index];
           return {
@@ -943,9 +1112,22 @@ export class GameManager {
             color: playerInfo?.color
           };
         });
+        console.log('🎨 [RENDER] Created right paddles:', frontendState.rightPaddles.length);
       }
       
       this.gameState = frontendState;
+      
+      // Store countdown value if in countdown state
+      if (backendState.gameState === 'countdown' && backendState.countdownValue !== undefined) {
+        this.countdownValue = backendState.countdownValue;
+      } else if (backendState.gameState === 'playing') {
+        // Clear countdown when game starts
+        this.countdownValue = null;
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+        }
+      }
+      
       this.render();
       
       // No longer need to update HTML UI elements - everything is rendered on canvas
@@ -955,6 +1137,41 @@ export class GameManager {
   private updateScoreDisplay(): void {
     // This method is no longer needed since we're rendering everything on canvas
     // All UI updates are now handled in the render() method
+  }
+
+  private drawCountdownOverlay(value: number): void {
+    if (!this.ctx || !this.canvas) return;
+    
+    // Draw very light semi-transparent overlay (barely visible to keep game bright)
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw countdown text with subtle glow effect
+    this.ctx.shadowColor = '#77e6ff';
+    this.ctx.shadowBlur = 8;
+    this.ctx.fillStyle = 'rgba(119, 230, 255, 0.9)'; // Less bright cyan
+    this.ctx.font = 'bold 60px "Courier New", monospace'; // Even smaller font
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    const text = value > 0 ? value.toString() : 'GO!';
+    this.ctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+    
+    // Add "GET READY" text above countdown (smaller and less bright)
+    if (value > 0) {
+      this.ctx.font = 'bold 20px "Courier New", monospace';
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      this.ctx.shadowBlur = 5;
+      this.ctx.fillText('GET READY', this.canvas.width / 2, this.canvas.height / 2 - 50);
+    }
+    
+    // Reset shadow
+    this.ctx.shadowBlur = 0;
+  }
+
+  private hideCountdown(): void {
+    // Countdown is hidden by normal render() calls
+    // This method exists for clarity and future enhancements
   }
 
   private render(): void {
@@ -1051,6 +1268,11 @@ export class GameManager {
     
     // Draw control keys for arcade mode
     this.drawArcadeControls();
+    
+    // Draw countdown overlay if active (drawn last so it's on top)
+    if (this.countdownValue !== null) {
+      this.drawCountdownOverlay(this.countdownValue);
+    }
   }
 
   private drawBallWithTrail(): void {
@@ -1187,36 +1409,24 @@ export class GameManager {
     let leftPlayerLevel: number;
     let rightPlayerLevel: number;
     
-    if (isArcadeMode) {
-      // Arcade mode: Show team names with average levels
+    // Check tournament mode first (takes priority over arcade mode)
+    const app = (window as any).app;
+    const tournamentMatch = app?.currentTournamentMatch;
+    
+    if (tournamentMatch && tournamentMatch.player1Name && tournamentMatch.player2Name) {
+      // Tournament mode: Use player names from match data
+      leftPlayerName = tournamentMatch.player1Name;
+      rightPlayerName = tournamentMatch.player2Name;
+      leftPlayerLevel = 1; // Can enhance later with actual player levels
+      rightPlayerLevel = 1;
+    } else if (isArcadeMode) {
+      // Arcade mode: Show team names (no levels needed for teams)
       leftPlayerName = 'Team 1';
       rightPlayerName = 'Team 2';
-      
-      // Calculate average level for Team 1
-      if (this.team1Players.length > 0) {
-        const totalLevel = this.team1Players.reduce((sum, player) => {
-          // Try to get level from player object
-          const playerLevel = player.level || player.profileLevel || 1;
-          return sum + playerLevel;
-        }, 0);
-        leftPlayerLevel = Math.round(totalLevel / this.team1Players.length);
-      } else {
-        leftPlayerLevel = 1;
-      }
-      
-      // Calculate average level for Team 2
-      if (this.team2Players.length > 0) {
-        const totalLevel = this.team2Players.reduce((sum, player) => {
-          // Try to get level from player object
-          const playerLevel = player.level || player.profileLevel || 1;
-          return sum + playerLevel;
-        }, 0);
-        rightPlayerLevel = Math.round(totalLevel / this.team2Players.length);
-      } else {
-        rightPlayerLevel = 1;
-      }
+      leftPlayerLevel = 0; // Not displayed for teams
+      rightPlayerLevel = 0; // Not displayed for teams
     } else {
-      // Co-op/Campaign mode: Show player names
+      // Co-op/Campaign mode: Show player vs AI
       leftPlayerName = user?.username || 'Player 1';
       rightPlayerName = 'AI Bot';
       
@@ -1262,10 +1472,15 @@ export class GameManager {
     this.ctx.fillStyle = '#ffffff';
     this.ctx.textAlign = 'center';
     
+    // Debug: log what mode we're in
+    if (this.isCampaignMode || isArcadeMode) {
+      console.log('[RENDER-HEADER] isCampaignMode:', this.isCampaignMode, 'isArcadeMode:', isArcadeMode, 'gameMode:', this.gameSettings.gameMode);
+    }
+    
     if (this.isCampaignMode) {
       this.ctx.fillText(`Campaign Level ${this.currentCampaignLevel} - First to ${targetScore}`, this.canvas.width / 2, 30);
     } else if (isArcadeMode) {
-      // Show Team vs Team with levels
+      // Arcade mode - just show score target
       this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
     } else {
       this.ctx.fillText(`First to ${targetScore}`, this.canvas.width / 2, 30);
@@ -1474,6 +1689,13 @@ export class GameManager {
       this.handleArcadeGameEnd(result);
       return; // Arcade mode handles its own UI and navigation
     }
+
+    // Handle tournament mode completion
+    if (this.gameSettings.gameMode === 'tournament') {
+      console.log('🏆 [TOURNAMENT] Handling tournament game end');
+      this.handleTournamentGameEnd(result);
+      return; // Tournament mode handles its own UI and navigation
+    }
     
     // Regular game end handling
     // Determine winner message
@@ -1611,6 +1833,20 @@ export class GameManager {
     console.log('✅ [GameManager.startBotMatch] Guard passed - proceeding with bot match');
     console.log('GameManager: Starting bot match with mode:', this.gameSettings.gameMode);
     
+    // Clear any leftover paddle data from previous games
+    // BUT: Don't clear for tournament mode - it needs the team arrays for input handling
+    if (this.gameSettings.gameMode !== 'tournament') {
+      this.team1Players = [];
+      this.team2Players = [];
+      if (this.gameState) {
+        this.gameState.leftPaddles = undefined;
+        this.gameState.rightPaddles = undefined;
+        console.log('🧹 Cleared leftover paddle arrays from previous game');
+      }
+    } else {
+      console.log('🏆 [TOURNAMENT] Skipping team array clear - tournament mode needs them for input');
+    }
+    
     // Check game mode and start appropriate match type
     if (this.gameSettings.gameMode === 'coop') {
       console.log('🎯 [CAMPAIGN] CO-OP mode detected, starting campaign game');
@@ -1618,6 +1854,9 @@ export class GameManager {
     } else if (this.gameSettings.gameMode === 'arcade') {
       console.log('🕹️ [ARCADE] ARCADE mode detected, starting arcade match');
       await this.startArcadeMatch();
+    } else if (this.gameSettings.gameMode === 'tournament') {
+      console.log('🏆 [TOURNAMENT] TOURNAMENT mode detected, starting tournament match');
+      await this.startTournamentMatch();
     } else {
       // Default or other modes
       console.log('🎮 [GAME] Starting standard bot match');
@@ -1649,6 +1888,80 @@ export class GameManager {
     
     // Start the arcade match
     await this.startArcadeMatchWithSettings();
+  }
+
+  // Start tournament mode (competitive match between two players)
+  public async startTournamentMatch(): Promise<void> {
+    console.log('🏆 [TOURNAMENT] Starting tournament match');
+    this.isCampaignMode = false; // Tournament is NOT campaign mode
+    
+    // Sync settings from app before starting
+    const app = (window as any).app;
+    if (app && app.gameSettings) {
+      this.gameSettings = { ...this.gameSettings, ...app.gameSettings };
+      console.log('🏆 [TOURNAMENT] Synced game settings from app:', this.gameSettings);
+      console.log('🏆 [TOURNAMENT] Confirmed gameMode is:', this.gameSettings.gameMode);
+    }
+    
+    if (!app || !app.currentTournamentMatch) {
+      console.error('🏆 [TOURNAMENT] No tournament match data found!');
+      return;
+    }
+    
+    // Store tournament match data locally in GameManager
+    this.currentTournamentMatch = app.currentTournamentMatch;
+    const match = this.currentTournamentMatch;
+    console.log('🏆 [TOURNAMENT] Match:', match.player1Name, 'vs', match.player2Name);
+    console.log('🏆 [TOURNAMENT] Player IDs:', match.player1Id, 'vs', match.player2Id);
+    console.log('🏆 [TOURNAMENT] Stored match data locally in GameManager');
+    console.log('🏆 [TOURNAMENT] Score to win:', this.gameSettings.scoreToWin);
+    
+    // IMPORTANT: Ensure gameMode is set to tournament
+    this.gameSettings.gameMode = 'tournament';
+    console.log('🏆 [TOURNAMENT] Force-set gameMode to tournament');
+    
+    // CRITICAL: Force team player counts to 1 for tournament mode
+    // This prevents backend from creating multiple paddles from previous arcade settings
+    this.gameSettings.team1PlayerCount = 1;
+    this.gameSettings.team2PlayerCount = 1;
+    console.log('🏆 [TOURNAMENT] Force-set team player counts to 1 for single-paddle mode');
+    
+    // Set up team player arrays with tournament player names for rendering
+    // These arrays are used to display player names on paddles
+    this.team1Players = [{
+      userId: match.player1Id,
+      username: match.player1Name,
+      team: 1,
+      paddleIndex: 0,
+      color: '#77e6ff' // Cyan for player 1
+    }];
+    
+    this.team2Players = [{
+      userId: match.player2Id,
+      username: match.player2Name,
+      team: 2,
+      paddleIndex: 0,
+      color: '#e94560' // Red/pink for player 2
+    }];
+    
+    console.log('🏆 [TOURNAMENT] Set up team players for paddle rendering:', {
+      team1: this.team1Players[0].username,
+      team2: this.team2Players[0].username
+    });
+    
+    // Clear gameState paddle arrays if they exist
+    if (this.gameState) {
+      this.gameState.leftPaddles = undefined;
+      this.gameState.rightPaddles = undefined;
+    }
+    console.log('🏆 [TOURNAMENT] Cleared gameState paddle arrays for fresh tournament start');
+    
+    // Ensure canvas exists
+    this.ensureCanvasInitialized();
+    
+    // Connect to game server for tournament match
+    // Use bot game server connection which handles messages via connectionAck
+    await this.connectToBotGameServer();
   }
 
   // Start campaign mode (progressive difficulty against AI)
@@ -1819,12 +2132,20 @@ export class GameManager {
           }
         }
         
-        // Ensure at least 1 player per team (defaults)
-        const team1Count = Math.max(1, team1Players.length);
-        const team2Count = Math.max(1, team2Players.length);
-
         // Get all game settings from app
         const gameSettings = app?.gameSettings || this.gameSettings;
+        
+        // For tournament mode, always use 1v1 (ignore team player arrays)
+        let team1Count, team2Count;
+        if (gameSettings.gameMode === 'tournament') {
+          team1Count = 1;
+          team2Count = 1;
+          console.log('🏆 [TOURNAMENT] Forcing 1v1 paddle setup for tournament mode');
+        } else {
+          // For arcade mode, use actual team player counts
+          team1Count = Math.max(1, team1Players.length);
+          team2Count = Math.max(1, team2Players.length);
+        }
         
         // Determine AI difficulty based on minimum player level
         // For now, use the configured difficulty, but could be enhanced to check player stats
@@ -1832,11 +2153,11 @@ export class GameManager {
 
         // Send arcade match request with complete player information
         if (this.websocket) {
-          const arcadeRequest = {
+          const arcadeRequest: any = {
             type: 'userConnect',
             userId: user.userId,
             username: user.username,
-            gameMode: 'arcade',
+            gameMode: gameSettings.gameMode || 'arcade', // Use actual game mode (could be 'tournament')
             // Game settings
             aiDifficulty: aiDifficulty,
             ballSpeed: gameSettings.ballSpeed || 'medium',
@@ -1861,6 +2182,26 @@ export class GameManager {
               isBot: p.userId === 0 // Mark AI players
             }))
           };
+          
+          // Add tournament information if this is a tournament match
+          if (gameSettings.gameMode === 'tournament' && app && app.currentTournamentMatch) {
+            // CRITICAL FIX: Always send player1 as the game's player1, regardless of who initiated
+            // This ensures game winner IDs match tournament player IDs correctly
+            arcadeRequest.userId = app.currentTournamentMatch.player1Id;
+            arcadeRequest.username = app.currentTournamentMatch.player1Name;
+            arcadeRequest.tournamentId = app.currentTournamentMatch.tournamentId;
+            arcadeRequest.tournamentMatchId = app.currentTournamentMatch.matchId;
+            arcadeRequest.player2Id = app.currentTournamentMatch.player2Id;
+            arcadeRequest.player2Name = app.currentTournamentMatch.player2Name;
+            console.log('🏆 [TOURNAMENT] Fixed player mapping for game creation:', {
+              gamePlayer1: arcadeRequest.userId, // Always tournament player1
+              gamePlayer2: arcadeRequest.player2Id, // Always tournament player2
+              tournamentId: arcadeRequest.tournamentId,
+              matchId: arcadeRequest.tournamentMatchId,
+              currentUser: user.userId
+            });
+          }
+          
           console.log('🕹️ [ARCADE] Sending match request with full player info:', arcadeRequest);
           console.log('🕹️ [ARCADE] Team 1 (LEFT SIDE):', arcadeRequest.team1Players);
           console.log('🕹️ [ARCADE] Team 2 (RIGHT SIDE):', arcadeRequest.team2Players);
@@ -2081,6 +2422,22 @@ export class GameManager {
     // Clear all key states
     this.keys = {};
     
+    // Clear team player data for arcade mode only
+    // DON'T clear in tournament mode to preserve match state
+    if (this.gameSettings.gameMode !== 'tournament') {
+      this.team1Players = [];
+      this.team2Players = [];
+      console.log(`🛑 [GM#${this.instanceId}] Cleared team player arrays`);
+    } else {
+      console.log(`🛑 [GM#${this.instanceId}] Tournament mode - preserving team player arrays`);
+    }
+    
+    // Reset game mode to default to prevent mode conflicts
+    // This ensures tournament mode starts fresh after arcade mode
+    const previousMode = this.gameSettings.gameMode;
+    console.log(`🛑 [GM#${this.instanceId}] Resetting game mode from '${previousMode}' to default 'coop'`);
+    this.gameSettings.gameMode = 'coop';
+    
     // If in campaign mode, exit campaign
     if (this.isCampaignMode) {
       console.log(`🛑 [GM#${this.instanceId}] Exiting campaign mode`);
@@ -2094,9 +2451,50 @@ export class GameManager {
     const app = (window as any).app;
     console.log(`🛑 [GM#${this.instanceId}] App exists:`, !!app, 'Router exists:', !!(app && app.router));
     
+    // For tournament mode, preserve the match data so it can be restarted
+    // For other modes, clear the tournament match data
+    if (previousMode === 'tournament') {
+      console.log(`🛑 [GM#${this.instanceId}] Tournament mode - preserving tournament match data for restart`);
+      // Don't clear app.currentTournamentMatch or this.currentTournamentMatch
+      // This allows the player to restart from the tournament bracket
+    } else {
+      // Clear tournament match data for non-tournament modes
+      if (app && app.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Clearing tournament match data`);
+        app.currentTournamentMatch = null;
+      }
+      
+      // Clear local tournament match data
+      if (this.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Clearing local tournament match data`);
+        this.currentTournamentMatch = null;
+      }
+    }
+    
+    // Reset app game settings to default as well
+    if (app && app.gameSettings) {
+      console.log(`🛑 [GM#${this.instanceId}] Resetting app.gameSettings.gameMode to 'coop'`);
+      app.gameSettings.gameMode = 'coop';
+    }
+    
     if (app && app.router && typeof app.router.navigate === 'function') {
-      console.log(`🛑 [GM#${this.instanceId}] Calling router.navigate('play-config')`);
-      app.router.navigate('play-config');
+      // If quitting from tournament mode, go back to view the tournament bracket
+      // The match remains in "pending" state and can be played again
+      if (previousMode === 'tournament' && this.currentTournamentMatch) {
+        console.log(`🛑 [GM#${this.instanceId}] Returning to tournament bracket - match can be replayed`);
+        // Navigate to tournament screen and auto-open the bracket
+        app.router.navigate('tournament');
+        // After a brief delay, auto-open the bracket for this tournament
+        setTimeout(() => {
+          const tournamentManager = (window as any).tournamentManager;
+          if (tournamentManager && this.currentTournamentMatch) {
+            tournamentManager.viewTournament(this.currentTournamentMatch.tournamentId);
+          }
+        }, 100);
+      } else {
+        console.log(`🛑 [GM#${this.instanceId}] Calling router.navigate('play-config')`);
+        app.router.navigate('play-config');
+      }
       console.log(`🛑 [GM#${this.instanceId}] Navigation call completed`);
     } else {
       console.error(`🛑 [GM#${this.instanceId}] ERROR: Cannot navigate - app or router not available!`);
@@ -2116,9 +2514,9 @@ export class GameManager {
   public getBallSpeedValue(): number {
     switch (this.gameSettings.ballSpeed) {
       case 'slow': return 3;
-      case 'medium': return 5;
+      case 'medium': return 4;
       case 'fast': return 7;
-      default: return 5;
+      default: return 4;
     }
   }
 
@@ -2815,6 +3213,232 @@ export class GameManager {
       </div>
       <div style="font-size: 16px; margin-top: 20px; color: rgba(255, 255, 255, 0.8);">
         ${playerWon ? 'Well played! 🏆' : 'Better luck next time!'}
+      </div>
+    `;
+    
+    document.body.appendChild(message);
+    
+    // Remove message after 3 seconds
+    setTimeout(() => {
+      if (message.parentNode) {
+        message.parentNode.removeChild(message);
+      }
+    }, 3000);
+  }
+
+  private handleTournamentGameEnd(gameData: any): void {
+    console.log('🏆 [TOURNAMENT] ========== GAME END HANDLER ==========');
+    console.log('🏆 [TOURNAMENT] Game ended with data:', gameData);
+    
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    
+    if (!user) {
+      console.error('🏆 [TOURNAMENT] No user logged in');
+      return;
+    }
+    
+    const app = (window as any).app;
+    const tournamentMatch = app?.currentTournamentMatch;
+    
+    if (!tournamentMatch) {
+      console.error('🏆 [TOURNAMENT] No tournament match data found');
+      return;
+    }
+    
+    console.log('🏆 [TOURNAMENT] Tournament match data:', {
+      matchId: tournamentMatch.matchId,
+      player1Id: tournamentMatch.player1Id,
+      player2Id: tournamentMatch.player2Id,
+      player1Name: tournamentMatch.player1Name,
+      player2Name: tournamentMatch.player2Name,
+      originalPlayer1Id: tournamentMatch.originalPlayer1Id,
+      originalPlayer2Id: tournamentMatch.originalPlayer2Id
+    });
+    
+    // Get the winner from game (this is based on displayed positions)
+    const gameWinnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
+    const playerWon = gameWinnerId === user.userId;
+    
+    // Get final scores (based on displayed positions)
+    const scores = gameData.scores || { player1: 0, player2: 0 };
+    const finalScoreText = `${scores.player1} - ${scores.player2}`;
+    
+    console.log('🏆 [TOURNAMENT] Game result:', {
+      gameWinnerId,
+      gameScores: scores,
+      currentUserId: user.userId,
+      playerWon
+    });
+    
+    // Map back to original tournament player IDs if sides were swapped
+    const originalPlayer1Id = tournamentMatch.originalPlayer1Id || tournamentMatch.player1Id;
+    const originalPlayer2Id = tournamentMatch.originalPlayer2Id || tournamentMatch.player2Id;
+    const werePlayersSwapped = tournamentMatch.player1Id !== originalPlayer1Id;
+    
+    console.log('🏆 [TOURNAMENT] Player mapping:', {
+      displayedPlayer1: tournamentMatch.player1Id,
+      displayedPlayer2: tournamentMatch.player2Id,
+      originalPlayer1: originalPlayer1Id,
+      originalPlayer2: originalPlayer2Id,
+      werePlayersSwapped
+    });
+    
+    let actualWinnerId = gameWinnerId;
+    let actualPlayer1Score = scores.player1;
+    let actualPlayer2Score = scores.player2;
+    
+    if (werePlayersSwapped) {
+      // Players were swapped for display, need to map back to original IDs
+      console.log('🔄 [TOURNAMENT] Players were swapped, mapping back to original IDs');
+      console.log('🔄 [TOURNAMENT] Understanding the swap:');
+      console.log('  - Displayed LEFT (player1) is actually:', originalPlayer2Id);
+      console.log('  - Displayed RIGHT (player2) is actually:', originalPlayer1Id);
+      console.log('  - Game scores.player1 (LEFT) is originalPlayer2 score:', scores.player1);
+      console.log('  - Game scores.player2 (RIGHT) is originalPlayer1 score:', scores.player2);
+      
+      // Swap the scores back to match original player order
+      actualPlayer1Score = scores.player2;
+      actualPlayer2Score = scores.player1;
+      
+      console.log('🔄 [TOURNAMENT] After remapping to original positions:', {
+        originalPlayer1Score: actualPlayer1Score,
+        originalPlayer2Score: actualPlayer2Score
+      });
+    } else {
+      console.log('✅ [TOURNAMENT] No swap - players in original positions');
+      console.log('  - LEFT (player1) is originalPlayer1:', originalPlayer1Id);
+      console.log('  - RIGHT (player2) is originalPlayer2:', originalPlayer2Id);
+      console.log('  - Scores match original positions');
+    }
+    
+    // CRITICAL FIX: Always determine winner based on the FINAL scores and original player IDs
+    // Don't trust the game's winnerId because it's based on displayed positions
+    if (actualPlayer1Score > actualPlayer2Score) {
+      actualWinnerId = originalPlayer1Id;
+      console.log('🏆 Winner is originalPlayer1 (higher score):', originalPlayer1Id);
+    } else if (actualPlayer2Score > actualPlayer1Score) {
+      actualWinnerId = originalPlayer2Id;
+      console.log('🏆 Winner is originalPlayer2 (higher score):', originalPlayer2Id);
+    } else {
+      // Tie - this shouldn't happen in tournament mode, but default to game's winner
+      console.warn('🏆 [TOURNAMENT] WARNING: Tie score detected! Using game winner ID:', gameWinnerId);
+      actualWinnerId = gameWinnerId;
+    }
+    
+    console.log('🏆 [TOURNAMENT] Winner determination:', {
+      gameReportedWinner: gameWinnerId,
+      player1Score: actualPlayer1Score,
+      player2Score: actualPlayer2Score,
+      calculatedWinnerId: actualWinnerId,
+      isOriginalPlayer1: actualWinnerId === originalPlayer1Id,
+      isOriginalPlayer2: actualWinnerId === originalPlayer2Id
+    });
+    
+    console.log('🏆 [TOURNAMENT] Final result to record:', {
+      tournamentId: tournamentMatch.tournamentId,
+      matchId: tournamentMatch.matchId,
+      winnerId: actualWinnerId,
+      originalPlayer1Id: originalPlayer1Id,
+      originalPlayer2Id: originalPlayer2Id,
+      player1Score: actualPlayer1Score,
+      player2Score: actualPlayer2Score
+    });
+    
+    // Verify winner is one of the original players
+    if (actualWinnerId !== originalPlayer1Id && actualWinnerId !== originalPlayer2Id) {
+      console.error('🚨 [TOURNAMENT] CRITICAL ERROR: Winner ID does not match any original player!', {
+        winnerId: actualWinnerId,
+        originalPlayer1Id,
+        originalPlayer2Id
+      });
+      alert('Error: Invalid winner ID. Please report this bug.');
+      return;
+    }
+    
+    // Record match result via tournament manager
+    const tournamentManager = (window as any).tournamentManager;
+    if (tournamentManager && tournamentManager.recordMatchResult) {
+      tournamentManager.recordMatchResult(
+        tournamentMatch.tournamentId,
+        tournamentMatch.matchId,
+        actualWinnerId,
+        actualPlayer1Score,
+        actualPlayer2Score
+      ).then(() => {
+        console.log('✅ [TOURNAMENT] Match result recorded successfully');
+        
+        // Clear current tournament match to prevent replay
+        if (app) {
+          app.currentTournamentMatch = null;
+        }
+        
+        // Show result message
+        this.showTournamentResultMessage(playerWon, finalScoreText);
+        
+        // Reset UI and navigate back after delay
+        setTimeout(() => {
+          this.resetFindMatch();
+          
+          // Close websocket
+          if (this.websocket) {
+            this.websocket.close();
+            this.websocket = null;
+          }
+          
+          // Navigate back to play config
+          if (app && app.router) {
+            app.router.navigate('play-config');
+          }
+          
+          // Show tournament bracket again
+          if (tournamentManager && tournamentManager.viewTournament) {
+            tournamentManager.viewTournament(tournamentMatch.tournamentId);
+          }
+        }, 3000);
+      }).catch((error: any) => {
+        console.error('🚨 [TOURNAMENT] Failed to record match result:', error);
+        alert('Failed to record match result: ' + (error.message || 'Unknown error'));
+      });
+    } else {
+      console.error('🚨 [TOURNAMENT] Tournament manager or recordMatchResult not available');
+    }
+    
+    console.log('🏆 [TOURNAMENT] ========== END HANDLER COMPLETE ==========');
+  }
+
+  private showTournamentResultMessage(playerWon: boolean, scoreText: string): void {
+    const message = document.createElement('div');
+    message.id = 'tournament-result-message';
+    message.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: ${playerWon ? 'rgba(255, 215, 0, 0.95)' : 'rgba(233, 69, 96, 0.95)'};
+      color: ${playerWon ? '#1a1a1a' : '#ffffff'};
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      z-index: 10000;
+      border: 3px solid ${playerWon ? '#ffd700' : '#ff6b8a'};
+      box-shadow: 0 0 40px ${playerWon ? 'rgba(255, 215, 0, 0.6)' : 'rgba(233, 69, 96, 0.6)'};
+      min-width: 400px;
+    `;
+    message.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 20px;">
+        ${playerWon ? '🏆' : '😔'}
+      </div>
+      <div style="margin-bottom: 15px;">
+        ${playerWon ? 'MATCH WON!' : 'MATCH LOST'}
+      </div>
+      <div style="font-size: 24px; margin-top: 10px; opacity: 0.9;">
+        Final Score: ${scoreText}
+      </div>
+      <div style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
+        ${playerWon ? 'Advancing to next round! 🚀' : 'Tournament continues...'}
       </div>
     `;
     
