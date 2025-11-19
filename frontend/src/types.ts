@@ -8,6 +8,35 @@ export interface GameSettings {
   accelerateOnHit: boolean;
   scoreToWin?: number; // Only for arcade mode
 }
+
+// Tournament interfaces
+export interface Tournament {
+  id: string;
+  name: string;
+  status: 'waiting' | 'active' | 'completed';
+  maxPlayers: number;
+  currentPlayers: number;
+  createdAt: string;
+  settings: {
+    gameMode: 'tournament';
+    difficulty: 'easy' | 'medium' | 'hard';
+    timeLimit?: number;
+    scoreLimit?: number;
+  };
+}
+
+export interface TournamentMatch {
+  id: string;
+  tournamentId: string;
+  round: number;
+  player1: any; // Player object
+  player2: any | null; // Player object or null for bye
+  status: 'pending' | 'active' | 'completed';
+  winner?: any; // Player object
+  createdAt: string;
+  completedAt?: string;
+}
+
 // Shared interfaces/types
 export interface User {
   userId: number;

@@ -13,9 +13,9 @@ restart: check-docker check-compose
 	@echo "✅ Services restarted!"
 
 rebuild: check-docker check-compose
-	@echo "🔨 Rebuilding and restarting services..."
+	@echo "🔨 Rebuilding and restarting services with clean build..."
 	docker compose down
-	docker compose build
+	docker compose build --no-cache
 	docker compose up -d
 	@echo "✅ Services rebuilt and started!"
 
@@ -70,8 +70,8 @@ clean:
 	fi
 
 up:
-	@echo "🚀 Running docker compose up --build --no-cache..."
-	docker compose build --no-cache
+	@echo "🚀 Running docker compose up --build..."
+	docker compose build
 	docker compose up -d
 
 open:

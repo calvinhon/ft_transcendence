@@ -6,8 +6,6 @@ import './match';
 import './tournament';
 import './profile';
 import './leaderboard';
-import './chat';
-import './blockchain';
 
 // Import CSS
 import '../css/style.css';
