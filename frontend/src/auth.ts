@@ -38,14 +38,13 @@ export class AuthManager {
 
   constructor() {
     this.token = sessionStorage.getItem('token');
-    
+
     // If we have a token, verify it on startup
     if (this.token) {
-      this.verifyToken().then(isValid => {
-        if (!isValid) {
-          console.log('Stored token is invalid, clearing auth data');
-          this.logout();
-        }
+      // Don't block constructor - verify asynchronously
+      this.verifyToken().catch(error => {
+        console.error('Token verification failed during startup:', error);
+        this.logout();
       });
     }
   }
@@ -175,7 +174,7 @@ export class AuthManager {
       });
 
       const data: VerifyResponse = await response.json();
-      
+
       if (response.ok && data.valid) {
         console.log('Token verified successfully');
         this.currentUser = data.user || null;
@@ -185,12 +184,24 @@ export class AuthManager {
         if (data.expired) {
           console.log('Token has expired');
         }
+        // Clear invalid auth data
         this.logout();
+        // If we're on main-menu but token is invalid, redirect to login
+        const app = (window as any).app;
+        if (app && app.showScreen) {
+          app.showScreen('login-screen');
+        }
         return false;
       }
     } catch (error) {
       console.log('Token verification error:', error);
+      // Clear auth data on error
       this.logout();
+      // If we're on main-menu but verification failed, redirect to login
+      const app = (window as any).app;
+      if (app && app.showScreen) {
+        app.showScreen('login-screen');
+      }
       return false;
     }
   }
@@ -206,7 +217,9 @@ export class AuthManager {
   }
 
   isAuthenticated(): boolean {
-    return !!this.token && !!this.currentUser;
+    // If we have a token, consider us authenticated initially
+    // The async token verification will update this later if needed
+    return !!this.token;
   }
 
   getCurrentUser(): User | null {

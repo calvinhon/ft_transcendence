@@ -56,6 +56,7 @@ export interface LocalPlayer {
   isCurrentUser: boolean;
   userId: number;
   token: string;
+  team?: number; // Team number for arcade mode (1 or 2)
 }
 
 export interface Route {

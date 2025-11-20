@@ -57,7 +57,7 @@ export class TournamentDataManager {
   public async loadUserTournaments(userId: number): Promise<void> {
     try {
       console.log('Loading user tournaments for user:', userId);
-      const response = await fetch(`${this.baseURL}/user/${userId}/tournaments`);
+      const response = await fetch(`${this.baseURL}/user/${userId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

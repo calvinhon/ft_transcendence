@@ -9,10 +9,13 @@ export class AppUIManager {
   }
 
   private initializeUI(): void {
+    console.log('🔧 [UI] Initializing UI...');
+    
     // Hide all screens initially
     this.hideAllScreens();
 
     // Show login screen by default
+    console.log('🔧 [UI] Showing login screen by default');
     this.showScreen('login-screen');
 
     // Initialize navigation
@@ -36,20 +39,27 @@ export class AppUIManager {
   }
 
   public showScreen(screenId: string): void {
+    console.log(`🔧 [UI] Attempting to show screen: ${screenId}`);
+    
     // Hide current screen
     this.hideScreen(this.currentScreen);
 
     // Show new screen
     const screen = document.getElementById(screenId);
+    console.log(`🔧 [UI] Found screen element:`, screen);
+    
     if (screen) {
       screen.classList.add('active');
       this.currentScreen = screenId;
+      console.log(`🔧 [UI] Added 'active' class to ${screenId}, current classes:`, screen.className);
 
       // Update navigation active state
       this.updateNavigationState(screenId);
 
       // Trigger screen-specific initialization
       this.onScreenShown(screenId);
+    } else {
+      console.error(`🔧 [UI] Screen element not found: ${screenId}`);
     }
   }
 
@@ -123,7 +133,7 @@ export class AppUIManager {
 
   private onGameModeSelectionShown(): void {
     // Initialize game mode selection
-    const gameModeButtons = document.querySelectorAll('.game-mode-btn');
+    const gameModeButtons = document.querySelectorAll('.game-mode-tab');
     gameModeButtons.forEach(button => {
       button.addEventListener('click', () => {
         const mode = (button as HTMLElement).dataset.mode;
@@ -145,8 +155,14 @@ export class AppUIManager {
   }
 
   private onProfileShown(): void {
-    // Load and display user profile
-    this.loadUserProfile();
+    // Load and display user profile using ProfileManager
+    const profileManager = (window as any).profileManager;
+    if (profileManager && typeof profileManager.loadProfile === 'function') {
+      profileManager.loadProfile();
+    } else {
+      // Fallback to basic profile loading
+      this.loadUserProfile();
+    }
   }
 
   private onLeaderboardShown(): void {
@@ -160,14 +176,48 @@ export class AppUIManager {
   }
 
   private selectGameMode(mode: string): void {
+    console.log(`🔧 [UI] Selecting game mode: ${mode}`);
+    
     // Update game settings
     const app = (window as any).app;
-    if (app && app.gameSettings) {
-      app.gameSettings.gameMode = mode;
+    if (app && app.gameManager && app.gameManager.gameSettings) {
+      app.gameManager.gameSettings.gameMode = mode;
     }
 
-    // Navigate to play configuration screen for all modes
-    this.showScreen('play-config-screen');
+    // Update active tab styling
+    const gameModeTabs = document.querySelectorAll('.game-mode-tab');
+    gameModeTabs.forEach(tab => {
+      tab.classList.remove('active');
+      if ((tab as HTMLElement).dataset.mode === mode) {
+        tab.classList.add('active');
+      }
+    });
+
+    // Update mode descriptions
+    const modeDescriptions = document.querySelectorAll('.mode-desc');
+    modeDescriptions.forEach(desc => {
+      desc.classList.remove('active');
+      if (desc.id === `mode-desc-${mode}`) {
+        desc.classList.add('active');
+      }
+    });
+
+    // Show/hide appropriate party frames based on mode
+    const coopFrame = document.getElementById('coop-party-frame');
+    const tournamentFrame = document.getElementById('tournament-party-frame');
+    const teamsRow = document.getElementById('teams-row');
+
+    if (coopFrame) coopFrame.style.display = mode === 'coop' ? 'block' : 'none';
+    if (tournamentFrame) tournamentFrame.style.display = mode === 'tournament' ? 'block' : 'none';
+    if (teamsRow) teamsRow.style.display = mode === 'arcade' ? 'flex' : 'none';
+
+    // Show/hide arcade-only settings
+    const arcadeOnlyElements = document.querySelectorAll('.arcade-only');
+    arcadeOnlyElements.forEach(element => {
+      (element as HTMLElement).style.display = mode === 'arcade' ? 'block' : 'none';
+    });
+
+    console.log(`🔧 [UI] Game mode ${mode} selected, UI updated`);
   }
 
   private initializeTournamentSetup(): void {

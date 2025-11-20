@@ -130,7 +130,24 @@ export class AppPlayerManager {
       this.updateGamePartyDisplay();
     });
 
+    // Add drag and drop event listeners
+    this.setupDragAndDrop(playerCard, player);
+
     return playerCard;
+  }
+
+  private setupDragAndDrop(playerCard: HTMLElement, player: any): void {
+    // Drag start
+    playerCard.addEventListener('dragstart', (e) => {
+      e.dataTransfer!.setData('text/plain', player.id);
+      e.dataTransfer!.effectAllowed = 'move';
+      playerCard.classList.add('dragging');
+    });
+
+    // Drag end
+    playerCard.addEventListener('dragend', () => {
+      playerCard.classList.remove('dragging');
+    });
   }
 
   public updateGamePartyDisplay(): void {
@@ -145,6 +162,20 @@ export class AppPlayerManager {
           hostPlayerNameTournament.textContent = authManager.getCurrentUser().username;
         }
 
+        // Clear existing player cards
+        tournamentLocalContainer.innerHTML = '';
+
+        // Add local players to tournament display
+        for (const player of this.localPlayers) {
+          const playerCard = this.createPlayerCard(player);
+          tournamentLocalContainer.appendChild(playerCard);
+
+          // Mark as selected if in selectedPlayerIds
+          if (this.selectedPlayerIds.has(player.id)) {
+            playerCard.classList.add('selected');
+          }
+        }
+
         // Update selected count
         const selectedCount = document.getElementById('tournament-selected-count');
         if (selectedCount) {
@@ -157,6 +188,9 @@ export class AppPlayerManager {
 
     // Update arcade team displays
     this.updateArcadeTeamDisplays();
+
+    // Setup drag and drop zones
+    this.setupDropZones();
   }
 
   private updateArcadeTeamDisplays(): void {
@@ -165,8 +199,8 @@ export class AppPlayerManager {
 
     if (!team1List || !team2List) return;
 
-    const team1LocalContainer = team1List.querySelector('.local-players-container') as HTMLElement;
-    const team2LocalContainer = team2List.querySelector('.local-players-container') as HTMLElement;
+    const team1LocalContainer = document.getElementById('team1-local-players') as HTMLElement;
+    const team2LocalContainer = document.getElementById('team2-local-players') as HTMLElement;
 
     if (team1LocalContainer) team1LocalContainer.innerHTML = '';
     if (team2LocalContainer) team2LocalContainer.innerHTML = '';
@@ -216,19 +250,92 @@ export class AppPlayerManager {
     if (team1Count) {
       const team1Players = Array.from(this.selectedPlayerIds)
         .map(id => this.localPlayers.find(p => p.id === id))
-        .filter(p => p && p.team !== 2)
-        .concat(this.selectedPlayerIds.has('ai-player') &&
-                !document.getElementById('ai-player-card')?.closest('#team2-list') ? [{ id: 'ai-player' }] : []);
+        .filter(p => p && p.team !== 2);
       team1Count.textContent = team1Players.length.toString();
     }
 
     if (team2Count) {
       const team2Players = Array.from(this.selectedPlayerIds)
         .map(id => this.localPlayers.find(p => p.id === id))
-        .filter(p => p && p.team === 2)
-        .concat(this.selectedPlayerIds.has('ai-player') &&
-                document.getElementById('ai-player-card')?.closest('#team2-list') ? [{ id: 'ai-player' }] : []);
+        .filter(p => p && p.team === 2);
       team2Count.textContent = team2Players.length.toString();
     }
+  }
+
+  private setupDropZones(): void {
+    // Setup drop zones for team containers
+    const team1List = document.getElementById('team1-list');
+    const team2List = document.getElementById('team2-list');
+
+    if (team1List) {
+      this.setupDropZone(team1List, 1);
+    }
+
+    if (team2List) {
+      this.setupDropZone(team2List, 2);
+    }
+  }
+
+  private setupDropZone(container: HTMLElement, teamNumber: number): void {
+    // Add drop zone event listeners with bound functions
+    const dragOverHandler = (e: DragEvent) => this.handleDragOver(e, teamNumber);
+    const dragLeaveHandler = (e: DragEvent) => this.handleDragLeave(e, container);
+    const dropHandler = (e: DragEvent) => this.handleDrop(e, teamNumber);
+
+    container.addEventListener('dragover', dragOverHandler);
+    container.addEventListener('dragleave', dragLeaveHandler);
+    container.addEventListener('drop', dropHandler);
+
+    // Store the handlers for potential cleanup
+    (container as any)._dragOverHandler = dragOverHandler;
+    (container as any)._dragLeaveHandler = dragLeaveHandler;
+    (container as any)._dropHandler = dropHandler;
+  }
+
+  private handleDragOver(e: DragEvent, teamNumber: number): void {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+
+    const target = e.target as HTMLElement;
+    const container = target.closest('.team-list') as HTMLElement;
+    if (container) {
+      container.classList.add('drag-over');
+    }
+  }
+
+  private handleDragLeave(e: DragEvent, container: HTMLElement): void {
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!container.contains(relatedTarget)) {
+      container.classList.remove('drag-over');
+    }
+  }
+
+  private handleDrop(e: DragEvent, teamNumber: number): void {
+    e.preventDefault();
+
+    const container = (e.target as HTMLElement).closest('.team-list') as HTMLElement;
+    if (container) {
+      container.classList.remove('drag-over');
+    }
+
+    const playerId = e.dataTransfer!.getData('text/plain');
+    if (playerId) {
+      this.movePlayerToTeam(playerId, teamNumber);
+    }
+  }
+
+  private movePlayerToTeam(playerId: string, teamNumber: number): void {
+    // Find the player
+    const player = this.localPlayers.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Update player's team
+    player.team = teamNumber;
+    this.saveLocalPlayers();
+
+    // Update the UI
+    this.updateGamePartyDisplay();
+
+    console.log(`Moved player ${player.username} to team ${teamNumber}`);
   }
 }

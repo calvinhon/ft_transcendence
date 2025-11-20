@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { UserProfile, SearchQuery, LeaderboardQuery, LeaderboardUser, OnlineUser, GameStats } from '../types.js';
+import { UserProfile, SearchQuery, LeaderboardQuery, LeaderboardUser, OnlineUser, GameStats, JWTPayload, ApiResponse, Friend } from '../types.js';
 import { db } from '../user-logic.js';
 
 export default async function setupUserQueriesRoutes(fastify: FastifyInstance): Promise<void> {
@@ -10,7 +10,10 @@ export default async function setupUserQueriesRoutes(fastify: FastifyInstance): 
     const { query, limit = '20' } = request.query;
 
     if (!query) {
-      return reply.status(400).send({ error: 'Search query required' });
+      return reply.status(400).send({
+        success: false,
+        error: 'Search query required'
+      } as ApiResponse);
     }
 
     return new Promise<void>((resolve, reject) => {
@@ -23,10 +26,16 @@ export default async function setupUserQueriesRoutes(fastify: FastifyInstance): 
         [`%${query}%`, `%${query}%`, parseInt(limit)],
         (err: Error | null, users: UserProfile[]) => {
           if (err) {
-            reply.status(500).send({ error: 'Database error' });
+            reply.status(500).send({
+              success: false,
+              error: 'Database error'
+            } as ApiResponse);
             reject(err);
           } else {
-            reply.send(users);
+            reply.send({
+              success: true,
+              data: users
+            } as ApiResponse<UserProfile[]>);
             resolve();
           }
         }
@@ -55,7 +64,10 @@ export default async function setupUserQueriesRoutes(fastify: FastifyInstance): 
     return new Promise<void>((resolve, reject) => {
       db.all(query, [parseInt(limit)], async (err: Error | null, users: UserProfile[]) => {
         if (err) {
-          reply.status(500).send({ error: 'Database error' });
+          reply.status(500).send({
+            success: false,
+            error: 'Database error'
+          } as ApiResponse);
           reject(err);
           return;
         }
@@ -103,11 +115,17 @@ export default async function setupUserQueriesRoutes(fastify: FastifyInstance): 
             leaderboard.sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
           }
 
-          reply.send(leaderboard);
+          reply.send({
+            success: true,
+            data: leaderboard
+          } as ApiResponse<LeaderboardUser[]>);
           resolve();
         } catch (error) {
           console.error('Error building leaderboard:', error);
-          reply.status(500).send({ error: 'Error fetching leaderboard data' });
+          reply.status(500).send({
+            success: false,
+            error: 'Error fetching leaderboard data'
+          } as ApiResponse);
           reject(error);
         }
       });
@@ -167,6 +185,78 @@ export default async function setupUserQueriesRoutes(fastify: FastifyInstance): 
           last_seen: new Date().toISOString()
         }
       ]);
+    }
+  });
+
+  // Get current user friends (JWT authenticated)
+  fastify.get('/friends', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const authHeader = request.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return reply.status(401).send({
+          success: false,
+          error: 'No token provided'
+        } as ApiResponse);
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const decoded = fastify.jwt.verify(token) as JWTPayload;
+      const userId = decoded.userId;
+
+      return new Promise<void>((resolve, reject) => {
+        // Get friends where status is 'accepted'
+        const query = `
+          SELECT f.*, up.display_name as friend_display_name, up.avatar_url
+          FROM friends f
+          JOIN user_profiles up ON f.friend_id = up.user_id
+          WHERE f.user_id = ? AND f.status = 'accepted'
+          UNION
+          SELECT f.*, up.display_name as friend_display_name, up.avatar_url
+          FROM friends f
+          JOIN user_profiles up ON f.user_id = up.user_id
+          WHERE f.friend_id = ? AND f.status = 'accepted'
+        `;
+
+        db.all(query, [userId, userId], (err: Error | null, friends: any[]) => {
+          if (err) {
+            reply.status(500).send({
+              success: false,
+              error: 'Database error'
+            } as ApiResponse);
+            reject(err);
+          } else {
+            // Format the response
+            const formattedFriends = friends.map(friend => ({
+              id: friend.id,
+              user_id: friend.user_id === userId ? friend.friend_id : friend.user_id,
+              friend_id: friend.friend_id,
+              status: friend.status,
+              created_at: friend.created_at,
+              updated_at: friend.updated_at,
+              friend_username: friend.friend_display_name || `User ${friend.friend_id}`,
+              friend_display_name: friend.friend_display_name || `User ${friend.friend_id}`
+            }));
+
+            reply.send({
+              success: true,
+              data: formattedFriends
+            } as ApiResponse<Friend[]>);
+            resolve();
+          }
+        });
+      });
+    } catch (error) {
+      console.log('Get friends error:', error);
+      if (error instanceof Error && error.message.includes('expired')) {
+        return reply.status(401).send({
+          success: false,
+          error: 'Token expired'
+        } as ApiResponse);
+      }
+      reply.status(401).send({
+        success: false,
+        error: 'Invalid token'
+      } as ApiResponse);
     }
   });
 

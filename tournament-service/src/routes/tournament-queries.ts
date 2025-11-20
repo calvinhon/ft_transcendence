@@ -8,7 +8,7 @@ export default async function setupTournamentQueryRoutes(fastify: FastifyInstanc
   // Get all tournaments (with mock data for testing)
   fastify.get<{
     Querystring: TournamentQuery;
-  }>('/list', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
+  }>('/tournaments', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
     const { status, limit = '50' } = request.query;
 
     // For now, return mock tournaments for testing
@@ -151,6 +151,31 @@ export default async function setupTournamentQueryRoutes(fastify: FastifyInstanc
 
           reply.send(rankings);
           resolve();
+        }
+      );
+    });
+  });
+
+  // Get user's tournament count
+  fastify.get<{
+    Params: { userId: string };
+  }>('/user/:userId/count', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+    const { userId } = request.params;
+
+    return new Promise<void>((resolve, reject) => {
+      db.get(
+        `SELECT COUNT(*) as count
+         FROM tournament_participants
+         WHERE user_id = ?`,
+        [userId],
+        (err: Error | null, row: { count: number }) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else {
+            reply.send({ count: row.count });
+            resolve();
+          }
         }
       );
     });

@@ -26,6 +26,12 @@ interface TournamentMatch {
   player2Name: string;
 }
 
+interface User {
+  userId: number;
+  username: string;
+  email: string;
+}
+
 export class GameRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -51,7 +57,8 @@ export class GameRenderer {
     gameSettings: GameSettings,
     isCampaignMode: boolean,
     currentCampaignLevel: number,
-    tournamentMatch: TournamentMatch | null
+    tournamentMatch: TournamentMatch | null,
+    currentUser: User | null
   ): void {
     if (!this.ctx || !this.canvas || !gameState || isPaused) return;
     
@@ -72,7 +79,7 @@ export class GameRenderer {
     this.ctx.shadowBlur = 0;
     
     // Draw player info header
-    this.drawPlayerInfo(gameState, gameSettings, isCampaignMode, currentCampaignLevel, tournamentMatch);
+    this.drawPlayerInfo(gameState, gameSettings, isCampaignMode, currentCampaignLevel, tournamentMatch, currentUser);
     
     // Draw countdown overlay if active
     if (countdownValue !== null) {
@@ -215,7 +222,8 @@ export class GameRenderer {
     gameSettings: GameSettings,
     isCampaignMode: boolean,
     currentCampaignLevel: number,
-    tournamentMatch: TournamentMatch | null
+    tournamentMatch: TournamentMatch | null,
+    currentUser: User | null
   ): void {
     if (!this.ctx || !this.canvas) return;
     
@@ -242,7 +250,7 @@ export class GameRenderer {
       leftPlayerName = 'Team 1';
       rightPlayerName = 'Team 2';
     } else {
-      leftPlayerName = 'Player';
+      leftPlayerName = currentUser?.username || 'Player 1';
       rightPlayerName = 'AI Bot';
     }
     

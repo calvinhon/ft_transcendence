@@ -57,5 +57,18 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         metadata TEXT DEFAULT '{}'
       )
     `);
+
+    // Create friends table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS friends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        friend_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, friend_id)
+      )
+    `);
   }
 });

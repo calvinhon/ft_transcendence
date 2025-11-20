@@ -1,26 +1,21 @@
 // frontend/src/app-game-manager.ts
 // Game management functionality for the App
 
-export interface GameSettings {
-  gameMode: 'coop' | 'tournament' | 'arcade';
-  difficulty: 'easy' | 'medium' | 'hard';
-  soundEnabled: boolean;
-  musicEnabled: boolean;
-  maxPlayers: number;
-  timeLimit?: number;
-  scoreLimit?: number;
-}
+import { GameSettings } from './game-interfaces.js';
 
 export class AppGameManager {
-  public gameSettings: GameSettings = {
-    gameMode: 'coop',
-    difficulty: 'medium',
-    soundEnabled: true,
-    musicEnabled: true,
-    maxPlayers: 4
-  };
+  public gameSettings: GameSettings;
 
   constructor() {
+    this.gameSettings = {
+      gameMode: 'coop',
+      aiDifficulty: 'medium',
+      ballSpeed: 'medium',
+      paddleSpeed: 'medium',
+      powerupsEnabled: false,
+      accelerateOnHit: false,
+      scoreToWin: 3
+    };
     this.loadGameSettings();
   }
 
@@ -51,18 +46,18 @@ export class AppGameManager {
   }
 
   public setDifficulty(difficulty: 'easy' | 'medium' | 'hard'): void {
-    this.gameSettings.difficulty = difficulty;
+    this.gameSettings.aiDifficulty = difficulty;
     this.saveGameSettings();
   }
 
   public toggleSound(): void {
-    this.gameSettings.soundEnabled = !this.gameSettings.soundEnabled;
-    this.saveGameSettings();
+    // Sound settings not implemented yet
+    console.log('Sound toggle not implemented');
   }
 
   public toggleMusic(): void {
-    this.gameSettings.musicEnabled = !this.gameSettings.musicEnabled;
-    this.saveGameSettings();
+    // Music settings not implemented yet
+    console.log('Music toggle not implemented');
   }
 
   public startCoopGame(): void {
@@ -84,7 +79,7 @@ export class AppGameManager {
   }
 
   public getDifficultyMultiplier(): number {
-    switch (this.gameSettings.difficulty) {
+    switch (this.gameSettings.aiDifficulty) {
       case 'easy': return 0.8;
       case 'medium': return 1.0;
       case 'hard': return 1.2;
@@ -99,13 +94,13 @@ export class AppGameManager {
       return false;
     }
 
-    if (!['easy', 'medium', 'hard'].includes(this.gameSettings.difficulty)) {
-      console.error('Invalid difficulty setting');
+    if (!['easy', 'medium', 'hard'].includes(this.gameSettings.aiDifficulty)) {
+      console.error('Invalid AI difficulty setting');
       return false;
     }
 
-    if (this.gameSettings.maxPlayers < 1 || this.gameSettings.maxPlayers > 8) {
-      console.error('Invalid max players setting');
+    if (this.gameSettings.scoreToWin < 1 || this.gameSettings.scoreToWin > 10) {
+      console.error('Invalid score to win setting');
       return false;
     }
 
@@ -115,10 +110,12 @@ export class AppGameManager {
   public resetToDefaults(): void {
     this.gameSettings = {
       gameMode: 'coop',
-      difficulty: 'medium',
-      soundEnabled: true,
-      musicEnabled: true,
-      maxPlayers: 4
+      aiDifficulty: 'medium',
+      ballSpeed: 'medium',
+      paddleSpeed: 'medium',
+      powerupsEnabled: false,
+      accelerateOnHit: false,
+      scoreToWin: 3
     };
     this.saveGameSettings();
   }

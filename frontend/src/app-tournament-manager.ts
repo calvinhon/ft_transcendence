@@ -74,17 +74,59 @@ export class AppTournamentManager {
   }
 
   public startTournament(): void {
-    if (!this.currentTournament) {
-      console.error('No tournament to start');
+    const players = this.getTournamentPlayers();
+    
+    if (players.length < 2) {
+      console.error('Not enough players for tournament. Need at least 2 players.');
+      (window as any).app?.showToast('Need at least 2 players to start a tournament', 'error');
       return;
     }
 
-    this.currentTournament.status = 'active';
+    // Create tournament with current players
+    this.createTournament(`Tournament ${new Date().toLocaleDateString()}`, Math.max(8, players.length));
+    this.currentTournament!.currentPlayers = players.length;
+
+    this.currentTournament!.status = 'active';
     this.generateTournamentBracket();
     this.saveTournamentData();
 
     console.log('Tournament started:', this.currentTournament);
-    // TODO: Navigate to tournament bracket view
+    
+    // Start the first match
+    this.startNextMatch();
+  }
+
+  public startNextMatch(): void {
+    // Find the next pending match
+    const nextMatch = this.tournamentMatches.find(match => match.status === 'pending');
+    if (!nextMatch) {
+      console.log('No more matches to play');
+      this.endTournament();
+      return;
+    }
+
+    // Set the current match on the app
+    const app = (window as any).app;
+    if (app) {
+      // Convert to the format expected by GameManager
+      app.currentTournamentMatch = {
+        tournamentId: parseInt(nextMatch.tournamentId.split('_')[1] || '0'),
+        matchId: parseInt(nextMatch.id.split('_')[1] || '0'),
+        player1Id: nextMatch.player1?.userId || nextMatch.player1?.id || 0,
+        player1Name: nextMatch.player1?.username || 'Unknown',
+        player2Id: nextMatch.player2?.userId || nextMatch.player2?.id || 0,
+        player2Name: nextMatch.player2?.username || 'AI Bot',
+        round: nextMatch.round,
+        status: nextMatch.status === 'pending' ? 'pending' : 'in_progress'
+      };
+      console.log('Starting tournament match:', app.currentTournamentMatch);
+      
+      // Start the game with this match
+      const actualGameManager = (window as any).gameManager;
+      if (actualGameManager) {
+        actualGameManager.startBotMatch();
+      }
+    }
   }
 
   private generateTournamentBracket(): void {
@@ -203,10 +245,19 @@ export class AppTournamentManager {
     this.saveTournamentData();
   }
 
-  public exportTournamentData(): string {
-    return JSON.stringify({
-      tournament: this.currentTournament,
-      matches: this.tournamentMatches
-    }, null, 2);
+  private endTournament(): void {
+    if (!this.currentTournament) return;
+
+    this.currentTournament.status = 'completed';
+    this.saveTournamentData();
+
+    console.log('Tournament ended:', this.currentTournament);
+
+    // Show completion message
+    const app = (window as any).app;
+    if (app) {
+      app.showToast('Tournament completed!', 'success');
+      app.showScreen('play-config-screen');
+    }
   }
 }

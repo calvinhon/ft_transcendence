@@ -90,17 +90,39 @@ export class LocalPlayerModalManager {
     });
 
     // Close modal handlers
-    const closeBtn = loginModal?.querySelector('.close');
+    const closeBtn = document.getElementById('close-local-player-login-modal');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.hideLoginModal());
     }
 
-    // Click outside to close
-    loginModal?.addEventListener('click', (e) => {
-      if (e.target === loginModal) {
+    // Modal overlay click to close
+    if (loginModal) {
+      loginModal.addEventListener('click', (e) => {
+        if (e.target === loginModal) {
+          this.hideLoginModal();
+        }
+      });
+    }
+
+    // Link handlers
+    const forgotPasswordLink = document.getElementById('local-player-forgot-password-link');
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
         this.hideLoginModal();
-      }
-    });
+        // Show forgot password screen (not implemented yet)
+        console.log('Forgot password link clicked - not implemented');
+      });
+    }
+
+    const createAccountLink = document.getElementById('local-player-create-account-link');
+    if (createAccountLink) {
+      createAccountLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.hideLoginModal();
+        this.showRegisterModal();
+      });
+    }
   }
 
   private setupRegisterModal(): void {
@@ -182,17 +204,29 @@ export class LocalPlayerModalManager {
     });
 
     // Close modal handlers
-    const closeBtn = registerModal?.querySelector('.close');
+    const closeBtn = document.getElementById('close-local-player-register-modal');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.hideRegisterModal());
     }
 
-    // Click outside to close
-    registerModal?.addEventListener('click', (e) => {
-      if (e.target === registerModal) {
+    // Modal overlay click to close
+    if (registerModal) {
+      registerModal.addEventListener('click', (e) => {
+        if (e.target === registerModal) {
+          this.hideRegisterModal();
+        }
+      });
+    }
+
+    // Link handlers
+    const backToLoginLink = document.getElementById('local-player-back-to-login-link');
+    if (backToLoginLink) {
+      backToLoginLink.addEventListener('click', (e) => {
+        e.preventDefault();
         this.hideRegisterModal();
-      }
-    });
+        this.showLoginModal();
+      });
+    }
   }
 
   private async handleLogin(email: string, password: string): Promise<{ success: boolean; error?: string }> {

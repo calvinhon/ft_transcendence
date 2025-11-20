@@ -1,14 +1,6 @@
 // Campaign mode manager - handles all campaign progression and UI
 
-interface GameSettings {
-  gameMode: string;
-  aiDifficulty: string;
-  ballSpeed: string;
-  paddleSpeed: string;
-  powerupsEnabled: boolean;
-  accelerateOnHit: boolean;
-  scoreToWin: number;
-}
+import { GameSettings } from '../game-interfaces.js';
 
 export class CampaignMode {
   private currentLevel: number = 1;
@@ -172,9 +164,9 @@ export class CampaignMode {
     // - Levels 16-20: Very Hard (faster ball, faster paddle, accelerate on hit)
     // - Level 21: Final Boss (everything maxed)
     
-    let aiDifficulty: string = 'easy';
-    let ballSpeed: string = 'slow';
-    let paddleSpeed: string = 'slow';
+    let aiDifficulty: 'easy' | 'medium' | 'hard' = 'easy';
+    let ballSpeed: 'slow' | 'medium' | 'fast' = 'slow';
+    let paddleSpeed: 'slow' | 'medium' | 'fast' = 'slow';
     let accelerateOnHit: boolean = false;
     let scoreToWin: number = 3;
     
@@ -366,7 +358,7 @@ export class CampaignMode {
         document.body.removeChild(overlay);
         const app = (window as any).app;
         if (app && typeof app.showScreen === 'function') {
-          app.showScreen('play-config');
+          app.showScreen('play-config-screen');
         }
       });
     }

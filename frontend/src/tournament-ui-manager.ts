@@ -21,11 +21,8 @@ export class TournamentUIManager {
   }
 
   private setupEventListeners(): void {
-    console.log('Setting up tournament UI event listeners');
-
     // Create tournament button - opens modal
     const createBtn = document.getElementById('create-tournament-btn');
-    console.log('Create tournament button found:', !!createBtn);
     if (createBtn) {
       createBtn.addEventListener('click', () => {
         this.openCreateTournamentModal();
@@ -45,7 +42,6 @@ export class TournamentUIManager {
 
     // Create tournament form submission
     const createForm = document.getElementById('create-tournament-form') as HTMLFormElement;
-    console.log('Create tournament form found:', !!createForm);
     if (createForm) {
       createForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -63,10 +59,19 @@ export class TournamentUIManager {
         }
       });
     });
+
+    // Modal overlay click to close
+    const modal = document.getElementById('create-tournament-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          this.closeCreateTournamentModal();
+        }
+      });
+    }
   }
 
   private openCreateTournamentModal(): void {
-    console.log('Opening create tournament modal');
     const modal = document.getElementById('create-tournament-modal');
     if (!modal) {
       console.error('Create tournament modal not found');
@@ -78,7 +83,6 @@ export class TournamentUIManager {
   }
 
   private closeCreateTournamentModal(): void {
-    console.log('Closing create tournament modal');
     const modal = document.getElementById('create-tournament-modal');
     if (modal) {
       modal.style.display = 'none';
@@ -91,7 +95,6 @@ export class TournamentUIManager {
   }
 
   private populatePartyList(): void {
-    console.log('Populating party list for tournament creation');
     const partyList = document.getElementById('tournament-party-list');
     if (!partyList) return;
 
@@ -123,8 +126,6 @@ export class TournamentUIManager {
   }
 
   private async handleCreateTournament(): Promise<void> {
-    console.log('Handling tournament creation');
-
     const nameInput = document.getElementById('tournament-name') as HTMLInputElement;
     const descInput = document.getElementById('tournament-description') as HTMLTextAreaElement;
     const maxParticipantsInput = document.getElementById('tournament-max-participants') as HTMLInputElement;
@@ -168,8 +169,6 @@ export class TournamentUIManager {
   }
 
   private switchTournamentTab(tabType: 'all' | 'my'): void {
-    console.log('Switching tournament tab to:', tabType);
-
     // Update tab buttons
     const tabButtons = document.querySelectorAll('.tournament-tab-btn');
     tabButtons.forEach(btn => {
@@ -198,7 +197,6 @@ export class TournamentUIManager {
   }
 
   public refreshTournamentList(): void {
-    console.log('Refreshing tournament list');
     const dataManager = (window as any).tournamentDataManager;
     if (!dataManager) return;
 
@@ -221,6 +219,55 @@ export class TournamentUIManager {
     }
 
     container.innerHTML = tournaments.map(tournament => this.createTournamentCard(tournament)).join('');
+    
+    // Attach event handlers to dynamically created buttons
+    this.attachTournamentActionHandlers(container);
+  }
+
+  private attachTournamentActionHandlers(container: HTMLElement): void {
+    // Join tournament buttons
+    const joinButtons = container.querySelectorAll('.join-tournament-btn');
+    joinButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tournamentId = parseInt((e.target as HTMLElement).getAttribute('data-tournament-id') || '0');
+        if (tournamentId) {
+          this.handleJoinTournament(tournamentId);
+        }
+      });
+    });
+
+    // Start tournament buttons
+    const startButtons = container.querySelectorAll('.start-tournament-btn');
+    startButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tournamentId = parseInt((e.target as HTMLElement).getAttribute('data-tournament-id') || '0');
+        if (tournamentId) {
+          this.handleStartTournament(tournamentId);
+        }
+      });
+    });
+
+    // Leave tournament buttons
+    const leaveButtons = container.querySelectorAll('.leave-tournament-btn');
+    leaveButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tournamentId = parseInt((e.target as HTMLElement).getAttribute('data-tournament-id') || '0');
+        if (tournamentId) {
+          this.handleLeaveTournament(tournamentId);
+        }
+      });
+    });
+
+    // Delete tournament buttons
+    const deleteButtons = container.querySelectorAll('.delete-tournament-btn');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tournamentId = parseInt((e.target as HTMLElement).getAttribute('data-tournament-id') || '0');
+        if (tournamentId) {
+          this.handleDeleteTournament(tournamentId);
+        }
+      });
+    });
   }
 
   private createTournamentCard(tournament: Tournament): string {
@@ -277,6 +324,74 @@ export class TournamentUIManager {
       section.style.display = 'block';
       // Refresh data
       this.refreshTournamentList();
+    }
+  }
+
+  private async handleJoinTournament(tournamentId: number): Promise<void> {
+    const dataManager = (window as any).tournamentDataManager;
+    if (!dataManager) {
+      console.error('Tournament data manager not found');
+      return;
+    }
+
+    const success = await dataManager.joinTournament(tournamentId);
+    if (success) {
+      this.refreshTournamentList();
+      this.showToast('Successfully joined tournament!', 'success');
+    } else {
+      this.showToast('Failed to join tournament', 'error');
+    }
+  }
+
+  private async handleStartTournament(tournamentId: number): Promise<void> {
+    const dataManager = (window as any).tournamentDataManager;
+    if (!dataManager) {
+      console.error('Tournament data manager not found');
+      return;
+    }
+
+    const success = await dataManager.startTournament(tournamentId);
+    if (success) {
+      this.refreshTournamentList();
+      this.showToast('Tournament started!', 'success');
+    } else {
+      this.showToast('Failed to start tournament', 'error');
+    }
+  }
+
+  private async handleLeaveTournament(tournamentId: number): Promise<void> {
+    const dataManager = (window as any).tournamentDataManager;
+    if (!dataManager) {
+      console.error('Tournament data manager not found');
+      return;
+    }
+
+    const success = await dataManager.leaveTournament(tournamentId);
+    if (success) {
+      this.refreshTournamentList();
+      this.showToast('Left tournament successfully', 'success');
+    } else {
+      this.showToast('Failed to leave tournament', 'error');
+    }
+  }
+
+  private async handleDeleteTournament(tournamentId: number): Promise<void> {
+    if (!confirm('Are you sure you want to delete this tournament?')) {
+      return;
+    }
+
+    const dataManager = (window as any).tournamentDataManager;
+    if (!dataManager) {
+      console.error('Tournament data manager not found');
+      return;
+    }
+
+    const success = await dataManager.deleteTournament(tournamentId);
+    if (success) {
+      this.refreshTournamentList();
+      this.showToast('Tournament deleted successfully', 'success');
+    } else {
+      this.showToast('Failed to delete tournament', 'error');
     }
   }
 }

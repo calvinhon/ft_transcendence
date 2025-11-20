@@ -2,9 +2,9 @@
 
 OS := $(shell uname)
 
-.PHONY: start check-docker check-compose clean up open stop restart rebuild
+.PHONY: start check-docker check-compose clean clean-host up open stop restart rebuild
 
-start: check-docker check-compose clean up open
+start: check-docker check-compose clean-host clean up open
 
 restart: check-docker check-compose
 	@echo "🔄 Restarting services without rebuild..."
@@ -19,34 +19,30 @@ rebuild: check-docker check-compose
 	docker compose up -d
 	@echo "✅ Services rebuilt and started!"
 
-check-docker:
-	@echo "🔍 Checking Docker Desktop..."
-	@if ! docker info >/dev/null 2>&1; then \
-		echo "⚠️  Docker is not running. Starting Docker Desktop..."; \
-		if [ "$(OS)" = "Darwin" ]; then \
-			open -a Docker; \
-			echo "⏳ Waiting for Docker to start..."; \
-			while ! docker info >/dev/null 2>&1; do sleep 2; done; \
-		else \
-			if command -v systemctl >/dev/null 2>&1; then \
-				sudo systemctl start docker; \
-			else \
-				echo "❌ Cannot auto-start Docker on this Linux. Please start it manually."; \
-				exit 1; \
-			fi \
-		fi \
+check-compose:
+	@echo "🔍 Checking Docker Compose..."
+	@if docker compose version >/dev/null 2>&1; then \
+		echo "✅ Docker Compose (new syntax) is available."; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		echo "✅ Docker Compose (legacy syntax) is available."; \
 	else \
-		echo "✅ Docker is already running."; \
+		echo "❌ Docker Compose not found. Please install Docker Compose."; \
+		exit 1; \
 	fi
 
-check-compose:
-	@echo "🔍 Checking Docker Compose v2..."
-	@if ! docker compose version >/dev/null 2>&1; then \
-		echo "❌ Docker Compose v2 not found. Please install it."; \
-		exit 1; \
-	else \
-		echo "✅ Docker Compose v2 available."; \
+clean-host:
+	@echo "🧹 Cleaning host build directories and frontend compiled files..."
+	@# Clean general build directories
+	@find . -type d \( -name "dist" -o -name "build" -o -name ".next" -o -name ".nuxt" -o -name ".vuepress" -o -name "node_modules" \) -exec rm -rf {} + 2>/dev/null || true
+	@# Clean TypeScript build info files
+	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
+	@# Clean frontend specific build artifacts
+	@if [ -d "frontend" ]; then \
+		echo "🧹 Cleaning frontend build artifacts..."; \
+		cd frontend && rm -rf dist node_modules/.vite node_modules/.cache 2>/dev/null || true; \
+		find . -name "*.tsbuildinfo" -delete 2>/dev/null || true; \
 	fi
+	@echo "✅ Host build directories, node_modules, and frontend compiled files cleaned."
 
 clean:
 	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."

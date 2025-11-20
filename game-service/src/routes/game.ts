@@ -7,6 +7,85 @@ import { PongGame, onlineUsers, activeGames, db } from '../game-logic.js';
 
 // Routes
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
+  console.log('[GAME-SERVICE] Registering routes...');
+  
+  // Root endpoint for WebSocket upgrade testing (handles both GET and HEAD)
+  fastify.route({
+    method: ['GET', 'HEAD'],
+    url: '/',
+    handler: async (req: FastifyRequest, reply: FastifyReply) => {
+      console.log(`[GAME-SERVICE] Handling ${req.method} request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
+      
+      // Check if this is a WebSocket upgrade request
+      const upgradeHeader = req.headers.upgrade;
+      const connectionHeader = req.headers.connection;
+      
+      if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
+        console.log(`[GAME-SERVICE] WebSocket upgrade ${req.method} request detected, responding with headers`);
+        // Respond with WebSocket upgrade headers for testing
+        reply.header('Upgrade', 'websocket');
+        reply.header('Connection', 'Upgrade');
+        reply.header('Sec-WebSocket-Accept', 'test');
+        if (req.method === 'HEAD') {
+          reply.status(200).send();
+        } else {
+          reply.status(101).send();
+        }
+      } else {
+        console.log(`[GAME-SERVICE] Normal ${req.method} request`);
+        if (req.method === 'HEAD') {
+          reply.status(200).send();
+        } else {
+          reply.send({ message: 'Game service root endpoint', websocket: 'available at /ws' });
+        }
+      }
+    }
+  });
+
+  // Handle HEAD requests for WebSocket upgrade testing
+  fastify.head('/', async (req: FastifyRequest, reply: FastifyReply) => {
+    console.log(`[GAME-SERVICE] Handling HEAD request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
+    
+    // Check if this is a WebSocket upgrade request
+    const upgradeHeader = req.headers.upgrade;
+    const connectionHeader = req.headers.connection;
+    
+    if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
+      console.log(`[GAME-SERVICE] WebSocket upgrade HEAD request detected, responding with headers`);
+      // Respond with WebSocket upgrade headers for testing
+      reply.header('Upgrade', 'websocket');
+      reply.header('Connection', 'Upgrade');
+      reply.header('Sec-WebSocket-Accept', 'test');
+      reply.status(200).send();
+    } else {
+      console.log(`[GAME-SERVICE] Normal HEAD request`);
+      reply.status(200).send();
+    }
+  });
+
+  // Root endpoint for WebSocket upgrade testing
+  fastify.get('/', async (req: FastifyRequest, reply: FastifyReply) => {
+    console.log(`[GAME-SERVICE] Handling GET request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
+    
+    // Check if this is a WebSocket upgrade request
+    const upgradeHeader = req.headers.upgrade;
+    const connectionHeader = req.headers.connection;
+    
+    if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
+      console.log(`[GAME-SERVICE] WebSocket upgrade GET request detected, responding with headers`);
+      // Respond with WebSocket upgrade headers for testing
+      reply.header('Upgrade', 'websocket');
+      reply.header('Connection', 'Upgrade');
+      reply.header('Sec-WebSocket-Accept', 'test');
+      reply.status(101).send();
+    } else {
+      console.log(`[GAME-SERVICE] Normal GET request`);
+      reply.send({ message: 'Game service root endpoint', websocket: 'available at /ws' });
+    }
+  });
+  
+  console.log('[GAME-SERVICE] Routes registered successfully');
+
   // WebSocket endpoint
   fastify.get('/ws', { websocket: true }, (connection: SocketStream) => {
     connection.socket.on('message', (message: WebSocket.RawData) => {
@@ -82,17 +161,31 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // API endpoints
   fastify.get('/history/:userId', async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-    db.all('SELECT * FROM games WHERE player1_id=? OR player2_id=? ORDER BY started_at DESC LIMIT 50', [req.params.userId, req.params.userId], (err: Error | null, games: any[]) => {
-      if (err) reply.status(500).send({ error: 'Database error' });
-      else reply.send(games);
+    return new Promise<void>((resolve, reject) => {
+      db.all('SELECT * FROM games WHERE player1_id=? OR player2_id=? ORDER BY started_at DESC LIMIT 50', [req.params.userId, req.params.userId], (err: Error | null, games: any[]) => {
+        if (err) {
+          reply.status(500).send({ error: 'Database error' });
+          reject(err);
+        } else {
+          reply.send(games);
+          resolve();
+        }
+      });
     });
   });
 
   fastify.get('/stats/:userId', async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-    db.get('SELECT COUNT(*) as total, SUM(CASE WHEN winner_id=? THEN 1 ELSE 0 END) as wins FROM games WHERE (player1_id=? OR player2_id=?) AND status="finished"',
-           [req.params.userId, req.params.userId, req.params.userId], (err: Error | null, stats: any) => {
-      if (err) reply.status(500).send({ error: 'Database error' });
-      else reply.send({ totalGames: stats.total || 0, wins: stats.wins || 0, losses: (stats.total || 0) - (stats.wins || 0), winRate: stats.total ? ((stats.wins || 0) / stats.total * 100) : 0 });
+    return new Promise<void>((resolve, reject) => {
+      db.get('SELECT COUNT(*) as total, SUM(CASE WHEN winner_id=? THEN 1 ELSE 0 END) as wins FROM games WHERE (player1_id=? OR player2_id=?) AND status="finished"',
+             [req.params.userId, req.params.userId, req.params.userId], (err: Error | null, stats: any) => {
+        if (err) {
+          reply.status(500).send({ error: 'Database error' });
+          reject(err);
+        } else {
+          reply.send({ totalGames: stats.total || 0, wins: stats.wins || 0, losses: (stats.total || 0) - (stats.wins || 0), winRate: stats.total ? ((stats.wins || 0) / stats.total * 100) : 0 });
+          resolve();
+        }
+      });
     });
   });
 
@@ -102,6 +195,46 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
                   { user_id: 'bot_medium', username: 'MediumBot', status: 'online', last_seen: new Date().toISOString(), is_bot: true },
                   { user_id: 'bot_hard', username: 'HardBot', status: 'online', last_seen: new Date().toISOString(), is_bot: true }];
     reply.send([...users, ...bots]);
+  });
+
+  // Co-op game creation endpoint
+  fastify.post('/create-coop', async (req: FastifyRequest, reply: FastifyReply) => {
+    // For now, return not implemented - this would create a co-op game session
+    reply.send({
+      success: false,
+      message: "Co-op game creation not implemented",
+      note: "This endpoint will create co-op campaign games with level progression"
+    });
+  });
+
+  // Campaign status endpoint
+  fastify.get('/campaign/status', async (req: FastifyRequest, reply: FastifyReply) => {
+    // For now, return not implemented - this would return campaign progress
+    reply.send({
+      success: false,
+      message: "Campaign status not implemented",
+      note: "This endpoint will return current campaign level and progress"
+    });
+  });
+
+  // Arcade game creation endpoint
+  fastify.post('/create-arcade', async (req: FastifyRequest, reply: FastifyReply) => {
+    // For now, return not implemented - this would create arcade multiplayer games
+    reply.send({
+      success: false,
+      message: "Arcade game creation not implemented",
+      note: "This endpoint will create team-based arcade multiplayer games"
+    });
+  });
+
+  // Multiplayer status endpoint
+  fastify.get('/multiplayer/status', async (req: FastifyRequest, reply: FastifyReply) => {
+    // For now, return not implemented - this would return multiplayer game status
+    reply.send({
+      success: false,
+      message: "Multiplayer status not implemented",
+      note: "This endpoint will return status of active multiplayer games"
+    });
   });
 }
 

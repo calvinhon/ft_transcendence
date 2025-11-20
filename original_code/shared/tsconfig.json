@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true
+  },
+  "include": ["types.ts"],
+  "exclude": ["node_modules", "dist"]
+}

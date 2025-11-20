@@ -11,8 +11,6 @@ export class TournamentManager {
   public logic: TournamentLogic;
 
   constructor() {
-    console.log('TournamentManager constructor called');
-
     // Initialize all managers
     this.dataManager = new TournamentDataManager();
     this.uiManager = new TournamentUIManager();

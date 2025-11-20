@@ -13,6 +13,8 @@ export interface PaddlePlayer {
   username?: string;
   userId?: number;
   color?: string;
+  team?: number;
+  paddleIndex?: number;
 }
 
 export interface GameState {

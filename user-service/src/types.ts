@@ -71,3 +71,37 @@ export interface LeaderboardQuery {
   type?: 'wins' | 'games' | 'winrate';
   limit?: string;
 }
+
+// Authentication Types
+export interface JWTPayload {
+  userId: number;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface UserProfileParams {
+  userId: string;
+}
+
+export interface AchievementParams {
+  userId: string;
+}
+
+export interface Friend {
+  id: number;
+  user_id: number;
+  friend_id: number;
+  status: 'pending' | 'accepted' | 'blocked';
+  created_at: string;
+  updated_at: string;
+  friend_username?: string;
+  friend_display_name?: string;
+}

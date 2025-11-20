@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ft_transcendence</title>
+  <title>ft_transcendence v2</title>
   <link rel="stylesheet" href="css/style.css">
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -709,30 +709,54 @@
     <div class="modal-overlay"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Login</h2>
+        <h2 class="modal-title">Add Local Player - Login</h2>
         <button type="button" class="modal-close" id="close-local-player-login-modal" aria-label="Close">
           <i class="fas fa-times"></i>
         </button>
       </div>
       
       <div class="modal-body">
-        <div class="login-form-container">
-          <form id="local-player-login-form" class="login-form">
-            <input type="text" id="local-player-login-email" placeholder="Username" required class="login-input" />
-            <input type="password" id="local-player-login-password" placeholder="Password" required class="login-input" />
-            <div id="local-player-login-error" class="error-message" style="display: none;"></div>
-            <button type="submit" class="login-btn">LOGIN</button>
-          </form>
-          
-          <div class="login-links">
-            <a href="#" id="local-player-forgot-password-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Forgot Password?
-            </a>
-            <span>OR</span>
-            <a href="#" id="local-player-create-account-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Create an Account
-            </a>
+        <p class="modal-description">Login with an existing account to add a local player to this game session.</p>
+        
+        <form id="local-player-login-form" class="login-form">
+          <div class="form-group">
+            <input 
+              type="text" 
+              id="local-player-login-email" 
+              class="login-input" 
+              placeholder="Username or Email" 
+              required 
+              autocomplete="username"
+            />
           </div>
+          
+          <div class="form-group">
+            <input 
+              type="password" 
+              id="local-player-login-password" 
+              class="login-input" 
+              placeholder="Password" 
+              required 
+              autocomplete="current-password"
+            />
+          </div>
+          
+          <div id="local-player-login-error" class="error-message" style="display: none;"></div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-local-player-login">Cancel</button>
+            <button type="submit" class="login-btn">Login</button>
+          </div>
+        </form>
+        
+        <div class="login-links">
+          <a href="#" id="local-player-forgot-password-link" class="login-link">
+            <span style="color: #e94560;">▶</span> Forgot Password?
+          </a>
+          <span>OR</span>
+          <a href="#" id="local-player-create-account-link" class="login-link">
+            <span style="color: #e94560;">▶</span> Create an Account
+          </a>
         </div>
       </div>
     </div>
@@ -743,27 +767,62 @@
     <div class="modal-overlay"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Create Account</h2>
+        <h2 class="modal-title">Add Local Player - Create Account</h2>
         <button type="button" class="modal-close" id="close-local-player-register-modal" aria-label="Close">
           <i class="fas fa-times"></i>
         </button>
       </div>
       
       <div class="modal-body">
-        <div class="login-form-container">
-          <form id="local-player-register-form" class="login-form">
-            <input type="text" id="local-player-register-username" placeholder="Username" required class="login-input" />
-            <input type="email" id="local-player-register-email" placeholder="Email" required class="login-input" />
-            <input type="password" id="local-player-register-password" placeholder="Password" required class="login-input" />
-            <div id="local-player-register-error" class="error-message" style="display: none;"></div>
-            <button type="submit" class="login-btn">Create Account</button>
-          </form>
-          
-          <div class="login-links">
-            <a href="#" id="local-player-back-to-login-link" class="login-link">
-              <span style="color: #e94560;">◀</span> Back to Login
-            </a>
+        <p class="modal-description">Create a new account to add a local player to this game session.</p>
+        
+        <form id="local-player-register-form" class="login-form">
+          <div class="form-group">
+            <input 
+              type="text" 
+              id="local-player-register-username" 
+              class="login-input" 
+              placeholder="Username" 
+              required 
+              autocomplete="username"
+            />
           </div>
+          
+          <div class="form-group">
+            <input 
+              type="email" 
+              id="local-player-register-email" 
+              class="login-input" 
+              placeholder="Email" 
+              required 
+              autocomplete="email"
+            />
+          </div>
+          
+          <div class="form-group">
+            <input 
+              type="password" 
+              id="local-player-register-password" 
+              class="login-input" 
+              placeholder="Password" 
+              required 
+              minlength="6"
+              autocomplete="new-password"
+            />
+          </div>
+          
+          <div id="local-player-register-error" class="error-message" style="display: none;"></div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-local-player-register">Cancel</button>
+            <button type="submit" class="login-btn">Create Account</button>
+          </div>
+        </form>
+        
+        <div class="login-links">
+          <a href="#" id="local-player-back-to-login-link" class="login-link">
+            <span style="color: #e94560;">▶</span> Already have an account? Login
+          </a>
         </div>
       </div>
     </div>
@@ -846,6 +905,6 @@
   </div>
 
   <!-- Scripts -->
-  <script type="module" src="src/main.ts"></script>
+  <script type="module" src="src/main.ts?cache=force"></script>
 </body>
 </html>

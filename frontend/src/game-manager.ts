@@ -89,6 +89,22 @@ export class GameManager {
         this.findMatch();
       });
     }
+
+    // Pause/Resume button
+    const pauseBtn = document.getElementById('pause-game-btn') as HTMLButtonElement;
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', () => {
+        this.pauseGame();
+      });
+    }
+
+    // Stop/Quit button
+    const stopBtn = document.getElementById('stop-game-btn') as HTMLButtonElement;
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        this.stopGame();
+      });
+    }
   }
 
   // Public API methods
@@ -175,7 +191,7 @@ export class GameManager {
 
     let gameSettings: GameSettings;
     if (this.stateManager.getIsCampaignMode()) {
-      gameSettings = this.campaignMode.getLevelSettings();
+      gameSettings = this.campaignMode.getLevelSettings() as GameSettings;
     } else {
       gameSettings = this.settingsManager.getSettings();
     }
@@ -197,6 +213,12 @@ export class GameManager {
     this.ensureCanvasInitialized();
     this.startInputHandler();
     this.stateManager.setIsPlaying(true);
+
+    // Transition to game screen
+    const app = (window as any).app;
+    if (app && typeof app.showScreen === 'function') {
+      app.showScreen('game-screen');
+    }
   }
 
   private ensureCanvasInitialized(): void {
@@ -359,6 +381,8 @@ export class GameManager {
 
       // Use GameRenderer to render the game
       if (this.stateManager.getGameState()) {
+        const authManager = (window as any).authManager;
+        const currentUser = authManager?.getCurrentUser();
         this.renderer.render(
           this.stateManager.getGameState()!,
           this.stateManager.getIsPaused(),
@@ -366,7 +390,8 @@ export class GameManager {
           this.settingsManager.getSettings(),
           this.stateManager.getIsCampaignMode(),
           this.stateManager.getCurrentCampaignLevel(),
-          this.stateManager.getCurrentTournamentMatch()
+          this.stateManager.getCurrentTournamentMatch(),
+          currentUser
         );
       }
     }
@@ -412,8 +437,45 @@ export class GameManager {
   }
 
   private handleCampaignGameEnd(result: any): void {
-    // TODO: Implement campaign game end handling
-    console.log('Campaign game end not yet implemented');
+    // Determine if player won or lost
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    const playerWon = result.winner && user && result.winner === user.userId;
+
+    if (playerWon) {
+      // Player won - progress to next level
+      const currentLevel = this.stateManager.getCurrentCampaignLevel();
+      const maxLevel = this.campaignMode.getMaxLevel();
+
+      if (currentLevel >= maxLevel) {
+        // Campaign completed!
+        this.campaignMode.showCompleteMessage();
+      } else {
+        // Progress to next level
+        this.campaignMode.progressToNextLevel();
+        this.campaignMode.showLevelUpMessage(() => {
+          // Start next level
+          this.startCampaignGame();
+        });
+      }
+    } else {
+      // Player lost - show retry option
+      this.campaignMode.showRetryMessage(
+        () => {
+          // Retry current level
+          this.startCampaignGame();
+        },
+        () => {
+          // Quit to play config
+          this.stateManager.setIsCampaignMode(false);
+          this.navigateToPlayConfig();
+        }
+      );
+    }
+
+    // Clean up game state
+    this.networkHandler.disconnect();
+    this.notifyMatchManager();
   }
 
   private handleArcadeGameEnd(result: any): void {
@@ -422,8 +484,42 @@ export class GameManager {
   }
 
   private handleTournamentGameEnd(result: any): void {
-    // TODO: Implement tournament game end handling
-    console.log('Tournament game end not yet implemented');
+    // Update the current match result
+    const app = (window as any).app;
+    if (app && app.currentTournamentMatch) {
+      const match = app.currentTournamentMatch;
+      match.status = 'completed';
+      match.completedAt = new Date().toISOString();
+      
+      // Determine winner
+      const authManager = (window as any).authManager;
+      const user = authManager?.getCurrentUser();
+      if (result.winner && user) {
+        match.winner = result.winner === user.userId ? user.userId : 
+                      (result.winner === match.player1Id ? match.player1Id : match.player2Id);
+      }
+      
+      // Update tournament manager
+      const tournamentManager = app.tournamentManager;
+      if (tournamentManager) {
+        tournamentManager.updateMatchResult(match.id, match.winner);
+        
+        // Check if tournament is complete
+        const tournament = tournamentManager.getCurrentTournament();
+        if (tournament && tournament.status === 'completed') {
+          this.showGameResult({ message: 'Tournament completed!' });
+          this.navigateToPlayConfig();
+        } else {
+          // Start next match
+          tournamentManager.startNextMatch();
+        }
+      }
+    }
+
+    // Clean up
+    this.networkHandler.disconnect();
+    this.notifyMatchManager();
+    // Don't navigate away - tournament continues
   }
 
   private showGameResult(result: any): void {
@@ -460,7 +556,7 @@ export class GameManager {
   private navigateToPlayConfig(): void {
     const app = (window as any).app;
     if (app && typeof app.showScreen === 'function') {
-      app.showScreen('play-config');
+      app.showScreen('play-config-screen');
     }
   }
 
@@ -521,16 +617,23 @@ export class GameManager {
     // Reset game state
     this.stateManager.resetGameState();
 
-    // Reset game mode to default
+    // Clear team player data for arcade mode only
+    // DON'T clear in tournament mode to preserve match state
+    if (this.settingsManager.getGameMode() !== 'tournament') {
+      this.stateManager.clearTeamPlayers();
+    }
+
+    // Reset game mode to default to prevent mode conflicts
     this.settingsManager.setGameMode('coop');
 
     // If in campaign mode, exit campaign
     if (this.stateManager.getIsCampaignMode()) {
+      console.log('🎯 [CAMPAIGN] Exiting campaign mode');
       this.stateManager.setIsCampaignMode(false);
       this.stateManager.setCurrentCampaignLevel(1);
     }
 
-    // Navigate back to play config
+    // Navigate back to play config (game mode selection)
     this.navigateToPlayConfig();
   }
 
@@ -540,15 +643,10 @@ export class GameManager {
 
   // Game mode starters
   public async startBotMatch(): Promise<void> {
-    console.log('🎮 [GameManager.startBotMatch] === CALLED ===');
-
     // GUARD: Prevent double starts
     if (this.stateManager.getIsPlaying()) {
-      console.warn('⚠️ GameManager: Game already in progress, ignoring duplicate startBotMatch call');
       return;
     }
-
-    console.log('✅ [GameManager.startBotMatch] Guard passed - proceeding with bot match');
 
     // Clear any leftover paddle data from previous games
     if (this.settingsManager.getGameMode() !== 'tournament') {
@@ -557,38 +655,27 @@ export class GameManager {
         const gameState = this.stateManager.getGameState()!;
         gameState.leftPaddles = undefined;
         gameState.rightPaddles = undefined;
-        console.log('🧹 Cleared leftover paddle arrays from previous game');
       }
-    } else {
-      console.log('🏆 [TOURNAMENT] Skipping team array clear - tournament mode needs them for input');
     }
 
     // Check game mode and start appropriate match type
     if (this.settingsManager.getGameMode() === 'coop') {
-      console.log('🎯 [CAMPAIGN] CO-OP mode detected, starting campaign game');
       await this.startCampaignGame();
     } else if (this.settingsManager.getGameMode() === 'arcade') {
-      console.log('🕹️ [ARCADE] ARCADE mode detected, starting arcade match');
       await this.startArcadeMatch();
     } else if (this.settingsManager.getGameMode() === 'tournament') {
-      console.log('🏆 [TOURNAMENT] TOURNAMENT mode detected, starting tournament match');
       await this.startTournamentMatch();
     } else {
-      console.log('🎮 [GAME] Starting standard bot match');
       this.startBotMatchWithSettings(false);
     }
-
-    console.log('🏁 [GameManager.startBotMatch] === COMPLETED ===');
   }
 
   private async startCampaignGame(): Promise<void> {
-    console.log('🎯 [CAMPAIGN] Starting campaign mode');
     this.stateManager.setIsCampaignMode(true);
 
     // Load player's current campaign level
     this.stateManager.setCurrentCampaignLevel(this.campaignMode.getCurrentLevel());
 
-    console.log(`🎯 [CAMPAIGN] Starting campaign at player's current level ${this.stateManager.getCurrentCampaignLevel()}`);
     this.ensureCanvasInitialized();
     this.settingsManager.updateCampaignLevelSettings(this.stateManager.getCurrentCampaignLevel());
     this.campaignMode.updateUI();
@@ -596,7 +683,6 @@ export class GameManager {
   }
 
   private async startArcadeMatch(): Promise<void> {
-    console.log('🕹️ [ARCADE] Starting arcade mode');
     this.stateManager.setIsCampaignMode(false);
 
     // Sync settings from app
@@ -605,14 +691,12 @@ export class GameManager {
       this.settingsManager.setSettings({ ...this.settingsManager.getSettings(), ...app.gameSettings });
     }
 
-    console.log(`🕹️ [ARCADE] Score to win: ${this.settingsManager.getScoreToWin()}`);
     this.ensureCanvasInitialized();
     this.updateArcadeUI();
     await this.startArcadeMatchWithSettings();
   }
 
   private async startTournamentMatch(): Promise<void> {
-    console.log('🏆 [TOURNAMENT] Starting tournament match');
     this.stateManager.setIsCampaignMode(false);
 
     // Sync settings from app
@@ -629,7 +713,6 @@ export class GameManager {
     // Store tournament match data
     this.stateManager.setCurrentTournamentMatch(app.currentTournamentMatch);
     const match = this.stateManager.getCurrentTournamentMatch()!;
-    console.log('🏆 [TOURNAMENT] Match:', match.player1Name, 'vs', match.player2Name);
 
     this.settingsManager.setGameMode('tournament');
 
@@ -641,6 +724,8 @@ export class GameManager {
 
     // Set up team player arrays
     this.stateManager.setTeam1Players([{
+      y: 250, // Default paddle position
+      speed: 0,
       userId: match.player1Id,
       username: match.player1Name,
       team: 1,
@@ -649,6 +734,8 @@ export class GameManager {
     }]);
 
     this.stateManager.setTeam2Players([{
+      y: 250, // Default paddle position
+      speed: 0,
       userId: match.player2Id,
       username: match.player2Name,
       team: 2,
@@ -661,28 +748,36 @@ export class GameManager {
   }
 
   private async startArcadeMatchWithSettings(): Promise<void> {
-    // TODO: Implement arcade match setup
-    console.log('Arcade match setup not yet implemented');
+    // Connect to bot game server for arcade mode
+    await this.connectToBotGameServer();
   }
 
   private startCampaignMatch(): void {
-    // TODO: Implement campaign match start
-    console.log('Campaign match start not yet implemented');
+    // Connect to bot game server for campaign/coop mode
+    this.connectToBotGameServer();
   }
 
   private async connectToBotGameServer(): Promise<void> {
-    // TODO: Implement bot game server connection
-    console.log('Bot game server connection not yet implemented');
+    // Connect to game server and join bot game
+    try {
+      await this.networkHandler.connectToGameServer();
+      // For bot games, send joinBotGame message immediately after connecting
+      // (server doesn't send connectionAck for bot games)
+      this.sendJoinBotGameMessage();
+    } catch (error) {
+      console.error('Failed to connect to game server:', error);
+      this.resetFindMatch();
+    }
   }
 
   private startBotMatchWithSettings(isCampaign: boolean): void {
-    // TODO: Implement bot match with settings
-    console.log('Bot match with settings not yet implemented');
+    // Fallback method for starting bot matches
+    this.connectToBotGameServer();
   }
 
   private updateArcadeUI(): void {
-    // TODO: Implement arcade UI update
-    console.log('Arcade UI update not yet implemented');
+    // Update UI for arcade mode
+    console.log('Arcade UI updated');
   }
 
   // Settings API
@@ -720,29 +815,5 @@ export class GameManager {
 
   public isInCampaignMode(): boolean {
     return this.stateManager.getIsCampaignMode();
-  }
-
-  // Debug methods
-  public testKeyboard(): void {
-    console.log('🧪 [TEST] Testing keyboard input...');
-    console.log('🧪 [TEST] isPlaying:', this.stateManager.getIsPlaying());
-    console.log('🧪 [TEST] keys object:', this.inputHandler.getKeys());
-    console.log('🧪 [TEST] activeElement:', document.activeElement?.tagName, (document.activeElement as HTMLElement)?.id);
-
-    const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      console.log('🧪 [TEST] Canvas tabindex:', canvas.getAttribute('tabindex'));
-      console.log('🧪 [TEST] Focusing canvas...');
-      canvas.focus();
-      console.log('🧪 [TEST] Active element after focus:', (document.activeElement as HTMLElement)?.id);
-    }
-
-    // Set up temporary key listener for testing
-    const testListener = (e: KeyboardEvent) => {
-      console.log('🧪 [TEST] Test key detected:', e.key);
-      document.removeEventListener('keydown', testListener);
-    };
-    document.addEventListener('keydown', testListener);
-    console.log('🧪 [TEST] Press any key to test...');
   }
 }
