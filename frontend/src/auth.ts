@@ -32,7 +32,7 @@ interface VerifyResponse {
 }
 
 export class AuthManager {
-  private baseURL: string = '/api/auth';
+  private baseURL: string = '/auth';
   public currentUser: User | null = null;
   private token: string | null;
 

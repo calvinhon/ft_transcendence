@@ -7,79 +7,37 @@ import { PongGame, onlineUsers, activeGames, db } from '../game-logic.js';
 
 // Routes
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
-  console.log('[GAME-SERVICE] Registering routes...');
   
-  // Root endpoint for WebSocket upgrade testing (handles both GET and HEAD)
-  fastify.route({
-    method: ['GET', 'HEAD'],
-    url: '/',
-    handler: async (req: FastifyRequest, reply: FastifyReply) => {
-      console.log(`[GAME-SERVICE] Handling ${req.method} request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
-      
-      // Check if this is a WebSocket upgrade request
-      const upgradeHeader = req.headers.upgrade;
-      const connectionHeader = req.headers.connection;
-      
-      if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
-        console.log(`[GAME-SERVICE] WebSocket upgrade ${req.method} request detected, responding with headers`);
-        // Respond with WebSocket upgrade headers for testing
-        reply.header('Upgrade', 'websocket');
-        reply.header('Connection', 'Upgrade');
-        reply.header('Sec-WebSocket-Accept', 'test');
-        if (req.method === 'HEAD') {
-          reply.status(200).send();
-        } else {
-          reply.status(101).send();
-        }
-      } else {
-        console.log(`[GAME-SERVICE] Normal ${req.method} request`);
-        if (req.method === 'HEAD') {
-          reply.status(200).send();
-        } else {
-          reply.send({ message: 'Game service root endpoint', websocket: 'available at /ws' });
-        }
-      }
-    }
-  });
-
   // Handle HEAD requests for WebSocket upgrade testing
   fastify.head('/', async (req: FastifyRequest, reply: FastifyReply) => {
-    console.log(`[GAME-SERVICE] Handling HEAD request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
-    
     // Check if this is a WebSocket upgrade request
     const upgradeHeader = req.headers.upgrade;
     const connectionHeader = req.headers.connection;
     
     if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
-      console.log(`[GAME-SERVICE] WebSocket upgrade HEAD request detected, responding with headers`);
       // Respond with WebSocket upgrade headers for testing
       reply.header('Upgrade', 'websocket');
       reply.header('Connection', 'Upgrade');
       reply.header('Sec-WebSocket-Accept', 'test');
       reply.status(200).send();
     } else {
-      console.log(`[GAME-SERVICE] Normal HEAD request`);
       reply.status(200).send();
     }
   });
 
   // Root endpoint for WebSocket upgrade testing
   fastify.get('/', async (req: FastifyRequest, reply: FastifyReply) => {
-    console.log(`[GAME-SERVICE] Handling GET request to / with upgrade: ${req.headers.upgrade}, connection: ${req.headers.connection}`);
-    
     // Check if this is a WebSocket upgrade request
     const upgradeHeader = req.headers.upgrade;
     const connectionHeader = req.headers.connection;
     
     if (upgradeHeader === 'websocket' && connectionHeader?.toLowerCase().includes('upgrade')) {
-      console.log(`[GAME-SERVICE] WebSocket upgrade GET request detected, responding with headers`);
       // Respond with WebSocket upgrade headers for testing
       reply.header('Upgrade', 'websocket');
       reply.header('Connection', 'Upgrade');
       reply.header('Sec-WebSocket-Accept', 'test');
       reply.status(101).send();
     } else {
-      console.log(`[GAME-SERVICE] Normal GET request`);
       reply.send({ message: 'Game service root endpoint', websocket: 'available at /ws' });
     }
   });

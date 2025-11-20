@@ -35,7 +35,7 @@ export class TournamentDataManager {
     if (window.location.hostname === 'localhost' && window.location.port !== '80') {
       return 'http://localhost:3003';
     }
-    return '/api/tournament';
+    return '/tournament';
   }
 
   // Tournament CRUD operations

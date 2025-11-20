@@ -12,7 +12,7 @@ interface LeaderboardPlayer {
 }
 
 export class LeaderboardManager {
-  private baseURL: string = '/api/user';
+  private baseURL: string = '/user';
 
   constructor() {
     this.setupEventListeners();

@@ -105,27 +105,27 @@ export class AppAPIManager {
 
   // Authentication API methods
   public async login(credentials: { email: string; password: string }): Promise<any> {
-    return this.makeRequest('/api/auth/login', {
+    return this.makeRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
   public async register(userData: { username: string; email: string; password: string }): Promise<any> {
-    return this.makeRequest('/api/auth/register', {
+    return this.makeRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
   }
 
   public async logout(): Promise<any> {
-    return this.makeRequest('/api/auth/logout', {
+    return this.makeRequest('/auth/logout', {
       method: 'POST',
     });
   }
 
   public async refreshToken(): Promise<any> {
-    return this.makeRequest('/api/auth/refresh', {
+    return this.makeRequest('/auth/refresh', {
       method: 'POST',
     });
   }

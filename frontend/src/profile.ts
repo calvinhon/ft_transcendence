@@ -46,9 +46,9 @@ interface RecentGame {
 }
 
 export class ProfileManager {
-  private baseURL: string = '/api/user';
-  private gameURL: string = '/api/game';
-  private tournamentURL: string = '/api/tournament';
+  private baseURL: string = '/user';
+  private gameURL: string = '/game';
+  private tournamentURL: string = '/tournament';
 
   constructor() {
     this.setupEventListeners();
@@ -283,7 +283,7 @@ export class ProfileManager {
             } else {
               // Fallback: fetch opponent profile by ID from game table
               try {
-                const profileResponse = await fetch(`/api/auth/profile/${opponentId}`, {
+                const profileResponse = await fetch(`/auth/profile/${opponentId}`, {
                   headers: authManager.getAuthHeaders()
                 });
                 

@@ -600,7 +600,7 @@ export class TournamentManager {
       const participantsWithNames = await Promise.all(
         details.participants.map(async (p: any) => {
           try {
-            const userResponse = await fetch(`/api/auth/profile/${p.user_id}`, {
+            const userResponse = await fetch(`/auth/profile/${p.user_id}`, {
               headers: authManager.getAuthHeaders()
             });
             if (userResponse.ok) {

@@ -346,7 +346,7 @@ export class ProfileManager {
               // Fallback: fetch opponent profile by ID from game table
               console.log('[ProfileManager] Fetching opponent profile for ID:', opponentId);
               try {
-                const profileResponse = await fetch(`/api/auth/profile/${opponentId}`, {
+                const profileResponse = await fetch(`/auth/profile/${opponentId}`, {
                   headers: authManager.getAuthHeaders()
                 });
                 
