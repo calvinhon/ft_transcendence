@@ -16,7 +16,7 @@ export class GameNetworkHandler {
 
   public async connectToGameServer(): Promise<void> {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/game/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/game/ws`;
 
     return new Promise((resolve, reject) => {
       // Close any existing websocket clients

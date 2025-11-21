@@ -6,8 +6,10 @@ export class LocalPlayerModalManager {
   private registerModalInitialized = false;
   private isSubmittingLogin = false;
   private isSubmittingRegister = false;
+  private onAuthSuccess: ((user: any, token: string) => void) | null = null;
 
-  constructor() {
+  constructor(onAuthSuccessCallback?: (user: any, token: string) => void) {
+    this.onAuthSuccess = onAuthSuccessCallback || null;
     this.initializeModals();
   }
 
@@ -66,10 +68,20 @@ export class LocalPlayerModalManager {
         if (result.success) {
           console.log('✅ [LocalPlayer] Login successful');
           this.hideLoginModal();
-          this.showToast('Login successful!', 'success');
-
-          // Reload page or refresh app state
-          window.location.reload();
+          
+          // Get user data and token
+          const authManager = (window as any).authManager;
+          const token = authManager?.getToken() || '';
+          const user = authManager?.getCurrentUser() || result.data?.user;
+          
+          if (this.onAuthSuccess && user) {
+            console.log('✅ [LocalPlayer] Calling auth success callback');
+            this.onAuthSuccess(user, token);
+          } else {
+            this.showToast('Login successful!', 'success');
+            // Reload page as fallback
+            window.location.reload();
+          }
         } else {
           console.warn('❌ [LocalPlayer] Login failed:', result.error);
           if (error) {
@@ -180,10 +192,20 @@ export class LocalPlayerModalManager {
         if (result.success) {
           console.log('✅ [LocalPlayer] Register successful');
           this.hideRegisterModal();
-          this.showToast('Registration successful! Please log in.', 'success');
-
-          // Optionally switch to login modal
-          setTimeout(() => this.showLoginModal(), 1500);
+          
+          // Get user data and token
+          const authManager = (window as any).authManager;
+          const token = authManager?.getToken() || '';
+          const user = result.data?.user || result.data;
+          
+          if (this.onAuthSuccess && user) {
+            console.log('✅ [LocalPlayer] Calling auth success callback');
+            this.onAuthSuccess(user, token);
+          } else {
+            this.showToast('Registration successful! Please log in.', 'success');
+            // Optionally switch to login modal
+            setTimeout(() => this.showLoginModal(), 1500);
+          }
         } else {
           console.warn('❌ [LocalPlayer] Register failed:', result.error);
           if (error) {
@@ -321,5 +343,10 @@ export class LocalPlayerModalManager {
     if (modal) {
       modal.style.display = 'none';
     }
+  }
+
+  // Callback setter for authentication success
+  public setAuthSuccessCallback(callback: (user: any, token: string) => void): void {
+    this.onAuthSuccess = callback;
   }
 }

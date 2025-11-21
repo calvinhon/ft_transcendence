@@ -21,9 +21,10 @@ const fastify: FastifyInstance = Fastify({
 async function buildServer(): Promise<FastifyInstance> {
   // Register plugins
   await fastify.register(cors, {
-    origin: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
+    origin: true
   });
+
+  await fastify.register(websocket);
 
   // Add request/response logging middleware
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -40,11 +41,8 @@ async function buildServer(): Promise<FastifyInstance> {
     console.log(`🟢 [GAME-SERVICE] [${timestamp}] → ${request.method} ${request.url} - Status: ${reply.statusCode}`);
   });
 
-  // Register routes first
+  // Register routes
   await fastify.register(gameRoutes);
-
-  // Register WebSocket plugin after routes
-  await fastify.register(websocket);
 
   return fastify;
 }

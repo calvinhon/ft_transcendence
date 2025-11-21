@@ -702,6 +702,40 @@
     </div>
   </div>
 
+  <!-- Add Player Modal -->
+  <div id="add-player-modal" class="modal hidden" style="display: none;">
+    <div class="modal-overlay" id="add-player-modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Local Player</h2>
+        <button type="button" class="modal-close" id="close-add-player-modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="login-form-container">
+          <form id="add-player-form" class="login-form">
+            <input
+              type="text"
+              id="add-player-username"
+              placeholder="Enter player name"
+              required
+              class="login-input"
+              maxlength="20"
+            />
+            <div id="add-player-error" class="error-message" style="display: none;"></div>
+            <button type="submit" class="login-btn">Add Player</button>
+          </form>
+          
+          <div class="login-links">
+            <span style="color: var(--text-muted); font-family: 'Courier New', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Add local players to your party</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Local Player Modals will be injected here by app.ts -->
   
   <!-- Local Player Login Modal -->

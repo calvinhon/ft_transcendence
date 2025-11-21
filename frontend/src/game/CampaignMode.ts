@@ -11,6 +11,12 @@ export class CampaignMode {
     this.currentLevel = this.loadPlayerCampaignLevel();
   }
   
+  public async getCurrentLevelSynced(): Promise<number> {
+    // Ensure we have the latest level from database
+    await this.syncCampaignLevelFromDatabase();
+    return this.currentLevel;
+  }
+  
   public getCurrentLevel(): number {
     return this.currentLevel;
   }
@@ -31,7 +37,6 @@ export class CampaignMode {
     if (this.currentLevel < this.maxLevel) {
       this.currentLevel++;
       this.savePlayerCampaignLevel(this.currentLevel);
-      console.log(`📈 Campaign: Progressed to level ${this.currentLevel}`);
     }
   }
   
@@ -53,7 +58,7 @@ export class CampaignMode {
           console.error('Failed to sync campaign level:', err);
         });
         
-        const savedLevel = localStorage.getItem(`campaignLevel_${user.userId}`);
+        const savedLevel = localStorage.getItem(`campaign_level_${user.userId}`);
         if (savedLevel) {
           const level = parseInt(savedLevel, 10);
           if (!isNaN(level) && level >= 1 && level <= this.maxLevel) {
@@ -75,33 +80,26 @@ export class CampaignMode {
     try {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
+      const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
       
-      if (!user || !user.userId) {
-        console.warn('No user logged in, cannot sync campaign level');
-        return;
-      }
-      
-      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-      const response = await fetch(`${protocol}//${window.location.host}/api/user/${user.userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authManager.getToken()}`
+      if (user && user.userId) {
+        const response = await fetch(`/user/profile/${user.userId}`, { headers });
+        if (response.ok) {
+          const profile = await response.json();
+          const dbLevel = profile.campaign_level || 1; // Database level (default to 1 if not set)
+          const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+          const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
+          
+          // Always sync to match database value (handles both upgrades and resets)
+          if (dbLevel !== localLevelNum) {
+            localStorage.setItem(`campaign_level_${user.userId}`, dbLevel.toString());
+            this.currentLevel = dbLevel;
+            console.log(`🎯 [CAMPAIGN] Synced level ${dbLevel} from database (was ${localLevelNum} in localStorage)`);
+          }
         }
-      });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        if (userData.campaignLevel && typeof userData.campaignLevel === 'number') {
-          this.currentLevel = userData.campaignLevel;
-          localStorage.setItem(`campaignLevel_${user.userId}`, userData.campaignLevel.toString());
-          console.log(`✅ [CAMPAIGN] Synced level ${userData.campaignLevel} from database`);
-        }
-      } else {
-        console.warn('Failed to fetch user campaign level from database');
       }
     } catch (error) {
-      console.error('Error syncing campaign level from database:', error);
+      console.warn('Could not sync campaign level from database:', error);
     }
   }
   
@@ -111,10 +109,10 @@ export class CampaignMode {
       const user = authManager?.getCurrentUser();
       
       if (user && user.userId) {
-        localStorage.setItem(`campaignLevel_${user.userId}`, level.toString());
-        console.log(`💾 [CAMPAIGN] Saved level ${level} to localStorage for user ${user.userId}`);
+        localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
+        console.log(`🎯 [CAMPAIGN] Saved level ${level} for player ${user.username}`);
         
-        // Also save to database asynchronously
+        // Update database asynchronously
         this.saveCampaignLevelToDatabase(level).catch(err => {
           console.error('Failed to save campaign level to database:', err);
         });
@@ -128,29 +126,31 @@ export class CampaignMode {
     try {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
+      const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
       
-      if (!user || !user.userId) {
-        console.warn('No user logged in, cannot save campaign level');
-        return;
-      }
-      
-      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-      const response = await fetch(`${protocol}//${window.location.host}/api/user/${user.userId}/campaign-level`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authManager.getToken()}`
-        },
-        body: JSON.stringify({ campaignLevel: level })
-      });
-      
-      if (response.ok) {
-        console.log(`✅ [CAMPAIGN] Saved level ${level} to database`);
+      if (user && user.userId) {
+        const url = `/user/game/update-stats`;
+        const body = { campaign_level: level };
+        console.log('🎯 [CAMPAIGN] Sending POST to:', url, 'with body:', body);
+        console.log('🎯 [CAMPAIGN] Using headers:', headers);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ [CAMPAIGN] Failed to update campaign level on server. Status:', response.status, 'Response:', errorText);
+        } else {
+          const responseData = await response.json();
+          console.log('✅ [CAMPAIGN] Campaign level', level, 'synced to database. Response:', responseData);
+        }
       } else {
-        console.warn('Failed to save campaign level to database');
+        console.warn('⚠️ [CAMPAIGN] Cannot sync - user or userId not available:', { user, hasUserId: !!user?.userId });
       }
-    } catch (error) {
-      console.error('Error saving campaign level to database:', error);
+    } catch (err) {
+      console.error('❌ [CAMPAIGN] Exception while syncing campaign level to server:', err);
     }
   }
   

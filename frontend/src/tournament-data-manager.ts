@@ -21,21 +21,13 @@ interface User {
 }
 
 export class TournamentDataManager {
-  private baseURL: string;
+  private baseURL: string = '/tournament';
   private currentTournaments: Tournament[] = [];
   private userTournaments: Tournament[] = [];
   private participantMap: { [userId: number]: string } = {};
 
   constructor() {
-    this.baseURL = this.getBaseURL();
-  }
-
-  private getBaseURL(): string {
-    // Check if running in development mode
-    if (window.location.hostname === 'localhost' && window.location.port !== '80') {
-      return 'http://localhost:3003';
-    }
-    return '/tournament';
+    // Base URL is now fixed to use nginx routing
   }
 
   // Tournament CRUD operations

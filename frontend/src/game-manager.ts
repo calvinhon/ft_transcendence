@@ -436,7 +436,7 @@ export class GameManager {
     this.navigateToPlayConfig();
   }
 
-  private handleCampaignGameEnd(result: any): void {
+  private async handleCampaignGameEnd(result: any): Promise<void> {
     // Determine if player won or lost
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
@@ -453,6 +453,11 @@ export class GameManager {
       } else {
         // Progress to next level
         this.campaignMode.progressToNextLevel();
+        
+        // Get the new level directly from campaignMode (don't sync from DB yet)
+        const newLevel = this.campaignMode.getCurrentLevel();
+        this.stateManager.setCurrentCampaignLevel(newLevel);
+        
         this.campaignMode.showLevelUpMessage(() => {
           // Start next level
           this.startCampaignGame();
@@ -638,7 +643,7 @@ export class GameManager {
   }
 
   private cleanupCampaignModals(): void {
-    // TODO: Implement campaign modal cleanup
+    this.campaignMode.cleanupModals();
   }
 
   // Game mode starters
@@ -673,11 +678,12 @@ export class GameManager {
   private async startCampaignGame(): Promise<void> {
     this.stateManager.setIsCampaignMode(true);
 
-    // Load player's current campaign level
-    this.stateManager.setCurrentCampaignLevel(this.campaignMode.getCurrentLevel());
+    // Load player's current campaign level (ensures database sync)
+    const currentLevel = await this.campaignMode.getCurrentLevelSynced();
+    this.stateManager.setCurrentCampaignLevel(currentLevel);
 
     this.ensureCanvasInitialized();
-    this.settingsManager.updateCampaignLevelSettings(this.stateManager.getCurrentCampaignLevel());
+    this.settingsManager.updateCampaignLevelSettings(currentLevel);
     this.campaignMode.updateUI();
     this.startCampaignMatch();
   }

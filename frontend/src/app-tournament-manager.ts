@@ -179,16 +179,37 @@ export class AppTournamentManager {
   private getTournamentPlayers(): any[] {
     // Get players from player manager
     const playerManager = (window as any).app?.playerManager;
+    const authManager = (window as any).authManager;
+    
+    const players: any[] = [];
+    
+    // Always include the host player
+    if (authManager) {
+      const hostUser = authManager.getCurrentUser();
+      if (hostUser) {
+        players.push({
+          id: `host_${hostUser.id}`,
+          userId: hostUser.id,
+          username: hostUser.username,
+          isHost: true
+        });
+      }
+    }
+    
+    // Add selected local players
     if (playerManager) {
       const selectedIds = playerManager.getSelectedPlayerIds();
-      return Array.from(selectedIds).map(id => {
+      const selectedPlayers = Array.from(selectedIds).map(id => {
         if (id === 'ai-player') {
           return { id: 'ai-player', username: 'AI Bot', isAI: true };
         }
         return playerManager.getLocalPlayers().find((p: any) => p.id === id);
       }).filter(Boolean);
+      
+      players.push(...selectedPlayers);
     }
-    return [];
+    
+    return players;
   }
 
   public getCurrentTournament(): Tournament | null {

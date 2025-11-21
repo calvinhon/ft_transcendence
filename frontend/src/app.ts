@@ -13,6 +13,7 @@ export class App {
   public gameManager: AppGameManager;
   public tournamentManager: AppTournamentManager;
   public apiManager: AppAPIManager;
+  public localPlayers: any[] = [];
 
   constructor() {
     console.log('🔧 [APP] App constructor called, initializing managers...');
@@ -262,12 +263,17 @@ export class App {
       console.log('✅ [APP] Tournament add player button found');
       addTournamentPlayerBtn.addEventListener('click', () => {
         console.log('🎮 [APP] Tournament add player button clicked');
-        addPlayerModal.setSubmitHandler((username: string) => {
-          console.log('🎮 [APP] Adding tournament player:', username);
-          this.addLocalPlayer(username, 'tournament');
-          addPlayerModal.hide();
-        });
-        addPlayerModal.show();
+        (window as any).addPlayerTeam = 'tournament';
+        
+        // Set callback for successful authentication
+        const modalManager = (window as any).localPlayerModalManager;
+        if (modalManager) {
+          modalManager.setAuthSuccessCallback((user: any, token: string) => {
+            this.addAuthenticatedPlayer(user, token, 'tournament');
+          });
+        }
+        
+        this.showLocalPlayerLoginModal();
       });
     } else {
       console.error('❌ [APP] Tournament add player button not found!');
@@ -279,12 +285,17 @@ export class App {
       console.log('✅ [APP] Team 1 add player button found');
       addTeam1PlayerBtn.addEventListener('click', () => {
         console.log('🎮 [APP] Team 1 add player button clicked');
-        addPlayerModal.setSubmitHandler((username: string) => {
-          console.log('🎮 [APP] Adding team 1 player:', username);
-          this.addLocalPlayer(username, 'team1');
-          addPlayerModal.hide();
-        });
-        addPlayerModal.show();
+        (window as any).addPlayerTeam = 'team1';
+        
+        // Set callback for successful authentication
+        const modalManager = (window as any).localPlayerModalManager;
+        if (modalManager) {
+          modalManager.setAuthSuccessCallback((user: any, token: string) => {
+            this.addAuthenticatedPlayer(user, token, 'team1');
+          });
+        }
+        
+        this.showLocalPlayerLoginModal();
       });
     } else {
       console.error('❌ [APP] Team 1 add player button not found!');
@@ -296,12 +307,17 @@ export class App {
       console.log('✅ [APP] Team 2 add player button found');
       addTeam2PlayerBtn.addEventListener('click', () => {
         console.log('🎮 [APP] Team 2 add player button clicked');
-        addPlayerModal.setSubmitHandler((username: string) => {
-          console.log('🎮 [APP] Adding team 2 player:', username);
-          this.addLocalPlayer(username, 'team2');
-          addPlayerModal.hide();
-        });
-        addPlayerModal.show();
+        (window as any).addPlayerTeam = 'team2';
+        
+        // Set callback for successful authentication
+        const modalManager = (window as any).localPlayerModalManager;
+        if (modalManager) {
+          modalManager.setAuthSuccessCallback((user: any, token: string) => {
+            this.addAuthenticatedPlayer(user, token, 'team2');
+          });
+        }
+        
+        this.showLocalPlayerLoginModal();
       });
     } else {
       console.error('❌ [APP] Team 2 add player button not found!');
@@ -322,7 +338,7 @@ export class App {
       const localPlayer = {
         id: `local_${playerId}`,
         username: username,
-        email: `${username.toLowerCase().replace(/\s+/g, '_')}@local.player`, // Generate a placeholder email
+        email: `${username.toLowerCase().replace(/\s+/g, '_')}_${playerId}@local.player`, // Generate a unique placeholder email
         team: teamNumber,
         userId: playerId // Add numeric userId
       };
@@ -341,6 +357,55 @@ export class App {
     } catch (error) {
       console.error('Failed to add local player:', error);
       this.showToast('Failed to add player', 'error');
+    }
+  }
+
+  private addAuthenticatedPlayer(user: any, token: string, target: 'tournament' | 'team1' | 'team2'): void {
+    if (!this.playerManager) {
+      console.error('Player manager not available');
+      return;
+    }
+
+    try {
+      console.log('🎮 [APP] Adding authenticated player:', user, 'to target:', target);
+
+      // Create a local player object from authenticated user
+      const teamNumber = target === 'team1' ? 1 : target === 'team2' ? 2 : 1;
+      const playerId = user.userId || user.id || Date.now();
+      
+      const localPlayer = {
+        id: `user_${playerId}`,
+        username: user.username,
+        email: user.email,
+        team: teamNumber,
+        userId: playerId,
+        token: token,
+        isCurrentUser: false // This is a different user added to the session
+      };
+
+      this.playerManager.addLocalPlayer(localPlayer as any);
+      
+      // For tournaments, automatically select the player
+      if (target === 'tournament') {
+        this.playerManager.togglePlayerSelection(localPlayer.id);
+      }
+      
+      // Update the UI to show the new player
+      this.playerManager.updateGamePartyDisplay();
+      
+      this.showToast(`Added player: ${user.username}`, 'success');
+    } catch (error) {
+      console.error('Failed to add authenticated player:', error);
+      this.showToast('Failed to add player', 'error');
+    }
+  }
+
+  private showLocalPlayerLoginModal(): void {
+    const modalManager = (window as any).localPlayerModalManager;
+    if (modalManager && modalManager.showLoginModal) {
+      modalManager.showLoginModal();
+    } else {
+      console.error('Local player modal manager not available');
     }
   }
 
@@ -436,107 +501,117 @@ export class App {
   }
 
   private setupKeyboardShortcuts(): void {
-    document.addEventListener('keydown', (e) => {
-      // Don't handle shortcuts if user is typing in an input
-      const activeElement = document.activeElement;
-      const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return;
+      }
 
-      if (isInputFocused) return;
+      const currentScreen = this.uiManager ? (this.uiManager as any).currentScreen : null;
 
-      switch (e.key.toLowerCase()) {
-        case 'escape':
-          this.handleEscapeKey();
+      switch (e.key) {
+        case 'Backspace':
+          e.preventDefault();
+          this.handleBackspaceShortcut(currentScreen);
           break;
-        case 'enter':
-          this.handleEnterKey();
+        case 'Escape':
+            e.preventDefault();
+            // Clean up campaign modals and stop any running game
+            const gameManager = (window as any).gameManager;
+            if (gameManager) {
+              // Clean up any campaign modals that might be visible
+              if (typeof gameManager.cleanupCampaignModals === 'function') {
+                gameManager.cleanupCampaignModals();
+              }
+              // Stop the game if it's running
+              if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
+                gameManager.stopGame();
+              }
+            }
+          this.uiManager.showScreen('login-screen');
           break;
-        case 'arrowleft':
-        case 'arrowright':
-          this.handleArrowKeys(e.key.toLowerCase());
-          break;
-        case '1':
-        case '2':
-        case '3':
-          this.handleNumberKeys(e.key);
+        case 'Enter':
+          e.preventDefault();
+          this.handleEnterShortcut(currentScreen);
           break;
       }
     });
   }
 
-  private handleEscapeKey(): void {
-    const currentScreen = this.uiManager ? (this.uiManager as any).currentScreen : null;
-
-    // Define back navigation for each screen
-    const backNavigation: { [key: string]: string } = {
-      'register-screen': 'login-screen',
-      'forgot-password-screen': 'login-screen',
-      'play-config-screen': 'main-menu-screen',
-      'profile-screen': 'main-menu-screen',
-      'settings-screen': 'main-menu-screen',
-      'game-screen': 'play-config-screen'
-    };
-
-    if (currentScreen && backNavigation[currentScreen]) {
-      this.uiManager.showScreen(backNavigation[currentScreen]);
-    }
-  }
-
-  private handleEnterKey(): void {
-    const currentScreen = this.uiManager ? (this.uiManager as any).currentScreen : null;
-
-    // Auto-submit forms or start game based on current screen
-    if (currentScreen === 'login-screen') {
-      const loginForm = document.getElementById('login-form') as HTMLFormElement;
-      if (loginForm) loginForm.requestSubmit();
-    } else if (currentScreen === 'register-screen') {
-      const registerForm = document.getElementById('register-form') as HTMLFormElement;
-      if (registerForm) registerForm.requestSubmit();
-    } else if (currentScreen === 'play-config-screen') {
-      this.startGame();
-    }
-  }
-
-  private handleArrowKeys(key: string): void {
-    const currentScreen = this.uiManager ? (this.uiManager as any).currentScreen : null;
-
-    if (currentScreen === 'play-config-screen') {
-      // Navigate between game modes with arrow keys
-      const gameModeTabs = document.querySelectorAll('.game-mode-tab');
-      const activeTab = document.querySelector('.game-mode-tab.active') as HTMLElement;
-
-      if (activeTab) {
-        const currentIndex = Array.from(gameModeTabs).indexOf(activeTab);
-        let newIndex = currentIndex;
-
-        if (key === 'arrowleft') {
-          newIndex = Math.max(0, currentIndex - 1);
-        } else if (key === 'arrowright') {
-          newIndex = Math.min(gameModeTabs.length - 1, currentIndex + 1);
-        }
-
-        if (newIndex !== currentIndex) {
-          const newTab = gameModeTabs[newIndex] as HTMLElement;
-          if (newTab && newTab.dataset.mode) {
-            this.selectGameMode(newTab.dataset.mode);
+  private handleBackspaceShortcut(currentScreen: string | undefined): void {
+    if (!currentScreen) return;
+    switch (currentScreen) {
+      case 'register-screen':
+        this.uiManager.showScreen('login-screen');
+        break;
+      case 'forgot-password-screen':
+        this.uiManager.showScreen('login-screen');
+        break;
+      case 'main-menu-screen':
+        this.handleLogout();
+        break;
+      case 'play-config-screen':
+        this.uiManager.showScreen('main-menu-screen');
+        break;
+      case 'settings-screen':
+        this.uiManager.showScreen('main-menu-screen');
+        break;
+      case 'profile-screen':
+        this.uiManager.showScreen('main-menu-screen');
+        break;
+      case 'game-screen': {
+        const gameManager = (window as any).gameManager;
+        if (gameManager) {
+          // Clean up any campaign modals that might be visible
+          if (typeof gameManager.cleanupCampaignModals === 'function') {
+            gameManager.cleanupCampaignModals();
+          }
+          // Stop the game if it's running
+          if (typeof gameManager.stopGame === 'function') {
+            gameManager.stopGame();
           }
         }
+        break;
       }
     }
   }
 
-  private handleNumberKeys(key: string): void {
-    const currentScreen = this.uiManager ? (this.uiManager as any).currentScreen : null;
-
-    if (currentScreen === 'main-menu-screen') {
-      // Navigate main menu with number keys
-      const menuActions: { [key: string]: () => void } = {
-        '1': () => this.uiManager.showScreen('play-config-screen'), // Play
-        '2': () => this.uiManager.showScreen('profile-screen'),     // Profile
-        '3': () => this.uiManager.showScreen('settings-screen')     // Settings
-      };
-
-      if (menuActions[key]) {
-        menuActions[key]();
+  private handleEnterShortcut(currentScreen: string | undefined): void {
+    switch (currentScreen) {
+      case 'login-screen': {
+        const loginForm = document.getElementById('login-form') as HTMLFormElement;
+        if (loginForm) loginForm.requestSubmit();
+        break;
+      }
+      case 'register-screen': {
+        const registerForm = document.getElementById('register-form') as HTMLFormElement;
+        if (registerForm) registerForm.requestSubmit();
+        break;
+      }
+      case 'forgot-password-screen': {
+        const forgotForm = document.getElementById('forgot-password-form') as HTMLFormElement;
+        if (forgotForm) forgotForm.requestSubmit();
+        break;
+      }
+      case 'main-menu-screen': {
+        // Navigate to play config screen (equivalent to clicking play button)
+        this.uiManager.showScreen('play-config-screen');
+        break;
+      }
+      case 'play-config-screen': {
+        // Don't auto-start game with Enter - let user manually click start button
+        // Focus on start game button for visual feedback
+        const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
+        if (startGameBtn) startGameBtn.focus();
+        break;
+      }
+      case 'game-screen': {
+        const pauseBtn = document.getElementById('pause-game-btn');
+        if (pauseBtn instanceof HTMLButtonElement) {
+          pauseBtn.click();
+        }
+        break;
       }
     }
   }
@@ -664,6 +739,14 @@ export class App {
 
   public showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
     this.uiManager.showToast(message, type);
+  }
+
+  handleLogout(): void {
+    const authManager = (window as any).authManager;
+    authManager.logout();
+    this.uiManager.showScreen('login-screen');
+    this.localPlayers = [];
+    // this.updateChatVisibility();
   }
 
   // Cleanup method

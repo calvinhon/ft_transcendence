@@ -18,47 +18,7 @@ export class AddPlayerModal {
   private initializeModal(): void {
     console.log('🎮 [AddPlayerModal] Initializing modal...');
 
-    // Create modal HTML
-    const modalHTML = `
-      <div id="add-player-modal" class="modal" style="display: none;">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Add Local Player</h2>
-            <button type="button" class="modal-close" id="close-add-player-modal" aria-label="Close">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div class="login-form-container">
-              <form id="add-player-form" class="login-form">
-                <input
-                  type="text"
-                  id="add-player-username"
-                  placeholder="Enter player name"
-                  required
-                  class="login-input"
-                  maxlength="20"
-                />
-                <div id="add-player-error" class="error-message" style="display: none;"></div>
-                <button type="submit" class="login-btn">Add Player</button>
-              </form>
-              
-              <div class="login-links">
-                <span style="color: var(--text-muted); font-family: 'Courier New', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Add local players to your party</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    console.log('🎮 [AddPlayerModal] Injecting modal HTML...');
-    // Inject modal into DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Get references
+    // Get references to existing modal elements
     this.modal = document.getElementById('add-player-modal');
     this.form = document.getElementById('add-player-form') as HTMLFormElement;
     this.input = document.getElementById('add-player-username') as HTMLInputElement;
@@ -88,11 +48,10 @@ export class AddPlayerModal {
     }
 
     // Modal overlay click to close
-    this.modal.addEventListener('click', (e) => {
-      if (e.target === this.modal) {
-        this.hide();
-      }
-    });
+    const overlay = document.getElementById('add-player-modal-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', () => this.hide());
+    }
 
     // ESC key to close
     document.addEventListener('keydown', (e) => {
@@ -147,6 +106,7 @@ export class AddPlayerModal {
 
   public show(): void {
     if (this.modal && this.input && this.error) {
+      this.modal.classList.remove('hidden');
       this.modal.style.display = 'block';
       this.input.value = '';
       this.error.style.display = 'none';
@@ -156,6 +116,7 @@ export class AddPlayerModal {
 
   public hide(): void {
     if (this.modal) {
+      this.modal.classList.add('hidden');
       this.modal.style.display = 'none';
     }
   }

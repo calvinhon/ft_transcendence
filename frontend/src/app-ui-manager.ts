@@ -142,6 +142,12 @@ export class AppUIManager {
         }
       });
     });
+
+    // Update the game party display to show host player name
+    const app = (window as any).app;
+    if (app && app.playerManager) {
+      app.playerManager.updateGamePartyDisplay();
+    }
   }
 
   private onTournamentSetupShown(): void {
@@ -216,6 +222,11 @@ export class AppUIManager {
     arcadeOnlyElements.forEach(element => {
       (element as HTMLElement).style.display = mode === 'arcade' ? 'block' : 'none';
     });
+
+    // Update the game party display after mode change
+    if (app && app.playerManager) {
+      app.playerManager.updateGamePartyDisplay();
+    }
 
     console.log(`🔧 [UI] Game mode ${mode} selected, UI updated`);
   }

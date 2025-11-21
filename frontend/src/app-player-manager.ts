@@ -151,32 +151,42 @@ export class AppPlayerManager {
   }
 
   public updateGamePartyDisplay(): void {
+    // Always restore host name in all party frames
+    const authManager = (window as any).authManager;
+    const savedHostUser = authManager?.getCurrentUser();
+    console.log('🎮 [PlayerManager] updateGamePartyDisplay - authManager:', !!authManager);
+    console.log('🎮 [PlayerManager] updateGamePartyDisplay - savedHostUser:', savedHostUser);
+    
+    const hostPlayerNames = [
+      document.getElementById('host-player-name'),
+      document.getElementById('host-player-name-coop'),
+      document.getElementById('host-player-name-tournament')
+    ];
+    
+    console.log('🎮 [PlayerManager] updateGamePartyDisplay - host player name elements:', hostPlayerNames.map(el => !!el));
+    
+    hostPlayerNames.forEach((element, index) => {
+      if (element && savedHostUser) {
+        element.textContent = savedHostUser.username;
+        console.log(`🎮 [PlayerManager] updateGamePartyDisplay - Set host name element ${index} to:`, savedHostUser.username);
+      } else {
+        console.log(`🎮 [PlayerManager] updateGamePartyDisplay - Could not set host name element ${index}, element:`, !!element, 'user:', !!savedHostUser);
+      }
+    });
+
     // Update tournament local players display
     const tournamentLocalContainer = document.getElementById('tournament-local-players');
     if (tournamentLocalContainer) {
       const currentMode = (window as any).app?.gameSettings?.gameMode || 'coop';
       if (currentMode === 'tournament') {
-        const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
-        const authManager = (window as any).authManager;
-        if (hostPlayerNameTournament && authManager && authManager.getCurrentUser()) {
-          hostPlayerNameTournament.textContent = authManager.getCurrentUser().username;
-        }
-
-        // Clear existing player cards
         tournamentLocalContainer.innerHTML = '';
-
-        // Add local players to tournament display
         for (const player of this.localPlayers) {
           const playerCard = this.createPlayerCard(player);
           tournamentLocalContainer.appendChild(playerCard);
-
-          // Mark as selected if in selectedPlayerIds
           if (this.selectedPlayerIds.has(player.id)) {
             playerCard.classList.add('selected');
           }
         }
-
-        // Update selected count
         const selectedCount = document.getElementById('tournament-selected-count');
         if (selectedCount) {
           const count = this.selectedPlayerIds.size;
@@ -185,11 +195,7 @@ export class AppPlayerManager {
         }
       }
     }
-
-    // Update arcade team displays
     this.updateArcadeTeamDisplays();
-
-    // Setup drag and drop zones
     this.setupDropZones();
   }
 

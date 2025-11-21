@@ -44,44 +44,44 @@ export class AppAPIManager {
 
   // User API methods
   public async getUserProfile(userId: number): Promise<any> {
-    return this.makeRequest(`/api/users/${userId}`);
+    return this.makeRequest(`/user/${userId}`);
   }
 
   public async updateUserProfile(userId: number, updates: any): Promise<any> {
-    return this.makeRequest(`/api/users/${userId}`, {
+    return this.makeRequest(`/user/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
   }
 
   public async getUserStats(userId: number): Promise<any> {
-    return this.makeRequest(`/api/users/${userId}/stats`);
+    return this.makeRequest(`/user/${userId}/stats`);
   }
 
   // Tournament API methods
   public async getTournaments(): Promise<any[]> {
-    return this.makeRequest('/api/tournaments');
+    return this.makeRequest('/tournament');
   }
 
   public async getTournament(tournamentId: string): Promise<any> {
-    return this.makeRequest(`/api/tournaments/${tournamentId}`);
+    return this.makeRequest(`/tournament/${tournamentId}`);
   }
 
   public async createTournament(tournamentData: any): Promise<any> {
-    return this.makeRequest('/api/tournaments', {
+    return this.makeRequest('/tournament', {
       method: 'POST',
       body: JSON.stringify(tournamentData),
     });
   }
 
   public async joinTournament(tournamentId: string): Promise<any> {
-    return this.makeRequest(`/api/tournaments/${tournamentId}/join`, {
+    return this.makeRequest(`/tournament/${tournamentId}/join`, {
       method: 'POST',
     });
   }
 
   public async updateTournamentMatch(matchId: string, matchData: any): Promise<any> {
-    return this.makeRequest(`/api/matches/${matchId}`, {
+    return this.makeRequest(`/tournament/match/${matchId}`, {
       method: 'PUT',
       body: JSON.stringify(matchData),
     });
@@ -89,15 +89,15 @@ export class AppAPIManager {
 
   // Game API methods
   public async getLeaderboard(limit: number = 10): Promise<any[]> {
-    return this.makeRequest(`/api/leaderboard?limit=${limit}`);
+    return this.makeRequest(`/user/leaderboard?limit=${limit}`);
   }
 
   public async getGameHistory(userId: number, limit: number = 20): Promise<any[]> {
-    return this.makeRequest(`/api/games/history/${userId}?limit=${limit}`);
+    return this.makeRequest(`/game/history/${userId}?limit=${limit}`);
   }
 
   public async reportGameResult(gameData: any): Promise<any> {
-    return this.makeRequest('/api/games/result', {
+    return this.makeRequest('/game/result', {
       method: 'POST',
       body: JSON.stringify(gameData),
     });
@@ -137,7 +137,7 @@ export class AppAPIManager {
 
   public async ping(): Promise<boolean> {
     try {
-      await this.makeRequest('/api/health');
+      await this.makeRequest('/auth/health');
       return true;
     } catch (error) {
       return false;
@@ -145,6 +145,6 @@ export class AppAPIManager {
   }
 
   public async getServerStatus(): Promise<any> {
-    return this.makeRequest('/api/status');
+    return this.makeRequest('/auth/status');
   }
 }

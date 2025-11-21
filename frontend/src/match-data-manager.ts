@@ -35,7 +35,7 @@ export class MatchDataManager {
   public async loadOnlinePlayers(): Promise<void> {
     try {
       console.log('MatchDataManager: Loading online players...');
-      const response = await fetch('/api/players/online');
+      const response = await fetch('/user/online');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -4,6 +4,103 @@ import { UserProfile, UpdateProfileBody, JWTPayload, ApiResponse } from '../type
 import { db } from '../user-logic.js';
 
 export default async function setupUserProfileRoutes(fastify: FastifyInstance): Promise<void> {
+  // Get user profile by ID (JWT authenticated - can view own or other profiles)
+  fastify.get<{
+    Params: { userId: string };
+  }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+    try {
+      const authHeader = request.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return reply.status(401).send({
+          success: false,
+          error: 'No token provided'
+        } as ApiResponse);
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const decoded = fastify.jwt.verify(token) as JWTPayload;
+      const requestingUserId = decoded.userId;
+      const requestedUserId = parseInt(request.params.userId);
+
+      if (isNaN(requestedUserId)) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Invalid user ID'
+        } as ApiResponse);
+      }
+
+      return new Promise<void>((resolve, reject) => {
+        db.get(
+          'SELECT * FROM user_profiles WHERE user_id = ?',
+          [requestedUserId],
+          (err: Error | null, profile: UserProfile) => {
+            if (err) {
+              reply.status(500).send({
+                success: false,
+                error: 'Database error'
+              } as ApiResponse);
+              reject(err);
+            } else if (!profile) {
+              // Create default profile if doesn't exist
+              db.run(
+                'INSERT INTO user_profiles (user_id) VALUES (?)',
+                [requestedUserId],
+                function(this: sqlite3.RunResult, err: Error | null) {
+                  if (err) {
+                    reply.status(500).send({
+                      success: false,
+                      error: 'Database error'
+                    } as ApiResponse);
+                    reject(err);
+                  } else {
+                    // Query the newly created profile to get all default values
+                    db.get(
+                      'SELECT * FROM user_profiles WHERE user_id = ?',
+                      [requestedUserId],
+                      (err: Error | null, newProfile: UserProfile) => {
+                        if (err) {
+                          reply.status(500).send({
+                            success: false,
+                            error: 'Database error'
+                          } as ApiResponse);
+                          reject(err);
+                        } else {
+                          reply.send({
+                            success: true,
+                            data: newProfile
+                          } as ApiResponse<UserProfile>);
+                          resolve();
+                        }
+                      }
+                    );
+                  }
+                }
+              );
+            } else {
+              reply.send({
+                success: true,
+                data: profile
+              } as ApiResponse<UserProfile>);
+              resolve();
+            }
+          }
+        );
+      });
+    } catch (error) {
+      console.log('Profile fetch by ID error:', error);
+      if (error instanceof Error && error.message.includes('expired')) {
+        return reply.status(401).send({
+          success: false,
+          error: 'Token expired'
+        } as ApiResponse);
+      }
+      reply.status(401).send({
+        success: false,
+        error: 'Invalid token'
+      } as ApiResponse);
+    }
+  });
+
   // Get current user profile (JWT authenticated)
   fastify.get('/profile', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
