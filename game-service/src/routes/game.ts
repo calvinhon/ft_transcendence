@@ -1,22 +1,28 @@
+export default gameRoutes;
 // game-service/src/routes/game.ts
 // This file has been refactored into modular components.
 // All functionality is now handled by the index.ts file and its modules.
 
-import gameRoutes from './index';
 
-export default gameRoutes;
+import path from 'path';
+import sqlite3 from 'sqlite3';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+
+
+
 
 // Type definitions
 interface OnlineUserData {
   username: string;
-  sockets: Set<WebSocket>;
+  sockets: Set<any>;
   lastSeen: Date;
 }
 
 interface GamePlayer {
   userId: number;
   username: string;
-  socket: WebSocket;
+  socket: any;
 }
 
 interface Ball {
@@ -121,12 +127,12 @@ const chatClients = new Set<WebSocket>();
 const onlineUsers = new Map<number, OnlineUserData>();
 const activeGames = new Map<number, PongGame>();
 const waitingPlayers: GamePlayer[] = [];
-const matchTimers = new Map<WebSocket, NodeJS.Timeout>();
+const matchTimers = new Map<any, NodeJS.Timeout>();
 
 const dbPath = path.join(__dirname, '../../database/games.db');
 
 // Initialize database
-const db = new sqlite3.Database(dbPath, (err) => {
+const db = new sqlite3.Database(dbPath, (err: Error | null) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
@@ -152,14 +158,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
     `);
     
     // Migrate existing database: Add new columns if they don't exist
-    db.all("PRAGMA table_info(games)", (err, columns: any[]) => {
+    db.all("PRAGMA table_info(games)", (err: Error | null, columns: any[]) => {
       if (!err && columns) {
         const columnNames = columns.map(col => col.name);
         
         // Add game_mode column if it doesn't exist
         if (!columnNames.includes('game_mode')) {
           console.log('📦 [DB-MIGRATION] Adding game_mode column...');
-          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'coop'", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'coop'", (err: Error | null) => {
             if (err) console.error('Failed to add game_mode column:', err);
             else console.log('✅ [DB-MIGRATION] game_mode column added');
           });
@@ -168,7 +174,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Add team1_players column if it doesn't exist
         if (!columnNames.includes('team1_players')) {
           console.log('📦 [DB-MIGRATION] Adding team1_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err: Error | null) => {
             if (err) console.error('Failed to add team1_players column:', err);
             else console.log('✅ [DB-MIGRATION] team1_players column added');
           });
@@ -177,7 +183,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Add team2_players column if it doesn't exist
         if (!columnNames.includes('team2_players')) {
           console.log('📦 [DB-MIGRATION] Adding team2_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err: Error | null) => {
             if (err) console.error('Failed to add team2_players column:', err);
             else console.log('✅ [DB-MIGRATION] team2_players column added');
           });
@@ -186,7 +192,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Add tournament_id column if it doesn't exist
         if (!columnNames.includes('tournament_id')) {
           console.log('📦 [DB-MIGRATION] Adding tournament_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err: Error | null) => {
             if (err) console.error('Failed to add tournament_id column:', err);
             else console.log('✅ [DB-MIGRATION] tournament_id column added');
           });
@@ -195,7 +201,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Add tournament_match_id column if it doesn't exist
         if (!columnNames.includes('tournament_match_id')) {
           console.log('📦 [DB-MIGRATION] Adding tournament_match_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err: Error | null) => {
             if (err) console.error('Failed to add tournament_match_id column:', err);
             else console.log('✅ [DB-MIGRATION] tournament_match_id column added');
           });
@@ -217,7 +223,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // Add user to online tracking when they connect
-function addOnlineUser(userId: number, username: string, socket: WebSocket): void {
+function addOnlineUser(userId: number, username: string, socket: any): void {
   if (onlineUsers.has(userId)) {
     // User already tracked, just add this socket
     const userData = onlineUsers.get(userId)!;
@@ -236,7 +242,7 @@ function addOnlineUser(userId: number, username: string, socket: WebSocket): voi
 }
 
 // Remove user from online tracking
-function removeOnlineUser(socket: WebSocket): void {
+function removeOnlineUser(socket: any): void {
   for (const [userId, userData] of onlineUsers) {
     if (userData.sockets.has(socket)) {
       userData.sockets.delete(socket);
@@ -738,10 +744,10 @@ class PongGame {
     // DEBUG LOG: Print game state every time it's broadcast
     console.log('🔴 [GAME-STATE] Broadcasting game state:', JSON.stringify(gameState));
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) {
       this.player1.socket.send(JSON.stringify(gameState));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) {
       this.player2.socket.send(JSON.stringify(gameState));
     }
   }
@@ -758,10 +764,10 @@ class PongGame {
       gameId: this.gameId
     };
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) {
       this.player1.socket.send(JSON.stringify(pauseMessage));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) {
       this.player2.socket.send(JSON.stringify(pauseMessage));
     }
   }
@@ -777,10 +783,10 @@ class PongGame {
       gameId: this.gameId
     };
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) {
       this.player1.socket.send(JSON.stringify(resumeMessage));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) {
       this.player2.socket.send(JSON.stringify(resumeMessage));
     }
   }
@@ -836,11 +842,11 @@ class PongGame {
     };
 
     console.log(`📤 [GAME-${this.gameId}] Sending endGame message to players`);
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) {
       this.player1.socket.send(JSON.stringify(endMessage));
       console.log(`📤 [GAME-${this.gameId}] End message sent to ${this.player1.username}`);
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) {
       this.player2.socket.send(JSON.stringify(endMessage));
       console.log(`📤 [GAME-${this.gameId}] End message sent to ${this.player2.username}`);
     }
@@ -854,95 +860,80 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // reintroduced later, add the appropriate import and uncomment the
   // initialization call here.
   
-  // WebSocket connection for real-time game
-  fastify.get('/ws', { websocket: true }, (connection: SocketStream, req: FastifyRequest) => {
-    console.log('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
-    console.log('Connection from:', req.socket.remoteAddress);
-      
-    connection.socket.on('message', async (message: Buffer | string) => {
-      try {
-        const data = JSON.parse(message.toString()) as WebSocketMessage;
-        console.log('🔵 [WS-MESSAGE] Received WebSocket message:', data);
-        console.log('🔵 [WS-MESSAGE] Message type:', data.type);
-        
-        switch (data.type) {
-          case 'userConnect':
-            console.log('🔵 [WS-MESSAGE] Processing userConnect');
-            // Track user as online when they connect with authentication
-            addOnlineUser(data.userId, data.username, connection.socket);
-            
-            // Check if this is a game mode request (arcade or coop)
-            if (data.gameMode) {
-              console.log('🎮 [USER-CONNECT] Game mode detected:', data.gameMode);
-              
-              // Prepare game settings
-              const gameSettings: GameSettings = {
-                gameMode: data.gameMode || 'arcade',
-                aiDifficulty: data.aiDifficulty || 'medium',
-                ballSpeed: data.ballSpeed || 'medium',
-                paddleSpeed: data.paddleSpeed || 'medium',
-                powerupsEnabled: data.powerupsEnabled || false,
-                accelerateOnHit: data.accelerateOnHit || false,
-                scoreToWin: data.scoreToWin || 5,
-                team1PlayerCount: data.team1PlayerCount || 1,
-                team2PlayerCount: data.team2PlayerCount || 1
-              };
-              
-              console.log('🎮 [USER-CONNECT] Starting game with settings:', gameSettings);
-              console.log('🎮 [USER-CONNECT] Team 1 players:', data.team1Players);
-              console.log('🎮 [USER-CONNECT] Team 2 players:', data.team2Players);
-              
-              // Start the bot game directly with team player data
-              handleJoinBotGame(connection.socket, {
-                type: 'joinBotGame',
-                userId: data.userId,
-                username: data.username,
-                gameSettings: gameSettings,
-                team1Players: data.team1Players,
-                team2Players: data.team2Players
-              });
-            } else {
-              // Just acknowledge connection
-              connection.socket.send(JSON.stringify({
-                type: 'connectionAck',
-                message: 'You are now tracked as online'
-              }));
-            }
-            break;
-          case 'joinGame':
-            console.log('🔵 [WS-MESSAGE] Processing joinGame');
-            handleJoinGame(connection.socket, data as JoinGameMessage);
-            break;
-          case 'joinBotGame':
-            console.log('🔵 [WS-MESSAGE] Processing joinBotGame');
-            handleJoinBotGame(connection.socket, data as JoinGameMessage);
-            break;
-          case 'movePaddle':
-            console.log('🔵 [WS-MESSAGE] Processing movePaddle - calling handleMovePaddle');
-            handleMovePaddle(connection.socket, data as MovePaddleMessage);
-            break;
-          case 'pause':
-            console.log('🔵 [WS-MESSAGE] Processing pause');
-            handlePauseGame(connection.socket, data);
-            break;
-          case 'disconnect':
-            console.log('🔵 [WS-MESSAGE] Processing disconnect');
-            handleDisconnect(connection.socket);
-            break;
-          default:
-            console.log('🔵 [WS-MESSAGE] Unknown message type:', data.type);
+  fastify.route({
+    method: 'GET',
+    url: '/ws',
+    handler: (req, reply) => {
+      reply.send({ status: 'WebSocket endpoint' });
+    },
+    wsHandler: (connection: any, req: any) => {
+      console.log('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
+      console.log('Connection from:', req.socket.remoteAddress);
+      connection.socket.on('message', async (message: Buffer | string) => {
+        try {
+          const data = JSON.parse(message.toString()) as WebSocketMessage;
+          console.log('🔵 [WS-MESSAGE] Received WebSocket message:', data);
+          console.log('🔵 [WS-MESSAGE] Message type:', data.type);
+          switch (data.type) {
+            case 'userConnect':
+              console.log('🔵 [WS-MESSAGE] Processing userConnect');
+              addOnlineUser(data.userId, data.username, connection.socket);
+              if (data.gameMode) {
+                const gameSettings: GameSettings = {
+                  gameMode: data.gameMode || 'arcade',
+                  aiDifficulty: data.aiDifficulty || 'medium',
+                  ballSpeed: data.ballSpeed || 'medium',
+                  paddleSpeed: data.paddleSpeed || 'medium',
+                  powerupsEnabled: data.powerupsEnabled || false,
+                  accelerateOnHit: data.accelerateOnHit || false,
+                  scoreToWin: data.scoreToWin || 5,
+                  team1PlayerCount: data.team1PlayerCount || 1,
+                  team2PlayerCount: data.team2PlayerCount || 1
+                };
+                handleJoinBotGame(connection.socket, {
+                  type: 'joinBotGame',
+                  userId: data.userId,
+                  username: data.username,
+                  gameSettings: gameSettings,
+                  team1Players: data.team1Players,
+                  team2Players: data.team2Players
+                });
+              } else {
+                connection.socket.send(JSON.stringify({
+                  type: 'connectionAck',
+                  message: 'You are now tracked as online'
+                }));
+              }
+              break;
+            case 'joinGame':
+              handleJoinGame(connection.socket, data as JoinGameMessage);
+              break;
+            case 'joinBotGame':
+              handleJoinBotGame(connection.socket, data as JoinGameMessage);
+              break;
+            case 'movePaddle':
+              handleMovePaddle(connection.socket, data as MovePaddleMessage);
+              break;
+            case 'pause':
+              handlePauseGame(connection.socket, data);
+              break;
+            case 'disconnect':
+              handleDisconnect(connection.socket);
+              break;
+            default:
+              console.log('🔵 [WS-MESSAGE] Unknown message type:', data.type);
+          }
+        } catch (error) {
+          console.error('WebSocket message error:', error);
         }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-
-    connection.socket.on('close', () => {
-      handleDisconnect(connection.socket);
-    });
+      });
+      connection.socket.on('close', () => {
+        handleDisconnect(connection.socket);
+      });
+    }
   });
 
-  function handleJoinGame(socket: WebSocket, data: JoinGameMessage): void {
+  function handleJoinGame(socket: any, data: JoinGameMessage): void {
     console.log('handleJoinGame called with:', data);
     
     // Prevent duplicate joins
@@ -1024,9 +1015,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
           matchTimers.delete(socket); // Clean up timer reference
           // Create dummy opponent
           const dummySocket = {
-            readyState: WebSocket.OPEN,
+            readyState: 1, // 1 = OPEN
             send: () => {} // No-op
-          } as unknown as WebSocket;
+          };
           const player2: GamePlayer = {
             userId: 0,
             username: 'Bot',
@@ -1071,7 +1062,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   }
 
-  function handleJoinBotGame(socket: WebSocket, data: JoinGameMessage): void {
+  function handleJoinBotGame(socket: any, data: JoinGameMessage): void {
     console.log('handleJoinBotGame called with:', data);
     console.log('Game settings received:', data.gameSettings);
     console.log('🏆 [TOURNAMENT-CHECK] player2Id:', data.player2Id, 'player2Name:', data.player2Name, 'gameMode:', data.gameSettings?.gameMode);
@@ -1093,9 +1084,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       
       // Create a dummy socket for player2 since they're on the same machine
       const dummySocket = {
-        readyState: WebSocket.OPEN,
+        readyState: 1, // 1 = OPEN
         send: () => {} // No-op since both players share the same connection
-      } as unknown as WebSocket;
+      };
       
       player2 = {
         userId: data.player2Id,
@@ -1105,9 +1096,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     } else {
       // Regular bot match
       const dummySocket = {
-        readyState: WebSocket.OPEN,
+        readyState: 1, // 1 = OPEN
         send: () => {} // No-op
-      } as unknown as WebSocket;
+      };
       
       player2 = {
         userId: 0,
@@ -1169,7 +1160,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   );
 }
 
-  function handleMovePaddle(socket: WebSocket, data: MovePaddleMessage): void {
+  function handleMovePaddle(socket: any, data: MovePaddleMessage): void {
     console.log('🎮 [HANDLE-MOVE] handleMovePaddle called with:', data);
     console.log('🎮 [HANDLE-MOVE] Active games count:', activeGames.size);
     
@@ -1206,7 +1197,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     console.log('🎮 [HANDLE-MOVE] No game found for this socket');
   }
 
-  function handlePauseGame(socket: WebSocket, data: any): void {
+  function handlePauseGame(socket: any, data: any): void {
     console.log('⏸️ [HANDLE-PAUSE] handlePauseGame called with:', data);
     console.log('⏸️ [HANDLE-PAUSE] Active games count:', activeGames.size);
     
@@ -1240,7 +1231,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     console.log('⏸️ [HANDLE-PAUSE] No game found for this socket');
   }
 
-  function handleDisconnect(socket: WebSocket): void {
+  function handleDisconnect(socket: any): void {
     // Remove from online users tracking
     removeOnlineUser(socket);
     
@@ -1427,4 +1418,4 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 }
 
-export default gameRoutes;
+
