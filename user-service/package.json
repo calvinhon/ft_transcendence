@@ -10,15 +10,15 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },
   "dependencies": {
-    "fastify": "^4.24.3",
-    "sqlite3": "^5.1.6",
+    "@fastify/cors": "^9.0.0",
     "@fastify/multipart": "^8.0.0",
-    "@fastify/cors": "^9.0.0"
+    "fastify": "^4.24.3",
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "ts-node-dev": "^2.0.0",
     "@types/node": "^20.0.0",
-    "rimraf": "^5.0.0"
+    "rimraf": "^5.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
   }
 }

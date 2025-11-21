@@ -1,0 +1,75 @@
+// user-service/src/routes/types.ts
+export interface UserProfile {
+  id: number;
+  user_id: number;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  country: string | null;
+  preferred_language: string;
+  theme_preference: string;
+  notification_settings: string;
+  privacy_settings: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon_url: string;
+  reward_points: number;
+}
+
+export interface UserAchievement {
+  id: number;
+  user_id: number;
+  achievement_id: number;
+  unlocked_at: string;
+  name: string;
+  description: string;
+  icon_url: string;
+  reward_points: number;
+}
+
+export interface GameStats {
+  wins: number;
+  losses: number;
+  total_games: number;
+  winRate: number;
+}
+
+export interface LeaderboardUser extends UserProfile {
+  wins: number;
+  losses: number;
+  total_games: number;
+  winRate: number;
+}
+
+export interface OnlineUser {
+  user_id: number | string;
+  username: string;
+  display_name: string;
+  status: 'online';
+  is_bot: boolean;
+  last_seen: string;
+}
+
+export interface UpdateProfileBody {
+  displayName?: string;
+  bio?: string;
+  country?: string;
+  preferredLanguage?: string;
+  themePreference?: string;
+}
+
+export interface SearchQuery {
+  query: string;
+  limit?: string;
+}
+
+export interface LeaderboardQuery {
+  type?: 'wins' | 'games' | 'winrate';
+  limit?: string;
+}

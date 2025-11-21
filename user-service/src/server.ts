@@ -1,7 +1,7 @@
 // user-service/src/server.ts
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
-import userRoutes from './routes/user';
+import userRoutes from './routes/index';
 
 const fastify = Fastify({ 
   logger: true

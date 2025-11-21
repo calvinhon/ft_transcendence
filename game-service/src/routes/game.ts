@@ -1,9 +1,10 @@
 // game-service/src/routes/game.ts
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { SocketStream } from '@fastify/websocket';
-import * as sqlite3 from 'sqlite3';
-import * as path from 'path';
-import * as WebSocket from 'ws';
+// This file has been refactored into modular components.
+// All functionality is now handled by the index.ts file and its modules.
+
+import gameRoutes from './index';
+
+export default gameRoutes;
 
 // Type definitions
 interface OnlineUserData {
