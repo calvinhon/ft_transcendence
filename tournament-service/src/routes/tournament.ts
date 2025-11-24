@@ -89,8 +89,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     db.run(`
       CREATE TABLE IF NOT EXISTS tournaments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        min_participants INTEGER 4,
-        max_participants INTEGER 4,
+        min_participants INTEGER DEFAULT 4,
+        max_participants INTEGER DEFAULT 4,
         current_participants INTEGER DEFAULT 0,
         started_at DATETIME,
         winner_id INTEGER
@@ -105,7 +105,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         user_id INTEGER NOT NULL,
         eliminated_at DATETIME,
         final_rank INTEGER,
-        FOREIGN KEY (tournament_id) REFERENCES tournaments (id),
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
       )
     `);
     
@@ -190,87 +190,87 @@ function generateBracket(participantIds: number[]): MatchToCreate[] {
 // Route definitions
 async function routes(fastify: FastifyInstance): Promise<void> {
   // Create tournament
-  fastify.post<{
-    Body: CreateTournamentBody;
-  }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
-    const { name, description, maxParticipants, createdBy } = request.body;
+//   fastify.post<{
+//     Body: CreateTournamentBody;
+//   }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
+//     const { name, description, maxParticipants, createdBy } = request.body;
     
-    return new Promise<void>((resolve, reject) => {
-      db.run(
-        'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',
-        [name, description || '', maxParticipants || 8, createdBy],
-        function(this: sqlite3.RunResult, err: Error | null) {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else {
-            reply.send({ 
-              message: 'Tournament created successfully',
-              tournamentId: this.lastID
-            });
-            resolve();
-          }
-        }
-      );
-    });
-  });
+//     return new Promise<void>((resolve, reject) => {
+//       db.run(
+//         'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',
+//         [name, description || '', maxParticipants || 8, createdBy],
+//         function(this: sqlite3.RunResult, err: Error | null) {
+//           if (err) {
+//             reply.status(500).send({ error: 'Database error' });
+//             reject(err);
+//           } else {
+//             reply.send({ 
+//               message: 'Tournament created successfully',
+//               tournamentId: this.lastID
+//             });
+//             resolve();
+//           }
+//         }
+//       );
+//     });
+//   });
 
   // Join tournament
-  fastify.post<{
-    Body: JoinTournamentBody;
-  }>('/join', async (request: FastifyRequest<{ Body: JoinTournamentBody }>, reply: FastifyReply) => {
-    const { tournamentId, userId } = request.body;
-    if (!tournamentId || !userId) {
-      return reply.status(400).send({ error: 'Tournament ID and User ID required' });
-    }
-    return new Promise<void>((resolve, reject) => {
-      // First check if tournament exists and is open
-      db.get(
-        'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
-        [tournamentId],
-        (err: Error | null, tournament: Tournament) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else if (!tournament) {
-            reply.status(404).send({ error: 'Tournament not found or not open' });
-            resolve();
-          } else if (tournament.current_participants >= tournament.max_participants) {
-            reply.status(409).send({ error: 'Tournament is full' });
-            resolve();
-          } else {
-            // Add participant
-            db.run(
-              'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
-              [tournamentId, userId],
-              function(this: sqlite3.RunResult, err: Error | null) {
-                if (err) {
-                  if ((err as any).code === 'SQLITE_CONSTRAINT') {
-                    reply.status(409).send({ error: 'Already joined this tournament' });
-                  } else {
-                    reply.status(500).send({ error: 'Database error' });
-                  }
-                  reject(err);
-                } else {
-                  // Update participant count
-                  db.run(
-                    'UPDATE tournaments SET current_participants = current_participants + 1 WHERE id = ?',
-                    [tournamentId],
-                    (err: Error | null) => {
-                      if (!err) {
-                        reply.send({ message: 'Successfully joined tournament' });
-                      }
-                      resolve();
-                    }
-                  );
-                }
-              }
-            );
-          }
-        }
-      );
-    });
-  });
+//   fastify.post<{
+//     Body: JoinTournamentBody;
+//   }>('/join', async (request: FastifyRequest<{ Body: JoinTournamentBody }>, reply: FastifyReply) => {
+//     const { tournamentId, userId } = request.body;
+//     if (!tournamentId || !userId) {
+//       return reply.status(400).send({ error: 'Tournament ID and User ID required' });
+//     }
+//     return new Promise<void>((resolve, reject) => {
+//       // First check if tournament exists and is open
+//       db.get(
+//         'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
+//         [tournamentId],
+//         (err: Error | null, tournament: Tournament) => {
+//           if (err) {
+//             reply.status(500).send({ error: 'Database error' });
+//             reject(err);
+//           } else if (!tournament) {
+//             reply.status(404).send({ error: 'Tournament not found or not open' });
+//             resolve();
+//           } else if (tournament.current_participants >= tournament.max_participants) {
+//             reply.status(409).send({ error: 'Tournament is full' });
+//             resolve();
+//           } else {
+//             // Add participant
+//             db.run(
+//               'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
+//               [tournamentId, userId],
+//               function(this: sqlite3.RunResult, err: Error | null) {
+//                 if (err) {
+//                   if ((err as any).code === 'SQLITE_CONSTRAINT') {
+//                     reply.status(409).send({ error: 'Already joined this tournament' });
+//                   } else {
+//                     reply.status(500).send({ error: 'Database error' });
+//                   }
+//                   reject(err);
+//                 } else {
+//                   // Update participant count
+//                   db.run(
+//                     'UPDATE tournaments SET current_participants = current_participants + 1 WHERE id = ?',
+//                     [tournamentId],
+//                     (err: Error | null) => {
+//                       if (!err) {
+//                         reply.send({ message: 'Successfully joined tournament' });
+//                       }
+//                       resolve();
+//                     }
+//                   );
+//                 }
+//               }
+//             );
+//           }
+//         }
+//       );
+//     });
+//   });
 
   // Start tournament
   fastify.post<{
@@ -506,7 +506,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                   // Tournament finished
                   db.run(
                     'UPDATE tournaments SET status = "finished", finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
-                    [winnerId, tournamentId],
+                    [match.winner_id, match.tournament_id],
                     (err: Error | null) => {
                       if (err) {
                         fastify.log.error({ err }, '[CHECK NEXT ROUND] Failed to update tournament status');
@@ -517,7 +517,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                       // Winner gets rank 1
                       db.run(
                         'UPDATE tournament_participants SET final_rank = 1 WHERE tournament_id = ? AND user_id = ?',
-                        [tournamentId, winnerId],
+                        [match.tournament_id, match.winner_id],
                         (err: Error | null) => {
                           if (err) {
                             fastify.log.error({ err }, '[RANKINGS] Failed to set winner rank');
@@ -531,7 +531,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                          FROM tournament_matches 
                          WHERE tournament_id = ? AND status = 'completed' AND winner_id IS NOT NULL
                          ORDER BY round DESC`,
-                        [tournamentId],
+                        [match.tournament_id],
                         (err: Error | null, matches: any[]) => {
                           if (err) {
                             fastify.log.error({ err }, '[RANKINGS] Failed to get matches for ranking');
@@ -552,7 +552,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                               `UPDATE tournament_participants 
                                SET final_rank = ? 
                                WHERE tournament_id = ? AND user_id = ? AND final_rank IS NULL`,
-                              [rankRangeStart, tournamentId, loser],
+                              [rankRangeStart, match.tournament_id, loser],
                               (err: Error | null) => {
                                 if (err) {
                                   fastify.log.error({ err, loser, rank: rankRangeStart }, '[RANKINGS] Failed to set participant rank');
@@ -573,8 +573,8 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                   for (let i = 0; i < winners.length; i += 2) {
                     if (i + 1 < winners.length) {
                       nextMatches.push({
-                        player1: winners[i],
-                        player2: winners[i + 1],
+                        player1: winners[i].winner_id,
+                        player2: winners[i + 1].winner_id,
                         round: nextRound,
                         matchNumber: Math.floor(i / 2) + 1
                       });

@@ -12,9 +12,7 @@ RUN npm install
 
 # Copy source code
 COPY src/ ./src/
-COPY contracts/ ./contracts/
 COPY scripts/ ./scripts/
-COPY test/ ./test/
 COPY hardhat.config.js ./
 
 # Build TypeScript if src exists
@@ -34,7 +32,7 @@ RUN echo '#!/bin/sh' > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Expose ports
-EXPOSE 8545 3001
+EXPOSE 8545 3000
 
 # Start both hardhat node and API server
 CMD ["/app/start.sh"]
