@@ -491,10 +491,10 @@ export class PongGame {
     // DEBUG LOG: Print game state every time it's broadcast
     console.log('🔴 [GAME-STATE] Broadcasting game state:', JSON.stringify(gameState));
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(gameState));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(gameState));
     }
   }
@@ -511,10 +511,10 @@ export class PongGame {
       gameId: this.gameId
     };
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(pauseMessage));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(pauseMessage));
     }
   }
@@ -530,10 +530,10 @@ export class PongGame {
       gameId: this.gameId
     };
 
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(resumeMessage));
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(resumeMessage));
     }
   }
@@ -579,11 +579,11 @@ export class PongGame {
     };
 
     console.log(`📤 [GAME-${this.gameId}] Sending endGame message to players`);
-    if (this.player1.socket.readyState === WebSocket.OPEN) {
+    if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(endMessage));
       console.log(`📤 [GAME-${this.gameId}] End message sent to ${this.player1.username}`);
     }
-    if (this.player2.socket.readyState === WebSocket.OPEN) {
+    if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(endMessage));
       console.log(`📤 [GAME-${this.gameId}] End message sent to ${this.player2.username}`);
     }
