@@ -26,7 +26,7 @@ export class AuthService {
 
   async login(username: string, password: string): Promise<{ user: User; token: string }> {
     const user = await getQuery<DatabaseUser>(
-      'SELECT id, username, password_hash FROM users WHERE username = ?',
+      'SELECT id, username, email, password_hash FROM users WHERE username = ?',
       [username]
     );
 
