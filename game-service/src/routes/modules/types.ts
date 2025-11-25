@@ -16,6 +16,7 @@ export interface Ball {
   y: number;
   dx: number;
   dy: number;
+  frozen?: boolean; // Optional: freeze ball movement during countdown
 }
 
 export interface Paddle {

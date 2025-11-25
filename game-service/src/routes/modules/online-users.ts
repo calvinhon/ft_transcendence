@@ -1,5 +1,6 @@
 // game-service/src/routes/modules/online-users.ts
 import { OnlineUserData, OnlineUser } from './types';
+import { logger } from './logger';
 
 // Global state for online users
 export const onlineUsers = new Map<number, OnlineUserData>();
@@ -11,7 +12,7 @@ export function addOnlineUser(userId: number, username: string, socket: any): vo
     const userData = onlineUsers.get(userId)!;
     userData.sockets.add(socket);
     userData.lastSeen = new Date();
-    console.log(`User ${username} (${userId}) added socket. Total sockets: ${userData.sockets.size}`);
+    logger.info(`User ${username} (${userId}) added socket. Total sockets: ${userData.sockets.size}`);
   } else {
     // New user
     onlineUsers.set(userId, {
@@ -19,7 +20,7 @@ export function addOnlineUser(userId: number, username: string, socket: any): vo
       sockets: new Set([socket]),
       lastSeen: new Date()
     });
-    console.log(`User ${username} (${userId}) is now online. Total online: ${onlineUsers.size}`);
+    logger.info(`User ${username} (${userId}) is now online. Total online: ${onlineUsers.size}`);
   }
 }
 
@@ -28,11 +29,11 @@ export function removeOnlineUser(socket: any): void {
   for (const [userId, userData] of onlineUsers) {
     if (userData.sockets.has(socket)) {
       userData.sockets.delete(socket);
-      console.log(`User ${userData.username} (${userId}) removed socket. Remaining sockets: ${userData.sockets.size}`);
+      logger.info(`User ${userData.username} (${userId}) removed socket. Remaining sockets: ${userData.sockets.size}`);
 
       // Only remove user if they have no more sockets
       if (userData.sockets.size === 0) {
-        console.log(`User ${userData.username} (${userId}) went offline. Total online: ${onlineUsers.size - 1}`);
+        logger.info(`User ${userData.username} (${userId}) went offline. Total online: ${onlineUsers.size - 1}`);
         onlineUsers.delete(userId);
       }
       break;
@@ -80,6 +81,6 @@ export function getOnlineUsers(): OnlineUser[] {
   ];
 
   const allOnlineUsers = [...onlineUsersList, ...botPlayers];
-  console.log(`Returning ${allOnlineUsers.length} online users (${onlineUsersList.length} real, ${botPlayers.length} bots)`);
+  logger.info(`Returning ${allOnlineUsers.length} online users (${onlineUsersList.length} real, ${botPlayers.length} bots)`);
   return allOnlineUsers;
 }
