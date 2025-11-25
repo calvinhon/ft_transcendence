@@ -80,6 +80,16 @@ async function buildServer(): Promise<FastifyInstance> {
   // Register routes
   await fastify.register(authRoutes);
 
+  // Health check
+  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+    reply.send({
+      status: 'healthy',
+      service: 'auth-service',
+      timestamp: new Date().toISOString(),
+      modules: ['auth']
+    });
+  });
+
   return fastify;
 }
 

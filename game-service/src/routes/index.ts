@@ -65,6 +65,16 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       reply.status(500).send({ error: 'Error fetching online users' });
     }
   });
+
+  // Health check
+  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+    reply.send({
+      status: 'healthy',
+      service: 'game-service',
+      timestamp: new Date().toISOString(),
+      modules: ['websocket', 'game-history', 'game-stats', 'online-users']
+    });
+  });
 }
 
 export default gameRoutes;

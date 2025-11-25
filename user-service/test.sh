@@ -3,10 +3,11 @@
 echo "🧪 Testing User Service Endpoints"
 echo "================================="
 
-# Start service in background
-npm run dev &
-SERVICE_PID=$!
-sleep 3
+# Note: This script assumes the user service is already running
+# For standalone testing, uncomment the following lines:
+# npm run dev &
+# SERVICE_PID=$!
+# sleep 3
 
 echo -e "\n1. Testing Health Endpoint:"
 curl -s http://localhost:3004/health
@@ -55,7 +56,7 @@ curl -s http://localhost:3004/profile/1
 echo -e "\n\n13. Testing User Achievements After Unlock (User 1):"
 curl -s http://localhost:3004/achievements/1
 
-# Kill the service
-kill $SERVICE_PID 2>/dev/null
+# For standalone testing, uncomment the following line:
+# kill $SERVICE_PID 2>/dev/null
 
 echo -e "\n\n✅ All endpoint tests completed!"

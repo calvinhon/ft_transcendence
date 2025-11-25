@@ -201,7 +201,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   // Create tournament
   fastify.post<{
     Body: CreateTournamentBody;
-  }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
+  }>('/tournaments/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
     const { name, description, maxParticipants, createdBy } = request.body;
     
     if (!name || !createdBy) {
@@ -230,9 +230,11 @@ async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Join tournament
   fastify.post<{
+    Params: { tournamentId: string };
     Body: JoinTournamentBody;
-  }>('/join', async (request: FastifyRequest<{ Body: JoinTournamentBody }>, reply: FastifyReply) => {
-    const { tournamentId, userId } = request.body;
+  }>('/tournaments/:tournamentId/join', async (request: FastifyRequest<{ Params: { tournamentId: string }; Body: JoinTournamentBody }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+    const { userId } = request.body;
     
     if (!tournamentId || !userId) {
       return reply.status(400).send({ error: 'Tournament ID and User ID required' });
@@ -287,10 +289,76 @@ async function routes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
+  // Leave tournament
+  fastify.post<{
+    Params: { tournamentId: string };
+    Body: { userId: number };
+  }>('/tournaments/:tournamentId/leave', async (request: FastifyRequest<{ Params: { tournamentId: string }; Body: { userId: number } }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+    const { userId } = request.body;
+
+    return new Promise<void>((resolve, reject) => {
+      // Check if tournament is still open
+      db.get(
+        'SELECT status FROM tournaments WHERE id = ?',
+        [tournamentId],
+        (err: Error | null, tournament: any) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+            return;
+          }
+
+          if (!tournament) {
+            reply.status(404).send({ error: 'Tournament not found' });
+            resolve();
+            return;
+          }
+
+          if (tournament.status !== 'open') {
+            reply.status(400).send({ error: 'Cannot leave tournament that has already started' });
+            resolve();
+            return;
+          }
+
+          // Remove participant
+          db.run(
+            'DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ?',
+            [tournamentId, userId],
+            function(err: Error | null) {
+              if (err) {
+                reply.status(500).send({ error: 'Database error' });
+                reject(err);
+              } else if (this.changes === 0) {
+                reply.status(404).send({ error: 'Participant not found in tournament' });
+                resolve();
+              } else {
+                // Update participant count
+                db.run(
+                  'UPDATE tournaments SET current_participants = current_participants - 1 WHERE id = ?',
+                  [tournamentId],
+                  (err: Error | null) => {
+                    if (err) {
+                      reply.status(500).send({ error: 'Database error' });
+                      reject(err);
+                    } else {
+                      reply.send({ message: 'Successfully left tournament' });
+                      resolve();
+                    }
+                  }
+                );
+              }
+            }
+          );
+        }
+      );
+    });
+  });
+
   // Start tournament
   fastify.post<{
     Params: { tournamentId: string };
-  }>('/start/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/:tournamentId/start', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
     const { tournamentId } = request.params;
 
     return new Promise<void>((resolve, reject) => {
@@ -407,7 +475,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   // Get tournament details
   fastify.get<{
     Params: { tournamentId: string };
-  }>('/details/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
     const { tournamentId } = request.params;
 
     return new Promise<void>((resolve, reject) => {
@@ -464,7 +532,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   // Get all tournaments (with mock data for testing)
   fastify.get<{
     Querystring: TournamentQuery;
-  }>('/list', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
+  }>('/tournaments', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
     const { status, limit = '50' } = request.query;
 
     // For now, return mock tournaments for testing
@@ -538,13 +606,20 @@ async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Update match result
   fastify.post<{
+    Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;
-  }>('/match/result', async (request: FastifyRequest<{ Body: MatchResultBody }>, reply: FastifyReply) => {
-    const { matchId, winnerId, player1Score, player2Score } = request.body;
+  }>('/tournaments/:tournamentId/matches/:matchId/result', async (request: FastifyRequest<{ Params: { tournamentId: string; matchId: string }; Body: MatchResultBody }>, reply: FastifyReply) => {
+    const { tournamentId, matchId } = request.params;
+    const { winnerId, player1Score, player2Score } = request.body;
+
+    const matchIdNum = parseInt(matchId, 10);
+    if (isNaN(matchIdNum)) {
+      return reply.status(400).send({ error: 'Invalid match ID' });
+    }
 
     fastify.log.info('========== MATCH RESULT ENDPOINT ==========');
     fastify.log.info({ 
-      matchId, 
+      matchId: matchIdNum, 
       winnerId, 
       player1Score, 
       player2Score,
@@ -610,7 +685,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                 }, '[MATCH RESULT] Successfully updated match');
                 
                 // Check if we need to create next round matches
-                checkAndCreateNextRound(matchId);
+                checkAndCreateNextRound(matchIdNum);
                 reply.send({ message: 'Match result updated successfully' });
                 resolvePromise();
               }
@@ -791,7 +866,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   // Get user tournaments
   fastify.get<{
     Params: { userId: string };
-  }>('/user/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/user/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const { userId } = request.params;
 
     return new Promise<void>((resolve, reject) => {
@@ -815,10 +890,86 @@ async function routes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
+  // Get tournament matches
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/tournaments/:tournamentId/matches', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+
+    return new Promise<void>((resolve, reject) => {
+      db.all(
+        'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
+        [tournamentId],
+        (err: Error | null, matches: any[]) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else {
+            reply.send(matches);
+            resolve();
+          }
+        }
+      );
+    });
+  });
+
+  // Get tournament leaderboard
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/tournaments/:tournamentId/leaderboard', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+
+    return new Promise<void>((resolve, reject) => {
+      // Get all matches for this tournament
+      db.all(
+        'SELECT * FROM tournament_matches WHERE tournament_id = ?',
+        [tournamentId],
+        (err: Error | null, matches: any[]) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else {
+            // Calculate leaderboard based on match results
+            const playerStats: { [key: number]: { wins: number; losses: number; points: number } } = {};
+            
+            matches.forEach(match => {
+              if (match.winner_id) {
+                if (!playerStats[match.player1_id]) playerStats[match.player1_id] = { wins: 0, losses: 0, points: 0 };
+                if (!playerStats[match.player2_id]) playerStats[match.player2_id] = { wins: 0, losses: 0, points: 0 };
+                
+                if (match.winner_id === match.player1_id) {
+                  playerStats[match.player1_id].wins++;
+                  playerStats[match.player2_id].losses++;
+                } else {
+                  playerStats[match.player2_id].wins++;
+                  playerStats[match.player1_id].losses++;
+                }
+                
+                playerStats[match.winner_id].points += 3; // 3 points for win
+              }
+            });
+            
+            const leaderboard = Object.entries(playerStats)
+              .map(([userId, stats]) => ({
+                userId: parseInt(userId),
+                wins: stats.wins,
+                losses: stats.losses,
+                points: stats.points
+              }))
+              .sort((a, b) => b.points - a.points || b.wins - a.wins);
+            
+            reply.send(leaderboard);
+            resolve();
+          }
+        }
+      );
+    });
+  });
+
   // Get tournament match by match ID
   fastify.get<{
     Params: { matchId: string };
-  }>('/match/:matchId', async (request: FastifyRequest<{ Params: { matchId: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/match/:matchId', async (request: FastifyRequest<{ Params: { matchId: string } }>, reply: FastifyReply) => {
     const { matchId } = request.params;
 
     return new Promise<void>((resolve, reject) => {
@@ -975,6 +1126,16 @@ async function routes(fastify: FastifyInstance): Promise<void> {
           resolve();
         }
       );
+    });
+  });
+
+  // Health check
+  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
+    reply.send({
+      status: 'healthy',
+      service: 'tournament-service',
+      timestamp: new Date().toISOString(),
+      modules: ['tournaments', 'matches', 'leaderboards']
     });
   });
 }

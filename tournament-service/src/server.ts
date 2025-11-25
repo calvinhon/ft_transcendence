@@ -38,10 +38,12 @@ fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, p
   }
 });
 
-// Register routes
-fastify.register(tournamentRoutes);
-
-const start = async (): Promise<void> => {
+// Initialize and start the server
+async function init(): Promise<void> {
+  // Register routes by calling the function directly
+  await tournamentRoutes(fastify);
+  
+  // Start the server
   try {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     console.log('Tournament service running on port 3000');
@@ -49,6 +51,6 @@ const start = async (): Promise<void> => {
     fastify.log.error(err);
     process.exit(1);
   }
-};
+}
 
-start();
+init();

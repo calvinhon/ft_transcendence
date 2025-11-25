@@ -3,6 +3,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import sqlite3 from 'sqlite3';
 import { db } from './database';
 import { UserProfile, UpdateProfileBody, GameStats } from './types';
+import { handleDatabaseError, promisifyDbGet, promisifyDbRun, promisifyDbAll } from './utils';
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // Get user profile
@@ -11,48 +12,16 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
   }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const { userId } = request.params;
 
-    return new Promise<void>((resolve, reject) => {
-      db.get(
-        'SELECT * FROM user_profiles WHERE user_id = ?',
-        [userId],
-        (err: Error | null, profile: UserProfile) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else if (!profile) {
-            // Create default profile if doesn't exist
-            db.run(
-              'INSERT INTO user_profiles (user_id) VALUES (?)',
-              [userId],
-              function(this: sqlite3.RunResult, err: Error | null) {
-                if (err) {
-                  reply.status(500).send({ error: 'Database error' });
-                  reject(err);
-                } else {
-                  // Query the newly created profile to get all default values
-                  db.get(
-                    'SELECT * FROM user_profiles WHERE user_id = ?',
-                    [userId],
-                    (err: Error | null, newProfile: UserProfile) => {
-                      if (err) {
-                        reply.status(500).send({ error: 'Database error' });
-                        reject(err);
-                      } else {
-                        reply.send(newProfile);
-                        resolve();
-                      }
-                    }
-                  );
-                }
-              }
-            );
-          } else {
-            reply.send(profile);
-            resolve();
-          }
-        }
-      );
-    });
+    try {
+      let profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+      if (!profile) {
+        await promisifyDbRun(db, 'INSERT INTO user_profiles (user_id) VALUES (?)', [userId]);
+        profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+      }
+      reply.send(profile);
+    } catch (err) {
+      reply.status(500).send({ error: 'Database error' });
+    }
   });
 
   // Update user profile
@@ -63,28 +32,19 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     const { userId } = request.params;
     const { displayName, bio, country, preferredLanguage, themePreference } = request.body;
 
-    return new Promise<void>((resolve, reject) => {
-      db.run(
-        `UPDATE user_profiles SET
+    try {
+      await promisifyDbRun(db, `UPDATE user_profiles SET
          display_name = COALESCE(?, display_name),
          bio = COALESCE(?, bio),
          country = COALESCE(?, country),
          preferred_language = COALESCE(?, preferred_language),
          theme_preference = COALESCE(?, theme_preference),
          updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`,
-        [displayName, bio, country, preferredLanguage, themePreference, userId],
-        function(this: sqlite3.RunResult, err: Error | null) {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else {
-            reply.send({ message: 'Profile updated successfully' });
-            resolve();
-          }
-        }
-      );
-    });
+         WHERE user_id = ?`, [displayName, bio, country, preferredLanguage, themePreference, userId]);
+      reply.send({ message: 'Profile updated successfully' });
+    } catch (err) {
+      reply.status(500).send({ error: 'Database error' });
+    }
   });
 
   // Update game stats (wins, total_games, xp, level, campaign_level, etc)
@@ -100,7 +60,7 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
       lost?: number;
       [key: string]: any;
     };
-  }>('/game/update-stats/:userId', async (request, reply) => {
+  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number; [key: string]: any; } }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
 
@@ -122,17 +82,12 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
       return reply.status(400).send({ error: 'No stats provided' });
     }
 
-    return new Promise<void>((resolve, reject) => {
+    try {
       const sql = 'UPDATE user_profiles SET ' + fields.join(', ') + ' WHERE user_id = ?';
-      db.run(sql, values, function(this: sqlite3.RunResult, err: Error | null) {
-        if (err) {
-          reply.status(500).send({ error: 'Database error', details: err });
-          reject(err);
-        } else {
-          reply.send({ message: 'Game stats updated successfully' });
-          resolve();
-        }
-      });
-    });
+      await promisifyDbRun(db, sql, values);
+      reply.send({ message: 'Game stats updated successfully' });
+    } catch (err) {
+      reply.status(500).send({ error: 'Database error', details: err });
+    }
   });
 }
