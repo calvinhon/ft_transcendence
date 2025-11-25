@@ -1,531 +1,165 @@
 // auth-service/src/routes/auth.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import sqlite3 from 'sqlite3';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
-import path from 'path';
+import { AuthService } from '../services/authService';
+import { RegisterRequestBody } from '../types';
+import { validateRequiredFields, validateEmail, sendError, sendSuccess } from '../utils/responses';
 
-// Local type definitions
-interface User {
-  userId: number;
-  username: string;
-  email: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface AuthResponse {
-  success: boolean;
-  token?: string;
-  user?: User;
-  message?: string;
-}
-
-interface JWTPayload {
-  userId: number;
-  username: string;
-  iat?: number;
-  exp?: number;
-}
-
-interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
-const dbPath = path.join(__dirname, '../../database/auth.db');
-
-// Initialize database
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-  } else {
-    console.log('Connected to SQLite database');
-    // Create users table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        last_login DATETIME
-      )
-    `);
-  }
-});
-
-interface DatabaseUser {
-  id: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  created_at: string;
-  last_login?: string;
-}
-
-interface RegisterRequestBody {
-  username: string;
-  email: string;
-  password: string;
-}
-
-interface LoginRequestBody {
-  username: string;
-  password: string;
-}
-
-interface UserProfileParams {
-  userId: string;
-}
-
-async function authRoutes(fastify: FastifyInstance): Promise<void> {
-  // Register user
-  fastify.post<{
-    Body: RegisterRequestBody;
-  }>('/register', async (request: FastifyRequest<{ Body: RegisterRequestBody }>, reply: FastifyReply) => {
-    const { username, email, password } = request.body;
-    
-    if (!username || !email || !password) {
-      return reply.status(400).send({ 
-        success: false,
-        error: 'Missing required fields' 
-      } as ApiResponse);
-    }
-
+async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
+  // plugin initialization
+  // Register user (only this route for now)
+  fastify.post('/register', async (request: FastifyRequest, reply: FastifyReply) => {
+    const authService = new AuthService(fastify);
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      return new Promise<void>((resolve, reject) => {
-        db.run(
-          'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-          [username, email, hashedPassword],
-          function(this: sqlite3.RunResult, err: Error | null) {
-            if (err) {
-              if (err.message.includes('UNIQUE constraint failed')) {
-                reply.status(409).send({ 
-                  success: false,
-                  error: 'Username or email already exists' 
-                } as ApiResponse);
-              } else {
-                reply.status(500).send({ 
-                  success: false,
-                  error: 'Database error' 
-                } as ApiResponse);
-              }
-              reject(err);
-            } else {
-              const token = fastify.jwt.sign({ 
-                userId: this.lastID, 
-                username: username 
-              } as JWTPayload, { expiresIn: '24h' });
-              
-              reply.send({ 
-                success: true,
-                message: 'User registered successfully',
-                data: {
-                  userId: this.lastID,
-                  username: username
-                },
-                token: token
-              } as AuthResponse);
-              resolve();
-            }
-          }
-        );
-      });
-    } catch (error) {
-      console.error('Registration error:', error);
-      return reply.status(500).send({ 
-        success: false,
-        error: 'Internal server error' 
-      } as ApiResponse);
-    }
-  });
-
-  // Login user
-  fastify.post<{
-    Body: LoginRequestBody;
-  }>('/login', async (request: FastifyRequest<{ Body: LoginRequestBody }>, reply: FastifyReply) => {
-    const { username, password } = request.body;
-    
-    if (!username || !password) {
-      return reply.status(400).send({ 
-        success: false,
-        error: 'Username and password required' 
-      } as ApiResponse);
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      db.get(
-        'SELECT id, username, password_hash FROM users WHERE username = ?',
-        [username],
-        async (err: Error | null, user: DatabaseUser | undefined) => {
-          if (err) {
-            reply.status(500).send({ 
-              success: false,
-              error: 'Database error' 
-            } as ApiResponse);
-            reject(err);
-          } else if (!user) {
-            reply.status(401).send({ 
-              success: false,
-              error: 'Invalid credentials' 
-            } as ApiResponse);
-            resolve();
-          } else {
-            try {
-              const isValid = await bcrypt.compare(password, user.password_hash);
-              if (isValid) {
-                // Update last login
-                db.run(
-                  'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
-                  [user.id]
-                );
-                
-                const token = fastify.jwt.sign({ 
-                  userId: user.id, 
-                  username: user.username 
-                } as JWTPayload, { expiresIn: '24h' });
-                
-                reply.send({
-                  success: true,
-                  message: 'Login successful',
-                  user: {
-                    userId: user.id,
-                    username: user.username
-                  },
-                  token: token
-                } as AuthResponse);
-              } else {
-                reply.status(401).send({ 
-                  success: false,
-                  error: 'Invalid credentials' 
-                } as ApiResponse);
-              }
-              resolve();
-            } catch (bcryptError) {
-              console.error('Bcrypt error:', bcryptError);
-              reply.status(500).send({ 
-                success: false,
-                error: 'Internal server error' 
-              } as ApiResponse);
-              resolve();
-            }
-          }
-        }
-      );
-    });
-  });
-
-  // Verify token
-  fastify.post('/verify', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const authHeader = request.headers.authorization;
-      const token = authHeader?.replace('Bearer ', '');
-      
-      if (!token) {
-        console.log('No token provided in authorization header');
-        return reply.status(401).send({ 
-          success: false,
-          error: 'No token provided' 
-        } as ApiResponse);
+      const { username, email, password } = request.body as RegisterRequestBody;
+      const validationError = validateRequiredFields(request.body, ['username', 'email', 'password']);
+      if (validationError) return sendError(reply, validationError, 400);
+      if (!validateEmail(email)) return sendError(reply, 'Invalid email format', 400);
+      if (password.length < 6) return sendError(reply, 'Password must be at least 6 characters', 400);
+      const result = await authService.register(username, email, password);
+      sendSuccess(reply, { userId: result.userId, username }, 'User registered successfully', 201);
+    } catch (error: any) {
+      if (error.message?.includes('UNIQUE constraint failed')) {
+        sendError(reply, 'Username or email already exists', 409);
+      } else {
+        console.error('Registration error:', error);
+        sendError(reply, 'Internal server error', 500);
       }
-
-      console.log('Verifying token:', token.substring(0, 20) + '...');
-      const decoded = fastify.jwt.verify(token) as JWTPayload;
-      console.log('Token verified successfully for user:', decoded.username);
-      
-      reply.send({ 
-        success: true,
-        valid: true, 
-        user: decoded 
-      } as ApiResponse<{ valid: boolean; user: JWTPayload }>);
-    } catch (error) {
-      console.log('Token verification failed:', error);
-      if (error instanceof Error && error.message.includes('expired')) {
-        return reply.status(401).send({ 
-          success: false,
-          error: 'Token expired', 
-          expired: true 
-        } as ApiResponse);
-      }
-      reply.status(401).send({ 
-        success: false,
-        error: 'Invalid token' 
-      } as ApiResponse);
     }
-  });
-
-  // Get user profile
-  fastify.get<{
-    Params: UserProfileParams;
-  }>('/profile/:userId', async (request: FastifyRequest<{ Params: UserProfileParams }>, reply: FastifyReply) => {
-    const { userId } = request.params;
-    
-    return new Promise<void>((resolve, reject) => {
-      db.get(
-        'SELECT id, username, email, created_at, last_login FROM users WHERE id = ?',
-        [userId],
-        (err: Error | null, user: DatabaseUser | undefined) => {
-          if (err) {
-            reply.status(500).send({ 
-              success: false,
-              error: 'Database error' 
-            } as ApiResponse);
-            reject(err);
-          } else if (!user) {
-            reply.status(404).send({ 
-              success: false,
-              error: 'User not found' 
-            } as ApiResponse);
-            resolve();
-          } else {
-            const userProfile: User = {
-              userId: user.id,
-              username: user.username,
-              email: user.email,
-              created_at: user.created_at
-            };
-            
-            reply.send({ 
-              success: true,
-              data: userProfile 
-            } as ApiResponse<User>);
-            resolve();
-          }
-        }
-      );
-    });
   });
 
   // Forgot password endpoint
   fastify.post('/forgot-password', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { email } = request.body as { email: string };
+    const authService = new AuthService(fastify);
+    try {
+      const { email } = request.body as { email: string };
 
-    console.log('Forgot password request received for email:', email);
+      if (!email) {
+        return sendError(reply, 'Email is required', 400);
+      }
 
-    if (!email) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Email is required'
-      } as ApiResponse);
+      if (!validateEmail(email)) {
+        return sendError(reply, 'Invalid email format', 400);
+      }
+
+      const result = await authService.createPasswordResetToken(email);
+
+      // In production the reset link will be emailed; log for development
+      console.log('Reset Link:', result.resetLink);
+
+      sendSuccess(reply, { message: 'If an account with that email exists, a password reset link has been sent.' });
+
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      // Always respond with success to avoid leaking account existence
+      sendSuccess(reply, { message: 'If an account with that email exists, a password reset link has been sent.' });
     }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Invalid email format'
-      } as ApiResponse);
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      // First check if user exists
-      db.get(
-        'SELECT id, email FROM users WHERE email = ?',
-        [email],
-        async (err: Error | null, user: any) => {
-          if (err) {
-            console.error('Database error during forgot password:', err);
-            reply.status(500).send({
-              success: false,
-              error: 'Database error'
-            } as ApiResponse);
-            reject(err);
-            return;
-          }
-
-          if (!user) {
-            // Return success even if user doesn't exist for security
-            console.log('Password reset requested for non-existent email:', email);
-            reply.send({
-              success: true,
-              message: 'If an account with that email exists, a password reset link has been sent.'
-            } as ApiResponse);
-            resolve();
-            return;
-          }
-
-          // Generate a reset token
-          const resetToken = crypto.randomBytes(32).toString('hex');
-          const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
-
-          console.log('Generated reset token for user:', user.id, 'Token:', resetToken);
-
-          // Create password_reset_tokens table if it doesn't exist
-          db.run(`
-            CREATE TABLE IF NOT EXISTS password_reset_tokens (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              user_id INTEGER NOT NULL,
-              token TEXT NOT NULL UNIQUE,
-              expires_at DATETIME NOT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              used BOOLEAN DEFAULT FALSE,
-              FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-          `, (createErr: Error | null) => {
-            if (createErr) {
-              console.error('Error creating password_reset_tokens table:', createErr);
-              reply.status(500).send({
-                success: false,
-                error: 'Database error'
-              } as ApiResponse);
-              reject(createErr);
-              return;
-            }
-
-            // Insert the reset token
-            db.run(
-              'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-              [user.id, resetToken, expiresAt.toISOString()],
-              function(insertErr: Error | null) {
-                if (insertErr) {
-                  console.error('Error storing reset token:', insertErr);
-                  reply.status(500).send({
-                    success: false,
-                    error: 'Database error'
-                  } as ApiResponse);
-                  reject(insertErr);
-                  return;
-                }
-
-                console.log('Reset token stored successfully for user:', user.id);
-                
-                // In a real app, you would send an email here
-                // For development, we'll just log the reset link
-                const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
-                console.log('\n=== PASSWORD RESET EMAIL (Development) ===');
-                console.log(`To: ${email}`);
-                console.log(`Reset Link: ${resetLink}`);
-                console.log('==========================================\n');
-
-                reply.send({
-                  success: true,
-                  message: 'If an account with that email exists, a password reset link has been sent.',
-                  // In development, include the token for testing
-                  ...(process.env.NODE_ENV === 'development' && { resetToken, resetLink })
-                } as ApiResponse);
-                resolve();
-              }
-            );
-          });
-        }
-      );
-    });
   });
 
   // Reset password endpoint
   fastify.post('/reset-password', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { token, newPassword } = request.body as { token: string; newPassword: string };
+    const authService = new AuthService(fastify);
+    try {
+      const { token, newPassword } = request.body as { token: string; newPassword: string };
 
-    console.log('Password reset request received with token:', token);
+      if (!token || !newPassword) {
+        return sendError(reply, 'Token and new password are required', 400);
+      }
 
-    if (!token || !newPassword) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Token and new password are required'
-      } as ApiResponse);
+      if (newPassword.length < 6) {
+        return sendError(reply, 'Password must be at least 6 characters', 400);
+      }
+
+      const result = await authService.resetPassword(token, newPassword);
+      sendSuccess(reply, { username: result.username, email: result.email }, 'Password has been reset successfully');
+    } catch (error: any) {
+      if (error.message === 'Invalid or expired reset token') {
+        sendError(reply, error.message, 400);
+      } else if (error.message === 'Reset token has expired') {
+        sendError(reply, error.message, 400);
+      } else {
+        console.error('Reset password error:', error);
+        sendError(reply, 'Internal server error', 500);
+      }
     }
-
-    if (newPassword.length < 6) {
-      return reply.status(400).send({
-        success: false,
-        error: 'Password must be at least 6 characters'
-      } as ApiResponse);
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      // Find the reset token
-      db.get(
-        `SELECT prt.*, u.email, u.username 
-         FROM password_reset_tokens prt 
-         JOIN users u ON prt.user_id = u.id 
-         WHERE prt.token = ? AND prt.used = FALSE`,
-        [token],
-        async (err: Error | null, resetRecord: any) => {
-          if (err) {
-            console.error('Database error during password reset:', err);
-            reply.status(500).send({
-              success: false,
-              error: 'Database error'
-            } as ApiResponse);
-            reject(err);
-            return;
-          }
-
-          if (!resetRecord) {
-            console.log('Invalid or already used reset token:', token);
-            reply.status(400).send({
-              success: false,
-              error: 'Invalid or expired reset token'
-            } as ApiResponse);
-            resolve();
-            return;
-          }
-
-          // Check if token has expired
-          const expiresAt = new Date(resetRecord.expires_at);
-          if (expiresAt < new Date()) {
-            console.log('Reset token has expired:', token);
-            reply.status(400).send({
-              success: false,
-              error: 'Reset token has expired'
-            } as ApiResponse);
-            resolve();
-            return;
-          }
-
-          // Hash the new password
-          const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-          // Update the user's password
-          db.run(
-            'UPDATE users SET password = ? WHERE id = ?',
-            [hashedPassword, resetRecord.user_id],
-            function(updateErr: Error | null) {
-              if (updateErr) {
-                console.error('Error updating password:', updateErr);
-                reply.status(500).send({
-                  success: false,
-                  error: 'Failed to update password'
-                } as ApiResponse);
-                reject(updateErr);
-                return;
-              }
-
-              // Mark token as used
-              db.run(
-                'UPDATE password_reset_tokens SET used = TRUE WHERE token = ?',
-                [token],
-                (markErr: Error | null) => {
-                  if (markErr) {
-                    console.error('Error marking token as used:', markErr);
-                    // Don't fail the request since password was already updated
-                  }
-
-                  console.log('Password successfully reset for user:', resetRecord.user_id);
-                  
-                  reply.send({
-                    success: true,
-                    message: 'Password has been reset successfully',
-                    data: {
-                      username: resetRecord.username,
-                      email: resetRecord.email
-                    }
-                  } as ApiResponse);
-                  resolve();
-                }
-              );
-            }
-          );
-        }
-      );
-    });
   });
+
+  // Verify token
+  fastify.post('/verify', async (request: FastifyRequest, reply: FastifyReply) => {
+    const authService = new AuthService(fastify);
+    try {
+      const authHeader = request.headers.authorization;
+      const token = authHeader?.replace('Bearer ', '');
+
+      if (!token) {
+        return sendError(reply, 'No token provided', 401);
+      }
+
+      const decoded = await authService.verifyToken(token);
+      sendSuccess(reply, { valid: true, user: decoded });
+
+    } catch (error: any) {
+      if (error.message === 'Invalid token') {
+        sendError(reply, 'Invalid token', 401);
+      } else {
+        console.error('Token verification error:', error);
+        sendError(reply, 'Internal server error', 500);
+      }
+    }
+  });
+
+  // Get user profile
+  fastify.get('/profile/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
+    const authService = new AuthService(fastify);
+    try {
+      const { userId } = request.params as { userId: string };
+      const userIdNum = parseInt(userId, 10);
+
+      if (isNaN(userIdNum)) {
+        return sendError(reply, 'Invalid user ID', 400);
+      }
+
+      const userProfile = await authService.getUserProfile(userIdNum);
+      sendSuccess(reply, userProfile);
+
+    } catch (error: any) {
+      if (error.message === 'User not found') {
+        sendError(reply, 'User not found', 404);
+      } else {
+        console.error('Profile fetch error:', error);
+        sendError(reply, 'Internal server error', 500);
+      }
+    }
+  });
+
+  // Login user
+  fastify.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
+    const authService = new AuthService(fastify);
+    try {
+      const { username, password } = request.body as { username: string; password: string };
+
+      const validationError = validateRequiredFields(request.body, ['username', 'password']);
+      if (validationError) {
+        return sendError(reply, validationError, 400);
+      }
+
+      const result = await authService.login(username, password);
+
+      sendSuccess(reply, {
+        user: result.user,
+        token: result.token
+      }, 'Login successful');
+
+    } catch (error: any) {
+      if (error.message === 'Invalid credentials') {
+        sendError(reply, 'Invalid credentials', 401);
+      } else {
+        console.error('Login error:', error);
+        sendError(reply, 'Internal server error', 500);
+      }
+    }
+  });
+  // plugin setup complete
+  return Promise.resolve();
 }
 
 export default authRoutes;

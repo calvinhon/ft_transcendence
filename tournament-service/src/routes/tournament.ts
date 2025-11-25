@@ -198,6 +198,36 @@ function generateBracket(participantIds: number[]): MatchToCreate[] {
 }
 
 async function routes(fastify: FastifyInstance): Promise<void> {
+  // Legacy create tournament route (for backward compatibility)
+  fastify.post<{
+    Body: CreateTournamentBody;
+  }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
+    const { name, description, maxParticipants, createdBy } = request.body;
+    
+    if (!name || !createdBy) {
+      return reply.status(400).send({ error: 'Name and creator required' });
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      db.run(
+        'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',
+        [name, description || '', maxParticipants || 8, createdBy],
+        function(this: sqlite3.RunResult, err: Error | null) {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else {
+            reply.send({ 
+              message: 'Tournament created successfully',
+              tournamentId: this.lastID
+            });
+            resolve();
+          }
+        }
+      );
+    });
+  });
+
   // Create tournament
   fastify.post<{
     Body: CreateTournamentBody;
@@ -228,13 +258,73 @@ async function routes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
-  // Join tournament
+  // Legacy join tournament route (for backward compatibility)
+
   fastify.post<{
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
   }>('/tournaments/:tournamentId/join', async (request: FastifyRequest<{ Params: { tournamentId: string }; Body: JoinTournamentBody }>, reply: FastifyReply) => {
     const { tournamentId } = request.params;
     const { userId } = request.body;
+    
+    if (!tournamentId || !userId) {
+      return reply.status(400).send({ error: 'Tournament ID and User ID required' });
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      // First check if tournament exists and is open
+      db.get(
+        'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
+        [tournamentId],
+        (err: Error | null, tournament: Tournament) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else if (!tournament) {
+            reply.status(404).send({ error: 'Tournament not found or not open' });
+            resolve();
+          } else if (tournament.current_participants >= tournament.max_participants) {
+            reply.status(409).send({ error: 'Tournament is full' });
+            resolve();
+          } else {
+            // Add participant
+            db.run(
+              'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
+              [tournamentId, userId],
+              function(this: sqlite3.RunResult, err: Error | null) {
+                if (err) {
+                  if ((err as any).code === 'SQLITE_CONSTRAINT') {
+                    reply.status(409).send({ error: 'Already joined this tournament' });
+                  } else {
+                    reply.status(500).send({ error: 'Database error' });
+                  }
+                  reject(err);
+                } else {
+                  // Update participant count
+                  db.run(
+                    'UPDATE tournaments SET current_participants = current_participants + 1 WHERE id = ?',
+                    [tournamentId],
+                    (err: Error | null) => {
+                      if (!err) {
+                        reply.send({ message: 'Successfully joined tournament' });
+                      }
+                      resolve();
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      );
+    });
+  });
+
+  // Legacy join tournament route (for backward compatibility)
+  fastify.post<{
+    Body: JoinTournamentBody;
+  }>('/join', async (request: FastifyRequest<{ Body: JoinTournamentBody }>, reply: FastifyReply) => {
+    const { tournamentId, userId } = request.body;
     
     if (!tournamentId || !userId) {
       return reply.status(400).send({ error: 'Tournament ID and User ID required' });
@@ -472,6 +562,121 @@ async function routes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
+  // Legacy start tournament route (for backward compatibility)
+  fastify.post<{
+    Params: { tournamentId: string };
+  }>('/start/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+
+    return new Promise<void>((resolve, reject) => {
+      // Get tournament and participants
+      db.get(
+        'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
+        [tournamentId],
+        (err: Error | null, tournament: Tournament) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else if (!tournament) {
+            reply.status(404).send({ error: 'Tournament not found or not open for starting' });
+            resolve();
+          } else {
+            // Get participants
+            db.all(
+              'SELECT user_id FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
+              [tournamentId],
+              (err: Error | null, participants: { user_id: number }[]) => {
+                if (err) {
+                  reply.status(500).send({ error: 'Database error' });
+                  reject(err);
+                } else if (participants.length < 2) {
+                  reply.status(400).send({ error: 'Tournament needs at least 2 participants to start' });
+                  resolve();
+                } else {
+                  // Update tournament status
+                  db.run(
+                    'UPDATE tournaments SET status = "active", started_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    [tournamentId],
+                    (err: Error | null) => {
+                      if (err) {
+                        reply.status(500).send({ error: 'Failed to start tournament' });
+                        reject(err);
+                      } else {
+                        // Create first round matches
+                        const matches = generateBracket(participants.map(p => p.user_id));
+                        
+                        // Insert matches into database
+                        const matchInserts = matches.map(match => 
+                          new Promise<void>((resolveInsert, rejectInsert) => {
+                            db.run(
+                              'INSERT INTO tournament_matches (tournament_id, player1_id, player2_id, round, match_number) VALUES (?, ?, ?, ?, ?)',
+                              [tournamentId, match.player1, match.player2, match.round, match.matchNumber],
+                              (err: Error | null) => {
+                                if (err) rejectInsert(err);
+                                else resolveInsert();
+                              }
+                            );
+                          })
+                        );
+
+                        Promise.all(matchInserts).then(() => {
+                          // Auto-complete BYE matches
+                          db.run(
+                            `UPDATE tournament_matches 
+                             SET status = 'completed', 
+                                 winner_id = CASE 
+                                   WHEN player1_id = 0 THEN player2_id 
+                                   WHEN player2_id = 0 THEN player1_id 
+                                   ELSE winner_id 
+                                 END,
+                                 player1_score = CASE WHEN player1_id = 0 THEN 0 ELSE 0 END,
+                                 player2_score = CASE WHEN player2_id = 0 THEN 0 ELSE 0 END,
+                                 played_at = CURRENT_TIMESTAMP
+                             WHERE tournament_id = ? 
+                             AND (player1_id = 0 OR player2_id = 0)`,
+                            [tournamentId],
+                            (err: Error | null) => {
+                              if (err) {
+                                fastify.log.error(err, '[START] Failed to auto-complete BYE matches');
+                              } else {
+                                fastify.log.info('[START] Auto-completed BYE matches');
+                                
+                                // Check if tournament is already finished (only BYE matches)
+                                db.get(
+                                  'SELECT id FROM tournament_matches WHERE tournament_id = ? AND round = 1 LIMIT 1',
+                                  [tournamentId],
+                                  (err: Error | null, match: any) => {
+                                    if (!err && match) {
+                                      checkAndCreateNextRound(match.id);
+                                    }
+                                  }
+                                );
+                              }
+                              
+                              reply.send({ 
+                                message: 'Tournament started successfully',
+                                totalRounds: Math.ceil(Math.log2(participants.length)),
+                                firstRoundMatches: matches.filter(m => m.round === 1).length
+                              });
+                              resolve();
+                            }
+                          );
+                        }).catch(err => {
+                          reply.status(500).send({ error: 'Failed to create matches' });
+                          reject(err);
+                        });
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      );
+    });
+  });
+
   // Get tournament details
   fastify.get<{
     Params: { tournamentId: string };
@@ -497,6 +702,61 @@ async function routes(fastify: FastifyInstance): Promise<void> {
                WHERE tp.tournament_id = ?`,
               [tournamentId],
               (err: Error | null, participants: TournamentParticipant[]) => {
+                if (err) {
+                  reply.status(500).send({ error: 'Database error' });
+                  reject(err);
+                } else {
+                  // Get matches
+                  db.all(
+                    'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
+                    [tournamentId],
+                    (err: Error | null, matches: TournamentMatch[]) => {
+                      if (err) {
+                        reply.status(500).send({ error: 'Database error' });
+                        reject(err);
+                      } else {
+                        const details: TournamentDetails = {
+                          tournament,
+                          participants,
+                          matches
+                        };
+                        reply.send(details);
+                        resolve();
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          }
+        }
+      );
+    });
+  });
+
+  // Legacy get tournament details route (for backward compatibility)
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/details/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+    const { tournamentId } = request.params;
+
+    return new Promise<void>((resolve, reject) => {
+      db.get(
+        'SELECT * FROM tournaments WHERE id = ?',
+        [tournamentId],
+        (err: Error | null, tournament: Tournament) => {
+          if (err) {
+            reply.status(500).send({ error: 'Database error' });
+            reject(err);
+          } else if (!tournament) {
+            reply.status(404).send({ error: 'Tournament not found' });
+            resolve();
+          } else {
+            // Get participants
+            db.all(
+              'SELECT tp.user_id, tp.joined_at, tp.eliminated_at, u.username FROM tournament_participants tp JOIN users u ON tp.user_id = u.id WHERE tp.tournament_id = ?',
+              [tournamentId],
+              (err: Error | null, participants: (TournamentParticipant & { username: string })[]) => {
                 if (err) {
                   reply.status(500).send({ error: 'Database error' });
                   reject(err);
@@ -586,6 +846,81 @@ async function routes(fastify: FastifyInstance): Promise<void> {
         status: 'full',
         created_by: 4,
         created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      }
+    ];
+
+    // Filter by status if specified
+    let filteredTournaments = mockTournaments;
+    if (status) {
+      filteredTournaments = mockTournaments.filter(t => t.status === status);
+    }
+
+    // Apply limit
+    const limitedTournaments = filteredTournaments.slice(0, parseInt(limit));
+
+    reply.send(limitedTournaments);
+  });
+
+  // Legacy get all tournaments route (for backward compatibility)
+  fastify.get<{
+    Querystring: TournamentQuery;
+  }>('/list', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
+    const { status, limit = '50' } = request.query;
+
+    // For now, return mock tournaments for testing
+    // In a real system, this would query the actual database
+    const mockTournaments: Tournament[] = [
+      {
+        id: 1,
+        name: 'Weekly Championship',
+        description: 'Join our weekly championship tournament! Winner takes glory and bragging rights.',
+        max_participants: 8,
+        current_participants: 3,
+        status: 'open',
+        created_by: 1,
+        created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 2,
+        name: 'Speed Pong Masters',
+        description: 'Fast-paced tournament for skilled players. Quick matches, intense competition!',
+        max_participants: 16,
+        current_participants: 7,
+        status: 'open',
+        created_by: 2,
+        created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 3,
+        name: 'Beginner Friendly Cup',
+        description: 'Perfect for newcomers! Learn the ropes in a friendly competitive environment.',
+        max_participants: 8,
+        current_participants: 2,
+        status: 'open',
+        created_by: 3,
+        created_at: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), // 9 hours ago
+        started_at: null,
+        finished_at: null,
+        winner_id: null
+      },
+      {
+        id: 4,
+        name: 'Elite Tournament',
+        description: 'For the most skilled players only. High stakes, ultimate bragging rights.',
+        max_participants: 4,
+        current_participants: 4,
+        status: 'full',
+        created_by: 4,
+        created_at: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(), // 10 hours ago
         started_at: null,
         finished_at: null,
         winner_id: null
@@ -986,6 +1321,81 @@ async function routes(fastify: FastifyInstance): Promise<void> {
           } else {
             reply.send(match);
             resolve();
+          }
+        }
+      );
+    });
+  });
+
+  // Legacy update match result route (for backward compatibility)
+  fastify.post<{
+    Body: MatchResultBody;
+  }>('/match/result', async (request: FastifyRequest<{ Body: MatchResultBody }>, reply: FastifyReply) => {
+    const { matchId, winnerId, player1Score, player2Score } = request.body;
+
+    const matchIdNum = parseInt(matchId.toString(), 10);
+    if (isNaN(matchIdNum)) {
+      return reply.status(400).send({ error: 'Invalid match ID' });
+    }
+
+    fastify.log.info('========== MATCH RESULT ENDPOINT ==========');
+    fastify.log.info({ 
+      matchId: matchIdNum, 
+      winnerId, 
+      player1Score, 
+      player2Score,
+      body: request.body 
+    }, '[MATCH RESULT] Received request');
+
+    if (!matchId || !winnerId || player1Score === undefined || player2Score === undefined) {
+      fastify.log.error({ matchId, winnerId, player1Score, player2Score }, '[MATCH RESULT] Missing required fields');
+      return reply.status(400).send({ error: 'Missing required fields' });
+    }
+
+    // First, get the match details to see what we're updating
+    return new Promise<void>((resolvePromise, rejectPromise) => {
+      db.get(
+        'SELECT * FROM tournament_matches WHERE id = ?',
+        [matchIdNum],
+        (err: Error | null, match: TournamentMatch) => {
+          if (err) {
+            fastify.log.error({ err, matchId }, '[MATCH RESULT] Failed to get match details');
+            reply.status(500).send({ error: 'Database error' });
+            rejectPromise(err);
+          } else if (!match) {
+            reply.status(404).send({ error: 'Match not found' });
+            resolvePromise();
+          } else if (match.status === 'completed') {
+            reply.status(409).send({ error: 'Match already completed' });
+            resolvePromise();
+          } else {
+            // Validate winner
+            if (winnerId !== match.player1_id && winnerId !== match.player2_id) {
+              fastify.log.error({ winnerId, player1_id: match.player1_id, player2_id: match.player2_id }, '[MATCH RESULT] Winner ID does not match either player!');
+              reply.status(400).send({ error: 'Winner must be one of the players in this match' });
+              resolvePromise();
+            } else {
+              // Update match result
+              db.run(
+                'UPDATE tournament_matches SET winner_id = ?, player1_score = ?, player2_score = ?, status = "completed", played_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [winnerId, player1Score, player2Score, matchIdNum],
+                function(this: sqlite3.RunResult, err: Error | null) {
+                  if (err) {
+                    fastify.log.error(err, '[MATCH RESULT] Database update error');
+                    reply.status(500).send({ error: 'Database error' });
+                    rejectPromise(err);
+                  } else {
+                    fastify.log.info({ matchId, winnerId, player1Score, player2Score }, '[MATCH RESULT] Successfully updated match');
+                    
+                    // Check if we need to create the next round
+                    checkAndCreateNextRound(matchIdNum);
+                    
+                    reply.send({ message: 'Match result updated successfully' });
+                    resolvePromise();
+                  }
+                }
+              );
+            }
           }
         }
       );

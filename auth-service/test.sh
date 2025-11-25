@@ -9,48 +9,55 @@ echo "================================"
 # SERVICE_PID=$!
 # sleep 3
 
-echo -e "\n1. Testing Health Endpoint:"
-curl -s http://localhost:3001/health
+# Set the target server (defaults to service internal port if running in container)
+TARGET=${TARGET:-http://localhost:3000}
 
-echo -e "\n\n2. Testing User Registration:"
-curl -s -X POST http://localhost:3001/register \
+echo -e "\n1. Testing Health Endpoint: (target=$TARGET)"
+curl -s "$TARGET/health"
+
+echo -e "\n\n2. Testing User Registration: (target=$TARGET)"
+curl -s -X POST "$TARGET/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
-echo -e "\n\n3. Testing User Login:"
-curl -s -X POST http://localhost:3001/login \
+echo -e "\n\n3. Testing User Login: (target=$TARGET)"
+curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}'
 
-# Extract token from login response (simplified)
-TOKEN=$(curl -s -X POST http://localhost:3001/login \
+TOKEN=$(curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
-echo -e "\n\n4. Testing Token Verification:"
+echo -e "\n\n4. Testing Token Verification: (target=$TARGET)"
 if [ -n "$TOKEN" ]; then
-  curl -s -X POST http://localhost:3001/verify \
+  curl -s -X POST "$TARGET/verify" \
+    -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
-    -d "{\"token\":\"$TOKEN\"}"
+    -d '{}'
 else
   echo "No token available for verification"
 fi
 
 echo -e "\n\n5. Testing Profile Access (with token):"
 if [ -n "$TOKEN" ]; then
-  curl -s -X GET http://localhost:3001/profile \
+  # Get userId from login response
+  USER_ID=$(curl -s -X POST "$TARGET/login" \
+    -H "Content-Type: application/json" \
+    -d '{"username":"testuser","password":"password123"}' | grep -o '"userId":[0-9]*' | grep -o '[0-9]*')
+  curl -s -X GET "$TARGET/profile/$USER_ID" \
     -H "Authorization: Bearer $TOKEN"
 else
   echo "No token available for profile access"
 fi
 
-echo -e "\n\n6. Testing Forgot Password:"
-curl -s -X POST http://localhost:3001/forgot-password \
+echo -e "\n\n6. Testing Forgot Password: (target=$TARGET)"
+curl -s -X POST "$TARGET/forgot-password" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com"}'
 
-echo -e "\n\n7. Testing Reset Password:"
-curl -s -X POST http://localhost:3001/reset-password \
+echo -e "\n\n7. Testing Reset Password: (target=$TARGET)"
+curl -s -X POST "$TARGET/reset-password" \
   -H "Content-Type: application/json" \
   -d '{"token":"fake-reset-token","newPassword":"newpassword123"}'
 
