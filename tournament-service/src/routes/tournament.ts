@@ -1,18 +1,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import sqlite3 from 'sqlite3';
 import path from 'path';
+import fs from 'fs';
 import { recordTournamentOnBlockchain, isBlockchainAvailable } from '../blockchain';
 
-// Type definitions
+// Type definitions (simplified)
 interface Tournament {
   id: number;
-  name: string;
-  description: string | null;
-  max_participants: number;
   current_participants: number;
-  status: 'open' | 'active' | 'finished' | 'full';
-  created_by: number;
-  created_at: string;
+  status: 'active' | 'finished';
   started_at: string | null;
   finished_at: string | null;
   winner_id: number | null;
@@ -21,8 +17,9 @@ interface Tournament {
 interface TournamentParticipant {
   id: number;
   tournament_id: number;
-  joined_at: string;
+  user_id: number;
   eliminated_at: string | null;
+  final_rank: number | null;
 }
 
 interface TournamentMatch {
@@ -39,18 +36,6 @@ interface TournamentMatch {
   played_at: string | null;
 }
 
-interface CreateTournamentBody {
-  name: string;
-  description?: string;
-  maxParticipants?: number;
-  createdBy: number;
-}
-
-interface JoinTournamentBody {
-  tournamentId: number;
-  userId: number;
-}
-
 interface MatchResultBody {
   matchId: number;
   winnerId: number;
@@ -58,47 +43,74 @@ interface MatchResultBody {
   player2Score: number;
 }
 
-interface TournamentQuery {
-  status?: string;
-  limit?: string;
-}
-
-interface TournamentDetails {
-  tournament: Tournament;
-  participants: TournamentParticipant[];
-  matches: TournamentMatch[];
-}
-
-interface MatchToCreate {
-  player1: number;
-  player2: number;
-  round: number;
-  matchNumber: number;
+interface CreateFromPartyBody {
+  participants: number[];
 }
 
 declare const __dirname: string;
-const dbPath = path.join(__dirname, '../../database/tournaments.db');
+const dbDir = path.join(__dirname, '../../database');
+const dbPath = path.join(dbDir, 'tournaments.db');
 
-// Initialize database
+// Ensure database directory exists
+if (!fs.existsSync(dbDir)) {
+  console.log('🏆 Creating database directory:', dbDir);
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// Create database connection
 const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error('Error opening database:', err);
-  else {
-    console.log('Connected to Tournaments SQLite database');
-    
-    // Create tournaments table
-    db.run(`
+  if (err) {
+    console.error('🏆 FATAL: Error opening database:', err);
+    process.exit(1);  // Exit if can't open database
+  }
+  console.log('🏆 Connected to Tournaments SQLite database at:', dbPath);
+});
+
+// Promisified database helpers
+const dbRun = (sql: string, params: any[] = []): Promise<{ lastID: number; changes: number }> => {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
+};
+
+const dbGet = <T>(sql: string, params: any[] = []): Promise<T | undefined> => {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row as T);
+    });
+  });
+};
+
+const dbAll = <T>(sql: string, params: any[] = []): Promise<T[]> => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows as T[]);
+    });
+  });
+};
+
+// Initialize database tables - returns a promise
+async function initializeDatabase(): Promise<void> {
+  try {
+    // Create tables in order, fail fast if any error
+    await dbRun(`
       CREATE TABLE IF NOT EXISTS tournaments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        min_participants INTEGER DEFAULT 4,
-        max_participants INTEGER DEFAULT 4,
         current_participants INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'active',
         started_at DATETIME,
+        finished_at DATETIME,
         winner_id INTEGER
       )
     `);
+    console.log('🏆 tournaments table ready');
 
-    // Create tournament participants table
-    db.run(`
+    await dbRun(`
       CREATE TABLE IF NOT EXISTS tournament_participants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tournament_id INTEGER NOT NULL,
@@ -108,18 +120,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
       )
     `);
-    
-    // Add final_rank column if it doesn't exist (for existing databases)
-    db.run(`ALTER TABLE tournament_participants ADD COLUMN final_rank INTEGER`, (err: any) => {
-      // Ignore error if column already exists - this is expected for new databases
-    });
+    console.log('🏆 tournament_participants table ready');
 
-    // Create tournament matches table
-    db.run(`
+    await dbRun(`
       CREATE TABLE IF NOT EXISTS tournament_matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tournament_id INTEGER NOT NULL,
         round INTEGER NOT NULL,
+        match_number INTEGER NOT NULL,
         player1_id INTEGER,
         player2_id INTEGER,
         winner_id INTEGER,
@@ -130,667 +138,426 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
       )
     `);
+    console.log('🏆 tournament_matches table ready');
+
+    console.log('🏆 All database tables initialized successfully');
+  } catch (err) {
+    console.error('🏆 FATAL: Database initialization failed:', err);
+    process.exit(1);  // Exit if tables can't be created
   }
-});
-
-/**
- * Generate single-elimination bracket for tournament
- * Supports any number of participants with byes for non-power-of-2
- * @param participantIds Array of user IDs
- * @returns Array of matches to create
- */
-function generateBracket(participantIds: number[]): MatchToCreate[] {
-  const matches: MatchToCreate[] = [];
-  const numParticipants = participantIds.length;
-  
-  if (numParticipants < 2) {
-    return matches;
-  }
-
-  // Calculate next power of 2 (bracket size)
-  const bracketSize = Math.pow(2, Math.ceil(Math.log2(numParticipants)));
-  const numByes = bracketSize - numParticipants;
-  
-  console.log(`[Tournament Bracket] Participants: ${numParticipants}, Bracket Size: ${bracketSize}, Byes: ${numByes}`);
-
-  // First round: pair up participants, leaving byes (null) for missing players
-  const firstRoundPlayers: (number | null)[] = [...participantIds];
-  
-  // Add null (bye) slots at strategic positions
-  // Byes should be distributed evenly (typically at top and bottom of bracket)
-  for (let i = 0; i < numByes; i++) {
-    // Insert byes at even intervals
-    const insertPos = Math.floor((i * firstRoundPlayers.length) / numByes);
-    firstRoundPlayers.splice(insertPos, 0, null);
-  }
-
-  // Create first round matches
-  let matchNumber = 1;
-  for (let i = 0; i < firstRoundPlayers.length; i += 2) {
-    const player1 = firstRoundPlayers[i];
-    const player2 = firstRoundPlayers[i + 1];
-    
-    // Only create match if at least one player exists
-    // If one player is null (bye), the other advances automatically
-    if (player1 !== null || player2 !== null) {
-      matches.push({
-        player1: player1 || 0, // 0 represents bye
-        player2: player2 || 0,
-        round: 1,
-        matchNumber: matchNumber++
-      });
-    }
-  }
-
-  console.log(`[Tournament Bracket] Generated ${matches.length} matches for round 1`);
-  
-  return matches;
 }
+
+// Initialize database immediately
+initializeDatabase();
 
 // Route definitions
 async function routes(fastify: FastifyInstance): Promise<void> {
-  // Create tournament
-//   fastify.post<{
-//     Body: CreateTournamentBody;
-//   }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
-//     const { name, description, maxParticipants, createdBy } = request.body;
-    
-//     return new Promise<void>((resolve, reject) => {
-//       db.run(
-//         'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',
-//         [name, description || '', maxParticipants || 8, createdBy],
-//         function(this: sqlite3.RunResult, err: Error | null) {
-//           if (err) {
-//             reply.status(500).send({ error: 'Database error' });
-//             reject(err);
-//           } else {
-//             reply.send({ 
-//               message: 'Tournament created successfully',
-//               tournamentId: this.lastID
-//             });
-//             resolve();
-//           }
-//         }
-//       );
-//     });
-//   });
 
-  // Join tournament
-//   fastify.post<{
-//     Body: JoinTournamentBody;
-//   }>('/join', async (request: FastifyRequest<{ Body: JoinTournamentBody }>, reply: FastifyReply) => {
-//     const { tournamentId, userId } = request.body;
-//     if (!tournamentId || !userId) {
-//       return reply.status(400).send({ error: 'Tournament ID and User ID required' });
-//     }
-//     return new Promise<void>((resolve, reject) => {
-//       // First check if tournament exists and is open
-//       db.get(
-//         'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
-//         [tournamentId],
-//         (err: Error | null, tournament: Tournament) => {
-//           if (err) {
-//             reply.status(500).send({ error: 'Database error' });
-//             reject(err);
-//           } else if (!tournament) {
-//             reply.status(404).send({ error: 'Tournament not found or not open' });
-//             resolve();
-//           } else if (tournament.current_participants >= tournament.max_participants) {
-//             reply.status(409).send({ error: 'Tournament is full' });
-//             resolve();
-//           } else {
-//             // Add participant
-//             db.run(
-//               'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
-//               [tournamentId, userId],
-//               function(this: sqlite3.RunResult, err: Error | null) {
-//                 if (err) {
-//                   if ((err as any).code === 'SQLITE_CONSTRAINT') {
-//                     reply.status(409).send({ error: 'Already joined this tournament' });
-//                   } else {
-//                     reply.status(500).send({ error: 'Database error' });
-//                   }
-//                   reject(err);
-//                 } else {
-//                   // Update participant count
-//                   db.run(
-//                     'UPDATE tournaments SET current_participants = current_participants + 1 WHERE id = ?',
-//                     [tournamentId],
-//                     (err: Error | null) => {
-//                       if (!err) {
-//                         reply.send({ message: 'Successfully joined tournament' });
-//                       }
-//                       resolve();
-//                     }
-//                   );
-//                 }
-//               }
-//             );
-//           }
-//         }
-//       );
-//     });
-//   });
-
-  // Start tournament
+  // ✅ KEEP: Create tournament directly from party (main entry point)
   fastify.post<{
-    Params: { tournamentId: string };
-  }>('/start/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
-    const { tournamentId } = request.params;
-    return new Promise<void>((resolve, reject) => {
-      db.get(
-        'SELECT * FROM tournaments WHERE id = ? AND status = "open"',
-        [tournamentId],
-        (err: Error | null, tournament: Tournament) => {
-          if (err || !tournament) {
-            reply.status(404).send({ error: 'Tournament not found' });
-            reject(err);
-            return;
-          }
-          if (tournament.current_participants < 2) {
-            reply.status(400).send({ error: 'Need at least 2 participants' });
-            resolve();
-            return;
-          }
-          db.all(
-            'SELECT user_id FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
-            [tournamentId],
-            (err: Error | null, participants: { user_id: number }[]) => {
-              if (err) {
-                reply.status(500).send({ error: 'Database error' });
-                reject(err);
-                return;
-              }
+    Body: CreateFromPartyBody;
+  }>('/create-from-party', async (request, reply) => {
+    console.log('🏆 [Tournament API] create-from-party called');
+    console.log('🏆 [Tournament API] Body:', JSON.stringify(request.body));
+    
+    try {
+      const { participants } = request.body;
 
-              // Generate single-elimination bracket
-              const matches = generateBracket(participants.map(p => p.user_id));
+      // Validate
+      if (!participants || participants.length < 2) {
+        console.log('🏆 [Tournament API] Error: Need at least 2 participants');
+        return reply.status(400).send({ error: 'Need at least 2 participants' });
+      }
 
-              // Insert matches into database
-              const insertPromises = matches.map(match => {
-                return new Promise<void>((resolveMatch, rejectMatch) => {
-                  db.run(
-                    'INSERT INTO tournament_matches (tournament_id, round, match_number, player1_id, player2_id) VALUES (?, ?, ?, ?, ?)',
-                    [tournamentId, match.round, match.matchNumber, match.player1, match.player2],
-                    (err: Error | null) => {
-                      if (err) rejectMatch(err);
-                      else resolveMatch();
-                    }
-                  );
-                });
-              });
-              Promise.all(insertPromises).then(() => {
-                db.run(
-                  'UPDATE tournaments SET status = "active", started_at = CURRENT_TIMESTAMP WHERE id = ?',
-                  [tournamentId],
-                  (err: Error | null) => {
-                    if (err) {
-                      reply.status(500).send({ error: 'Failed to start tournament' });
-                      resolve();
-                    } else {
-                      // Auto-complete BYE matches (where player1_id = 0 or player2_id = 0)
-                      db.run(
-                        `UPDATE tournament_matches 
-                         SET status = 'completed', 
-                             winner_id = CASE 
-                               WHEN player1_id = 0 THEN player2_id 
-                               WHEN player2_id = 0 THEN player1_id 
-                               ELSE winner_id 
-                             END,
-                             player1_score = CASE WHEN player1_id = 0 THEN 0 ELSE 0 END,
-                             player2_score = CASE WHEN player2_id = 0 THEN 0 ELSE 0 END,
-                             played_at = CURRENT_TIMESTAMP
-                         WHERE tournament_id = ? 
-                         AND (player1_id = 0 OR player2_id = 0)
-                         AND status = 'pending'`,
-                        [tournamentId],
-                        (err: Error | null) => {
-                          if (err) {
-                            fastify.log.error(err, '[START] Failed to auto-complete BYE matches');
-                          } else {
-                            fastify.log.info('[START] Auto-completed BYE matches');
-                            // Trigger next round creation for completed BYEs
-                            db.get(
-                              'SELECT id FROM tournament_matches WHERE tournament_id = ? AND round = 1 LIMIT 1',
-                              [tournamentId],
-                              (err: Error | null, match: any) => {
-                                if (!err && match) {
-                                  checkAndCreateNextRound(match.id);
-                                }
-                              }
-                            );
-                          }
-                          
-                          reply.send({ 
-                            message: 'Tournament started successfully',
-                            totalRounds: Math.ceil(Math.log2(participants.length)),
-                            firstRoundMatches: matches.filter(m => m.round === 1).length
-                          });
-                          resolve();
-                        }
-                      );
-                    }
-                  }
-                );
-              }).catch(err => {
-                reply.status(500).send({ error: 'Failed to create matches' });
-                reject(err);
-              });
-            }
-          );
-        }
+      if (![2, 4, 8, 16].includes(participants.length)) {
+        console.log('🏆 [Tournament API] Error: Invalid count:', participants.length);
+        return reply.status(400).send({ error: 'Need 2, 4, 8, or 16 players' });
+      }
+
+      console.log('🏆 [Tournament API] Creating tournament with', participants.length, 'players');
+      
+      const result = await dbRun(
+        `INSERT INTO tournaments (
+          current_participants, status, started_at
+        ) VALUES (?, 'active', CURRENT_TIMESTAMP)`,
+        [participants.length]
       );
-    });
-  });
 
-  // Get tournament details
-  fastify.get<{
-    Params: { tournamentId: string };
-  }>('/details/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
-    const { tournamentId } = request.params;
-    return new Promise<void>((resolve, reject) => {
-      db.get(
+      const tournamentId = result.lastID;
+      console.log('🏆 [Tournament API] Created tournament ID:', tournamentId);
+
+      // Add participants
+      for (const participantId of participants) {
+        await dbRun(
+          'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
+          [tournamentId, participantId]
+        );
+      }
+
+      // Generate bracket matches
+      const matches = await generateBracketMatches(tournamentId, participants);
+
+      // Get tournament data
+      const tournament = await dbGet<Tournament>(
         'SELECT * FROM tournaments WHERE id = ?',
-        [tournamentId],
-        (err: Error | null, tournament: Tournament) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else if (!tournament) {
-            reply.status(404).send({ error: 'Tournament not found' });
-            resolve();
-          } else {
-            db.all(
-              `SELECT tp.user_id, tp.joined_at, tp.eliminated_at FROM tournament_participants tp WHERE tp.tournament_id = ?`,
-              [tournamentId],
-              (err: Error | null, participants: TournamentParticipant[]) => {
-                if (err) {
-                  reply.status(500).send({ error: 'Database error' });
-                  reject(err);
-                } else {
-                  db.all(
-                    'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
-                    [tournamentId],
-                    (err: Error | null, matches: TournamentMatch[]) => {
-                      if (err) {
-                        reply.status(500).send({ error: 'Database error' });
-                        reject(err);
-                      } else {
-                        const details: TournamentDetails = {
-                          tournament,
-                          participants,
-                          matches
-                        };
-                        reply.send(details);
-                        resolve();
-                      }
-                    }
-                  );
-                }
-              }
-            );
-          }
-        }
+        [tournamentId]
       );
-    });
-  });
 
-  // Get all tournaments (mock data)
-  fastify.get<{
-    Querystring: TournamentQuery;
-  }>('/list', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
-    const { status, limit = '50' } = request.query;
-    const mockTournaments: Tournament[] = [
-      // ...mock data as in original file...
-    ];
-    let filteredTournaments = mockTournaments;
-    if (status) {
-      filteredTournaments = mockTournaments.filter(t => t.status === status);
+      return reply.send({
+        success: true,
+        tournamentId,
+        tournament,
+        matches
+      });
+
+    } catch (err) {
+      console.error('🏆 [Tournament API] ERROR:', err);
+      fastify.log.error(err, 'Create tournament from party error');
+      return reply.status(500).send({ 
+        error: 'Failed to create tournament',
+        details: err instanceof Error ? err.message : String(err)
+      });
     }
-    const limitedTournaments = filteredTournaments.slice(0, parseInt(limit));
-    reply.send(limitedTournaments);
   });
 
-  // Update match result
+  // ✅ KEEP: Get tournament details
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/details/:tournamentId', async (request, reply) => {
+    const { tournamentId } = request.params;
+    
+    try {
+      const tournament = await dbGet<Tournament>(
+        'SELECT * FROM tournaments WHERE id = ?',
+        [tournamentId]
+      );
+
+      if (!tournament) {
+        return reply.status(404).send({ error: 'Tournament not found' });
+      }
+
+      const participants = await dbAll<TournamentParticipant>(
+        'SELECT * FROM tournament_participants WHERE tournament_id = ?',
+        [tournamentId]
+      );
+
+      const matches = await dbAll<TournamentMatch>(
+        'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
+        [tournamentId]
+      );
+
+      return reply.send({ tournament, participants, matches });
+    } catch (err) {
+      fastify.log.error(err, 'Get tournament details error');
+      return reply.status(500).send({ error: 'Database error' });
+    }
+  });
+
+  // ✅ KEEP: Update match result
   fastify.post<{
     Body: MatchResultBody;
-  }>('/match/result', async (request: FastifyRequest<{ Body: MatchResultBody }>, reply: FastifyReply) => {
+  }>('/match/result', async (request, reply) => {
     const { matchId, winnerId, player1Score, player2Score } = request.body;
 
     if (!matchId || !winnerId || player1Score === undefined || player2Score === undefined) {
-      fastify.log.error({ matchId, winnerId, player1Score, player2Score }, '[MATCH RESULT] Missing required fields');
       return reply.status(400).send({ error: 'Missing required fields' });
     }
 
-    return new Promise<void>((resolve, reject) => {
-      db.run(
-        'UPDATE tournament_matches SET winner_id = ?, player1_score = ?, player2_score = ?, status = "completed", played_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [winnerId, player1Score, player2Score, matchId],
-        function(this: sqlite3.RunResult, err: Error | null) {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else {
-            // Check if we need to create next round matches
-            checkAndCreateNextRound(matchId);
-            reply.send({ message: 'Match result updated successfully' });
-            resolve();
-          }
-        }
+    try {
+      await dbRun(
+        `UPDATE tournament_matches 
+         SET winner_id = ?, player1_score = ?, player2_score = ?, 
+             status = 'completed', played_at = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        [winnerId, player1Score, player2Score, matchId]
       );
-    });
+
+      // Check if we need to create next round matches
+      await checkAndCreateNextRound(fastify, matchId);
+
+      return reply.send({ message: 'Match result updated successfully' });
+    } catch (err) {
+      fastify.log.error(err, 'Update match result error');
+      return reply.status(500).send({ error: 'Database error' });
+    }
   });
 
-  function checkAndCreateNextRound(matchId: number): void {
-    // Get match details
-    db.get(
-      'SELECT * FROM tournament_matches WHERE id = ?',
-      [matchId],
-      (err: Error | null, match: TournamentMatch) => {
-        if (err || !match) return;
-
-        // Check if all matches in current round are completed
-        db.all(
-          'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ? AND status != "completed"',
-          [match.tournament_id, match.round],
-          (err: Error | null, incompleteMatches: TournamentMatch[]) => {
-            if (err || incompleteMatches.length > 0) return;
-
-            // All matches in round completed, create next round
-            db.all(
-              'SELECT id, match_number, player1_id, player2_id, winner_id FROM tournament_matches WHERE tournament_id = ? AND round = ? ORDER BY match_number ASC',
-              [match.tournament_id, match.round],
-              (err: Error | null, winners: { winner_id: number }[]) => {
-                if (err) return;
-
-                if (winners.length === 1) {
-                  // Tournament finished
-                  db.run(
-                    'UPDATE tournaments SET status = "finished", finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
-                    [match.winner_id, match.tournament_id],
-                    (err: Error | null) => {
-                      if (err) {
-                        fastify.log.error({ err }, '[CHECK NEXT ROUND] Failed to update tournament status');
-                        return;
-                      }
-                      
-                      // Calculate rankings based on elimination rounds
-                      // Winner gets rank 1
-                      db.run(
-                        'UPDATE tournament_participants SET final_rank = 1 WHERE tournament_id = ? AND user_id = ?',
-                        [match.tournament_id, match.winner_id],
-                        (err: Error | null) => {
-                          if (err) {
-                            fastify.log.error({ err }, '[RANKINGS] Failed to set winner rank');
-                          }
-                        }
-                      );
-                      
-                      // Get all matches to determine elimination rounds for other participants
-                      db.all(
-                        `SELECT round, player1_id, player2_id, winner_id 
-                         FROM tournament_matches 
-                         WHERE tournament_id = ? AND status = 'completed' AND winner_id IS NOT NULL
-                         ORDER BY round DESC`,
-                        [match.tournament_id],
-                        (err: Error | null, matches: any[]) => {
-                          if (err) {
-                            fastify.log.error({ err }, '[RANKINGS] Failed to get matches for ranking');
-                            return;
-                          }
-                          
-                          const maxRound = Math.max(...matches.map(m => m.round));
-                          
-                          // Assign ranks based on elimination round (later rounds = better placement)
-                          matches.forEach(match => {
-                            const loser = match.winner_id === match.player1_id ? match.player2_id : match.player1_id;
-                            
-                            // Calculate rank: final = 1st, semi-final = 2nd-3rd, quarter-final = 4th-7th, etc.
-                            // Rank range for each round: 2^(maxRound - round + 1) to 2^(maxRound - round + 2) - 1
-                            const rankRangeStart = Math.pow(2, maxRound - match.round) + 1;
-                            
-                            db.run(
-                              `UPDATE tournament_participants 
-                               SET final_rank = ? 
-                               WHERE tournament_id = ? AND user_id = ? AND final_rank IS NULL`,
-                              [rankRangeStart, match.tournament_id, loser],
-                              (err: Error | null) => {
-                                if (err) {
-                                  fastify.log.error({ err, loser, rank: rankRangeStart }, '[RANKINGS] Failed to set participant rank');
-                                } else {
-                                  fastify.log.info({ loser, rank: rankRangeStart, round: match.round }, '[RANKINGS] Set participant rank');
-                                }
-                              }
-                            );
-                          });
-                        }
-                      );
-                    }
-                  );
-                } else if (winners.length > 1) {
-                  const nextRound = match.round + 1;
-                  const nextMatches: MatchToCreate[] = [];
-
-                  for (let i = 0; i < winners.length; i += 2) {
-                    if (i + 1 < winners.length) {
-                      nextMatches.push({
-                        player1: winners[i].winner_id,
-                        player2: winners[i + 1].winner_id,
-                        round: nextRound,
-                        matchNumber: Math.floor(i / 2) + 1
-                      });
-                      fastify.log.info({ 
-                        matchNum: Math.floor(i / 2) + 1,
-                        player1: winners[i], 
-                        player2: winners[i + 1] 
-                      }, '[CHECK NEXT ROUND] Created match pairing');
-                    }
-                  }
-                  nextMatches.forEach(nextMatch => {
-                    db.run(
-                      'INSERT INTO tournament_matches (tournament_id, round, match_number, player1_id, player2_id) VALUES (?, ?, ?, ?, ?)',
-                      [match.tournament_id, nextMatch.round, nextMatch.matchNumber, nextMatch.player1, nextMatch.player2],
-                      function(this: sqlite3.RunResult, err: Error | null) {
-                        if (err) {
-                          fastify.log.error({ err }, '[CHECK NEXT ROUND] Failed to insert next match');
-                        } else {
-                          fastify.log.info({ matchId: this.lastID }, '[CHECK NEXT ROUND] Inserted next round match');
-                        }
-                      }
-                    );
-                  });
-                }
-              }
-            );
-          }
-        );
-      }
-    );
-  }
-
-  // Get user tournaments
-  fastify.get<{
-    Params: { userId: string };
-  }>('/user/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-    const { userId } = request.params;
-    return new Promise<void>((resolve, reject) => {
-      db.all(
-        `SELECT t.*, tp.joined_at, tp.eliminated_at FROM tournaments t JOIN tournament_participants tp ON t.id = tp.tournament_id WHERE tp.user_id = ? ORDER BY t.created_at DESC`,
-        [userId],
-        (err: Error | null, tournaments: (Tournament & { joined_at: string; eliminated_at: string | null })[]) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else {
-            reply.send(tournaments);
-            resolve();
-          }
-        }
-      );
-    });
-  });
-
-  // Get tournament match by match ID
+  // ✅ KEEP: Get match by ID
   fastify.get<{
     Params: { matchId: string };
-  }>('/match/:matchId', async (request: FastifyRequest<{ Params: { matchId: string } }>, reply: FastifyReply) => {
+  }>('/match/:matchId', async (request, reply) => {
     const { matchId } = request.params;
 
-    return new Promise<void>((resolve, reject) => {
-      db.get(
+    try {
+      const match = await dbGet<TournamentMatch>(
         'SELECT * FROM tournament_matches WHERE id = ?',
-        [matchId],
-        (err: Error | null, match: TournamentMatch) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-          } else if (!match) {
-            reply.status(404).send({ error: 'Match not found' });
-            resolve();
-          } else {
-            reply.send(match);
-            resolve();
-          }
-        }
+        [matchId]
       );
-    });
+
+      if (!match) {
+        return reply.status(404).send({ error: 'Match not found' });
+      }
+
+      return reply.send(match);
+    } catch (err) {
+      fastify.log.error(err, 'Get match error');
+      return reply.status(500).send({ error: 'Database error' });
+    }
   });
 
-  // Record tournament result on blockchain
+  // ✅ KEEP: Get user tournaments
+  fastify.get<{
+    Params: { userId: string };
+  }>('/user/:userId', async (request, reply) => {
+    const { userId } = request.params;
+
+    try {
+      const tournaments = await dbAll(
+        `SELECT t.*, tp.eliminated_at, tp.final_rank
+         FROM tournaments t 
+         JOIN tournament_participants tp ON t.id = tp.tournament_id 
+         WHERE tp.user_id = ? 
+         ORDER BY t.id DESC`,
+        [userId]
+      );
+
+      return reply.send(tournaments);
+    } catch (err) {
+      fastify.log.error(err, 'Get user tournaments error');
+      return reply.status(500).send({ error: 'Database error' });
+    }
+  });
+
+  // ✅ KEEP: Get user rankings
+  fastify.get<{
+    Params: { userId: string };
+  }>('/user/:userId/rankings', async (request, reply) => {
+    const { userId } = request.params;
+
+    try {
+      const tournaments = await dbAll<any>(
+        `SELECT 
+          t.id as tournament_id,
+          t.finished_at,
+          t.status,
+          t.winner_id,
+          t.current_participants,
+          tp.final_rank
+         FROM tournaments t
+         INNER JOIN tournament_participants tp ON t.id = tp.tournament_id
+         WHERE tp.user_id = ?
+         ORDER BY t.id DESC
+         LIMIT 20`,
+        [userId]
+      );
+
+      const rankings = tournaments.map(t => ({
+        tournamentId: t.tournament_id,
+        date: t.finished_at,
+        rank: t.final_rank || '--',
+        totalParticipants: t.current_participants,
+        status: t.status,
+        isWinner: t.winner_id === parseInt(userId)
+      }));
+
+      return reply.send(rankings);
+    } catch (err) {
+      fastify.log.error(err, 'Get user rankings error');
+      return reply.status(500).send({ error: 'Database error' });
+    }
+  });
+
+  // ✅ KEEP: Record on blockchain
   fastify.post<{
     Body: { tournamentId: number; winnerId: number };
-  }>('/blockchain/record', async (request: FastifyRequest<{ Body: { tournamentId: number; winnerId: number } }>, reply: FastifyReply) => {
+  }>('/blockchain/record', async (request, reply) => {
     const { tournamentId, winnerId } = request.body;
 
     if (!tournamentId || !winnerId) {
       return reply.status(400).send({ error: 'Tournament ID and winner ID required' });
     }
 
-    return new Promise<void>((resolve, reject) => {
-      // Get tournament details
-      db.get(
+    try {
+      const tournament = await dbGet<Tournament>(
         'SELECT * FROM tournaments WHERE id = ? AND status = "finished"',
-        [tournamentId],
-        async (err: Error | null, tournament: Tournament) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-            return;
-          }
-          if (!tournament) {
-            reply.status(404).send({ error: 'Finished tournament not found' });
-            resolve();
-            return;
-          }
-
-          // Get all participants with their final rankings
-          db.all(
-            `SELECT tp.user_id, 
-                    CASE 
-                      WHEN tp.user_id = ? THEN 1
-                      ELSE 2
-                    END as rank
-             FROM tournament_participants tp
-             WHERE tp.tournament_id = ?
-             ORDER BY rank`,
-            [winnerId, tournamentId],
-            async (err: Error | null, participants: { user_id: number; rank: number }[]) => {
-              if (err) {
-                reply.status(500).send({ error: 'Database error' });
-                reject(err);
-                return;
-              }
-
-              try {
-                // Check if blockchain is available
-                const blockchainAvailable = await isBlockchainAvailable();
-                if (!blockchainAvailable) {
-                  reply.status(503).send({ 
-                    error: 'Blockchain service unavailable',
-                    message: 'Tournament completed but blockchain recording failed' 
-                  });
-                  resolve();
-                  return;
-                }
-
-                // Record on blockchain
-                // Map database field names to blockchain function parameters
-                const rankingsForBlockchain = participants.map(p => ({
-                  userId: p.user_id,
-                  rank: p.rank
-                }));
-                const txHash = await recordTournamentOnBlockchain(tournamentId, rankingsForBlockchain);
-                
-                // Store blockchain reference in database (add column if needed)
-                reply.send({ 
-                  message: 'Tournament recorded on blockchain successfully',
-                  transactionHash: txHash,
-                  participants: participants.length,
-                  winner: winnerId
-                });
-                resolve();
-              } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                reply.status(500).send({ 
-                  error: 'Blockchain recording failed',
-                  details: errorMessage
-                });
-                reject(error);
-              }
-            }
-          );
-        }
+        [tournamentId]
       );
-    });
+
+      if (!tournament) {
+        return reply.status(404).send({ error: 'Finished tournament not found' });
+      }
+
+      const participants = await dbAll<{ user_id: number; final_rank: number }>(
+        `SELECT user_id, COALESCE(final_rank, 999) as final_rank
+         FROM tournament_participants
+         WHERE tournament_id = ?
+         ORDER BY final_rank`,
+        [tournamentId]
+      );
+
+      const blockchainAvailable = await isBlockchainAvailable();
+      if (!blockchainAvailable) {
+        return reply.status(503).send({ 
+          error: 'Blockchain service unavailable'
+        });
+      }
+
+      const rankings = participants.map(p => ({
+        userId: p.user_id,
+        rank: p.final_rank
+      }));
+
+      const txHash = await recordTournamentOnBlockchain(tournamentId, rankings);
+
+      return reply.send({ 
+        message: 'Tournament recorded on blockchain',
+        transactionHash: txHash,
+        participants: participants.length,
+        winner: winnerId
+      });
+    } catch (err) {
+      fastify.log.error(err, 'Blockchain record error');
+      return reply.status(500).send({ error: 'Blockchain recording failed' });
+    }
   });
+}
+
+// Helper: Generate bracket matches
+async function generateBracketMatches(tournamentId: number, participants: number[]): Promise<TournamentMatch[]> {
+  const matches: TournamentMatch[] = [];
   
-  // Get user's tournament rankings
-  fastify.get<{
-    Params: { userId: string };
-  }>('/user/:userId/rankings', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-    const { userId } = request.params;
+  // Shuffle for random matchups
+  const shuffled = [...participants].sort(() => Math.random() - 0.5);
+  
+  // Calculate total rounds needed
+  const totalRounds = Math.ceil(Math.log2(shuffled.length));  // Use Math.ceil
+  
+  // Create first round matches
+  for (let i = 0; i < shuffled.length; i += 2) {
+    const result = await dbRun(
+      `INSERT INTO tournament_matches (
+        tournament_id, round, match_number, 
+        player1_id, player2_id, status
+      ) VALUES (?, 1, ?, ?, ?, 'pending')`,
+      [tournamentId, Math.floor(i / 2) + 1, shuffled[i], shuffled[i + 1]]
+    );
     
-    return new Promise<void>((resolve, reject) => {
-      // Get all tournaments the user participated in, with their ranking
-      db.all(
-        `SELECT 
-          t.id as tournament_id,
-          t.name as tournament_name,
-          t.created_at,
-          t.finished_at,
-          t.status,
-          t.winner_id,
-          t.current_participants,
-          tp.final_rank,
-          tp.eliminated_at
-         FROM tournaments t
-         INNER JOIN tournament_participants tp ON t.id = tp.tournament_id
-         WHERE tp.user_id = ?
-         ORDER BY t.created_at DESC
-         LIMIT 20`,
-        [userId],
-        (err: Error | null, tournaments: any[]) => {
-          if (err) {
-            reply.status(500).send({ error: 'Database error' });
-            reject(err);
-            return;
-          }
-          
-          const rankings = tournaments.map(t => ({
-            tournamentId: t.tournament_id,
-            tournamentName: t.tournament_name,
-            date: t.finished_at || t.created_at,
-            rank: t.final_rank || '--',
-            totalParticipants: t.current_participants,
-            status: t.status,
-            isWinner: t.winner_id === parseInt(userId)
-          }));
-          
-          reply.send(rankings);
-          resolve();
-        }
-      );
+    matches.push({
+      id: result.lastID,
+      tournament_id: tournamentId,
+      round: 1,
+      match_number: Math.floor(i / 2) + 1,
+      player1_id: shuffled[i],
+      player2_id: shuffled[i + 1],
+      winner_id: null,
+      player1_score: 0,
+      player2_score: 0,
+      status: 'pending',
+      played_at: null
     });
-  });
+  }
+  
+  // For 2 players, only 1 match needed (no future rounds)
+  if (shuffled.length === 2) {
+    return matches;
+  }
+  
+  // Create placeholder matches for future rounds (4+ players)
+  let matchesInRound = Math.floor(shuffled.length / 4);
+  for (let round = 2; round <= totalRounds; round++) {
+    for (let matchNum = 1; matchNum <= matchesInRound; matchNum++) {
+      const result = await dbRun(
+        `INSERT INTO tournament_matches (
+          tournament_id, round, match_number, 
+          player1_id, player2_id, status
+        ) VALUES (?, ?, ?, NULL, NULL, 'pending')`,
+        [tournamentId, round, matchNum]
+      );
+      
+      matches.push({
+        id: result.lastID,
+        tournament_id: tournamentId,
+        round: round,
+        match_number: matchNum,
+        player1_id: null,
+        player2_id: null,
+        winner_id: null,
+        player1_score: 0,
+        player2_score: 0,
+        status: 'pending',
+        played_at: null
+      });
+    }
+    matchesInRound = Math.max(1, Math.floor(matchesInRound / 2));  // Prevent 0
+  }
+  
+  return matches;
+}
+
+// Helper: Check and create next round
+async function checkAndCreateNextRound(fastify: FastifyInstance, matchId: number): Promise<void> {
+  try {
+    const match = await dbGet<TournamentMatch>(
+      'SELECT * FROM tournament_matches WHERE id = ?',
+      [matchId]
+    );
+
+    if (!match) return;
+
+    // Check if all matches in current round are completed
+    const incompleteMatches = await dbAll<TournamentMatch>(
+      'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ? AND status != "completed"',
+      [match.tournament_id, match.round]
+    );
+
+    if (incompleteMatches.length > 0) return;
+
+    // All matches completed, get winners
+    const completedMatches = await dbAll<{ winner_id: number; match_number: number }>(
+      'SELECT winner_id, match_number FROM tournament_matches WHERE tournament_id = ? AND round = ? ORDER BY match_number',
+      [match.tournament_id, match.round]
+    );
+
+    if (completedMatches.length === 1) {
+      // Tournament finished!
+      await dbRun(
+        'UPDATE tournaments SET status = "finished", finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
+        [match.winner_id, match.tournament_id]
+      );
+
+      // Set winner rank
+      await dbRun(
+        'UPDATE tournament_participants SET final_rank = 1 WHERE tournament_id = ? AND user_id = ?',
+        [match.tournament_id, match.winner_id]
+      );
+
+      fastify.log.info({ tournamentId: match.tournament_id, winnerId: match.winner_id }, 'Tournament finished');
+      return;
+    }
+
+    // Create next round matches
+    const nextRound = match.round + 1;
+    for (let i = 0; i < completedMatches.length; i += 2) {
+      if (i + 1 < completedMatches.length) {
+        await dbRun(
+          `UPDATE tournament_matches 
+           SET player1_id = ?, player2_id = ? 
+           WHERE tournament_id = ? AND round = ? AND match_number = ?`,
+          [
+            completedMatches[i].winner_id,
+            completedMatches[i + 1].winner_id,
+            match.tournament_id,
+            nextRound,
+            Math.floor(i / 2) + 1
+          ]
+        );
+      }
+    }
+
+    fastify.log.info({ tournamentId: match.tournament_id, nextRound }, 'Created next round matches');
+  } catch (err) {
+    fastify.log.error(err, 'Check and create next round error');
+  }
 }
 
 export default routes;

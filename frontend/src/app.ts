@@ -1687,23 +1687,16 @@ export class App {
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
 
-    // TOURNAMENT MODE: Check if creating new tournament or playing existing match
+    // TOURNAMENT MODE: Delegate to TournamentManager
     if (this.gameSettings.gameMode === 'tournament') {
       // If currentTournamentMatch exists, we're playing a match (not creating)
       if ((this as any).currentTournamentMatch) {
         console.log('🏆 [App.startGame] Tournament MATCH mode - starting actual game');
         // Continue to game start below (don't return)
       } else {
-        // No match data means user clicked "Start Game" to CREATE a tournament
-        console.log('🏆 [App.startGame] Tournament CREATE mode - opening tournament creation modal');
-        const tournamentManager = (window as any).tournamentManager;
-        if (tournamentManager && typeof tournamentManager.openCreateTournamentModal === 'function') {
-          tournamentManager.openCreateTournamentModal();
-        } else {
-          console.error('TournamentManager not available');
-          showToast('Tournament system not available', 'error');
-        }
-        console.log('🏁 [App.startGame] === COMPLETED (Tournament modal opened) ===');
+        // Create tournament via TournamentManager
+        console.log('🏆 [App.startGame] Tournament CREATE mode - delegating to TournamentManager');
+        await this.createTournamentFromParty();
         return;
       }
     }
@@ -1730,6 +1723,38 @@ export class App {
       this.router.navigate('play-config');
     }
     console.log('🏁 [App.startGame] === COMPLETED ===');
+  }
+
+  /**
+   * Gather all players from party and delegate to TournamentManager
+   */
+  private async createTournamentFromParty(): Promise<void> {
+    const tournamentManager = (window as any).tournamentManager;
+    if (!tournamentManager) {
+      showToast('Tournament system not available', 'error');
+      return;
+    }
+
+    // Gather ALL participants (no selection needed - everyone in party plays)
+    const participants: { id: number; username: string }[] = [];
+
+    // Add host player
+    const authManager = (window as any).authManager;
+    const hostUser = authManager?.getCurrentUser();
+    if (hostUser) {
+      participants.push({ id: hostUser.userId, username: hostUser.username });
+    }
+
+    // Add all local players in the party
+    for (const player of this.localPlayers) {
+      const playerId = player.userId || Math.floor(Math.random() * 100000) + 10000;
+      participants.push({ id: playerId, username: player.username });
+    }
+
+    console.log('🏆 [Tournament] All participants:', participants);
+
+    // Delegate to TournamentManager - it handles validation and API call
+    await tournamentManager.startTournament(participants);
   }
 
   updateGameUI(): void {

@@ -2,10 +2,8 @@ import { showToast } from './toast';
 
 interface Tournament {
   id: number;
-  max_participants: number;
   current_participants: number;
-  status: 'open' | 'active' | 'finished' | 'full';
-  created_at: string;
+  status: 'active' | 'finished';
   started_at?: string | null;
   finished_at?: string | null;
   winner_id?: number | null;
@@ -13,7 +11,7 @@ interface Tournament {
 
 interface TournamentDetails {
   tournament: Tournament;
-  participants: { user_id: number; joined_at: string }[];
+  participants: { user_id: number; username: string }[];
   matches: {
     id: number;
     tournament_id: number;
@@ -30,141 +28,54 @@ interface TournamentDetails {
 
 export class TournamentManager {
   private baseURL = '/api/tournament';
-  private tournaments: Tournament[] = [];
   private nameMap: Record<number, string> = {};
 
-  constructor() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.init());
-    } else {
-      this.init();
+  async startTournament(participants: { id: number; username: string }[]): Promise<void> {
+    // Validate minimum players
+    if (participants.length < 2) {
+      showToast('Need at least 2 players', 'error');
+      return;
     }
-  }
 
-  private init(): void {
-    this.wireUI();
-    this.loadTournaments();
-  }
-
-  private wireUI(): void {
-    const createForm = document.getElementById('create-tournament-form') as HTMLFormElement | null;
-    if (createForm) {
-      createForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.createTournament();
-      });
+    // Validate power of 2
+    if (![2, 4, 8, 16].includes(participants.length)) {
+      showToast(`Need 2, 4, 8, or 16 players. Currently have ${participants.length}`, 'error');
+      return;
     }
-  }
 
-  async loadTournaments(): Promise<void> {
+    // Build name map
+    participants.forEach(p => {
+      this.nameMap[p.id] = p.username;
+    });
+
     try {
       const auth = (window as any).authManager;
-      const res = await fetch(`${this.baseURL}/list`, { headers: auth ? auth.getAuthHeaders() : {} });
-      if (!res.ok) throw new Error('Failed to load tournaments');
-      this.tournaments = await res.json();
-      this.renderTournamentList();
-    } catch (e) {
-      const list = document.getElementById('tournaments-list');
-      if (list) {
-        list.innerHTML = `<div class="empty-state">Failed to load tournaments</div>`;
+      const response = await fetch(`${this.baseURL}/create-from-party`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...auth?.getAuthHeaders()
+        },
+        body: JSON.stringify({
+          participants: participants.map(p => p.id),
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast('Tournament started!', 'success');
+        this.showBracket({
+          tournament: data.tournament,
+          participants: participants.map(p => ({ user_id: p.id, username: p.username })),
+          matches: data.matches
+        });
+      } else {
+        showToast(`Error: ${data.error}`, 'error');
       }
-    }
-  }
-
-  private renderTournamentList(): void {
-    const list = document.getElementById('tournaments-list');
-    if (!list) return;
-    if (this.tournaments.length === 0) {
-      list.innerHTML = `<div class="empty-state">No tournaments yet</div>`;
-      return;
-    }
-    list.innerHTML = this.tournaments.map(t => `
-      <div class="tournament-card">
-        <h3>${this.escape(t.name)}</h3>
-        <div class="meta">
-          <span>${t.current_participants}/${t.max_participants}</span>
-          <span class="status status-${t.status}">${t.status}</span>
-        </div>
-        <div class="actions">
-          ${t.status === 'open' ? `
-            <button class="btn btn-sm" onclick="window.tournamentManager.joinTournament(${t.id})">Join</button>
-            <button class="btn btn-sm" onclick="window.tournamentManager.startTournament(${t.id})">Start Game</button>
-          ` : ''}
-          <button class="btn btn-sm" onclick="window.tournamentManager.viewTournament(${t.id})">View</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  async createTournament(): Promise<void> {
-    const form = document.getElementById('create-tournament-form') as HTMLFormElement | null;
-    if (!form) return;
-    const fd = new FormData(form);
-    const auth = (window as any).authManager;
-    const user = auth?.getCurrentUser();
-    if (!user) {
-      showToast('Login required', 'error');
-      return;
-    }
-    const payload = {
-      name: (fd.get('tournament-name') as string) || `Tournament ${new Date().toLocaleTimeString()}`,
-      description: (fd.get('tournament-description') as string) || '',
-      maxParticipants: parseInt(fd.get('max-participants') as string) || 8,
-      createdBy: user.userId
-    };
-    try {
-      const res = await fetch(`${this.baseURL}/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...auth.getAuthHeaders() },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Create failed');
-      const data = await res.json();
-      showToast('Tournament created', 'success');
-      form.reset();
-      await this.loadTournaments();
-      // Auto-join creator
-      await this.joinTournament(data.tournamentId);
-    } catch {
-      showToast('Failed to create', 'error');
-    }
-  }
-
-  async joinTournament(tournamentId: number): Promise<void> {
-    const auth = (window as any).authManager;
-    const user = auth?.getCurrentUser();
-    if (!user) {
-      showToast('Login required', 'error');
-      return;
-    }
-    try {
-      const res = await fetch(`${this.baseURL}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...auth.getAuthHeaders() },
-        body: JSON.stringify({ tournamentId, userId: user.userId })
-      });
-      if (!res.ok) throw new Error();
-      showToast('Joined', 'success');
-      await this.loadTournaments();
-    } catch {
-      showToast('Join failed', 'error');
-    }
-  }
-
-  async startTournament(tournamentId: number): Promise<void> {
-    const auth = (window as any).authManager;
-    try {
-      const res = await fetch(`${this.baseURL}/start/${tournamentId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...auth.getAuthHeaders() },
-        body: JSON.stringify({})
-      });
-      if (!res.ok) throw new Error();
-      showToast('Matchups created', 'success');
-      await this.viewTournament(tournamentId);
-      await this.loadTournaments();
-    } catch {
-      showToast('Start failed', 'error');
+    } catch (err) {
+      console.error('Start tournament error:', err);
+      showToast('Failed to start tournament', 'error');
     }
   }
 
@@ -210,7 +121,7 @@ export class TournamentManager {
         <div class="modal-overlay" onclick="document.getElementById('${modalId}')?.remove()"></div>
         <div class="modal-content" style="max-width:1000px;width:90%;">
           <div class="modal-header">
-            <h2>${this.escape(details.tournament.name)}</h2>
+            <h2>Tournament #${details.tournament.id}</h2>
             <button class="modal-close" onclick="document.getElementById('${modalId}')?.remove()">×</button>
           </div>
           <div class="modal-body">

@@ -20,7 +20,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Copy database directory
-COPY database/ ./database/
+# COPY database/ ./database/
 
 EXPOSE 3000
 
