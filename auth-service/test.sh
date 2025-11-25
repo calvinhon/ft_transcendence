@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
 
 echo "🔐 Testing Auth Service Endpoints"
 echo "================================"
@@ -13,17 +15,37 @@ echo "================================"
 TARGET=${TARGET:-http://localhost:3000}
 
 echo -e "\n1. Testing Health Endpoint: (target=$TARGET)"
-curl -s "$TARGET/health"
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET/health" || true)
+if [ "$HTTP" != "200" ]; then
+  echo "❌ Health check failed: $HTTP"
+  exit 1
+fi
 
 echo -e "\n\n2. Testing User Registration: (target=$TARGET)"
-curl -s -X POST "$TARGET/register" \
+RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/register" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
+HTTP=$(echo "$RES" | tail -n1)
+BODY=$(echo "$RES" | sed '$d')
+echo "$BODY"
+if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
+  echo "❌ Registration failed: $HTTP"
+  echo "$BODY"
+  exit 1
+fi
 
 echo -e "\n\n3. Testing User Login: (target=$TARGET)"
-curl -s -X POST "$TARGET/login" \
+RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}'
+HTTP=$(echo "$RES" | tail -n1)
+BODY=$(echo "$RES" | sed '$d')
+echo "$BODY"
+if [ "$HTTP" != "200" ]; then
+  echo "❌ Login failed: $HTTP"
+  echo "$BODY"
+  exit 1
+fi
 
 TOKEN=$(curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
@@ -31,10 +53,14 @@ TOKEN=$(curl -s -X POST "$TARGET/login" \
 
 echo -e "\n\n4. Testing Token Verification: (target=$TARGET)"
 if [ -n "$TOKEN" ]; then
-  curl -s -X POST "$TARGET/verify" \
+  HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$TARGET/verify" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{}'
+    -d '{}' || true)
+  if [ "$HTTP" != "200" ]; then
+    echo "❌ Verify token failed: $HTTP"
+    exit 1
+  fi
 else
   echo "No token available for verification"
 fi
@@ -52,14 +78,29 @@ else
 fi
 
 echo -e "\n\n6. Testing Forgot Password: (target=$TARGET)"
-curl -s -X POST "$TARGET/forgot-password" \
+RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/forgot-password" \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com"}'
+HTTP=$(echo "$RES" | tail -n1)
+BODY=$(echo "$RES" | sed '$d')
+echo "$BODY"
+if [ "$HTTP" != "200" ] && [ "$HTTP" != "201" ]; then
+  echo "❌ Forgot password failed: $HTTP"
+  exit 1
+fi
 
 echo -e "\n\n7. Testing Reset Password: (target=$TARGET)"
-curl -s -X POST "$TARGET/reset-password" \
+RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/reset-password" \
   -H "Content-Type: application/json" \
   -d '{"token":"fake-reset-token","newPassword":"newpassword123"}'
+HTTP=$(echo "$RES" | tail -n1)
+BODY=$(echo "$RES" | sed '$d')
+echo "$BODY"
+# Reset may return not found for fake token; ensure non-500
+if [ "$HTTP" -ge 500 ]; then
+  echo "❌ Reset password returned server error: $HTTP"
+  exit 1
+fi
 
 # For standalone testing, uncomment the following line:
 # kill $SERVICE_PID 2>/dev/null
