@@ -2,7 +2,9 @@
 import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
-import gameRoutes from './routes/game';
+// Import the routes directory (index.ts) directly — this is more
+// robust during container builds and avoids module resolution issues.
+import gameRoutes from './routes';
 
 interface ServiceConfig {
   port: number;
