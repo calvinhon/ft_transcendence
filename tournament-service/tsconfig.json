@@ -21,7 +21,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": "."
   },
