@@ -11,8 +11,8 @@ echo "================================"
 # SERVICE_PID=$!
 # sleep 3
 
-# Set the target server (defaults to service internal port if running in container)
-TARGET=${TARGET:-http://localhost:3000}
+# Set the target server (defaults to service external port when running in docker-compose)
+TARGET=${TARGET:-http://localhost:3001}
 
 echo -e "\n1. Testing Health Endpoint: (target=$TARGET)"
 HTTP=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET/health" || true)
@@ -24,7 +24,7 @@ fi
 echo -e "\n\n2. Testing User Registration: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/register" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
+  -d '{"username":"testuser","email":"test@example.com","password":"password123"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
@@ -37,7 +37,7 @@ fi
 echo -e "\n\n3. Testing User Login: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}'
+  -d '{"username":"testuser","password":"password123"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
@@ -51,36 +51,36 @@ TOKEN=$(curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
+if [ -z "$TOKEN" ]; then
+  echo "❌ Failed to extract token from login response."
+  exit 1
+fi
+
 echo -e "\n\n4. Testing Token Verification: (target=$TARGET)"
-if [ -n "$TOKEN" ]; then
-  HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$TARGET/verify" \
-    -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
-    -d '{}' || true)
-  if [ "$HTTP" != "200" ]; then
-    echo "❌ Verify token failed: $HTTP"
-    exit 1
-  fi
-else
-  echo "No token available for verification"
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$TARGET/verify" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{}' || true)
+if [ "$HTTP" != "200" ]; then
+  echo "❌ Verify token failed: $HTTP"
+  exit 1
 fi
 
 echo -e "\n\n5. Testing Profile Access (with token):"
-if [ -n "$TOKEN" ]; then
-  # Get userId from login response
-  USER_ID=$(curl -s -X POST "$TARGET/login" \
-    -H "Content-Type: application/json" \
-    -d '{"username":"testuser","password":"password123"}' | grep -o '"userId":[0-9]*' | grep -o '[0-9]*')
-  curl -s -X GET "$TARGET/profile/$USER_ID" \
-    -H "Authorization: Bearer $TOKEN"
-else
-  echo "No token available for profile access"
+USER_ID=$(curl -s -X POST "$TARGET/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}' | grep -o '"userId":[0-9]*' | grep -o '[0-9]*')
+if [ -z "$USER_ID" ]; then
+  echo "❌ Failed to extract userId from login response."
+  exit 1
 fi
+curl -s -X GET "$TARGET/profile/$USER_ID" \
+  -H "Authorization: Bearer $TOKEN"
 
 echo -e "\n\n6. Testing Forgot Password: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/forgot-password" \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com"}'
+  -d '{"email":"test@example.com"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
@@ -92,7 +92,7 @@ fi
 echo -e "\n\n7. Testing Reset Password: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/reset-password" \
   -H "Content-Type: application/json" \
-  -d '{"token":"fake-reset-token","newPassword":"newpassword123"}'
+  -d '{"token":"fake-reset-token","newPassword":"newpassword123"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"

@@ -30,24 +30,10 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-export interface AuthResponse extends ApiResponse {
-  token?: string;
-  user?: User;
-}
-
 export interface RegisterRequestBody {
   username: string;
   email: string;
   password: string;
-}
-
-export interface LoginRequestBody {
-  username: string;
-  password: string;
-}
-
-export interface UserProfileParams {
-  userId: string;
 }
 
 export interface ServiceConfig {

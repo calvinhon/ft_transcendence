@@ -6,12 +6,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install ALL dependencies (including devDependencies for TypeScript compilation)
+# Install dependencies
 RUN npm install
 
-# Copy source code and shared types
+# Copy source code
 COPY src/ ./src/
-# COPY ../shared/ ./shared/
 
 # Build TypeScript
 RUN npm run build

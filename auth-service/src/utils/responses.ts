@@ -41,13 +41,3 @@ export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
-
-export function sanitizeLogData(data: any): any {
-  const sanitized = { ...data };
-  if (sanitized.password) sanitized.password = '[REDACTED]';
-  if (sanitized.password_hash) sanitized.password_hash = '[REDACTED]';
-  if (sanitized.token && typeof sanitized.token === 'string') {
-    sanitized.token = sanitized.token.substring(0, 10) + '...[REDACTED]';
-  }
-  return sanitized;
-}

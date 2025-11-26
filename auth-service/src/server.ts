@@ -4,7 +4,6 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import authRoutes from './routes/auth';
 import { config } from './utils/config';
-import { setupLogging } from './utils/middleware';
 
 const fastify: FastifyInstance = Fastify({
   logger: true
@@ -16,9 +15,6 @@ export async function buildServer(): Promise<FastifyInstance> {
   await fastify.register(jwt, {
     secret: config.jwt.secret
   });
-
-  // Setup logging middleware
-  // setupLogging(fastify);
 
   // Register routes
   await fastify.register(authRoutes);
@@ -54,5 +50,3 @@ export async function start(): Promise<void> {
 if (require.main === module) {
   start();
 }
-
-export default fastify;
