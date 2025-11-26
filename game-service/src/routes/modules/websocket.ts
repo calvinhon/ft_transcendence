@@ -1,7 +1,7 @@
 // game-service/src/routes/modules/websocket.ts
 import { WebSocketMessage, JoinGameMessage, MovePaddleMessage } from './types';
 import { addOnlineUser } from './online-users';
-import { handleJoinGame, handleJoinBotGame, handleDisconnect } from './matchmaking';
+import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
 
@@ -17,11 +17,11 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         break;
       case 'joinGame':
         logger.ws('Processing joinGame');
-        handleJoinGame(socket, data as JoinGameMessage);
+        matchmakingService.handleJoinGame(socket, data as JoinGameMessage);
         break;
       case 'joinBotGame':
         logger.ws('Processing joinBotGame');
-        handleJoinBotGame(socket, data as JoinGameMessage);
+        matchmakingService.handleJoinBotGame(socket, data as JoinGameMessage);
         break;
       case 'movePaddle':
         logger.ws('Processing movePaddle');
@@ -33,7 +33,7 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         break;
       case 'disconnect':
         logger.ws('Processing disconnect');
-        handleDisconnect(socket);
+        matchmakingService.handleDisconnect(socket);
         break;
       default:
         logger.ws('Unknown message type:', data.type);
@@ -70,7 +70,7 @@ function handleUserConnect(socket: any, data: any): void {
     logger.info('Team 2 players:', data.team2Players);
 
     // Start the bot game directly with team player data
-    handleJoinBotGame(socket, {
+    matchmakingService.handleJoinBotGame(socket, {
       type: 'joinBotGame',
       userId: data.userId,
       username: data.username,
@@ -88,5 +88,5 @@ function handleUserConnect(socket: any, data: any): void {
 }
 
 export function handleWebSocketClose(socket: any): void {
-  handleDisconnect(socket);
+  matchmakingService.handleDisconnect(socket);
 }

@@ -82,30 +82,12 @@ export class GameCreator {
 
   // Create a dummy bot player
   createBotPlayer(): GamePlayer {
-    const dummySocket = {
-      readyState: 1, // WebSocket.OPEN
-      send: () => {} // No-op
-    } as unknown as any;
-
-    return {
-      userId: 0,
-      username: 'Bot',
-      socket: dummySocket
-    };
+    return createBotPlayer();
   }
 
   // Create a dummy player for tournament local multiplayer
   createDummyPlayer(userId: number, username: string): GamePlayer {
-    const dummySocket = {
-      readyState: 1, // WebSocket.OPEN
-      send: () => {} // No-op since both players share the same connection
-    } as unknown as any;
-
-    return {
-      userId: userId,
-      username: username,
-      socket: dummySocket
-    };
+    return createDummyPlayer(userId, username);
   }
 }
 
