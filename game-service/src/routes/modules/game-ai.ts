@@ -20,7 +20,7 @@ export class GameAI {
     this.ballY = ballY;
   }
 
-  moveBotPaddle(paddles: Paddles, gameId: number): void {
+  moveBotPaddle(paddles: Paddles, gameId: number, team2Players?: any[]): void {
     let reactionDelay = false;
     let errorMargin = 0;
     let moveSpeed = this.paddleSpeed;
@@ -43,17 +43,37 @@ export class GameAI {
 
     if (reactionDelay) return; // Sometimes bot doesn't react
 
+    logger.info(`AI moveBotPaddle called for game ${gameId}, mode: ${this.gameMode}, ball at (${this.ballX}, ${this.ballY})`);
+
     // Handle arcade/tournament mode with multiple paddles
     if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
       if (paddles.team2 && paddles.team2.length > 0) {
-        paddles.team2.forEach((botPaddle) => {
-          this.moveSingleBotPaddle(botPaddle, errorMargin, moveSpeed);
-        });
+        // Only control paddles that correspond to bot players
+        if (team2Players && team2Players.length > 0) {
+          logger.info(`AI controlling ${team2Players.filter(p => p.isBot).length} bot paddles in team2`);
+          team2Players.forEach((player, index) => {
+            if (player.isBot && paddles.team2 && paddles.team2[player.paddleIndex]) {
+              logger.info(`AI moving bot paddle at index ${player.paddleIndex}, current Y: ${paddles.team2[player.paddleIndex].y}`);
+              this.moveSingleBotPaddle(paddles.team2[player.paddleIndex], errorMargin, moveSpeed);
+              logger.info(`AI moved bot paddle to Y: ${paddles.team2[player.paddleIndex].y}`);
+            }
+          });
+        } else {
+          // Fallback: if no team2Players data, control all paddles (legacy behavior)
+          logger.info(`AI fallback: controlling all ${paddles.team2.length} paddles in team2`);
+          paddles.team2.forEach((botPaddle, index) => {
+            logger.info(`AI moving fallback paddle ${index}, current Y: ${botPaddle.y}`);
+            this.moveSingleBotPaddle(botPaddle, errorMargin, moveSpeed);
+            logger.info(`AI moved fallback paddle ${index} to Y: ${botPaddle.y}`);
+          });
+        }
       }
     } else {
       // Handle coop mode with single paddle
       if (paddles.player2) {
+        logger.info(`AI moving coop player2 paddle, current Y: ${paddles.player2.y}`);
         this.moveSingleBotPaddle(paddles.player2, errorMargin, moveSpeed);
+        logger.info(`AI moved coop player2 paddle to Y: ${paddles.player2.y}`);
       }
     }
   }

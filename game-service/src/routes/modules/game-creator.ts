@@ -25,6 +25,21 @@ export class GameCreator {
     const tournamentId = options.tournamentId || null;
     const tournamentMatchId = options.tournamentMatchId || null;
 
+    // Include team player data in game settings
+    const fullGameSettings: GameSettings = {
+      gameMode: gameSettings?.gameMode || 'coop',
+      aiDifficulty: gameSettings?.aiDifficulty || 'medium',
+      ballSpeed: gameSettings?.ballSpeed || 'medium',
+      paddleSpeed: gameSettings?.paddleSpeed || 'medium',
+      powerupsEnabled: gameSettings?.powerupsEnabled || false,
+      accelerateOnHit: gameSettings?.accelerateOnHit || false,
+      scoreToWin: gameSettings?.scoreToWin || 5,
+      team1PlayerCount: gameSettings?.team1PlayerCount,
+      team2PlayerCount: gameSettings?.team2PlayerCount,
+      team1Players: options.team1Players,
+      team2Players: options.team2Players
+    };
+
     return new Promise((resolve, reject) => {
       db.run(
         'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players, tournament_id, tournament_match_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -37,7 +52,7 @@ export class GameCreator {
           }
 
           const gameId = this.lastID!;
-          const game = new PongGame(player1, player2, gameId, gameSettings);
+          const game = new PongGame(player1, player2, gameId, fullGameSettings);
           activeGames.set(gameId, game);
 
           logger.matchmaking('Created game:', gameId, 'for players:', player1.username, 'vs', player2.username);

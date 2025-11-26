@@ -1,10 +1,10 @@
-// game-service/src/routes/index.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
 import { getOnlineUsers } from './modules/online-users';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
+import { sendSuccess, sendError } from './modules/responses';
 import { logger } from './modules/logger';
 
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
@@ -34,10 +34,10 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       const { userId } = request.params;
       const games = await gameHistoryService.getGameHistory(userId);
       const enrichedGames = await gameHistoryService.enrichGamesWithPlayerNames(games);
-      reply.send(enrichedGames);
+      sendSuccess(reply, enrichedGames);
     } catch (error) {
       logger.error('Error fetching game history:', error);
-      reply.status(500).send({ error: 'Error fetching game history' });
+      sendError(reply, 'Error fetching game history', 500);
     }
   });
 
@@ -48,10 +48,10 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     try {
       const { userId } = request.params;
       const stats = await gameStatsService.getGameStats(userId);
-      reply.send(stats);
+      sendSuccess(reply, stats);
     } catch (error) {
       logger.error('Error fetching game stats:', error);
-      reply.status(500).send({ error: 'Error fetching game statistics' });
+      sendError(reply, 'Error fetching game statistics', 500);
     }
   });
 
@@ -59,16 +59,16 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const onlineUsers = getOnlineUsers();
-      reply.send(onlineUsers);
+      sendSuccess(reply, onlineUsers);
     } catch (error) {
       logger.error('Error getting online users:', error);
-      reply.status(500).send({ error: 'Error fetching online users' });
+      sendError(reply, 'Error fetching online users', 500);
     }
   });
 
   // Health check
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    reply.send({
+    sendSuccess(reply, {
       status: 'healthy',
       service: 'game-service',
       timestamp: new Date().toISOString(),

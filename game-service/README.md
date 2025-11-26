@@ -4,30 +4,33 @@ A high-performance, real-time multiplayer Pong game microservice built with Node
 
 ## 🏗️ Architecture Overview
 
-The game-service follows a modular architecture with clear separation of game components:
+The game-service follows a modular architecture with clear separation of game components and recent refactoring for better maintainability:
 
 ```
 game-service/
-├── server.ts                    # Server setup & WebSocket handling
+├── server.ts                    # Server setup & WebSocket handling with shared logging
 ├── routes/
-│   ├── index.ts                # Route registration & WebSocket endpoint
+│   ├── index.ts                # Route registration & REST API endpoints
 │   └── modules/                # Game logic modules
 │       ├── game-logic.ts       # Core PongGame class & game loop
 │       ├── game-physics.ts     # Ball physics & collision detection
-│       ├── game-ai.ts          # AI opponent logic
+│       ├── game-ai.ts          # AI opponent logic with team support
 │       ├── game-state.ts       # Game state management & countdown
 │       ├── game-scoring.ts     # Score tracking & win conditions
 │       ├── game-broadcast.ts   # Real-time state broadcasting
 │       ├── game-creator.ts     # Game creation & database persistence
-│       ├── matchmaking.ts      # Player matchmaking system
+│       ├── matchmaking.ts      # Legacy compatibility exports
+│       ├── matchmaking-service.ts # Main matchmaking orchestration
+│       ├── matchmaking-queue.ts # Player queue management
 │       ├── websocket.ts        # WebSocket message handling
 │       ├── game-history-service.ts # Game history & statistics
-│       ├── game-stats-service.ts   # Player statistics
+│       ├── game-stats-service.ts   # Player statistics aggregation
 │       ├── online-users.ts     # Online user tracking
-│       ├── logger.ts           # Centralized logging
+│       ├── logger.ts           # Centralized logging system
 │       ├── database.ts         # Database utilities
+│       ├── responses.ts        # Shared response utilities
 │       ├── types.ts            # TypeScript interfaces
-│       └── utils.ts            # Utility functions
+│       └── utils.ts            # Shared utility functions
 ```
 
 ## 🎮 Core Components
@@ -185,23 +188,31 @@ Response: {
 ## 🛠️ Technology Stack
 
 - **Runtime**: Node.js 18+
-- **Framework**: Fastify (high-performance HTTP/WebSocket server)
-- **Language**: TypeScript (type safety)
+- **Framework**: Fastify v4 (high-performance HTTP/WebSocket server)
+- **Language**: TypeScript 5+ (type safety)
 - **Database**: SQLite3 (game persistence)
 - **Real-time**: WebSocket (@fastify/websocket)
-- **Architecture**: Modular component system
+- **Development**: ts-node-dev (hot reload)
+- **Build**: TypeScript compiler
+- **Testing**: Custom bash scripts with TARGET support
+- **Logging**: Custom logger with multiple levels and categories
+- **Architecture**: Modular component system with shared utilities
 
 ## 📦 Dependencies
 
 ### **Production Dependencies**
-- `fastify`: Web framework
-- `@fastify/cors`: CORS handling
-- `@fastify/websocket`: WebSocket support
-- `sqlite3`: Database driver
+- `fastify`: ^4.24.3 - High-performance web framework
+- `@fastify/cors`: ^8.4.0 - CORS handling
+- `@fastify/websocket`: ^8.3.1 - WebSocket support
+- `sqlite3`: ^5.1.6 - SQLite database driver
 
 ### **Development Dependencies**
-- `typescript`: TypeScript compiler
-- `@types/node`: Node.js types
+- `typescript`: ^5.9.3 - TypeScript compiler
+- `@types/node`: ^24.7.1 - Node.js type definitions
+- `@types/sqlite3`: ^3.1.11 - SQLite type definitions
+- `@types/ws`: ^8.18.1 - WebSocket type definitions
+- `ts-node-dev`: ^2.0.0 - Development server with hot reload
+- `rimraf`: ^6.0.1 - Cross-platform rm -rf utility
 
 ## ⚙️ Game Configuration
 
@@ -229,12 +240,42 @@ interface GameSettings {
 
 ### **Prerequisites**
 - Node.js 18+
-- npm
+- npm or yarn
+- SQLite3
 
 ### **Installation**
 ```bash
 cd game-service
 npm install
+```
+
+### **Development**
+```bash
+# Start development server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Clean build artifacts
+npm run clean
+
+# Type checking
+npm run type-check
+```
+
+### **Testing**
+```bash
+# Run tests with specific target
+./test.sh TARGET=websocket
+./test.sh TARGET=game-logic
+./test.sh TARGET=matchmaking
+
+# Run all tests
+./test.sh
 ```
 
 ### **Development**
@@ -388,19 +429,40 @@ ws.onmessage = (event) => {
 
 ## 📚 Architecture Principles
 
-This service follows **Component Architecture** principles:
+This service follows **Modular Component Architecture** principles with recent refactoring for better maintainability:
 
-1. **Single Responsibility**: Each module handles one aspect of game logic
-2. **Composition over Inheritance**: Game components are composed together
-3. **Dependency Injection**: Clean interfaces between components
-4. **Testability**: Isolated components for unit testing
-5. **Performance**: Optimized for real-time game requirements
+1. **Component Separation**: Game logic split into physics, AI, state, scoring, and broadcasting modules
+2. **Shared Utilities**: Common functions consolidated in utils.ts and responses.ts
+3. **Centralized Logging**: Custom logger with categorized logging (game, websocket, matchmaking, db)
+4. **Consistent Responses**: Standardized API response format across all endpoints
+5. **Type Safety**: Comprehensive TypeScript interfaces for all game entities
+
+## 🔄 Recent Refactoring (2025)
+
+### **Modularization Changes**
+- **Response Utilities**: Created `responses.ts` for consistent API responses
+- **Direct Service Calls**: Updated websocket.ts to call matchmaking-service.ts directly
+- **Removed Redundancy**: Eliminated duplicate player creation functions in game-creator.ts
+- **Legacy Compatibility**: Simplified matchmaking.ts to only export necessary items
+
+### **Code Quality Improvements**
+- **Type Safety**: Enhanced TypeScript configuration with DOM support
+- **Error Handling**: Standardized error responses with proper logging
+- **AI Logic Fix**: Fixed team 2 player control issue in arcade/tournament modes
+- **Logging**: Migrated from console.log to centralized logger system
+
+### **Performance Enhancements**
+- **Efficient Queries**: Optimized database operations with proper error handling
+- **Memory Management**: Proper cleanup of game instances and WebSocket connections
+- **Concurrent Handling**: Improved handling of multiple simultaneous games
 
 ---
 
 **Service Port**: `3002` (internal), `3000` (external)  
 **WebSocket Endpoint**: `ws://localhost:3002/ws`  
 **Health Check**: `GET /health`  
+**Testing**: `./test.sh TARGET=<module>`  
 **Documentation**: This README  
+**Last Updated**: November 2025  
 **Maintainer**: Development Team</content>
 <parameter name="filePath">/home/honguyen/ft_transcendence/game-service/README.md
