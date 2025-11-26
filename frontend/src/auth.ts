@@ -113,15 +113,21 @@ export class AuthManager {
         body: JSON.stringify({ username, password })
       });
 
-      const data: AuthResponse = await response.json();
+      const data: any = await response.json();
       
       if (response.ok && data.success) {
-        this.token = data.token;
-        sessionStorage.setItem('token', this.token);
+        // Handle both possible response formats (direct or nested in data)
+        const userData = data.user || data.data?.user;
+        const token = data.token || data.data?.token;
+        
+        this.token = token;
+        if (this.token) {
+          sessionStorage.setItem('token', this.token);
+        }
         this.currentUser = { 
-          userId: data.user.userId, 
-          username: data.user.username,
-          ...(data.user.email && { email: data.user.email })
+          userId: userData.userId, 
+          username: userData.username,
+          ...(userData.email && { email: userData.email })
         };
         return { success: true, data };
       } else {
