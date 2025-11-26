@@ -160,7 +160,7 @@ git clone https://github.com/calvinhon/ft_transcendence.git
 cd ft_transcendence
 
 # Start all services
-docker-compose up --build
+docker compose up --build
 
 # Access the application
 open http://localhost:8080

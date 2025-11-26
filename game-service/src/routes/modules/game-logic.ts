@@ -155,7 +155,6 @@ export class PongGame {
 
       if (shouldActivateAI) {
         this.ai.updateBallPosition(this.ball.x, this.ball.y);
-        logger.game(this.gameId, `AI activated - ball at (${this.ball.x}, ${this.ball.y})`);
         this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team2Players);
       }
 
