@@ -1,9 +1,9 @@
 // user-service/src/routes/profile.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import sqlite3 from 'sqlite3';
-import { db } from './database';
-import { UserProfile, UpdateProfileBody, GameStats } from './types';
-import { handleDatabaseError, promisifyDbGet, promisifyDbRun, promisifyDbAll } from './utils';
+import { UserService } from '../services/userService';
+import { UpdateProfileBody } from '../types';
+import { db } from '../database';
+import { promisifyDbRun } from '../utils/database';
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // Get user profile
@@ -13,11 +13,7 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     const { userId } = request.params;
 
     try {
-      let profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
-      if (!profile) {
-        await promisifyDbRun(db, 'INSERT INTO user_profiles (user_id) VALUES (?)', [userId]);
-        profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
-      }
+      const profile = await UserService.getOrCreateProfile(parseInt(userId));
       reply.send(profile);
     } catch (err) {
       reply.status(500).send({ error: 'Database error' });
@@ -30,17 +26,10 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     Body: UpdateProfileBody;
   }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: UpdateProfileBody }>, reply: FastifyReply) => {
     const { userId } = request.params;
-    const { displayName, bio, country, preferredLanguage, themePreference } = request.body;
+    const updates = request.body;
 
     try {
-      await promisifyDbRun(db, `UPDATE user_profiles SET
-         display_name = COALESCE(?, display_name),
-         bio = COALESCE(?, bio),
-         country = COALESCE(?, country),
-         preferred_language = COALESCE(?, preferred_language),
-         theme_preference = COALESCE(?, theme_preference),
-         updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`, [displayName, bio, country, preferredLanguage, themePreference, userId]);
+      await UserService.updateProfile(parseInt(userId), updates);
       reply.send({ message: 'Profile updated successfully' });
     } catch (err) {
       reply.status(500).send({ error: 'Database error' });

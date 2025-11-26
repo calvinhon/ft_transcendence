@@ -60,6 +60,8 @@ export interface GameSettings {
   scoreToWin: number;
   team1PlayerCount?: number; // Number of players on team 1
   team2PlayerCount?: number; // Number of players on team 2
+  team1Players?: any[]; // Player data for team 1
+  team2Players?: any[]; // Player data for team 2
 }
 
 export interface JoinGameMessage extends WebSocketMessage {

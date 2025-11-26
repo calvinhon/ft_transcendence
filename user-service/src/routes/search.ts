@@ -1,8 +1,8 @@
 // user-service/src/routes/search.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { db } from './database';
-import { SearchQuery, OnlineUser } from './types';
-import { promisifyDbAll } from './utils';
+import { db } from '../database';
+import { SearchQuery, OnlineUser } from '../types';
+import { promisifyDbAll } from '../utils/database';
 
 export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void> {
   // Search users by display name or username

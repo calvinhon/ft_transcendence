@@ -51,5 +51,55 @@ The frontend was trying to access `data.user` and `data.token` directly, but the
 - Docker Compose for container rebuilds
 
 ## Outcome
-The "Network Error" was actually a parsing error in the frontend. With the fix, the login flow should work correctly.</content>
+The "Network Error" was actually a parsing error in the frontend. With the fix, the login flow should work correctly.
+
+---
+
+# Debugging Log: User Data Missing userId Error
+
+## Issue Summary
+User reported "An error occurred during login: User data is missing userId. Please check the response structure." when attempting to log in through the frontend.
+
+## Debugging Steps Taken
+
+### 1. Investigation
+- **Examined auth-service response structure**: Backend sends nested data `{ success: true, data: { user: {...}, token: "..." }, message: "..." }`
+- **Checked frontend auth.ts**: Login method was extracting user data but returning the full backend response
+- **Inspected local-player.ts**: Code was trying to extract user data from `result.data.user || result.data.data || result.data`
+- **Found the issue**: `result.data.data` was the object containing `user` and `token`, not the user object itself
+
+### 2. Root Cause Identified
+**Inconsistent Data Handling**:
+- Frontend auth.ts was returning the backend response directly
+- local-player.ts expected a flattened structure but was falling back to `result.data.data` (the nested object)
+- This caused `userData.userId` to be undefined since `userData` was `{ user: {...}, token: "..." }`
+
+### 3. Fix Applied
+- **Updated frontend auth.ts**: Modified login and register methods to extract and return consistent AuthResponse structure
+- **Updated local-player.ts**: Simplified data extraction to use `result.data.user` and `result.data.token`
+- **Fixed register handling**: Updated to use `result.data.user.userId` etc.
+
+### 4. Code Changes
+```typescript
+// auth.ts - Now returns consistent structure
+const user = data.data?.user || data.user;
+const token = data.data?.token || data.token;
+return { success: true, data: { success: true, token, user, message: data.message } };
+
+// local-player.ts - Simplified extraction
+const userData = result.data.user;
+const token = result.data.token;
+```
+
+### 5. Validation
+- Frontend builds successfully without TypeScript errors
+- Auth-service logs show successful login processing
+- User data extraction now correctly accesses `userId` from the user object
+
+## Files Modified
+- `frontend/src/auth.ts`: Updated login/register methods for consistent response handling
+- `frontend/src/local-player.ts`: Simplified data extraction and fixed register handling
+
+## Outcome
+The "User data is missing userId" error is resolved. Frontend now correctly handles nested backend responses.</content>
 <parameter name="filePath">/home/honguyen/ft_transcendence/DEBUG_LOG.md

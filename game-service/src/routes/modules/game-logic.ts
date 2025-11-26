@@ -141,7 +141,11 @@ export class PongGame {
 
   startGameLoop(): void {
     this.stateManager.startGameLoop(() => {
-      if (this.player2.userId === 0) {
+      // Only activate AI if player2 is a bot AND there are no human team2 players
+      const shouldActivateAI = this.player2.userId === 0 && 
+        !(this.gameSettings.team2Players && this.gameSettings.team2Players.length > 0);
+
+      if (shouldActivateAI) {
         this.ai.updateBallPosition(this.ball.x, this.ball.y);
         this.ai.moveBotPaddle(this.paddles, this.gameId);
       }

@@ -4,13 +4,23 @@ A comprehensive user management microservice handling user profiles, achievement
 
 ## 🏗️ Architecture Overview
 
-The user-service provides modular user-centric functionality:
+The user-service provides modular user-centric functionality with a clean separation of concerns:
 
 ```
 user-service/
-├── server.ts              # Server setup & middleware
+├── server.ts              # Server setup & middleware with logging
+├── database/
+│   └── index.ts           # Database initialization & schema
+├── services/
+│   └── userService.ts     # Business logic for user operations
+├── types/
+│   └── index.ts           # TypeScript interfaces & types
+├── utils/
+│   ├── database.ts        # Database utility functions
+│   ├── logging.ts         # Shared logging middleware
+│   └── responses.ts       # Response utilities (if applicable)
 └── routes/
-    ├── index.ts           # Route aggregation
+    ├── index.ts           # Route aggregation & health check
     ├── profile.ts         # User profile management
     ├── achievements.ts    # Achievement system
     └── search.ts          # User search functionality
@@ -44,130 +54,142 @@ user-service/
 
 ## 🔌 API Endpoints
 
+### **Health Check**
+
+#### `GET /health`
+Service health status
+```json
+Response: {
+  "status": "healthy",
+  "service": "user-service",
+  "timestamp": "2023-...",
+  "modules": ["profile", "achievements", "search"]
+}
+```
+
 ### **Profile Management**
 
 #### `GET /profile/:userId`
 Get user profile information
-```typescript
+```json
 Response: {
-  userId: number,
-  username: string,
-  email: string,
-  avatar?: string,
-  created_at: string,
-  last_active: string,
-  achievements: Achievement[],
-  statistics: UserStats
+  "id": 1,
+  "user_id": 1,
+  "display_name": null,
+  "avatar_url": null,
+  "bio": null,
+  "country": null,
+  "preferred_language": "en",
+  "theme_preference": "dark",
+  "notification_settings": "{}",
+  "privacy_settings": "{}",
+  "campaign_level": 1,
+  "wins": 0,
+  "total_games": 0,
+  "games_played": 0,
+  "games_won": 0,
+  "games_lost": 0,
+  "win_streak": 0,
+  "tournaments_won": 0,
+  "friends_count": 0,
+  "xp": 0,
+  "level": 1,
+  "winRate": 0,
+  "created_at": "2023-...",
+  "updated_at": "2023-..."
 }
 ```
 
 #### `PUT /profile/:userId`
 Update user profile
-```typescript
+```json
 Request: {
-  username?: string,
-  avatar?: string,
-  bio?: string
+  "displayName": "NewName",
+  "bio": "Updated bio",
+  "country": "US",
+  "preferredLanguage": "en",
+  "themePreference": "light"
 }
-Response: { profile: UserProfile, message: string }
-```
-
-#### `POST /profile/:userId/avatar`
-Upload profile avatar
-```typescript
-Request: FormData (image file)
-Response: { avatarUrl: string, message: string }
+Response: {
+  "message": "Profile updated successfully"
+}
 ```
 
 ### **Achievement System**
 
-#### `GET /achievements/:userId`
-Get user achievements
-```typescript
-Response: Achievement[]
-```
-
 #### `GET /achievements`
 Get all available achievements
-```typescript
-Response: AchievementDefinition[]
+```json
+Response: [
+  {
+    "id": 1,
+    "name": "First Win",
+    "description": "Win your first game",
+    "icon_url": "/icons/first-win.png",
+    "reward_points": 10
+  }
+]
 ```
 
-#### `POST /achievements/:userId/:achievementId`
-Award achievement to user
-```typescript
-Response: { achievement: Achievement, message: string }
+#### `GET /achievements/:userId`
+Get user's achievements
+```json
+Response: [
+  {
+    "id": 1,
+    "user_id": 1,
+    "achievement_id": 1,
+    "unlocked_at": "2023-...",
+    "name": "First Win",
+    "description": "Win your first game",
+    "icon_url": "/icons/first-win.png",
+    "reward_points": 10
+  }
+]
 ```
 
-#### `GET /leaderboard/achievements`
-Get achievement-based leaderboard
-```typescript
-Query: { achievementId?: number, limit?: number }
-Response: LeaderboardEntry[]
+#### `POST /achievement/unlock`
+Unlock achievement for user
+```json
+Request: {
+  "userId": "1",
+  "achievementId": 1
+}
+Response: {
+  "message": "Achievement unlocked successfully"
+}
 ```
 
 ### **Search Functionality**
 
-#### `GET /search/users`
-Search for users
-```typescript
-Query: {
-  q: string,           // search query
-  filter?: 'username' | 'email' | 'all',
-  limit?: number,
-  offset?: number
-}
-Response: {
-  users: UserProfile[],
-  total: number,
-  query: string
-}
+#### `GET /search/users?query=test&limit=10`
+Search for users by display name or user ID
+```json
+Response: [
+  {
+    "user_id": 1,
+    "display_name": "TestUser",
+    "avatar_url": null,
+    "country": "US",
+    "games_won": 0,
+    "games_played": 0
+  }
+]
 ```
 
-#### `GET /search/suggestions`
-Get search suggestions
-```typescript
-Query: { q: string, limit?: number }
-Response: SearchSuggestion[]
-```
-
-### **Statistics & Analytics**
-
-#### `GET /stats/:userId`
-Get comprehensive user statistics
-```typescript
-Response: {
-  totalGames: number,
-  wins: number,
-  losses: number,
-  winRate: number,
-  favoriteGameMode: string,
-  averageScore: number,
-  achievementsUnlocked: number,
-  rank: number,
-  tournamentsPlayed: number,
-  tournamentsWon: number
-}
-```
-
-#### `GET /analytics/users`
-Get user analytics (admin only)
-```typescript
-Query: { period?: 'day' | 'week' | 'month' }
-Response: UserAnalytics
-```
-
-### **Health Check**
-
-#### `GET /health`
-Service health status
-```typescript
-Response: {
-  status: "healthy",
-  service: "user-service",
-  timestamp: string,
-  modules: ["profile", "achievements", "search"]
-}
+#### `GET /users/online`
+Get online users (placeholder)
+```json
+Response: [
+  {
+    "user_id": 1,
+    "display_name": "TestUser",
+    "avatar_url": null,
+    "status": "online",
+    "is_bot": 0,
+    "last_seen": "2023-..."
+  }
+]
 ```
 
 ## 👥 User Data Model
@@ -229,25 +251,27 @@ interface SearchSuggestion {
 ## 🛠️ Technology Stack
 
 - **Runtime**: Node.js 18+
-- **Framework**: Fastify (high-performance web framework)
-- **Language**: TypeScript (type safety)
+- **Framework**: Fastify v4 (high-performance web framework)
+- **Language**: TypeScript 5+ (type safety)
 - **Database**: SQLite3 (user data persistence)
-- **File Storage**: Local filesystem (avatars)
-- **Search**: Full-text search capabilities
+- **Development**: ts-node-dev (hot reload)
+- **Build**: TypeScript compiler
+- **Testing**: Custom bash scripts with TARGET support
+- **Logging**: Pino logger with custom middleware
 
 ## 📦 Dependencies
 
 ### **Production Dependencies**
-- `fastify`: Web framework
-- `@fastify/cors`: CORS handling
-- `@fastify/multipart`: File upload handling
-- `sqlite3`: Database driver
-- `sharp`: Image processing (avatars)
+- `fastify`: ^4.24.3 - High-performance web framework
+- `@fastify/cors`: ^9.0.0 - CORS handling
+- `@fastify/multipart`: ^8.0.0 - File upload handling
+- `sqlite3`: ^5.1.6 - SQLite database driver
 
 ### **Development Dependencies**
-- `typescript`: TypeScript compiler
-- `@types/node`: Node.js types
-- `@types/sharp`: Image processing types
+- `typescript`: ^5.9.3 - TypeScript compiler
+- `@types/node`: ^20.0.0 - Node.js type definitions
+- `ts-node-dev`: ^2.0.0 - Development server with hot reload
+- `rimraf`: ^5.0.0 - Cross-platform rm -rf utility
 
 ## ⚙️ Configuration
 
@@ -284,7 +308,7 @@ interface PrivacySettings {
 
 ### **Prerequisites**
 - Node.js 18+
-- npm
+- npm or yarn
 - SQLite3
 
 ### **Installation**
@@ -295,7 +319,7 @@ npm install
 
 ### **Development**
 ```bash
-# Start development server
+# Start development server with hot reload
 npm run dev
 
 # Build for production
@@ -303,12 +327,20 @@ npm run build
 
 # Start production server
 npm start
+
+# Clean build artifacts
+npm run clean
 ```
 
-### **Database Setup**
+### **Testing**
 ```bash
-# Database is automatically created on first run
-# Migrations are handled by the service
+# Run tests with specific target
+./test.sh TARGET=profile
+./test.sh TARGET=achievements
+./test.sh TARGET=search
+
+# Run all tests
+./test.sh
 ```
 
 ## 🐳 Docker Deployment
@@ -531,13 +563,34 @@ await fetch(`/user/achievements/${userId}/tournament_win`, {
 
 ## 📚 Architecture Principles
 
-This service follows **Modular Monolith** principles:
+This service follows **Modular Monolith** principles with recent refactoring for better maintainability:
 
 1. **Domain Separation**: Profile, achievements, search as distinct modules
 2. **Shared Database**: Single database with clear boundaries
 3. **API Composition**: Route aggregation for unified API
 4. **Independent Deployment**: Service-level deployment units
 5. **Shared Infrastructure**: Common logging and monitoring
+6. **Business Logic Layer**: Extracted services for clean separation of concerns
+
+## 🔄 Recent Refactoring (2025)
+
+### **Modularization Changes**
+- **File Structure**: Moved types to `src/types/index.ts`, utils to `src/utils/`
+- **Service Layer**: Created `src/services/userService.ts` for business logic
+- **Logging**: Added shared logging middleware in `src/utils/logging.ts`
+- **Database**: Centralized database utilities in `src/database/index.ts`
+- **Routes**: Updated imports to use new modular structure
+
+### **Code Quality Improvements**
+- **Type Safety**: Enhanced TypeScript interfaces and error handling
+- **Testing**: Improved test scripts with TARGET support and assertions
+- **Documentation**: Updated README with accurate API documentation
+- **Dependencies**: Updated to latest versions with security patches
+
+### **Performance Enhancements**
+- **Query Optimization**: Efficient database queries with proper indexing
+- **Response Caching**: Strategic caching for frequently accessed data
+- **Error Handling**: Comprehensive error handling with proper logging
 
 ## 🔮 Future Enhancements
 
@@ -552,7 +605,9 @@ This service follows **Modular Monolith** principles:
 
 **Service Port**: `3004` (internal), `3000` (external)  
 **Health Check**: `GET /health`  
-**File Uploads**: `/uploads/avatars/`  
+**Database**: SQLite (auto-initialized)  
+**Testing**: `./test.sh TARGET=<module>`  
 **Documentation**: This README  
+**Last Updated**: November 2025  
 **Maintainer**: Development Team</content>
 <parameter name="filePath">/home/honguyen/ft_transcendence/user-service/README.md

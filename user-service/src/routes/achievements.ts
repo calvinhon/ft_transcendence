@@ -1,9 +1,8 @@
 // user-service/src/routes/achievements.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import sqlite3 from 'sqlite3';
-import { db } from './database';
-import { Achievement, UserAchievement } from './types';
-import { handleDatabaseError, promisifyDbGet, promisifyDbRun, promisifyDbAll } from './utils';
+import { db } from '../database';
+import { Achievement, UserAchievement } from '../types';
+import { handleDatabaseError, promisifyDbGet, promisifyDbRun, promisifyDbAll } from '../utils/database';
 
 export async function setupAchievementRoutes(fastify: FastifyInstance): Promise<void> {
   // Get all achievements
