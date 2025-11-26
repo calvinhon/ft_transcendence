@@ -85,7 +85,8 @@ export async function createTestApp(): Promise<FastifyInstance> {
   const fastify = (await import('fastify')).default();
 
   // Register routes
-  await fastify.register(require('../src/routes/index').default);
+  const routes = await import('../src/routes/index');
+  await fastify.register(routes.default);
 
   return fastify;
 }
