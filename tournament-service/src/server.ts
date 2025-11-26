@@ -1,7 +1,7 @@
 // tournament-service/src/server.ts
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
-import tournamentRoutes from './routes/tournament';
+import routes from './routes';
 
 const fastify = Fastify({ 
   logger: true
@@ -41,7 +41,7 @@ fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, p
 // Initialize and start the server
 async function init(): Promise<void> {
   // Register routes by calling the function directly
-  await tournamentRoutes(fastify);
+  await routes(fastify);
   
   // Start the server
   try {

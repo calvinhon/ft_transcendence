@@ -11,11 +11,10 @@ COPY vite.config.js ./
 # Install dependencies
 RUN npm install
 
-# Copy source code and shared types
+# Copy source code
 COPY src/ ./src/
 COPY css/ ./css/
 COPY index.html ./
-# COPY ../shared/ ./shared/
 
 # Clean any existing build artifacts and build the application
 RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"

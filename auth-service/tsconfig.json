@@ -13,11 +13,7 @@
     "sourceMap": true,
     "types": ["node"],
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
-    "paths": {
-      "@shared/*": ["../shared/*"]
-    }
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/**/*.ts"

@@ -141,11 +141,6 @@ frontend/
 - **Hardhat Framework**: Development and testing environment
 - **Contract Deployment**: Automated deployment scripts
 
-### Shared Components (`/shared`)
-- **Common Types**: TypeScript interfaces shared across services
-- **Utilities**: Shared utility functions
-- **Constants**: Application-wide constants
-
 ## 🚀 Getting Started
 
 ### Prerequisites
