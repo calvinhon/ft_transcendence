@@ -20,6 +20,7 @@
     "@babylonjs/loaders": "^8.37.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.17",
     "babylonjs": "^8.37.0",
     "rimraf": "^6.1.0",
     "vite": "^7.2.2"
