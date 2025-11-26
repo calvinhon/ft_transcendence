@@ -33,8 +33,8 @@ export class ResponseUtil {
   ): void {
     const response: ApiResponse = {
       success: false,
-      message,
-      error
+      error: message,
+      message: error
     };
     reply.code(statusCode).send(response);
   }

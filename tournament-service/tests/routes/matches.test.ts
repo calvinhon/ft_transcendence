@@ -9,11 +9,14 @@ describe('Tournament Matches Routes', () => {
   beforeAll(async () => {
     await setupTestDatabase();
     app = await createTestApp();
+    await app.ready(); // Ensure app is ready
   });
 
   afterAll(async () => {
     await cleanupTestDatabase();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   beforeEach(async () => {
@@ -33,7 +36,7 @@ describe('Tournament Matches Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = tournamentResponse.body.data.tournament.id;
+      tournamentId = tournamentResponse.body.data.id;
 
       // Add participants
       await request(app.server)
@@ -76,7 +79,7 @@ describe('Tournament Matches Routes', () => {
           createdBy: 1
         });
 
-      const tournamentId = tournamentResponse.body.data.tournament.id;
+      const tournamentId = tournamentResponse.body.data.id;
 
       // Add participants and start tournament
       await request(app.server)
@@ -132,7 +135,7 @@ describe('Tournament Matches Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = tournamentResponse.body.data.tournament.id;
+      tournamentId = tournamentResponse.body.data.id;
 
       // Add participants and start tournament
       await request(app.server)
@@ -200,7 +203,7 @@ describe('Tournament Matches Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = tournamentResponse.body.data.tournament.id;
+      tournamentId = tournamentResponse.body.data.id;
 
       // Add participants and start tournament
       await request(app.server)

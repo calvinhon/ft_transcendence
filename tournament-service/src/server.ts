@@ -40,8 +40,10 @@ fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, p
 
 // Initialize and start the server
 async function init(): Promise<void> {
+  console.log('🏆 [SERVER] Initializing server...');
   // Register routes by calling the function directly
   await routes(fastify);
+  console.log('🏆 [SERVER] Routes registered');
   
   // Start the server
   try {

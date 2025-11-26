@@ -9,11 +9,14 @@ describe('Tournament Participants Routes', () => {
   beforeAll(async () => {
     await setupTestDatabase();
     app = await createTestApp();
+    await app.ready(); // Ensure app is ready
   });
 
   afterAll(async () => {
     await cleanupTestDatabase();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   beforeEach(async () => {
@@ -32,7 +35,7 @@ describe('Tournament Participants Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
     });
 
     it('should allow user to join tournament', async () => {
@@ -86,7 +89,7 @@ describe('Tournament Participants Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
 
       // Join the tournament first
       await request(app.server)
@@ -126,7 +129,7 @@ describe('Tournament Participants Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
 
       // Add participants
       await request(app.server)
@@ -159,7 +162,7 @@ describe('Tournament Participants Routes', () => {
         });
 
       const response = await request(app.server)
-        .get(`/tournaments/${newTournamentResponse.body.data.tournament.id}/participants`)
+        .get(`/tournaments/${newTournamentResponse.body.data.id}/participants`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -179,7 +182,7 @@ describe('Tournament Participants Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
 
       // Add participants
       await request(app.server)

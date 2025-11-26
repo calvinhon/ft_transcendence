@@ -28,7 +28,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const tournament = await TournamentService.createTournament(request.body);
       logger.info('Tournament created via legacy API', { id: tournament.id, name: tournament.name });
-      return ResponseUtil.success(reply, { tournamentId: tournament.id }, 'Tournament created successfully');
+      return ResponseUtil.success(reply, { id: tournament.id }, 'Tournament created successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to create tournament via legacy API', { error: err.message, body: request.body });
@@ -46,7 +46,8 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const status = request.query.status;
 
       const result = await TournamentService.getTournaments(page, limit, status);
-      return ResponseUtil.success(reply, result, 'Tournaments retrieved successfully');
+      // Return tournaments array directly for frontend compatibility
+      reply.send(result.tournaments);
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournaments', { error: err.message, query: request.query });
@@ -64,16 +65,67 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
       }
 
-      const tournament = await TournamentService.getTournamentById(id);
-      if (!tournament) {
+      const details = await TournamentService.getTournamentDetails(id);
+      if (!details) {
         return ResponseUtil.error(reply, 'Tournament not found', 404);
       }
 
-      return ResponseUtil.success(reply, tournament, 'Tournament retrieved successfully');
+      // Return details directly for frontend compatibility
+      reply.send(details);
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament', { error: err.message, id: request.params.id });
       return ResponseUtil.error(reply, 'Failed to retrieve tournament', 500);
+    }
+  });
+
+  // Update tournament
+  fastify.put<{
+    Params: { id: string };
+    Body: Partial<CreateTournamentBody>;
+  }>('/tournaments/:id', async (request: FastifyRequest<{
+    Params: { id: string };
+    Body: Partial<CreateTournamentBody>;
+  }>, reply: FastifyReply) => {
+    try {
+      const id = parseInt(request.params.id);
+      if (isNaN(id)) {
+        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+      }
+
+      const tournament = await TournamentService.updateTournament(id, request.body);
+      if (!tournament) {
+        return ResponseUtil.error(reply, 'Tournament not found', 404);
+      }
+
+      return ResponseUtil.success(reply, tournament, 'Tournament updated successfully');
+    } catch (error) {
+      const err = error as Error;
+      logger.error('Failed to update tournament', { error: err.message, id: request.params.id, body: request.body });
+      return ResponseUtil.error(reply, err.message || 'Failed to update tournament', 500);
+    }
+  });
+
+  // Delete tournament
+  fastify.delete<{
+    Params: { id: string };
+  }>('/tournaments/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    try {
+      const id = parseInt(request.params.id);
+      if (isNaN(id)) {
+        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+      }
+
+      const deleted = await TournamentService.deleteTournament(id);
+      if (!deleted) {
+        return ResponseUtil.error(reply, 'Tournament not found', 404);
+      }
+
+      return ResponseUtil.success(reply, null, 'Tournament deleted successfully');
+    } catch (error) {
+      const err = error as Error;
+      logger.error('Failed to delete tournament', { error: err.message, id: request.params.id });
+      return ResponseUtil.error(reply, err.message || 'Failed to delete tournament', 500);
     }
   });
 
@@ -242,24 +294,6 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         tournamentId: request.params.tournamentId
       });
       return ResponseUtil.error(reply, 'Failed to retrieve tournament details', 500);
-    }
-  });
-
-  // Legacy get all tournaments route (for backward compatibility)
-  fastify.get<{
-    Querystring: TournamentQuery;
-  }>('/list', async (request: FastifyRequest<{ Querystring: TournamentQuery }>, reply: FastifyReply) => {
-    try {
-      const page = parseInt(request.query.page || '1');
-      const limit = parseInt(request.query.limit || '10');
-      const status = request.query.status;
-
-      const result = await TournamentService.getTournaments(page, limit, status);
-      return ResponseUtil.success(reply, result.tournaments, 'Tournaments retrieved successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to get tournaments via legacy route', { error: err.message, query: request.query });
-      return ResponseUtil.error(reply, 'Failed to retrieve tournaments', 500);
     }
   });
 

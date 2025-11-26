@@ -9,11 +9,14 @@ describe('Tournament Bracket Routes', () => {
   beforeAll(async () => {
     await setupTestDatabase();
     app = await createTestApp();
+    await app.ready(); // Ensure app is ready
   });
 
   afterAll(async () => {
     await cleanupTestDatabase();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   beforeEach(async () => {
@@ -29,11 +32,11 @@ describe('Tournament Bracket Routes', () => {
         .post('/tournaments')
         .send({
           name: 'Test Tournament',
-          maxParticipants: 4,
+          maxParticipants: 8,
           createdBy: 1
         });
 
-      tournamentId = tournamentResponse.body.data.tournament.id;
+      tournamentId = tournamentResponse.body.data.id;
 
       // Add participants
       await request(app.server)
@@ -52,7 +55,7 @@ describe('Tournament Bracket Routes', () => {
 
     it('should get tournament bracket', async () => {
       const response = await request(app.server)
-        .get(`/tournaments/${tournamentId}/bracket`)
+        .get(`/tournaments/${tournamentId}/bracket/visualization`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -127,7 +130,7 @@ describe('Tournament Bracket Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = tournamentResponse.body.data.tournament.id;
+      tournamentId = tournamentResponse.body.data.id;
 
       // Add participants and start tournament
       await request(app.server)

@@ -54,10 +54,11 @@ if (existingApp && existingApp.constructor && existingApp.constructor.name === '
   console.log('✅ [MAIN] Valid App instance already exists, skipping');
 } else {
   if (existingApp) {
-    console.error('⚠️⚠️⚠️ [MAIN] Invalid window.app detected!');
-    console.error('Type:', typeof existingApp);
-    console.error('Constructor:', existingApp?.constructor?.name);
-    console.error('Replacing with valid App instance...');
+    console.warn('⚠️ [MAIN] Invalid window.app detected (likely from development tools), clearing and recreating...');
+    console.warn('Type:', typeof existingApp);
+    console.warn('Constructor:', existingApp?.constructor?.name);
+    // Clear the invalid app reference
+    delete (window as any).app;
   } else {
     console.log('✅ [MAIN] Creating App');
   }

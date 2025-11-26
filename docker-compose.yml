@@ -11,6 +11,7 @@ services:
       - tournament-service
       - user-service
       - hardhat-node
+    mem_limit: 128m
     networks:
       - transcendence-network
 
@@ -24,6 +25,7 @@ services:
       - PORT=3000
       - SERVICE_NAME=auth-service
       - NODE_ENV=development
+    mem_limit: 256m
     networks:
       - transcendence-network
 
@@ -36,6 +38,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=game-service
+    mem_limit: 256m
     networks:
       - transcendence-network
 
@@ -48,6 +51,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=tournament-service
+    mem_limit: 256m
     networks:
       - transcendence-network
 
@@ -60,6 +64,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=user-service
+    mem_limit: 256m
     networks:
       - transcendence-network
 
@@ -75,6 +80,7 @@ services:
       - ./blockchain/artifacts:/app/artifacts
     env_file:
       - .env
+    mem_limit: 1g
     networks:
       - transcendence-network
     healthcheck:

@@ -9,11 +9,14 @@ describe('Tournament CRUD Routes', () => {
   beforeAll(async () => {
     await setupTestDatabase();
     app = await createTestApp();
+    await app.ready(); // Ensure app is ready
   });
 
   afterAll(async () => {
     await cleanupTestDatabase();
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   beforeEach(async () => {
@@ -101,7 +104,7 @@ describe('Tournament CRUD Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
     });
 
     it('should get tournament details', async () => {
@@ -137,7 +140,7 @@ describe('Tournament CRUD Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
     });
 
     it('should update tournament successfully', async () => {
@@ -166,7 +169,7 @@ describe('Tournament CRUD Routes', () => {
           createdBy: 1
         });
 
-      tournamentId = response.body.data.tournament.id;
+      tournamentId = response.body.data.id;
     });
 
     it('should delete tournament successfully', async () => {

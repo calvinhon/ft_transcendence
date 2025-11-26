@@ -2,22 +2,31 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const dbPath = path.join(__dirname, '../../database/tournaments.db');
+// Use in-memory database for tests, file database for production
+const isTest = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+const dbPath = isTest ? ':memory:' : path.join(__dirname, '../../database/tournaments.db');
 
 // Initialize database
 export const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
-    console.log('Connected to Tournaments SQLite database');
-    initializeTables();
+    console.log(`Connected to ${isTest ? 'test' : 'Tournaments'} SQLite database`);
+    if (!isTest) {
+      initializeTables();
+    } else {
+      // For tests, initialize tables synchronously
+      initializeTestTables();
+    }
   }
 });
 
 /**
- * Initialize database tables
+ * Initialize database tables for production
  */
 function initializeTables(): void {
+  if (isTest) return; // Skip for tests
+
   // Create tournaments table
   db.run(`
     CREATE TABLE IF NOT EXISTS tournaments (
@@ -71,6 +80,75 @@ function initializeTables(): void {
       FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
     )
   `);
+}
+
+/**
+ * Initialize database tables for tests
+ */
+function initializeTestTables(): void {
+  if (!isTest) return; // Skip for production
+
+  console.log('Initializing test tables...');
+  db.serialize(() => {
+    // Create tournaments table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tournaments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        max_participants INTEGER DEFAULT 8,
+        current_participants INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'open',
+        created_by INTEGER NOT NULL,
+        winner_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        started_at DATETIME,
+        finished_at DATETIME
+      )
+    `, (err) => {
+      if (err) console.error('Error creating tournaments table:', err);
+      else console.log('Created tournaments table');
+    });
+
+    // Create tournament participants table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tournament_participants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        username TEXT,
+        joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        eliminated_at DATETIME,
+        final_rank INTEGER,
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id),
+        UNIQUE(tournament_id, user_id)
+      )
+    `, (err) => {
+      if (err) console.error('Error creating tournament_participants table:', err);
+      else console.log('Created tournament_participants table');
+    });
+
+    // Create tournament matches table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tournament_matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id INTEGER NOT NULL,
+        round INTEGER NOT NULL,
+        match_number INTEGER NOT NULL,
+        player1_id INTEGER,
+        player2_id INTEGER,
+        winner_id INTEGER,
+        player1_score INTEGER DEFAULT 0,
+        player2_score INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        played_at DATETIME,
+        FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
+      )
+    `, (err) => {
+      if (err) console.error('Error creating tournament_matches table:', err);
+      else console.log('Created tournament_matches table');
+    });
+  });
 }
 
 /**

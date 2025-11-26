@@ -281,8 +281,8 @@ export class TournamentManager {
         throw new Error(createResult.error || createResult.message || 'Failed to create tournament');
       }
 
-      const tournamentId = createResult.tournamentId;
-      console.log('✅ Tournament created:', tournamentId);
+      const tournamentId = createResult.data.id;
+      console.log('✅ Tournament created:', tournamentId); // Fixed property access
 
       // Add all participants to tournament
       console.log('👥 Adding participants:', participantIds);
