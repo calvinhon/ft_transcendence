@@ -186,4 +186,18 @@ export class ParticipantService {
       isWinner: r.winner_id === userId
     }));
   }
+
+  /**
+   * Get user's tournaments
+   */
+  static async getUserTournaments(userId: number): Promise<any[]> {
+    return dbAll(
+      `SELECT t.*, tp.joined_at, tp.eliminated_at
+       FROM tournaments t
+       JOIN tournament_participants tp ON t.id = tp.tournament_id
+       WHERE tp.user_id = ?
+       ORDER BY t.created_at DESC`,
+      [userId]
+    );
+  }
 }
