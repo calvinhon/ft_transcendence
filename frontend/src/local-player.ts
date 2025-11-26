@@ -124,8 +124,9 @@ export function setupLocalPlayerLoginModal(app: any) {
         return;
       }
       
-      // Extract user data from nested structure
-      const userData = result.data.user || result.data.data || result.data;
+      // Extract user data from auth response
+      const userData = result.data.user;
+      const token = result.data.token;
       console.log('[LocalPlayer] Extracted userData:', userData);
       
       if (!userData || !userData.userId) {
@@ -445,10 +446,10 @@ export async function registerAndHighlightLocalPlayer(app: any, username: string
     // DO NOT update host session or token
     if (!app.localPlayers) app.localPlayers = [];
     app.localPlayers.push({
-      id: result.data.userId.toString(),
-      username: result.data.username,
+      id: result.data.user.userId.toString(),
+      username: result.data.user.username,
       isCurrentUser: false,
-      userId: result.data.userId,
+      userId: result.data.user.userId,
       token: result.data.token || ''
     });
     app.updateLocalPlayersDisplay();
