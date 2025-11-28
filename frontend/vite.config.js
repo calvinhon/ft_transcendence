@@ -7,7 +7,20 @@ export default defineConfig({
   build: {
     outDir: "dist",
     rollupOptions: {
-      input: "./index.html",
+      input: {
+        main: "index.html",
+        login: "login.html",
+        register: "register.html",
+        forgotPassword: "forgot-password.html",
+        mainMenu: "main-menu.html",
+        playConfig: "play-config.html",
+        game: "game.html",
+        settings: "settings.html",
+        profile: "profile.html",
+        localPlayerLoginModal: "local-player-login-modal.html",
+        localPlayerRegisterModal: "local-player-register-modal.html",
+        base: "base.html",
+      },
     },
   },
   server: {

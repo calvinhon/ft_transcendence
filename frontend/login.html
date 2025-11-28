@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-bg-primary">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login - ft_transcendence</title>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script type="module" crossorigin src="./src/main.ts"></script>
+    <link rel="stylesheet" crossorigin href="./css/style.css" />
+  </head>
+  <body class="h-full bg-bg-primary overflow-hidden text-white">
+    <div id="root"></div>
+    <div id="app" class="h-screen w-screen relative">
+      <!-- ====================
+           LOGIN SCREEN
+      ==================== -->
+      <div
+        id="login-screen"
+        class="screen active w-full h-full flex items-center justify-center relative bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative"
+        >
+          <div class="text-center mb-8">
+            <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
+              LOGIN
+            </h1>
+          </div>
+
+          <form id="login-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="login-username"
+              placeholder="Username"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
+            />
+            <input
+              type="password"
+              id="login-password"
+              placeholder="Password"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
+            />
+
+            <button
+              type="submit"
+              class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
+            >
+              LOGIN
+            </button>
+          </form>
+
+          <div
+            class="flex flex-col items-center gap-3 mt-8 pt-4 border-t border-panel-border"
+          >
+            <a
+              href="#"
+              id="forgot-password-link"
+              class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Forgot Password?
+            </a>
+            <span class="text-text-muted text-[10px] uppercase">OR</span>
+            <a
+              href="#"
+              id="create-account-link"
+              class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Create an Account
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

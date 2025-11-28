@@ -1,6 +1,8 @@
 // App entry point and initialization
 import "@fortawesome/fontawesome-free/css/all.css";
 import "../css/style.css";
+// Imports from old index.ts for side effects
+import "./blockchain";
 import { Router } from "./router";
 import { handleHostLogin, handleHostRegister } from "./host-auth";
 import { setupLocalPlayerRegisterModal } from "./local-player";
@@ -9,10 +11,7 @@ import { GameManager } from "./game";
 import { ProfileManager } from "./profile";
 import { TournamentManager } from "./tournament";
 
-// Imports from old index.ts for side effects
-import "./match";
-import "./leaderboard";
-import "./blockchain";
+
 
 // Imports for 3D scene
 // import roomGlb from "../assets/Room/Room.glb";

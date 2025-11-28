@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-bg-primary">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Main Menu - ft_transcendence</title>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script type="module" crossorigin src="./src/main.ts"></script>
+    <link rel="stylesheet" crossorigin href="./css/style.css" />
+  </head>
+  <body class="h-full bg-bg-primary overflow-hidden text-white">
+    <div id="root"></div>
+    <div id="app" class="h-screen w-screen relative">
+      <!-- ====================
+           MAIN MENU (LAUNCHSEQ)
+      ==================== -->
+      <div
+        id="main-menu-screen"
+        class="screen w-full h-full flex items-center justify-center bg-bg-primary border-[4px] border-accent p-4 box-border"
+      >
+        <div class="flex flex-col items-center justify-center w-full max-w-3xl">
+          <!-- Logo Area -->
+          <div class="text-center mb-16">
+            <p class="text-white text-sm font-pixel italic opacity-80 mb-2">
+              Spiritual Ascension
+            </p>
+            <h1
+              class="text-6xl md:text-8xl font-bold font-pixel text-white tracking-tighter"
+            >
+              LAUNCH<span class="text-accent italic">SEQ</span>
+            </h1>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-6">
+            <!-- Play Button (Blue Square) -->
+            <button
+              id="play-btn"
+              class="w-24 h-24 bg-accent hover:bg-white transition-colors flex items-center justify-center group shadow-glow"
+            >
+              <i
+                class="fas fa-play text-3xl text-white group-hover:text-black"
+              ></i>
+            </button>
+
+            <!-- Settings Button (Black Square with white border) -->
+            <button
+              id="settings-btn"
+              class="w-24 h-24 bg-black border-2 border-white hover:bg-white transition-colors flex items-center justify-center group"
+            >
+              <i
+                class="fas fa-cog text-3xl text-white group-hover:text-black"
+              ></i>
+            </button>
+
+            <!-- Profile Button (Hidden in screenshot but needed for logic) -->
+            <button
+              id="profile-btn"
+              class="w-24 h-24 bg-black border-2 border-panel-border hover:border-accent transition-colors flex items-center justify-center group"
+            >
+              <i
+                class="fas fa-user text-3xl text-white group-hover:text-accent"
+              ></i>
+            </button>
+          </div>
+
+          <!-- Footer -->
+          <div
+            class="fixed bottom-8 w-full px-8 flex justify-between text-xs font-pixel text-text-muted"
+          >
+            <span
+              id="main-menu-logout-btn"
+              class="cursor-pointer hover:text-white"
+              >Action description goes here</span
+            >
+            <span>v1.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

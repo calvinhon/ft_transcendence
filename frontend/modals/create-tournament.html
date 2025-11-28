@@ -1,0 +1,47 @@
+<div
+  id="create-tournament-modal"
+  class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
+>
+  <div
+    class="bg-black border-2 border-accent p-8 w-full max-w-lg shadow-glow relative"
+  >
+    <h2 class="text-2xl font-vcr text-white mb-6">TOURNAMENT SETUP</h2>
+    <form id="create-tournament-form" class="flex flex-col gap-4">
+      <input
+        type="text"
+        id="tournament-name"
+        placeholder="Tournament Name"
+        class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+      />
+      <select
+        id="max-participants"
+        class="p-3 bg-black border border-white text-white font-pixel"
+      >
+        <option value="4">4 Players</option>
+        <option value="8">8 Players</option>
+      </select>
+      <div
+        id="tournament-participants-list"
+        class="border border-panel-border p-2 max-h-40 overflow-y-auto"
+      >
+        <!-- JS Injects here -->
+        <div class="text-xs text-text-muted">Select players...</div>
+      </div>
+      <div class="flex gap-4 mt-4">
+        <button
+          type="button"
+          id="cancel-tournament-btn"
+          class="flex-1 p-3 border border-white text-white font-vcr hover:bg-white hover:text-black"
+        >
+          CANCEL
+        </button>
+        <button
+          type="submit"
+          class="flex-1 p-3 bg-accent text-black font-bold font-vcr hover:bg-white"
+        >
+          START
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

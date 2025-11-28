@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-bg-primary">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings - ft_transcendence</title>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script type="module" crossorigin src="./src/main.ts"></script>
+    <link rel="stylesheet" crossorigin href="./css/style.css" />
+  </head>
+  <body class="h-full bg-bg-primary overflow-hidden text-white">
+    <div id="root"></div>
+    <div id="app" class="h-screen w-screen relative">
+      <!-- ====================
+           SETTINGS SCREEN
+      ==================== -->
+      <div
+        id="settings-screen"
+        class="screen w-full h-full flex items-center justify-center bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-2xl border-2 border-accent bg-black p-8 shadow-glow relative"
+        >
+          <div
+            class="flex justify-between items-center mb-8 border-b border-panel-border pb-4"
+          >
+            <h2 class="text-2xl font-vcr text-white uppercase">SETTINGS</h2>
+            <button id="settings-back-btn" class="text-white hover:text-accent">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <!-- Keep existing form logic -->
+          <form id="settings-profile-form" class="flex flex-col gap-4">
+            <label class="font-vcr text-sm">Display Name</label>
+            <input
+              type="text"
+              id="settings-display-name"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+
+            <label class="font-vcr text-sm">Avatar URL</label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="settings-avatar-url"
+                class="flex-1 p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+              />
+              <div
+                class="w-12 h-12 border border-white flex items-center justify-center"
+              >
+                <i class="fas fa-image"></i>
+              </div>
+            </div>
+
+            <div
+              class="mt-4 border-t border-panel-border pt-4 flex flex-col gap-2"
+            >
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="settings-sound-enabled"
+                  class="accent-accent"
+                />
+                <span class="font-pixel text-sm">Sound Effects</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="settings-music-enabled"
+                  class="accent-accent"
+                />
+                <span class="font-pixel text-sm">Background Music</span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              class="mt-4 px-6 py-3 bg-accent text-black font-bold font-vcr uppercase self-start hover:bg-white"
+            >
+              Save Changes
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

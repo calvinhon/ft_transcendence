@@ -14,7 +14,7 @@ RUN npm install
 # Copy source code and shared types
 COPY src/ ./src/
 COPY css/ ./css/
-COPY index.html ./
+COPY *.html ./
 COPY assets/ ./assets/
 # COPY ../shared/ ./shared/
 

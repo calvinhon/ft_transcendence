@@ -1,18 +1,14 @@
 import { showToast } from './toast';
-
-// Type definitions moved to types.ts
-
 import { User, AuthResult, LocalPlayer, Route, GameSettings } from './types';
 import { handleHostLogin, handleHostRegister } from './host-auth';
 import { Router } from './router';
 import { getCoopLevel, setCoopLevel, incrementCoopLevel } from './state';
 import { setupLocalPlayerRegisterModal, showLocalPlayerRegisterModal, setupLocalPlayerLoginModal, showLocalPlayerLoginModal } from './local-player';
 
-
 export class App {
   private currentScreen: string = "login";
   private router: Router;
-  private gameSettings: GameSettings = {
+  public gameSettings: GameSettings = {
     gameMode: "coop",
     aiDifficulty: "easy",
     ballSpeed: "medium",
@@ -33,30 +29,353 @@ export class App {
   // Prevent duplicate event listener setup
   private eventListenersInitialized: boolean = false;
 
-  // Screen elements
-  private loginScreen!: HTMLElement;
-  private registerScreen!: HTMLElement;
-  private mainMenuScreen!: HTMLElement;
-  private playConfigScreen!: HTMLElement;
-  private gameScreen!: HTMLElement;
-  private settingsScreen!: HTMLElement;
-
-  // Form elements
-  private loginForm!: HTMLFormElement;
-  private registerForm!: HTMLFormElement;
-  private forgotPasswordForm!: HTMLFormElement;
-
   constructor() {
     console.log('🏗️ [App] Constructor called - Creating new App instance');
-    console.trace();
     this.router = new Router(this);
     this.init();
     // Setup local player modals (now directly in index.html)
     console.log('[App] Setting up local player modals...');
     setupLocalPlayerLoginModal(this);
     setupLocalPlayerRegisterModal(this);
-    this.setupAddPlayerButtons();
     console.log('[App] Local player modal setup complete');
+  }
+
+  async init(): Promise<void> {
+    // Setup all event listeners
+    this.setupEventListeners();
+
+    // Initialize local players with current user
+    this.initializeLocalPlayers();
+
+    // Initialize coop mode as default (ensure party list is visible)
+    console.log('[App.init] Setting up default coop mode');
+    this.gameSettings.gameMode = 'coop';
+    this.setupCoopMode();
+
+    // Check authentication and update chat visibility
+    await this.checkExistingLogin();
+
+    // Navigate to initial route based on URL and auth state
+    const initialRoute = this.router.getInitialRoute();
+    this.router.navigateToPath(initialRoute, false);
+
+    // Pause game when user navigates away from the game screen or when
+    // the page becomes hidden. Stop the game on page unload to ensure
+    // no background matches continue running.
+    document.addEventListener('visibilitychange', () => {
+      try {
+        const gm = (window as any).gameManager;
+        if (document.hidden && gm && gm.isPlaying && !gm.isPaused && typeof gm.pauseGame === 'function') {
+          console.log('App: Page hidden — pausing game');
+          gm.pauseGame();
+        }
+      } catch (e) {
+        console.warn('App: visibilitychange handler failed', e);
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      try {
+        const gm = (window as any).gameManager;
+        if (gm && gm.isPlaying && typeof gm.pauseGame === 'function' && !gm.isPaused) {
+          console.log('App: pagehide — pausing game');
+          gm.pauseGame();
+        }
+      } catch (e) {
+        console.warn('App: pagehide handler failed', e);
+      }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      try {
+        const gm = (window as any).gameManager;
+        if (gm && gm.isPlaying && typeof gm.stopGame === 'function') {
+          console.log('App: beforeunload — stopping game');
+          gm.stopGame();
+        }
+      } catch (err) {
+        console.warn('App: beforeunload handler failed', err);
+      }
+      // No need to call preventDefault; just allow unload.
+    });
+  }
+
+  setupEventListeners(): void {
+    // GUARD: Prevent duplicate event listener registration
+    if (this.eventListenersInitialized) {
+      console.warn('⚠️ setupEventListeners already called, skipping duplicate registration');
+      return;
+    }
+    this.eventListenersInitialized = true;
+    console.log('✅ Initializing event listeners for the first time');
+
+    // Global keyboard shortcuts
+    this.setupKeyboardShortcuts();
+
+    // Zoom functionality
+    this.setupZoomControl();
+  }
+
+  setupZoomControl(): void {
+    let currentZoom = 1.0;
+    const minZoom = 0.5;
+    const maxZoom = 3.0;
+    const zoomStep = 0.1;
+
+    // Handle Ctrl + Mouse Wheel for zoom
+    document.addEventListener('wheel', (e: WheelEvent) => {
+      // Only zoom when Ctrl key is pressed
+      if (e.ctrlKey) {
+        e.preventDefault();
+
+        // Determine zoom direction
+        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+        const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
+
+        if (newZoom !== currentZoom) {
+          currentZoom = newZoom;
+          this.applyZoom(currentZoom);
+        }
+      }
+    }, { passive: false });
+
+    // Handle Ctrl + Plus/Minus for zoom (keyboard shortcuts)
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+') {
+          e.preventDefault();
+          const newZoom = Math.min(maxZoom, currentZoom + zoomStep);
+          if (newZoom !== currentZoom) {
+            currentZoom = newZoom;
+            this.applyZoom(currentZoom);
+          }
+        } else if (e.key === '-') {
+          e.preventDefault();
+          const newZoom = Math.max(minZoom, currentZoom - zoomStep);
+          if (newZoom !== currentZoom) {
+            currentZoom = newZoom;
+            this.applyZoom(currentZoom);
+          }
+        } else if (e.key === '0') {
+          e.preventDefault();
+          currentZoom = 1.0;
+          this.applyZoom(currentZoom);
+        }
+      }
+    });
+  }
+
+  applyZoom(zoomLevel: number): void {
+    const app = document.getElementById('app');
+    if (app) {
+      app.style.transform = `scale(${zoomLevel})`;
+      app.style.transformOrigin = 'top left';
+
+      // Adjust body size to accommodate zoom
+      document.body.style.width = `${100 / zoomLevel}%`;
+      document.body.style.height = `${100 / zoomLevel}%`;
+    }
+  }
+
+  setupKeyboardShortcuts(): void {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true"
+      ) {
+        return;
+      }
+
+      const currentScreen = this.router.getCurrentRoute()?.screen;
+
+      switch (e.key) {
+        case "Backspace":
+          e.preventDefault();
+          this.handleBackspaceShortcut(currentScreen);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          // Clean up campaign modals and stop any running game
+          const gameManager = (window as any).gameManager;
+          if (gameManager) {
+            // Clean up any campaign modals that might be visible
+            if (typeof gameManager.cleanupCampaignModals === 'function') {
+              gameManager.cleanupCampaignModals();
+            }
+            // Stop the game if it's running
+            if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
+              gameManager.stopGame();
+            }
+          }
+          this.router.navigate('login');
+          break;
+        case 'Enter':
+          e.preventDefault();
+          this.handleEnterShortcut(currentScreen);
+          break;
+      }
+    });
+  }
+
+  private handleBackspaceShortcut(currentScreen: string | undefined): void {
+    if (!currentScreen) return;
+    switch (currentScreen) {
+      case 'register':
+        this.router.navigate('login');
+        break;
+      case 'forgot-password':
+        this.router.navigate('login');
+        break;
+      case "main-menu":
+        this.handleLogout();
+        break;
+      case 'play-config':
+        this.router.navigate('main-menu');
+        break;
+      case 'settings':
+        this.router.navigate('main-menu');
+        break;
+      case 'profile':
+        this.router.navigate('main-menu');
+        break;
+      case 'game': {
+        const gameManager = (window as any).gameManager;
+        if (gameManager) {
+          // Clean up any campaign modals that might be visible
+          if (typeof gameManager.cleanupCampaignModals === 'function') {
+            gameManager.cleanupCampaignModals();
+          }
+          // Stop the game if it's running
+          if (typeof gameManager.stopGame === 'function') {
+            gameManager.stopGame();
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  private handleEnterShortcut(currentScreen: string | undefined): void {
+    switch (currentScreen) {
+      case 'login': {
+        const loginSubmitBtn = document.querySelector('#login-form button[type="submit"]') as HTMLButtonElement;
+        if (loginSubmitBtn) loginSubmitBtn.click();
+        break;
+      }
+      case 'register': {
+        const registerSubmitBtn = document.querySelector('#register-form button[type="submit"]') as HTMLButtonElement;
+        if (registerSubmitBtn) registerSubmitBtn.click();
+        break;
+      }
+      case 'forgot-password': {
+        const forgotSubmitBtn = document.querySelector('#forgot-password-form button[type="submit"]') as HTMLButtonElement;
+        if (forgotSubmitBtn) forgotSubmitBtn.click();
+        break;
+      }
+      case 'main-menu': {
+        const playBtn = document.getElementById('play-btn') as HTMLButtonElement;
+        if (playBtn) playBtn.click();
+        break;
+      }
+      case 'play-config': {
+        // Don't auto-start game with Enter - let user manually click start button
+        // Focus on start game button for visual feedback
+        const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
+        if (startGameBtn) startGameBtn.focus();
+        break;
+      }
+      case 'game': {
+        const pauseBtn = document.getElementById('pause-game-btn');
+        if (pauseBtn instanceof HTMLButtonElement) {
+          pauseBtn.click();
+        }
+        break;
+      }
+    }
+  }
+
+  // Check if user is authenticated
+  isAuthenticated(): boolean {
+    const authManager = (window as any).authManager;
+    if (!authManager) return false;
+    return authManager.isAuthenticated();
+  }
+
+  handleLogout(): void {
+    const authManager = (window as any).authManager;
+    authManager.logout();
+    this.router.navigate("login");
+    this.localPlayers = [];
+  }
+
+  async checkExistingLogin(): Promise<void> {
+    const authManager = (window as any).authManager;
+    if (!authManager) return;
+    const isValid = await authManager.verifyToken();
+    if (isValid) {
+      const user = authManager.getCurrentUser();
+      if (user) {
+        this.router.navigate("main-menu");
+      }
+    }
+  }
+
+  // Helper to get the actual host user (not a local player)
+  private getHostUser(): { userId: number; username: string } | null {
+    const authManager = (window as any).authManager;
+    if (!authManager) return null;
+    return authManager.getCurrentUser();
+  }
+
+  initializeLocalPlayers(): void {
+    const authManager = (window as any).authManager;
+    const user = authManager?.getCurrentUser();
+    const token = sessionStorage.getItem('token') || '';
+
+    // IMPORTANT: Do NOT add the host user to localPlayers array
+    // The host is displayed separately in the host-player-card elements
+    // localPlayers should only contain additional local players that are added via the "Add Player" button
+    console.log('[App] Initializing localPlayers array (empty - host is not a local player)');
+    this.localPlayers = [];
+
+    this.updateLocalPlayersDisplay();
+  }
+
+  updateLocalPlayersDisplay(): void {
+    const container = document.getElementById("local-players-list");
+    if (!container) return;
+
+    container.innerHTML = this.localPlayers
+      .map(
+        (player) => `
+      <div class="player-item">
+        <div class="player-info">
+          <div class="player-name">${player.username}${player.isCurrentUser ? " (You)" : ""
+          }</div>
+          <div class="player-status">${player.isCurrentUser ? "Host" : "Local Player"
+          }</div>
+        </div>
+        ${!player.isCurrentUser
+            ? '<button class="remove-player-btn" data-player-id="' +
+            player.id +
+            '">Remove</button>'
+            : ""
+          }
+      </div>
+    `
+      )
+      .join("");
+
+    // Add remove button listeners
+    container.querySelectorAll(".remove-player-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const playerId = btn.getAttribute("data-player-id");
+        this.removeLocalPlayer(playerId || "");
+      });
+    });
   }
 
   // Handles game mode tab click and initialization
@@ -87,6 +406,43 @@ export class App {
     // Update players section based on mode
     this.updatePlayersForMode(mode);
   }
+
+  handleConfigOption(button: HTMLElement): void {
+    const setting = button.getAttribute('data-setting');
+    const value = button.getAttribute('data-value');
+    if (!setting || !value) return;
+
+    // Remove active class from siblings
+    const siblings = button.parentElement?.querySelectorAll('.config-option, .setting-option') || [];
+    siblings.forEach(sibling => sibling.classList.remove('active'));
+    button.classList.add('active');
+
+    // Convert hyphenated setting names to camelCase for gameSettings object
+    const settingMap: { [key: string]: string } = {
+      'ai-difficulty': 'aiDifficulty',
+      'ball-speed': 'ballSpeed',
+      'paddle-speed': 'paddleSpeed',
+      'powerups-enabled': 'powerupsEnabled',
+      'accelerate-on-hit': 'accelerateOnHit',
+      'gameMode': 'gameMode'
+    };
+
+    const settingKey = settingMap[setting] || setting;
+
+    // Update settings
+    if (settingKey in this.gameSettings) {
+      (this.gameSettings as any)[settingKey] = value;
+      console.log(`⚙️ [SETTINGS] Updated ${settingKey} to ${value}`, this.gameSettings);
+    }
+
+    // Optionally trigger UI updates if needed
+    // For mode changes, call handleGameModeChange
+    if (setting === 'gameMode') {
+      const tab = document.querySelector(`.game-mode-tab[data-mode="${value}"]`) as HTMLElement;
+      if (tab) this.handleGameModeChange(tab);
+    }
+  }
+
   createPlayerCard(player: any): HTMLElement {
     const playerCard = document.createElement('div');
     playerCard.className = 'player-card local-player';
@@ -125,6 +481,7 @@ export class App {
     this.localPlayers = this.localPlayers.filter(player => player.id !== playerId);
     this.updateGamePartyDisplay();
   }
+
   updateGamePartyDisplay(): void {
     const team1List = document.getElementById('team1-list');
     const team2List = document.getElementById('team2-list');
@@ -224,935 +581,6 @@ export class App {
         }
       }
     });
-  }
-  /**
-   * Submit game results for all selected players (host and local)
-   * @param results Array of { userId, stats } for each player
-   */
-  async submitGameResults(
-    results: Array<{ userId: number; stats: any }>
-  ): Promise<void> {
-    // Host player
-    const authManager = (window as any).authManager;
-    const hostUser = authManager?.getCurrentUser();
-    const hostToken = localStorage.getItem("token");
-    if (hostUser && hostToken) {
-      // Debug: log stats sent to user-service
-      console.debug('Submitting host result:', {
-        userId: hostUser.userId,
-        stats: results.find(r => r.userId === hostUser.userId)?.stats,
-        token: hostToken
-      });
-      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
-    }
-
-    // Local players
-    for (const player of this.localPlayers) {
-      if (player.token && player.userId) {
-        // Debug: log stats sent to user-service
-        console.debug('Submitting local player result:', {
-          userId: player.userId,
-          stats: results.find(r => r.userId === player.userId)?.stats,
-          token: player.token
-        });
-        await this.submitResultForUser(player.userId, results.find(r => r.userId === player.userId)?.stats, player.token);
-      }
-    }
-
-    // NOTE: Co-op / campaign progression is handled inside the GameManager
-    // (frontend/src/game.ts) when a campaign match ends. Avoid changing
-    // campaign level or auto-starting the next match here to prevent
-    // duplicate starts. This method only submits results to the backend.
-  }
-
-  // Note: campaign continuation is handled by the GameManager (game.ts).
-  // --- Place this at the end of the class ---
-
-
-  /**
-   * Submit result for a single user
-   */
-  async submitResultForUser(
-    userId: number,
-    stats: any,
-    token: string
-  ): Promise<void> {
-    try {
-      const response = await fetch(`/api/game/update-stats/${userId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(stats),
-      });
-      if (!response.ok) {
-        console.error(`Failed to update stats for user ${userId}`);
-      }
-    } catch (error) {
-      console.error(`Error updating stats for user ${userId}:`, error);
-    }
-  }
-
-  setupAddPlayerButtons() {
-    console.log('[App] Setting up add player buttons...');
-
-    // TEAM 1 add player button
-    const addTeam1Btn = document.getElementById('add-team1-player-btn');
-    if (addTeam1Btn) {
-      // Remove old listener by cloning
-      const newBtn1 = addTeam1Btn.cloneNode(true) as HTMLElement;
-      addTeam1Btn.parentNode?.replaceChild(newBtn1, addTeam1Btn);
-
-      newBtn1.addEventListener('click', () => {
-        console.log('🎮 [App] TEAM 1 Add Player button clicked');
-        (window as any).addPlayerTeam = 1;
-        console.log('[App] Set addPlayerTeam = 1, calling showLocalPlayerLoginModal()');
-        showLocalPlayerLoginModal();
-      });
-      console.log('✅ [App] TEAM 1 add player button listener registered');
-    } else {
-      console.warn('⚠️ [App] TEAM 1 add player button (#add-team1-player-btn) not found');
-    }
-
-    // TEAM 2 add player button
-    const addTeam2Btn = document.getElementById('add-team2-player-btn');
-    if (addTeam2Btn) {
-      // Remove old listener by cloning
-      const newBtn2 = addTeam2Btn.cloneNode(true) as HTMLElement;
-      addTeam2Btn.parentNode?.replaceChild(newBtn2, addTeam2Btn);
-
-      newBtn2.addEventListener('click', () => {
-        console.log('🎮 [App] TEAM 2 Add Player button clicked');
-        (window as any).addPlayerTeam = 2;
-        console.log('[App] Set addPlayerTeam = 2, calling showLocalPlayerLoginModal()');
-        showLocalPlayerLoginModal();
-      });
-      console.log('✅ [App] TEAM 2 add player button listener registered');
-    } else {
-      console.warn('⚠️ [App] TEAM 2 add player button (#add-team2-player-btn) not found');
-    }
-  }
-
-  async init(): Promise<void> {
-    // IMMEDIATELY hide chat widget before any other logic
-    // forceHideChatWidget();
-
-    // Set initial body attribute to login screen
-    document.body.setAttribute("data-current-screen", "login");
-
-    // Get screen elements
-    this.loginScreen = document.getElementById("login-screen") as HTMLElement;
-    this.registerScreen = document.getElementById(
-      "register-screen"
-    ) as HTMLElement;
-    this.mainMenuScreen = document.getElementById(
-      "main-menu-screen"
-    ) as HTMLElement;
-    this.playConfigScreen = document.getElementById(
-      "play-config-screen"
-    ) as HTMLElement;
-    this.gameScreen = document.getElementById("game-screen") as HTMLElement;
-    this.settingsScreen = document.getElementById(
-      "settings-screen"
-    ) as HTMLElement;
-
-    // Get form elements
-    this.loginForm = document.getElementById("login-form") as HTMLFormElement;
-    this.registerForm = document.getElementById(
-      "register-form"
-    ) as HTMLFormElement;
-    this.forgotPasswordForm = document.getElementById(
-      "forgot-password-form"
-    ) as HTMLFormElement;
-
-    // Setup all event listeners
-    this.setupEventListeners();
-
-    // Ensure add-player buttons are wired immediately so UI is responsive
-    // even before optional modal HTML is fetched/inserted.
-    this.setupAddPlayerButtons();
-
-    // Setup chat widget (this will also hide it again)
-    // this.setupChatWidget();
-
-    // Initialize local players with current user
-    this.initializeLocalPlayers();
-
-    // Initialize coop mode as default (ensure party list is visible)
-    console.log('[App.init] Setting up default coop mode');
-    this.gameSettings.gameMode = 'coop';
-    this.setupCoopMode();
-
-    // Check authentication and update chat visibility
-    await this.checkExistingLogin();
-
-    // Navigate to initial route based on URL and auth state
-    const initialRoute = this.router.getInitialRoute();
-    this.router.navigateToPath(initialRoute, false);
-
-    // Pause game when user navigates away from the game screen or when
-    // the page becomes hidden. Stop the game on page unload to ensure
-    // no background matches continue running.
-    document.addEventListener('visibilitychange', () => {
-      try {
-        const gm = (window as any).gameManager;
-        if (document.hidden && gm && gm.isPlaying && !gm.isPaused && typeof gm.pauseGame === 'function') {
-          console.log('App: Page hidden — pausing game');
-          gm.pauseGame();
-        }
-      } catch (e) {
-        console.warn('App: visibilitychange handler failed', e);
-      }
-    });
-
-    window.addEventListener('pagehide', () => {
-      try {
-        const gm = (window as any).gameManager;
-        if (gm && gm.isPlaying && typeof gm.pauseGame === 'function' && !gm.isPaused) {
-          console.log('App: pagehide — pausing game');
-          gm.pauseGame();
-        }
-      } catch (e) {
-        console.warn('App: pagehide handler failed', e);
-      }
-    });
-
-    window.addEventListener('beforeunload', (e) => {
-      try {
-        const gm = (window as any).gameManager;
-        if (gm && gm.isPlaying && typeof gm.stopGame === 'function') {
-          console.log('App: beforeunload — stopping game');
-          gm.stopGame();
-        }
-      } catch (err) {
-        console.warn('App: beforeunload handler failed', err);
-      }
-      // No need to call preventDefault; just allow unload.
-    });
-  }
-
-  setupEventListeners(): void {
-    // GUARD: Prevent duplicate event listener registration
-    if (this.eventListenersInitialized) {
-      console.warn('⚠️ setupEventListeners already called, skipping duplicate registration');
-      return;
-    }
-    this.eventListenersInitialized = true;
-    console.log('✅ Initializing event listeners for the first time');
-
-    // Old add-player-modal event listeners removed - now using local-player modals
-
-    // Login form
-    this.loginForm.addEventListener("submit", (e: Event) => {
-      e.preventDefault();
-      this.handleLogin();
-    });
-
-    // Register form
-    this.registerForm.addEventListener("submit", (e: Event) => {
-      e.preventDefault();
-      this.handleRegister();
-    });
-
-    // Forgot password form
-    this.forgotPasswordForm.addEventListener("submit", (e: Event) => {
-      e.preventDefault();
-      this.handleForgotPassword();
-    });
-
-    // Navigation links
-    document
-      .getElementById("create-account-link")
-      ?.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.router.navigate("register");
-      });
-
-    document
-      .getElementById("forgot-password-link")
-      ?.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.router.navigate("forgot-password");
-      });
-
-    document
-      .getElementById("back-to-login-link")
-      ?.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.router.navigate("login");
-      });
-
-    document
-      .getElementById("back-to-login-from-forgot-link")
-      ?.addEventListener("click", (e) => {
-        e.preventDefault();
-        this.router.navigate("login");
-      });
-
-    // Main menu buttons
-    document.getElementById("play-btn")?.addEventListener("click", () => {
-      this.router.navigate("play-config");
-    });
-
-    document.getElementById("profile-btn")?.addEventListener("click", () => {
-      this.router.navigate("profile");
-    });
-
-    document.getElementById("settings-btn")?.addEventListener("click", () => {
-      this.router.navigate("settings");
-    });
-
-    document
-      .getElementById("main-menu-logout-btn")
-      ?.addEventListener("click", () => {
-        this.handleLogout();
-      });
-
-    // Play config buttons
-    document
-      .getElementById("back-to-main-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigate("main-menu");
-      });
-
-    document.getElementById('start-game-btn')?.addEventListener('click', () => {
-      console.log('🔵 [EventListener] start-game-btn clicked!');
-      this.startGame();
-    });
-
-    // Team-specific add player buttons are now handled in setupAddPlayerButtons()
-    // (called after modal setup in constructor)
-
-    // Settings buttons
-    document
-      .getElementById("back-to-main-settings-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigate("main-menu");
-      });
-
-    document
-      .getElementById("back-to-main-settings-bottom-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigate("main-menu");
-      });
-
-    // Profile buttons
-    document
-      .getElementById("back-to-main-profile-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigate("main-menu");
-      });
-
-    document
-      .getElementById("back-to-main-profile-bottom-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigate("main-menu");
-      });
-
-    // Game control buttons
-    document.getElementById('stop-game-btn')?.addEventListener('click', () => {
-      console.log('🛑 [UI] Stop button clicked');
-      const gameManager = (window as any).gameManager;
-      if (gameManager && typeof gameManager.stopGame === 'function') {
-        gameManager.stopGame();
-      }
-    });
-
-    // Pause button - don't wrap in DOMContentLoaded since we're already in setupEventListeners
-    const pauseBtn = document.getElementById('pause-game-btn');
-    if (pauseBtn) {
-      pauseBtn.addEventListener('click', () => {
-        console.log('⏸️ [UI] Pause button clicked');
-        const gameManager = (window as any).gameManager;
-        if (gameManager && typeof gameManager.pauseGame === 'function') {
-          gameManager.pauseGame();
-        }
-      });
-    } else {
-      console.warn('⚠️ [UI] Pause button not found during setup');
-    }
-
-    // Old Add Player Modal event listeners removed - now using local-player modals
-
-    // Config option buttons
-    document
-      .querySelectorAll(".config-option, .setting-option")
-      .forEach((btn) => {
-        btn.addEventListener("click", () => {
-          this.handleConfigOption(btn as HTMLElement);
-        });
-      });
-
-    // Game mode tabs
-
-    document.querySelectorAll(".game-mode-tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        this.handleGameModeChange(tab as HTMLElement);
-      });
-    });
-
-    // Initialize the UI with default CO-OP mode
-    const defaultTab = document.querySelector(
-      ".game-mode-tab.active"
-    ) as HTMLElement;
-    if (defaultTab) {
-      this.handleGameModeChange(defaultTab);
-    }
-
-    // Score increment/decrement buttons
-    document
-      .getElementById("score-increment")
-      ?.addEventListener("click", () => {
-        this.changeScoreToWin(1);
-      });
-
-    document
-      .getElementById("score-decrement")
-      ?.addEventListener("click", () => {
-        this.changeScoreToWin(-1);
-      });
-
-    // Checkbox settings
-    document
-      .getElementById("powerups-enabled")
-      ?.addEventListener("change", (e) => {
-        this.gameSettings.powerupsEnabled = (
-          e.target as HTMLInputElement
-        ).checked;
-      });
-
-    document
-      .getElementById("accelerate-on-hit")
-      ?.addEventListener("change", (e) => {
-        this.gameSettings.accelerateOnHit = (
-          e.target as HTMLInputElement
-        ).checked;
-      });
-
-    // Global keyboard shortcuts
-    this.setupKeyboardShortcuts();
-
-    // Zoom functionality
-    this.setupZoomControl();
-  }
-
-  setupZoomControl(): void {
-    let currentZoom = 1.0;
-    const minZoom = 0.5;
-    const maxZoom = 3.0;
-    const zoomStep = 0.1;
-
-    // Handle Ctrl + Mouse Wheel for zoom
-    document.addEventListener('wheel', (e: WheelEvent) => {
-      // Only zoom when Ctrl key is pressed
-      if (e.ctrlKey) {
-        e.preventDefault();
-
-        // Determine zoom direction
-        const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
-        const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
-
-        if (newZoom !== currentZoom) {
-          currentZoom = newZoom;
-          this.applyZoom(currentZoom);
-        }
-      }
-    }, { passive: false });
-
-    // Handle Ctrl + Plus/Minus for zoom (keyboard shortcuts)
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === '=' || e.key === '+') {
-          e.preventDefault();
-          const newZoom = Math.min(maxZoom, currentZoom + zoomStep);
-          if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            this.applyZoom(currentZoom);
-          }
-        } else if (e.key === '-') {
-          e.preventDefault();
-          const newZoom = Math.max(minZoom, currentZoom - zoomStep);
-          if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            this.applyZoom(currentZoom);
-          }
-        } else if (e.key === '0') {
-          e.preventDefault();
-          currentZoom = 1.0;
-          this.applyZoom(currentZoom);
-        }
-      }
-    });
-  }
-
-  applyZoom(zoomLevel: number): void {
-    const app = document.getElementById('app');
-    if (app) {
-      app.style.transform = `scale(${zoomLevel})`;
-      app.style.transformOrigin = 'top left';
-
-      // Adjust body size to accommodate zoom
-      document.body.style.width = `${100 / zoomLevel}%`;
-      document.body.style.height = `${100 / zoomLevel}%`;
-
-      // Show zoom level indicator (optional)
-      this.showZoomIndicator(zoomLevel);
-    }
-  }
-
-  showZoomIndicator(zoomLevel: number): void {
-    // Remove existing indicator
-    const existingIndicator = document.getElementById('zoom-indicator');
-    if (existingIndicator) {
-      existingIndicator.remove();
-    }
-
-  }
-
-  setupKeyboardShortcuts(): void {
-    document.addEventListener("keydown", (e: KeyboardEvent) => {
-      // Don't trigger shortcuts if user is typing in an input field
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true"
-      ) {
-        return;
-      }
-
-      const currentScreen = document.querySelector(".screen.active")?.id;
-
-      switch (e.key) {
-        case "Backspace":
-          e.preventDefault();
-          this.handleBackspaceShortcut(currentScreen);
-          break;
-        case 'Escape':
-          e.preventDefault();
-          // Clean up campaign modals and stop any running game
-          const gameManager = (window as any).gameManager;
-          if (gameManager) {
-            // Clean up any campaign modals that might be visible
-            if (typeof gameManager.cleanupCampaignModals === 'function') {
-              gameManager.cleanupCampaignModals();
-            }
-            // Stop the game if it's running
-            if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
-              gameManager.stopGame();
-            }
-          }
-          this.router.navigate('login');
-          break;
-        case 'Enter':
-          e.preventDefault();
-          this.handleEnterShortcut(currentScreen);
-          break;
-      }
-    });
-  }
-
-  private handleBackspaceShortcut(currentScreen: string | undefined): void {
-    if (!currentScreen) return;
-    switch (currentScreen) {
-      case 'register-screen':
-        this.router.navigate('login');
-        break;
-      case 'forgot-password-screen':
-        this.router.navigate('login');
-        break;
-      case "main-menu-screen":
-        this.handleLogout();
-        break;
-      case 'play-config-screen':
-        this.router.navigate('main-menu');
-        break;
-      case 'settings-screen':
-        this.router.navigate('main-menu');
-        break;
-      case 'profile-screen':
-        this.router.navigate('main-menu');
-        break;
-      case 'game-screen': {
-        const gameManager = (window as any).gameManager;
-        if (gameManager) {
-          // Clean up any campaign modals that might be visible
-          if (typeof gameManager.cleanupCampaignModals === 'function') {
-            gameManager.cleanupCampaignModals();
-          }
-          // Stop the game if it's running
-          if (typeof gameManager.stopGame === 'function') {
-            gameManager.stopGame();
-          }
-        }
-        break;
-      }
-    }
-  }
-
-  private handleEnterShortcut(currentScreen: string | undefined): void {
-    switch (currentScreen) {
-      case 'login-screen': {
-        const loginSubmitBtn = document.querySelector('#login-form button[type="submit"]') as HTMLButtonElement;
-        if (loginSubmitBtn) loginSubmitBtn.click();
-        break;
-      }
-      case 'register-screen': {
-        const registerSubmitBtn = document.querySelector('#register-form button[type="submit"]') as HTMLButtonElement;
-        if (registerSubmitBtn) registerSubmitBtn.click();
-        break;
-      }
-      case 'forgot-password-screen': {
-        const forgotSubmitBtn = document.querySelector('#forgot-password-form button[type="submit"]') as HTMLButtonElement;
-        if (forgotSubmitBtn) forgotSubmitBtn.click();
-        break;
-      }
-      case 'main-menu-screen': {
-        const playBtn = document.getElementById('play-btn') as HTMLButtonElement;
-        if (playBtn) playBtn.click();
-        break;
-      }
-      case 'play-config-screen': {
-        // Don't auto-start game with Enter - let user manually click start button
-        // Focus on start game button for visual feedback
-        const startGameBtn = document.getElementById('start-game-btn') as HTMLButtonElement;
-        if (startGameBtn) startGameBtn.focus();
-        break;
-      }
-      case 'game-screen': {
-        const pauseBtn = document.getElementById('pause-game-btn');
-        if (pauseBtn instanceof HTMLButtonElement) {
-          pauseBtn.click();
-        }
-        break;
-      }
-    }
-  }
-
-
-  // Get current active screen
-  private getCurrentScreen(): string | null {
-    const activeScreen = document.querySelector(".screen.active");
-    return activeScreen ? activeScreen.id : null;
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    const authManager = (window as any).authManager;
-    if (!authManager) return false;
-
-    const user = authManager.getCurrentUser();
-    const token = localStorage.getItem("token");
-    return !!(user && user.userId && token);
-  }
-
-  // Show screen directly (used by router)
-  showScreenDirect(screenName: string): void {
-    // Hide all screens
-    document.querySelectorAll(".screen").forEach((screen) => {
-      screen.classList.remove("active");
-    });
-
-    // Show target screen
-    const targetScreen = document.getElementById(`${screenName}-screen`);
-    if (targetScreen) {
-      targetScreen.classList.add("active");
-      this.currentScreen = screenName;
-      // Debug: log when play-config-screen is activated
-      if (screenName === 'play-config') {
-        console.log('[DEBUG] play-config-screen activated');
-        // Also visually highlight play-config-buttons for debug
-        const playConfigButtons = document.querySelector('.play-config-buttons') as HTMLElement;
-        if (playConfigButtons) {
-          playConfigButtons.style.border = '4px solid lime';
-          playConfigButtons.style.background = 'rgba(0,255,0,0.1)';
-        }
-      }
-    }
-
-    // When navigating away from play-config, hide all party frames
-    if (screenName !== 'play-config') {
-      const coopPartyFrame = document.getElementById('coop-party-frame');
-      const tournamentPartyFrame = document.getElementById('tournament-party-frame');
-      const teamsRow = document.getElementById('teams-row');
-
-      if (coopPartyFrame) coopPartyFrame.style.display = 'none';
-      if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
-      if (teamsRow) teamsRow.style.display = 'none';
-    } else {
-      // When navigating TO play-config, show the party frame for the current mode
-      console.log('[showScreenDirect] Showing party frame for mode:', this.gameSettings.gameMode);
-      this.updatePlayersForMode(this.gameSettings.gameMode);
-    }
-
-    // Set body data attribute for CSS targeting
-    document.body.setAttribute("data-current-screen", screenName);
-
-    // Update chat visibility based on current screen and auth status
-    // this.updateChatVisibility();
-
-    // Update UI based on screen
-    if (screenName === "play-config") {
-      this.updatePlayConfigUI();
-    } else if (screenName === "profile") {
-      this.loadProfileData();
-    }
-
-    // If we navigated away from the game screen, ensure the game is stopped
-    // (stop vs pause: stopping guarantees no background RAF/intervals/sockets remain)
-    if (screenName !== 'game') {
-      try {
-        const gm = (window as any).gameManager;
-        if (gm) {
-          // Clean up any campaign modals that might be visible
-          if (typeof gm.cleanupCampaignModals === 'function') {
-            gm.cleanupCampaignModals();
-          }
-          // Stop the game if it's running
-          if (gm.isPlaying && typeof gm.stopGame === 'function') {
-            console.log('App: Navigated away from game screen — stopping game');
-            gm.stopGame();
-          }
-        }
-      } catch (e) {
-        console.warn('App: failed to stop game on navigation', e);
-      }
-    }
-  }
-
-  async handleLogin(): Promise<void> {
-    const usernameInput = document.getElementById('login-username') as HTMLInputElement;
-    const passwordInput = document.getElementById('login-password') as HTMLInputElement;
-    const username = usernameInput.value;
-    const password = passwordInput.value;
-    if (!username || !password) {
-      showToast('Please fill in all fields', 'error');
-      return;
-    }
-    try {
-      const authManager = (window as any).authManager;
-      const result: AuthResult = await handleHostLogin(username, password, authManager);
-      if (result.success) {
-        this.router.navigate('main-menu');
-        this.updateUserDisplay();
-        this.updateHostPlayerDisplay();
-        // this.updateChatVisibility();
-        this.loginForm.reset();
-      } else {
-        authManager.currentUser = null;
-        localStorage.removeItem('token');
-        showToast('Login failed: ' + result.error, 'error');
-      }
-    } catch (error) {
-      showToast('Login failed: Network error', 'error');
-    }
-  }
-
-  async handleRegister(): Promise<void> {
-    const usernameInput = document.getElementById('register-username') as HTMLInputElement;
-    const emailInput = document.getElementById('register-email') as HTMLInputElement;
-    const passwordInput = document.getElementById('register-password') as HTMLFormElement;
-    const username = usernameInput.value;
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    if (!username || !email || !password) {
-      showToast('Please fill in all fields', 'error');
-      return;
-    }
-    if (password.length < 6) {
-      showToast('Password must be at least 6 characters long', 'error');
-      return;
-    }
-    try {
-      const authManager = (window as any).authManager;
-      const result: AuthResult = await handleHostRegister(username, email, password, authManager);
-      if (result.success) {
-        this.router.navigate("main-menu");
-        this.updateUserDisplay();
-        this.updateHostPlayerDisplay();
-        // this.updateChatVisibility();
-        this.registerForm.reset();
-      } else {
-        showToast('Registration failed: ' + result.error, 'error');
-      }
-    } catch (error) {
-      showToast('Registration failed: Network error', 'error');
-    }
-  }
-
-  async handleForgotPassword(): Promise<void> {
-    const emailInput = document.getElementById(
-      "forgot-password-email"
-    ) as HTMLInputElement;
-    const email = emailInput.value.trim();
-    if (!email) {
-      showToast('Please enter your email address', 'error');
-      return;
-    }
-    if (!email.includes('@')) {
-      showToast('Please enter a valid email address', 'error');
-      return;
-    }
-    try {
-      const authManager = (window as any).authManager;
-      const result: AuthResult = await authManager.forgotPassword(email);
-      if (result.success) {
-        showToast('Password reset link sent! Please check your email.', 'success');
-        this.forgotPasswordForm.reset();
-        this.router.navigate("login");
-      } else {
-        showToast('Failed to send reset email: ' + result.error, 'error');
-      }
-    } catch (error) {
-      showToast('Failed to send reset email: Network error', 'error');
-    }
-  }
-
-  handleLogout(): void {
-    const authManager = (window as any).authManager;
-    authManager.logout();
-    this.router.navigate("login");
-    this.localPlayers = [];
-    // this.updateChatVisibility();
-  }
-
-  async checkExistingLogin(): Promise<void> {
-    const authManager = (window as any).authManager;
-    if (!authManager) return;
-    const isValid = await authManager.verifyToken();
-    if (isValid) {
-      const user = authManager.getCurrentUser();
-      if (user) {
-        this.router.navigate("main-menu");
-        this.updateUserDisplay();
-        this.updateHostPlayerDisplay();
-        // this.updateChatVisibility();
-      }
-    }
-  }
-
-  updateUserDisplay(): void {
-    const authManager = (window as any).authManager;
-    const user = authManager?.getCurrentUser();
-
-    const userDisplay = document.getElementById("main-menu-user-display");
-    if (userDisplay && user) {
-      userDisplay.textContent = `Welcome, ${user.username}!`;
-    }
-  }
-
-  // Helper to get the actual host user (not a local player)
-  private getHostUser(): { userId: number; username: string } | null {
-    const authManager = (window as any).authManager;
-    if (!authManager) return null;
-
-    const currentUser = authManager.getCurrentUser();
-    if (!currentUser) return null;
-
-    // Verify this user matches the stored token
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      // This is the host user (token holder)
-      return currentUser;
-    }
-
-    return currentUser;
-  }
-
-  updateHostPlayerDisplay(): void {
-    const authManager = (window as any).authManager;
-    const user = authManager?.getCurrentUser();
-
-    const hostPlayerName = document.getElementById("host-player-name");
-    if (hostPlayerName && user) {
-      hostPlayerName.textContent = user.username;
-    }
-  }
-
-  initializeLocalPlayers(): void {
-    const authManager = (window as any).authManager;
-    const user = authManager?.getCurrentUser();
-    const token = localStorage.getItem('token') || '';
-
-    // IMPORTANT: Do NOT add the host user to localPlayers array
-    // The host is displayed separately in the host-player-card elements
-    // localPlayers should only contain additional local players that are added via the "Add Player" button
-    console.log('[App] Initializing localPlayers array (empty - host is not a local player)');
-    this.localPlayers = [];
-
-    this.updateLocalPlayersDisplay();
-  }
-
-  updateLocalPlayersDisplay(): void {
-    const container = document.getElementById("local-players-list");
-    if (!container) return;
-
-    container.innerHTML = this.localPlayers
-      .map(
-        (player) => `
-      <div class="player-item">
-        <div class="player-info">
-          <div class="player-name">${player.username}${player.isCurrentUser ? " (You)" : ""
-          }</div>
-          <div class="player-status">${player.isCurrentUser ? "Host" : "Local Player"
-          }</div>
-        </div>
-        ${!player.isCurrentUser
-            ? '<button class="remove-player-btn" data-player-id="' +
-            player.id +
-            '">Remove</button>'
-            : ""
-          }
-      </div>
-    `
-      )
-      .join("");
-
-    // Add remove button listeners
-    container.querySelectorAll(".remove-player-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const playerId = btn.getAttribute("data-player-id");
-        this.removeLocalPlayer(playerId || "");
-      });
-    });
-  }
-
-  handleConfigOption(button: HTMLElement): void {
-    alert("raas")
-    const setting = button.getAttribute('data-setting');
-    const value = button.getAttribute('data-value');
-    if (!setting || !value) return;
-
-    // Remove active class from siblings
-    const siblings = button.parentElement?.querySelectorAll('.config-option, .setting-option') || [];
-    siblings.forEach(sibling => sibling.classList.remove('active'));
-    button.classList.add('active');
-
-    // Convert hyphenated setting names to camelCase for gameSettings object
-    const settingMap: { [key: string]: string } = {
-      'ai-difficulty': 'aiDifficulty',
-      'ball-speed': 'ballSpeed',
-      'paddle-speed': 'paddleSpeed',
-      'powerups-enabled': 'powerupsEnabled',
-      'accelerate-on-hit': 'accelerateOnHit',
-      'gameMode': 'gameMode'
-    };
-
-    const settingKey = settingMap[setting] || setting;
-
-    // Update settings
-    if (settingKey in this.gameSettings) {
-      (this.gameSettings as any)[settingKey] = value;
-      console.log(`⚙️ [SETTINGS] Updated ${settingKey} to ${value}`, this.gameSettings);
-    }
-
-    // Optionally trigger UI updates if needed
-    // For mode changes, call handleGameModeChange
-    if (setting === 'gameMode') {
-      const tab = document.querySelector(`.game-mode-tab[data-mode="${value}"]`) as HTMLElement;
-      if (tab) this.handleGameModeChange(tab);
-    }
   }
 
   private updatePlayersForMode(mode: "coop" | "arcade" | "tournament"): void {
@@ -1407,9 +835,6 @@ export class App {
 
     // Setup drag for host and AI AFTER team lists are set up
     this.setupHostAndAIDrag();
-
-    // Re-attach add player button listeners for arcade mode
-    this.setupAddPlayerButtons();
   }
 
   private setupHostAndAIDrag(): void {
@@ -1586,44 +1011,6 @@ export class App {
     }
   }
 
-  updatePlayConfigUI(): void {
-    // Update settings display based on current settings
-    this.updateLocalPlayersDisplay();
-    this.updateGamePartyDisplay();
-    this.initializePlayerSelection();
-    this.updateScoreDisplay(); // Sync score display
-  }
-
-  // showAddPlayerDialog is deprecated - now using showLocalPlayerLoginModal from local-player.ts
-  // hideAddPlayerDialog is deprecated - now using hideLocalPlayerLoginModal from local-player.ts
-  // handleAddPlayerSubmit is deprecated - now handled in setupLocalPlayerLoginModal
-
-  // Local player registration modal logic is now handled in local-player.ts
-  showRegistrationForLocalPlayer(): void {
-    if ((window as any).showLocalPlayerRegisterModal) {
-      (window as any).showLocalPlayerRegisterModal();
-    } else {
-      showToast('Local player registration modal not available', 'error');
-    }
-  }
-
-  createAIPlayerCard(): HTMLElement {
-    const playerCard = document.createElement('div');
-    playerCard.className = 'player-card ai-player active'; // AI player is active by default
-    playerCard.dataset.playerId = 'ai-player';
-    playerCard.innerHTML = [
-      '<div class="player-avatar"><i class="fas fa-robot"></i></div>',
-      '<div class="player-info">',
-      '<span class="player-name">AI Player</span>',
-      '<span class="role-badge ai">Computer</span>',
-      '</div>'
-    ].join('');
-    // Selection handled via event delegation on the party container
-    // ensure AI is tracked as selected by default
-    this.selectedPlayerIds.add('ai-player');
-    return playerCard;
-  }
-
   togglePlayerSelection(playerCard: HTMLElement, playerType: string): void {
     // Update selected players state for game logic and persist selection
     const playerId = playerCard.dataset.playerId || playerType;
@@ -1657,16 +1044,6 @@ export class App {
     } else {
       this.selectedPlayerIds.delete(playerId);
       console.log(`❌ Player ${playerId} deselected from game`);
-    }
-
-    // Debug: log classes and computed styles
-    try {
-      const cs = window.getComputedStyle(playerCard);
-      console.log('[toggle]', wasActive ? 'WAS active' : 'was INACTIVE', '→', isNowActive ? 'NOW active' : 'now INACTIVE',
-        'classList=', Array.from(playerCard.classList),
-        'bg=', cs.backgroundColor, 'transform=', cs.transform);
-    } catch (e) {
-      // ignore
     }
   }
 
@@ -1723,11 +1100,6 @@ export class App {
       }
       this.lastClickTimestamps.set(cardId, now);
 
-      // Debug: log click target and classes to help diagnose selection issues
-      try {
-        console.debug('[App] player-card clicked', card, 'classes=', Array.from(card.classList));
-      } catch (e) { /* ignore */ }
-
       // Determine player type for togglePlayerSelection
       let playerType = 'local';
       if (card.id === 'host-player-card' || card.id === 'host-player-card-coop' || card.id === 'host-player-card-tournament' || card.classList.contains('host-player')) playerType = 'host';
@@ -1763,6 +1135,12 @@ export class App {
       return;
     }
 
+    // VALIDATION: Check minimum player requirements
+    if (!this.validateGameStart()) {
+      console.warn('⚠️ [App.startGame] Validation failed');
+      return;
+    }
+
     console.log('✅ [App.startGame] Guards passed - proceeding with game start');
     console.log('Starting game with settings:', this.gameSettings);
     console.log('Local players:', this.localPlayers);
@@ -1794,9 +1172,6 @@ export class App {
       gameManager.setGameSettings(this.gameSettings);
     }
 
-    // Update game UI with player information
-    this.updateGameUI();
-
     // Show game screen
     this.router.navigate('game');
 
@@ -1812,10 +1187,57 @@ export class App {
     console.log('🏁 [App.startGame] === COMPLETED ===');
   }
 
-  updateGameUI(): void {
-    // All UI rendering is now handled directly on canvas in game.ts
-    // No need to update HTML elements for player info and scores
-    console.log("Game UI update - rendering handled on canvas");
+  validateGameStart(): boolean {
+    const mode = this.gameSettings.gameMode;
+    const localPlayers = this.localPlayers;
+    const hostUser = this.getHostUser();
+
+    // Count players per team
+    // Host is usually Team 1, AI is Team 2 (in coop)
+    // In arcade, we need to check where everyone is
+
+    // Helper to check if host is in a team
+    const isHostInTeam = (team: number) => {
+      // Host is always in the game, but we need to know which team for arcade
+      // Usually host is Team 1 by default unless moved
+      // We can check the DOM or assume default if not tracked in localPlayers
+      // But localPlayers doesn't include host.
+      // We need to track host team. For now, assume Host is Team 1.
+      // TODO: If we implement drag-drop for host, we need to track it.
+      // Based on setupHostAndAIDrag, host card is draggable.
+      // We should check the DOM for host position if possible, or track it in a variable.
+      const hostCard = document.getElementById('host-player-card');
+      if (hostCard && hostCard.closest('#team2-list')) return team === 2;
+      return team === 1; // Default
+    };
+
+    if (mode === 'arcade') {
+      let team1Count = isHostInTeam(1) ? 1 : 0;
+      let team2Count = isHostInTeam(2) ? 1 : 0;
+
+      localPlayers.forEach((p: any) => {
+        if (p.team === 2) team2Count++;
+        else team1Count++; // Default to team 1
+      });
+
+      if (team1Count < 1) {
+        showToast('Team 1 needs at least 1 player!', 'error');
+        return false;
+      }
+      if (team2Count < 1) {
+        showToast('Team 2 needs at least 1 player!', 'error');
+        return false;
+      }
+    } else if (mode === 'tournament') {
+      // Host + local players
+      const totalPlayers = 1 + localPlayers.length;
+      if (totalPlayers < 2) {
+        showToast('Tournament needs at least 2 players!', 'error');
+        return false;
+      }
+    }
+
+    return true;
   }
 
   stopGame(): void {
@@ -1825,8 +1247,6 @@ export class App {
     if (gameManager && typeof gameManager.stopGame === "function") {
       gameManager.stopGame();
     }
-
-    // Navigation is now handled by gameManager.stopGame()
   }
 
   pauseGame(): void {
@@ -1946,55 +1366,6 @@ export class App {
     if (levelXpEl) levelXpEl.textContent = `Level ${level} | XP: ${expInLevel * 100} / ${expNeeded * 100}`;
   }
 
-  updateRecentActivity(activities: any[]): void {
-    const container = document.getElementById("profile-recent-activity");
-    if (!container) return;
-
-    if (activities.length === 0) {
-      container.innerHTML = `
-        <div class="activity-item">
-          <span class="activity-text">No recent activity</span>
-          <span class="activity-time">--</span>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = activities
-      .slice(0, 5)
-      .map((activity) => {
-        const timeAgo = this.formatTimeAgo(
-          new Date(activity.created_at || Date.now())
-        );
-        const result = activity.won ? "Won" : "Lost";
-        const resultClass = activity.won ? "win" : "loss";
-
-        return `
-        <div class="activity-item">
-          <span class="activity-text">
-            <span class="${resultClass}">${result}</span> game vs ${activity.opponent || "AI"
-          }
-          </span>
-          <span class="activity-time">${timeAgo}</span>
-        </div>
-      `;
-      })
-      .join("");
-  }
-
-  formatTimeAgo(date: Date): string {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
-    return "Just now";
-  }
-
   updateCoopProgressUI(): void {
     const level = getCoopLevel();
     const levelLabel = document.getElementById('coop-level-label');
@@ -2015,7 +1386,69 @@ export class App {
       if (btn.getAttribute('data-value') === this.gameSettings.aiDifficulty) btn.classList.add('active');
     });
   }
-}
 
-// Note: App initialization is now handled in main.ts
-// Removing duplicate DOMContentLoaded listener to prevent double initialization
+  /**
+   * Submit game results for all selected players (host and local)
+   * @param results Array of { userId, stats } for each player
+   */
+  async submitGameResults(
+    results: Array<{ userId: number; stats: any }>
+  ): Promise<void> {
+    // Host player
+    const authManager = (window as any).authManager;
+    const hostUser = authManager?.getCurrentUser();
+    const hostToken = sessionStorage.getItem("token");
+    if (hostUser && hostToken) {
+      // Debug: log stats sent to user-service
+      console.debug('Submitting host result:', {
+        userId: hostUser.userId,
+        stats: results.find(r => r.userId === hostUser.userId)?.stats,
+        token: hostToken
+      });
+      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
+    }
+
+    // Local players
+    for (const player of this.localPlayers) {
+      if (player.token && player.userId) {
+        // Debug: log stats sent to user-service
+        console.debug('Submitting local player result:', {
+          userId: player.userId,
+          stats: results.find(r => r.userId === player.userId)?.stats,
+          token: player.token
+        });
+        await this.submitResultForUser(player.userId, results.find(r => r.userId === player.userId)?.stats, player.token);
+      }
+    }
+
+    // NOTE: Co-op / campaign progression is handled inside the GameManager
+    // (frontend/src/game.ts) when a campaign match ends. Avoid changing
+    // campaign level or auto-starting the next match here to prevent
+    // duplicate starts. This method only submits results to the backend.
+  }
+
+  /**
+   * Submit result for a single user
+   */
+  async submitResultForUser(
+    userId: number,
+    stats: any,
+    token: string
+  ): Promise<void> {
+    try {
+      const response = await fetch(`/api/game/update-stats/${userId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(stats),
+      });
+      if (!response.ok) {
+        console.error(`Failed to update stats for user ${userId}`);
+      }
+    } catch (error) {
+      console.error(`Error updating stats for user ${userId}:`, error);
+    }
+  }
+}
