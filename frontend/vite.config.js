@@ -19,7 +19,6 @@ export default defineConfig({
         profile: "profile.html",
         localPlayerLoginModal: "local-player-login-modal.html",
         localPlayerRegisterModal: "local-player-register-modal.html",
-        base: "base.html",
       },
     },
   },
