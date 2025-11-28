@@ -1,852 +1,868 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<html lang="en" class="h-full bg-bg-primary">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ft_transcendence</title>
-  <link rel="stylesheet" href="css/style.css">
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-  <div id="root"></div>
-  <div id="app">
-    <!-- Login Screen -->
-    <div id="login-screen" class="screen active">
-      <div class="login-container">
-        <div class="login-panel">
-        
-          <div class="login-form-container">
-            <form id="login-form" class="login-form">
-              <input type="text" id="login-username" placeholder="Username" required class="login-input" />
-              <input type="password" id="login-password" placeholder="Password" required class="login-input" />
-              <button type="submit" class="login-btn">LOGIN</button>
-            </form>
-            
-            <div class="login-links">
-              <a href="#" id="forgot-password-link" class="login-link">
-                <span style="color: #e94560;">▶</span> Forgot Password?
-              </a>
-              <span>OR</span>
-              <a href="#" id="create-account-link" class="login-link">
-                <span style="color: #e94560;">▶</span> Create an Account
-              </a>
-            </div>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script type="module" crossorigin src="./src/main.ts"></script>
+    <link rel="stylesheet" crossorigin href="./css/style.css" />
+  </head>
+  <body class="h-full bg-bg-primary overflow-hidden text-white">
+    <div id="root"></div>
+    <div id="app" class="h-screen w-screen relative">
+      <!-- ==================== 
+           LOGIN SCREEN 
+      ==================== -->
+      <div
+        id="login-screen"
+        class="screen active w-full h-full flex items-center justify-center relative bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative"
+        >
+          <div class="text-center mb-8">
+            <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
+              LOGIN
+            </h1>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Registration Screen -->
-    <div id="register-screen" class="screen">
-      <div class="login-container">
-        <div class="login-panel">
-          <h1 class="login-title">Create Account</h1>
-          
-          <div class="login-form-container">
-            <form id="register-form" class="login-form">
-              <input type="text" id="register-username" placeholder="Username" required class="login-input" />
-              <input type="email" id="register-email" placeholder="Email" required class="login-input" />
-              <input type="password" id="register-password" placeholder="Password" required class="login-input" />
-              <button type="submit" class="login-btn">Create Account</button>
-            </form>
-            
-            <div class="login-links">
-              <a href="#" id="back-to-login-link" class="login-link">
-                <span style="color: #e94560;">◀</span> Back to Login
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Forgot Password Screen -->
-    <div id="forgot-password-screen" class="screen">
-      <div class="login-container">
-        <div class="login-panel">
-          <h1 class="login-title">Reset Password</h1>
-          
-          <div class="login-form-container">
-            <div class="forgot-password-info">
-              <p>Enter your email address and we'll send you a link to reset your password.</p>
-            </div>
-            
-            <form id="forgot-password-form" class="login-form">
-              <input type="email" id="forgot-password-email" placeholder="Email Address" required class="login-input" />
-              <button type="submit" class="login-btn">Send Reset Link</button>
-            </form>
-            
-            <div class="login-links">
-              <a href="#" id="back-to-login-from-forgot-link" class="login-link">
-                <span style="color: #e94560;">◀</span> Back to Login
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Menu Screen -->
-    <div id="main-menu-screen" class="screen">
-      <div class="main-menu-container">
-        <div class="main-menu-panel">
-            <h1 class="launch-seq">LAUNCHSEQ</h1>
-            <div class="main-menu-buttons">
-            <button id="play-btn" class="menu-btn play-btn" style="font-size: 24px;">▶</button>
-            <button id="profile-btn" class="menu-btn profile-btn" style="font-size: 24px;">👤</button>
-            <button id="settings-btn" class="menu-btn settings-btn" style="background: linear-gradient(180deg, #666 0%, #555 100%); color: white; font-size: 24px;">⚙️</button>
-          </div>
-          
-          <div class="logout-section" style="margin-top: 20px; text-align: center;">
-            <a href="#" id="main-menu-logout-btn" class="login-link" style="color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: bold;">
-              <span style="color: #e94560; font-size: 20px;">◀</span>
-              <span>LOGOUT</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Play Configuration Screen -->
-    <div id="play-config-screen" class="screen">
-      <div class="main-menu-container">
-        <div class="main-menu-panel">
-          <!-- Center Title -->
-          <div class="play-header-center">
-            <h1 class="launch-seq">PLAY MODE</h1>
-          </div>
-          <div class="play-config-content">
-            <!-- Button Row Above Columns (only visible in config menu) -->
-            <div class="play-config-buttons">
-              <button id="back-to-main-btn" class="back-btn">
-                <span style="color: inherit;">◀</span>
-                <span>Back</span>
-              </button>
-              <div class="button-spacer"></div>
-              <button id="start-game-btn" class="start-game-btn">
-                <i class="fas fa-play"></i>
-                <span>START GAME</span>
-              </button>
-            </div>
-            <!-- Settings Column (unchanged) -->
-            <div class="play-config-columns">
-              <div class="config-column">
-                <div class="column-title">
-                  <i class="fas fa-sliders-h"></i>
-                  <span>SETTINGS</span>
-                </div>
-                <div class="column-subtitle">
-                </div>
-                
-                <div class="column-content">
-                  <!-- AI Difficulty -->
-                  <div class="setting-group">
-                    <label class="setting-label">
-                      <span>AI Difficulty</span>
-                    </label>
-                    <div class="setting-options">
-                      <button class="setting-option active" data-setting="ai-difficulty" data-value="easy" data-short="E">
-                        <span>EASY</span>
-                      </button>
-                      <button class="setting-option" data-setting="ai-difficulty" data-value="medium" data-short="M">
-                        <span>MEDIUM</span>
-                      </button>
-                      <button class="setting-option" data-setting="ai-difficulty" data-value="hard" data-short="H">
-                        <span>HARD</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <!-- Ball Speed -->
-                  <div class="setting-group">
-                    <label class="setting-label">
-                      <span>Ball Speed</span>
-                    </label>
-                    <div class="setting-options">
-                      <button class="setting-option" data-setting="ball-speed" data-value="slow" data-short="S">
-                        <span>SLOW</span>
-                      </button>
-                      <button class="setting-option active" data-setting="ball-speed" data-value="medium" data-short="M">
-                        <span>MEDIUM</span>
-                      </button>
-                      <button class="setting-option" data-setting="ball-speed" data-value="fast" data-short="F">
-                        <span>FAST</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <!-- Paddle Speed -->
-                  <div class="setting-group">
-                    <label class="setting-label">
-                      <span>Paddle Speed</span>
-                    </label>
-                    <div class="setting-options">
-                      <button class="setting-option" data-setting="paddle-speed" data-value="slow" data-short="S">
-                        <span>SLOW</span>
-                      </button>
-                      <button class="setting-option active" data-setting="paddle-speed" data-value="medium" data-short="M">
-                        <span>MEDIUM</span>
-                      </button>
-                      <button class="setting-option" data-setting="paddle-speed" data-value="fast" data-short="F">
-                        <span>FAST</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <!-- Checkboxes -->
-                  <div class="setting-checkboxes">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="powerups-enabled" class="setting-checkbox">
-                      <span class="checkbox-text">PowerUps</span>
-                    </label>
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="accelerate-on-hit" class="setting-checkbox">
-                      <span class="checkbox-text">Accelerate</span>
-                    </label>
-                  </div>
-                  
-                  <!-- Score to Win (Arcade Mode) -->
-                  <div class="setting-group arcade-only">
-                    <label class="setting-label">
-                      <span>Score to Win</span>
-                    </label>
-                    <div class="score-setting">
-                      <button class="score-btn decrement" id="score-decrement">
-                        <i class="fas fa-minus"></i>
-                      </button>
-                      <span class="score-value" id="score-value">5</span>
-                      <button class="score-btn increment" id="score-increment">
-                        <i class="fas fa-plus"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Column 2: Game Mode -->
-              <div class="config-column">
-                <div class="column-title">
-                  <i class="fas fa-gamepad"></i>
-                  <span>MODES</span>
-                </div>
-                
-                <div class="column-content">
-                  <div class="game-mode-selection">
-                    <div class="game-mode-tabs">
-                      <button class="game-mode-tab active" data-mode="coop">
-                        <i class="fas fa-users"></i>
-                        <span>CO-OP</span>
-                        <small>Campaign</small>
-                      </button>
-                      <button class="game-mode-tab" data-mode="arcade">
-                        <i class="fas fa-coins"></i>
-                        <span>ARCADE</span>
-                        <small>Classic</small>
-                      </button>
-                      <button class="game-mode-tab" data-mode="tournament">
-                        <i class="fas fa-trophy"></i>
-                        <span>TOURNAMENT</span>
-                        <small>Competitive</small>
-                      </button>
-                    </div>
-                    <!-- Co-op campaign progress UI -->
-                    <div id="coop-campaign-progress" class="coop-campaign-progress" style="display:none; margin: 12px 0; text-align:center;">
-                      <span id="coop-level-label" style="font-weight:bold; font-size:1.1em;"></span>
-                      <span id="coop-next-ai" style="margin-left:12px; color:#e94560;"></span>
-                    </div>
-                    <div class="mode-description">
-                      <div id="mode-desc-coop" class="mode-desc active">
-                        <i class="fas fa-users"></i>
-                        <h4>Co-op Campaign</h4>
-                        <p>Defeat the AI at each level to increase your rank!<br>Progress: <span id="coop-campaign-desc"></span></p>
-                      </div>
-                      <div id="mode-desc-arcade" class="mode-desc">
-                        <i class="fas fa-coins"></i>
-                        <h4>Arcade Mode</h4>
-                        <p>Classic pong with customizable rules</p>
-                      </div>
-                      <div id="mode-desc-tournament" class="mode-desc">
-                        <i class="fas fa-trophy"></i>
-                        <h4>Tournament</h4>
-                        <p>Compete in ranked matches</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Column 3: Players -->
-              <div class="config-column">
-                <div class="column-title">
-                  <i class="fas fa-user-friends"></i>
-                  <span>Players</span>
-                </div>
-                <div class="column-content">
-                  <div id="game-party-list" class="players-list">
-                    <!-- COOP MODE: Single party frame (shown by default for coop) -->
-                    <div id="coop-party-frame" class="coop-party-frame" style="display: block;">
-                      <div class="party-list">
-                        <div id="host-player-card-coop" class="player-card host-player active">
-                          <div class="player-avatar">
-                            <i class="fas fa-crown"></i>
-                          </div>
-                          <div class="player-info">
-                            <div class="player-name" id="host-player-name-coop">Loading...</div>
-                            <span class="role-badge host">HOST</span>
-                          </div>
-                        </div>
-                        
-                        <div id="ai-player-card-coop" class="player-card ai-player active">
-                          <div class="player-avatar">
-                            <i class="fas fa-robot"></i>
-                          </div>
-                          <div class="player-info">
-                            <div class="player-name">AI</div>
-                            <span class="role-badge ai">AI</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- TOURNAMENT MODE: Single party frame with host + add player -->
-                    <div id="tournament-party-frame" class="tournament-party-frame" style="display: none;">
-                      <div class="party-list">
-                        <div id="host-player-card-tournament" class="player-card host-player active">
-                          <div class="player-avatar">
-                            <i class="fas fa-crown"></i>
-                          </div>
-                          <div class="player-info">
-                            <div class="player-name" id="host-player-name-tournament">Loading...</div>
-                            <span class="role-badge host">HOST</span>
-                          </div>
-                        </div>
-                        
-                        <!-- Local players will be injected here -->
-                        <div id="tournament-local-players" class="local-players"></div>
-                        
-                        <!-- Add Player button -->
-                        <button
-                          id="add-tournament-player-btn"
-                          class="add-player-btn"
-                          aria-controls="add-player-modal"
-                          aria-haspopup="dialog"
-                          title="Add local player"
-                        >
-                          <i class="fas fa-user-plus"></i>
-                          <span>Add Player</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- ARCADE MODE: Team-based layout -->
-                    <div class="teams-row" id="teams-row" style="display: none; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
-                        <!-- TEAM 1 Section -->
-                        <div class="team-section" id="team1-section">
-                          <div class="team-title">TEAM 1</div>
-                          <div class="team-list" id="team1-list">
-                            <div id="host-player-card" class="player-card host-player active" draggable="true" data-player-id="host-player">
-                              <div class="player-avatar">
-                                <i class="fas fa-crown"></i>
-                              </div>
-                              <div class="player-info">
-                                <div class="player-name" id="host-player-name">Loading...</div>
-                                <span class="role-badge host">HOST</span>
-                              </div>
-                            </div>
-
-                            <!-- Local players will be injected here -->
-                            <div id="team1-local-players" class="local-players"></div>
-
-                            <!-- Add Player button (opens Add Player modal; limited to 4 players per team) -->
-                            <div class="add-player-container" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                              <button
-                                id="add-team1-player-btn"
-                                class="add-player-btn"
-                                data-team="team1"
-                                aria-controls="add-player-modal"
-                                aria-haspopup="dialog"
-                                title="Add player to Team 1"
-                              >
-                                <i class="fas fa-user-plus"></i>
-                                <span>Add Player</span>
-                              </button>
-                              <small class="slots-info" id="team1-slots-info" aria-live="polite">Slots: <span id="team1-slots-left">3</span>/4</small>
-                            </div>
-                          </div>
-                        </div>
-                        <!-- TEAM 2 Section -->
-                        <div class="team-section" id="team2-section">
-                            <div class="team-title">TEAM 2</div>
-                            <div class="team-list" id="team2-list">
-                              <div id="ai-player-card" class="player-card ai-player" draggable="true" data-player-id="ai-player">
-                                <div class="player-avatar">
-                                  <i class="fas fa-robot"></i>
-                                </div>
-                                <div class="player-info">
-                                  <div class="player-name">AI</div>
-                                  <span class="role-badge ai">AI</span>
-                                </div>
-                              </div>
-                              <!-- AI team local players will be injected here -->
-                              <button id="add-team2-player-btn" class="add-player-btn">
-                                <i class="fas fa-user-plus"></i>
-                                <span>Add Player</span>
-                              </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Game Playing Screen -->
-    <div id="game-screen" class="screen">
-      <div class="game-container">
-        <div class="game-canvas-container">
-          <!-- Campaign  Display (shown during campaign mode) -->
-          <div id="campaign-level-display" class="campaign-level-display" style="display: none; text-align: center; margin: 10px 0; color: #ffffff; font-size: 18px; font-weight: bold;">
-            Campaign Level: <span id="current-level-number">1</span>
-            <div id="campaign-progress-bar" class="campaign-progress-bar" style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); margin: 5px auto; border-radius: 4px; overflow: hidden;">
-              <div id="campaign-progress-fill" style="height: 100%; background: linear-gradient(90deg, #77e6ff, #e94560); width: 10%; transition: width 0.3s ease;"></div>
-            </div>
-          </div>
-          <!-- Game Control Buttons above canvas -->
-          <div class="game-canvas-controls">
-            <button id="pause-game-btn" class="game-control-btn">
-              <i class="fas fa-pause"></i>
-              <span>Pause</span>
-            </button>
-            <button id="stop-game-btn" class="game-control-btn quit">
-              <i class="fas fa-stop"></i>
-              <span>Quit</span>
-            </button>
-          </div>
-          <!-- UI overlay removed - all player info now rendered on canvas -->
-          <div class="canvas-wrapper">
-            <canvas id="game-canvas" width="800" height="600" aria-label="Pong game area" tabindex="0"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Screen -->
-    <div id="settings-screen" class="screen">
-      <div class="settings-container">
-        <div class="settings-panel">
-          <!-- Top Back Button (only visible in settings menu) -->
-          <button id="back-to-main-settings-btn" class="back-btn-simple">
-            <span style="color: inherit;">◀</span>
-            <span>Back</span>
-          </button>
-          
-          <h2 class="settings-title">Settings</h2>
-          
-          <div class="settings-content">
-            <div class="settings-grid">
-              <!-- Column 1: Audio Settings -->
-              <div class="settings-column">
-                <h3 class="column-header">Audio</h3>
-                <div class="setting-item">
-                  <label class="setting-label">Master Volume</label>
-                  <input type="range" min="0" max="100" value="50" class="volume-slider">
-                  <span class="setting-value">50%</span>
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Sound Effects</label>
-                  <input type="checkbox" checked class="setting-checkbox">
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Music Volume</label>
-                  <input type="range" min="0" max="100" value="30" class="volume-slider">
-                  <span class="setting-value">30%</span>
-                </div>
-              </div>
-              
-              <!-- Column 2: Graphics Settings -->
-              <div class="settings-column">
-                <h3 class="column-header">Graphics</h3>
-                <div class="setting-item">
-                  <label class="setting-label">Particle Effects</label>
-                  <input type="checkbox" checked class="setting-checkbox">
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Screen Shake</label>
-                  <input type="checkbox" class="setting-checkbox">
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Visual Quality</label>
-                  <select class="setting-select">
-                    <option value="low">Low</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
-              
-              <!-- Column 3: Controls Settings -->
-              <div class="settings-column">
-                <h3 class="column-header">Controls</h3>
-                <div class="setting-item">
-                  <label class="setting-label">Player 1 Up</label>
-                  <button class="key-btn" data-key="w">W</button>
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Player 1 Down</label>
-                  <button class="key-btn" data-key="s">S</button>
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Pause Game</label>
-                  <button class="key-btn" data-key="escape">ESC</button>
-                </div>
-              </div>
-              
-              <!-- Column 4: Game Settings -->
-              <div class="settings-column">
-                <h3 class="column-header">Game</h3>
-                <div class="setting-item">
-                  <label class="setting-label">Auto-Save</label>
-                  <input type="checkbox" checked class="setting-checkbox">
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Show FPS</label>
-                  <input type="checkbox" class="setting-checkbox">
-                </div>
-                <div class="setting-item">
-                  <label class="setting-label">Language</label>
-                  <select class="setting-select">
-                    <option value="en" selected>English</option>
-                    <option value="fr">Français</option>
-                    <option value="es">Español</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Bottom Back Button (only visible in settings menu) -->
-          <button id="back-to-main-settings-bottom-btn" class="back-btn-simple back-btn-bottom">
-            <span style="color: inherit;">◀</span>
-            <span>Back</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Profile Dashboard Screen -->
-    <div id="profile-screen" class="screen">
-      <div class="profile-container">
-        <div class="profile-panel">
-          <!-- Top Back Button (only visible in profile menu) -->
-          <button id="back-to-main-profile-btn" class="back-btn-simple">
-            <span style="color: inherit;">◀</span>
-            <span>Back</span>
-          </button>
-          
-          <h2 class="profile-title">Player Dashboard</h2>
-          
-          <div class="profile-content">
-            <!-- Compact Profile Header -->
-            <div class="profile-header-compact">
-              <div class="user-avatar">👤</div>
-              <div class="user-basic-info">
-                <h3 id="profile-username">Loading...</h3>
-                <div class="user-meta">
-                  <span id="profile-user-id" class="user-detail">ID: Loading...</span>
-                  <span class="separator">•</span>
-                  <span id="profile-member-since" class="user-detail">Member since: Loading...</span>
-                </div>
-              </div>
-              <div class="level-compact">
-                <div class="level-number" id="profile-level">1</div>
-                <div class="level-label">Level</div>
-                <div class="exp-compact">
-                  <div class="exp-bar">
-                    <div class="exp-fill" id="profile-exp-bar" style="width: 30%"></div>
-                  </div>
-                  <span class="exp-text" id="profile-exp-text">300 / 1000 XP</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Stats Table Layout -->
-            <div class="profile-stats-table">
-              <div class="stats-section">
-                <h4 class="section-title">Game Statistics</h4>
-                <div class="stats-row">
-                  <div class="stat-cell">
-                    <span class="stat-label">Total Games</span>
-                    <span class="stat-value" id="profile-total-games">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Wins</span>
-                    <span class="stat-value" id="profile-wins">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Losses</span>
-                    <span class="stat-value" id="profile-losses">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Win Rate</span>
-                    <span class="stat-value" id="profile-win-rate">0%</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="stats-section">
-                <h4 class="section-title">Performance Metrics</h4>
-                <div class="stats-row">
-                  <div class="stat-cell">
-                    <span class="stat-label">Campaign Level</span>
-                    <span class="stat-value" id="profile-campaign-level">Level 1</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Current Streak</span>
-                    <span class="stat-value" id="profile-streak">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Best Streak</span>
-                    <span class="stat-value" id="profile-best-streak">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Global Rank</span>
-                    <span class="stat-value" id="profile-rank">#--</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="stats-section">
-                <h4 class="section-title">Tournament History</h4>
-                <div class="stats-row">
-                  <div class="stat-cell">
-                    <span class="stat-label">Tournaments</span>
-                    <span class="stat-value" id="profile-tournaments">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Tournament Wins</span>
-                    <span class="stat-value" id="profile-tournament-wins">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Top 3 Finishes</span>
-                    <span class="stat-value" id="profile-top3">0</span>
-                  </div>
-                  <div class="stat-cell">
-                    <span class="stat-label">Prize Money</span>
-                    <span class="stat-value" id="profile-earnings">$0</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="stats-section">
-                <h4 class="section-title">Recent Activity</h4>
-                <div class="activity-table">
-                  <div class="activity-row activity-header">
-                    <span>Date</span>
-                    <span>Game Mode</span>
-                    <span>Opponent</span>
-                    <span>Result</span>
-                    <span>Score</span>
-                  </div>
-                  <div id="profile-recent-activity" class="activity-list">
-                    <!-- Dynamic activity items will be inserted here -->
-                    <div class="activity-row">
-                      <span>Today</span>
-                      <span>Arcade</span>
-                      <span>Player42</span>
-                      <span class="result-win">Win</span>
-                      <span>8-5</span>
-                    </div>
-                    <div class="activity-row">
-                      <span>Yesterday</span>
-                      <span>Tournament</span>
-                      <span>ProGamer</span>
-                      <span class="result-loss">Loss</span>
-                      <span>6-8</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="stats-section">
-                <h4 class="section-title">Tournament Rankings</h4>
-                <div class="activity-table">
-                  <div class="activity-row activity-header">
-                    <span>Tournament</span>
-                    <span>Date</span>
-                    <span>Rank</span>
-                    <span>Participants</span>
-                    <span>Status</span>
-                  </div>
-                  <div id="profile-tournament-rankings" class="activity-list">
-                    <!-- Dynamic tournament ranking items will be inserted here -->
-                    <div class="empty-state" style="padding: 20px; text-align: center; color: #aaa;">
-                      <p>No tournament history yet</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Bottom Back Button (only visible in profile menu) -->
-          <button id="back-to-main-profile-bottom-btn" class="back-btn-simple back-btn-bottom">
-            <span style="color: inherit;">◀</span>
-            <span>Back</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Local Player Modals will be injected here by app.ts -->
-  
-  <!-- Local Player Login Modal -->
-  <div id="local-player-login-modal" class="modal" style="display: none;">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Login</h2>
-        <button type="button" class="modal-close" id="close-local-player-login-modal" aria-label="Close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="login-form-container">
-          <form id="local-player-login-form" class="login-form">
-            <input type="text" id="local-player-login-email" placeholder="Username" required class="login-input" />
-            <input type="password" id="local-player-login-password" placeholder="Password" required class="login-input" />
-            <div id="local-player-login-error" class="error-message" style="display: none;"></div>
-            <button type="submit" class="login-btn">LOGIN</button>
-          </form>
-          
-          <div class="login-links">
-            <a href="#" id="local-player-forgot-password-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Forgot Password?
-            </a>
-            <span>OR</span>
-            <a href="#" id="local-player-create-account-link" class="login-link">
-              <span style="color: #e94560;">▶</span> Create an Account
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Local Player Register Modal -->
-  <div id="local-player-register-modal" class="modal" style="display: none;">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Create Account</h2>
-        <button type="button" class="modal-close" id="close-local-player-register-modal" aria-label="Close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="login-form-container">
-          <form id="local-player-register-form" class="login-form">
-            <input type="text" id="local-player-register-username" placeholder="Username" required class="login-input" />
-            <input type="email" id="local-player-register-email" placeholder="Email" required class="login-input" />
-            <input type="password" id="local-player-register-password" placeholder="Password" required class="login-input" />
-            <div id="local-player-register-error" class="error-message" style="display: none;"></div>
-            <button type="submit" class="login-btn">Create Account</button>
-          </form>
-          
-          <div class="login-links">
-            <a href="#" id="local-player-back-to-login-link" class="login-link">
-              <span style="color: #e94560;">◀</span> Back to Login
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tournament Creation Modal -->
-  <div id="create-tournament-modal" class="modal hidden" style="display: none;">
-    <div class="modal-overlay"></div>
-    <div class="modal-content tournament-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">Create Tournament</h2>
-        <button type="button" class="modal-close" id="cancel-tournament" aria-label="Close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="modal-body">
-        <form id="create-tournament-form">
-          <div class="form-group">
-            <label for="tournament-name">Tournament Name (Optional)</label>
-            <input 
-              type="text" 
-              id="tournament-name" 
-              name="tournament-name" 
-              class="login-input" 
-              placeholder="Leave empty for auto-generated name" 
+          <form id="login-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="login-username"
+              placeholder="Username"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
             />
+            <input
+              type="password"
+              id="login-password"
+              placeholder="Password"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
+            />
+
+            <button
+              type="submit"
+              class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
+            >
+              LOGIN
+            </button>
+          </form>
+
+          <div
+            class="flex flex-col items-center gap-3 mt-8 pt-4 border-t border-panel-border"
+          >
+            <a
+              href="#"
+              id="forgot-password-link"
+              class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Forgot Password?
+            </a>
+            <span class="text-text-muted text-[10px] uppercase">OR</span>
+            <a
+              href="#"
+              id="create-account-link"
+              class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors"
+            >
+              Create an Account
+            </a>
           </div>
-          
-          <div class="form-group">
-            <label for="tournament-description">Description (Optional)</label>
-            <textarea 
-              id="tournament-description" 
-              name="tournament-description" 
-              class="login-input" 
-              placeholder="Tournament details..."
-              rows="3"
-            ></textarea>
+        </div>
+      </div>
+
+      <div
+        id="register-screen"
+        class="screen w-full h-full flex items-center justify-center relative bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative"
+        >
+          <div class="text-center mb-8">
+            <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
+              REGISTER
+            </h1>
           </div>
-          
-          <div class="form-group">
-            <label for="max-participants">Maximum Players</label>
-            <select id="max-participants" name="max-participants" class="login-input">
-              <option value="2">2 Players</option>
-              <option value="4">4 Players</option>
-              <option value="8" selected>8 Players</option>
-              <option value="16">16 Players</option>
-            </select>
+          <form id="register-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="register-username"
+              placeholder="Username"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all"
+            />
+            <input
+              type="email"
+              id="register-email"
+              placeholder="Email"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all"
+            />
+            <input
+              type="password"
+              id="register-password"
+              placeholder="Password"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all"
+            />
+
+            <button
+              type="submit"
+              class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
+            >
+              Create Account
+            </button>
+          </form>
+          <div class="mt-6 text-center">
+            <a
+              href="#"
+              id="back-to-login-link"
+              class="text-text-muted hover:text-white text-xs font-vcr uppercase tracking-wider"
+              >Back to Login</a
+            >
           </div>
-          
-          <div class="form-group">
-            <label>Select Participants from Party</label>
-            <div id="tournament-participants-list" class="tournament-participants-list">
-              <!-- Host automatically included -->
-              <div class="participant-item selected" data-player-type="host">
-                <input type="checkbox" checked disabled />
-                <span class="participant-name" id="tournament-host-name">You (Host)</span>
-                <span class="participant-badge host">HOST</span>
+        </div>
+      </div>
+
+      <div
+        id="forgot-password-screen"
+        class="screen w-full h-full flex items-center justify-center relative bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative"
+        >
+          <div class="text-center mb-8">
+            <h1 class="text-2xl text-white tracking-[2px] uppercase font-vcr">
+              RESET PASSWORD
+            </h1>
+          </div>
+          <form id="forgot-password-form" class="flex flex-col gap-4">
+            <div
+              class="p-3 bg-accent-dim/30 border border-accent rounded text-xs text-white font-vcr text-center"
+            >
+              Enter email to receive reset link.
+            </div>
+            <input
+              type="email"
+              id="forgot-password-email"
+              placeholder="Email Address"
+              required
+              class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all"
+            />
+            <button
+              type="submit"
+              class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
+            >
+              Send Link
+            </button>
+          </form>
+          <div class="mt-6 text-center">
+            <a
+              href="#"
+              id="back-to-login-from-forgot-link"
+              class="text-text-muted hover:text-white text-xs font-vcr uppercase tracking-wider"
+              >Back to Login</a
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 
+           MAIN MENU (LAUNCHSEQ) 
+      ==================== -->
+      <div
+        id="main-menu-screen"
+        class="screen w-full h-full flex items-center justify-center bg-bg-primary border-[4px] border-accent p-4 box-border"
+      >
+        <div class="flex flex-col items-center justify-center w-full max-w-3xl">
+          <!-- Logo Area -->
+          <div class="text-center mb-16">
+            <p class="text-white text-sm font-pixel italic opacity-80 mb-2">
+              Spiritual Ascension
+            </p>
+            <h1
+              class="text-6xl md:text-8xl font-bold font-pixel text-white tracking-tighter"
+            >
+              LAUNCH<span class="text-accent italic">SEQ</span>
+            </h1>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-6">
+            <!-- Play Button (Blue Square) -->
+            <button
+              id="play-btn"
+              class="w-24 h-24 bg-accent hover:bg-white transition-colors flex items-center justify-center group shadow-glow"
+            >
+              <i
+                class="fas fa-play text-3xl text-white group-hover:text-black"
+              ></i>
+            </button>
+
+            <!-- Settings Button (Black Square with white border) -->
+            <button
+              id="settings-btn"
+              class="w-24 h-24 bg-black border-2 border-white hover:bg-white transition-colors flex items-center justify-center group"
+            >
+              <i
+                class="fas fa-cog text-3xl text-white group-hover:text-black"
+              ></i>
+            </button>
+
+            <!-- Profile Button (Hidden in screenshot but needed for logic) -->
+            <button
+              id="profile-btn"
+              class="w-24 h-24 bg-black border-2 border-panel-border hover:border-accent transition-colors flex items-center justify-center group"
+            >
+              <i
+                class="fas fa-user text-3xl text-white group-hover:text-accent"
+              ></i>
+            </button>
+          </div>
+
+          <!-- Footer -->
+          <div
+            class="fixed bottom-8 w-full px-8 flex justify-between text-xs font-pixel text-text-muted"
+          >
+            <span
+              id="main-menu-logout-btn"
+              class="cursor-pointer hover:text-white"
+              >Action description goes here</span
+            >
+            <span>v1.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 
+           PLAY CONFIGURATION 
+      ==================== -->
+      <div
+        id="play-config-screen"
+        class="screen w-full h-full bg-bg-primary p-4 border-[4px] border-accent box-border flex flex-col"
+      >
+        <!-- Top Tabs (Navigation) -->
+        <div class="flex w-full border-b-2 border-accent mb-4">
+          <button
+            data-mode="coop"
+            class="px-8 py-3 font-vcr uppercase game-mode-tab"
+          >
+            CAMPAIGN
+          </button>
+          <button
+            data-mode="arcade"
+            class="px-8 py-3 font-vcr uppercase active-tab game-mode-tab"
+          >
+            ARCADE
+          </button>
+          <button
+            data-mode="tournament"
+            class="px-8 py-3 font-vcr uppercase game-mode-tab"
+          >
+            TOURNAMENT
+          </button>
+
+          <!-- Hidden Back Button functionality moved to logic -->
+          <div class="flex-1 bg-black"></div>
+          <button
+            id="back-to-main-btn"
+            class="px-4 text-accent hover:text-white"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div
+          class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-hidden"
+        >
+          <!-- Left Column: Settings & Description (Col Span 3) -->
+          <div
+            class="md:col-span-3 flex flex-col gap-6 border-r-0 md:border-r border-panel-border pr-4 overflow-y-auto"
+          >
+            <!-- Mode Header -->
+            <div>
+              <h2 class="text-3xl font-vcr text-white uppercase mb-2">
+                CAMPAIGN
+              </h2>
+              <p class="text-xs text-text-muted font-pixel leading-relaxed">
+                Go through the campaign and take on the aliens as they scale in
+                difficulty.
+              </p>
+            </div>
+
+            <!-- Divider -->
+            <div class="h-[2px] bg-accent w-full my-2"></div>
+
+            <!-- Settings Controls -->
+            <div class="flex flex-col gap-6">
+              <!-- Ball Speed -->
+              <div class="flex flex-col gap-2">
+                <label class="font-vcr text-white text-sm">Ball Speed</label>
+                <div class="flex border border-accent">
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel hover:bg-accent hover:text-black border-r border-accent text-white"
+                    data-setting="ball-speed"
+                    data-value="slow"
+                  >
+                    SLOW
+                  </button>
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel bg-accent text-black border-r border-accent font-bold"
+                    data-setting="ball-speed"
+                    data-value="medium"
+                  >
+                    MEDIUM
+                  </button>
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel hover:bg-accent hover:text-black text-white"
+                    data-setting="ball-speed"
+                    data-value="fast"
+                  >
+                    FAST
+                  </button>
+                </div>
               </div>
-              
-              <!-- Local players will be added here -->
-              <div id="tournament-local-players-list"></div>
-              
-              <!-- Online players will be added here -->
-              <div id="tournament-online-players-list"></div>
-              
-              <div class="participant-count">
-                <span>Selected: <strong id="tournament-selected-count">1</strong> / <strong id="tournament-max-count">8</strong></span>
+
+              <!-- Paddle Speed -->
+              <div class="flex flex-col gap-2">
+                <label class="font-vcr text-white text-sm">Paddle Speed</label>
+                <div class="flex border border-accent">
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel hover:bg-accent hover:text-black border-r border-accent text-white"
+                    data-setting="paddle-speed"
+                    data-value="slow"
+                  >
+                    SLOW
+                  </button>
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel bg-accent text-black border-r border-accent font-bold"
+                    data-setting="paddle-speed"
+                    data-value="medium"
+                  >
+                    MEDIUM
+                  </button>
+                  <button
+                    class="flex-1 py-1 text-xs font-pixel hover:bg-accent hover:text-black text-white"
+                    data-setting="paddle-speed"
+                    data-value="fast"
+                  >
+                    FAST
+                  </button>
+                </div>
+              </div>
+
+              <!-- Toggles -->
+              <div class="flex flex-col gap-2 mt-2">
+                <label
+                  class="flex justify-between items-center cursor-pointer group"
+                >
+                  <span class="font-vcr text-white text-sm">Powerups</span>
+                  <input
+                    type="checkbox"
+                    id="powerups-enabled"
+                    class="w-5 h-5 border-2 border-accent bg-transparent checked:bg-accent appearance-none cursor-pointer"
+                  />
+                </label>
+                <label
+                  class="flex justify-between items-center cursor-pointer group"
+                >
+                  <span class="font-vcr text-white text-sm"
+                    >Accelerate on Hit</span
+                  >
+                  <input
+                    type="checkbox"
+                    id="accelerate-on-hit"
+                    class="w-5 h-5 border-2 border-accent bg-transparent checked:bg-accent appearance-none cursor-pointer"
+                  />
+                </label>
+
+                <!-- Arcade Score (Hidden unless arcade) -->
+                <div
+                  class="arcade-only hidden flex justify-between items-center mt-2"
+                >
+                  <span class="font-vcr text-white text-sm">Max Score</span>
+                  <div class="flex items-center gap-2">
+                    <button
+                      id="score-decrement"
+                      class="text-accent hover:text-white"
+                    >
+                      -
+                    </button>
+                    <span id="score-value" class="font-pixel text-white"
+                      >5</span
+                    >
+                    <button
+                      id="score-increment"
+                      class="text-accent hover:text-white"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-auto pt-8">
+              <button
+                id="start-game-btn"
+                class="w-full py-4 bg-accent text-black font-bold font-vcr text-2xl uppercase hover:bg-white transition-colors shadow-glow"
+              >
+                PLAY
+              </button>
+            </div>
+          </div>
+
+          <!-- Middle Column: Party (Col Span 4) -->
+          <div
+            class="md:col-span-4 flex flex-col border-r-0 md:border-r border-panel-border px-4"
+          >
+            <div
+              class="bg-accent text-black p-2 font-bold font-vcr uppercase mb-4 flex justify-between"
+            >
+              <span>PARTY</span>
+              <span class="text-xs pt-1">1/1</span>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <div class="text-xs text-text-muted uppercase mb-1 font-pixel">
+                TEAM 1
+              </div>
+              <!-- Host Card -->
+              <div id="game-party-list" class="flex flex-col gap-2">
+                <!-- The JS injects player cards here. We style the container -->
+                <div id="coop-party-frame">
+                  <div
+                    class="border border-white p-3 flex items-center justify-between bg-black"
+                  >
+                    <div class="flex items-center gap-3">
+                      <img
+                        src="https://ui-avatars.com/api/?name=User&background=random"
+                        class="w-8 h-8 border border-white"
+                      />
+                      <span
+                        id="host-player-name-coop"
+                        class="font-vcr text-white"
+                        >Loading...</span
+                      >
+                    </div>
+                    <i class="fas fa-crown text-white text-xs"></i>
+                  </div>
+                </div>
+
+                <!-- Arcade/Tournament Slots placeholders for styling -->
+                <div id="teams-row" class="flex flex-col gap-4 hidden">
+                  <div id="team1-list"></div>
+                  <div
+                    class="text-xs text-text-muted uppercase mt-2 mb-1 font-pixel"
+                  >
+                    TEAM 2
+                  </div>
+                  <div id="team2-list"></div>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div class="modal-actions">
-            <button type="button" id="cancel-tournament-btn" class="btn btn-secondary">Cancel</button>
-            <button type="submit" class="btn btn-primary">Create & Start</button>
+
+          <!-- Right Column: Available Players (Col Span 5) -->
+          <div class="md:col-span-5 flex flex-col pl-4">
+            <div
+              class="bg-accent text-black p-2 font-bold font-vcr uppercase mb-4 flex justify-between"
+            >
+              <span>AVAILABLE</span>
+              <span class="text-xs pt-1">6</span>
+            </div>
+
+            <!-- Mock list to match screenshot look, real logic via JS -->
+            <div class="flex flex-col gap-2 overflow-y-auto pr-2">
+              <!-- Add Player Button acts as the "Available" list interaction -->
+              <button
+                id="add-team1-player-btn"
+                class="border border-white p-3 flex items-center justify-between hover:bg-white/10 text-left group"
+              >
+                <span class="font-vcr text-white group-hover:text-accent"
+                  >Add Player</span
+                >
+                <span class="text-white">+</span>
+              </button>
+
+              <!-- This container gets populated by JS for local/online players -->
+              <div
+                id="tournament-local-players-list"
+                class="flex flex-col gap-2"
+              ></div>
+            </div>
           </div>
-        </form>
+        </div>
+      </div>
+
+      <!-- ==================== 
+           GAME SCREEN 
+      ==================== -->
+      <div
+        id="game-screen"
+        class="screen w-full h-full bg-black p-4 border-[4px] border-accent box-border flex flex-col justify-center"
+      >
+        <!-- Top Bar (HUD) -->
+        <div
+          class="w-full max-w-6xl mx-auto mb-4 border border-white flex justify-between h-16 bg-black text-white relative"
+        >
+          <!-- Left Player -->
+          <div class="flex items-center w-1/3 border-r border-white">
+            <div
+              class="w-16 h-full border-r border-white bg-cover bg-center"
+              style="
+                background-image: url('https://ui-avatars.com/api/?name=P1&background=random');
+              "
+            ></div>
+            <span class="pl-4 font-vcr uppercase truncate">Player 1</span>
+          </div>
+
+          <!-- Center Status -->
+          <div
+            class="flex-1 flex items-center justify-center font-pixel text-xs text-text-muted"
+          >
+            <span id="game-status-text">NO POWERUP</span>
+          </div>
+
+          <!-- Right Player -->
+          <div
+            class="flex items-center justify-end w-1/3 border-l border-white"
+          >
+            <span class="pr-4 font-vcr uppercase truncate">Player 2</span>
+            <div
+              class="w-16 h-full border-l border-white bg-cover bg-center"
+              style="
+                background-image: url('https://ui-avatars.com/api/?name=P2&background=random');
+              "
+            ></div>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div
+          class="game-container w-full max-w-6xl mx-auto border border-accent relative bg-black aspect-video"
+        >
+          <!-- Overlay Controls -->
+          <div class="absolute top-4 right-4 flex gap-2 z-20">
+            <button
+              id="pause-game-btn"
+              class="w-8 h-8 border border-white text-white hover:bg-white hover:text-black flex items-center justify-center"
+            >
+              <i class="fas fa-pause"></i>
+            </button>
+            <button
+              id="stop-game-btn"
+              class="w-8 h-8 border border-white text-white hover:bg-red-500 hover:border-red-500 flex items-center justify-center"
+            >
+              <i class="fas fa-stop"></i>
+            </button>
+          </div>
+
+          <canvas
+            id="game-canvas"
+            width="800"
+            height="600"
+            class="w-full h-full block"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- ==================== 
+           SETTINGS SCREEN 
+      ==================== -->
+      <div
+        id="settings-screen"
+        class="screen w-full h-full flex items-center justify-center bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-2xl border-2 border-accent bg-black p-8 shadow-glow relative"
+        >
+          <div
+            class="flex justify-between items-center mb-8 border-b border-panel-border pb-4"
+          >
+            <h2 class="text-2xl font-vcr text-white uppercase">SETTINGS</h2>
+            <button id="settings-back-btn" class="text-white hover:text-accent">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <!-- Keep existing form logic -->
+          <form id="settings-profile-form" class="flex flex-col gap-4">
+            <label class="font-vcr text-sm">Display Name</label>
+            <input
+              type="text"
+              id="settings-display-name"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+
+            <label class="font-vcr text-sm">Avatar URL</label>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                id="settings-avatar-url"
+                class="flex-1 p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+              />
+              <div
+                class="w-12 h-12 border border-white flex items-center justify-center"
+              >
+                <i class="fas fa-image"></i>
+              </div>
+            </div>
+
+            <div
+              class="mt-4 border-t border-panel-border pt-4 flex flex-col gap-2"
+            >
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="settings-sound-enabled"
+                  class="accent-accent"
+                />
+                <span class="font-pixel text-sm">Sound Effects</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="settings-music-enabled"
+                  class="accent-accent"
+                />
+                <span class="font-pixel text-sm">Background Music</span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              class="mt-4 px-6 py-3 bg-accent text-black font-bold font-vcr uppercase self-start hover:bg-white"
+            >
+              Save Changes
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- ==================== 
+           PROFILE SCREEN 
+      ==================== -->
+      <div
+        id="profile-screen"
+        class="screen w-full h-full flex items-center justify-center bg-bg-primary"
+      >
+        <div
+          class="w-full max-w-4xl border-2 border-accent bg-black p-8 shadow-glow h-[80vh] flex flex-col relative"
+        >
+          <button
+            id="back-to-main-profile-btn"
+            class="absolute top-4 right-4 text-white hover:text-accent"
+          >
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 h-full">
+            <!-- Left Col -->
+            <div
+              class="border-r border-panel-border pr-8 flex flex-col items-center text-center"
+            >
+              <div
+                class="w-32 h-32 border-2 border-accent rounded-full mb-4 overflow-hidden bg-white/10"
+              >
+                <img
+                  id="profile-avatar"
+                  src=""
+                  class="w-full h-full object-cover hidden"
+                />
+              </div>
+              <h2
+                id="profile-username"
+                class="text-2xl font-vcr text-white mb-2"
+              >
+                User
+              </h2>
+              <div class="grid grid-cols-2 gap-4 w-full mt-8">
+                <div class="bg-white/5 p-2 rounded">
+                  <div class="text-[10px] text-text-muted uppercase">Wins</div>
+                  <div
+                    id="profile-tournament-wins"
+                    class="text-xl text-accent font-vcr"
+                  >
+                    0
+                  </div>
+                </div>
+                <div class="bg-white/5 p-2 rounded">
+                  <div class="text-[10px] text-text-muted uppercase">Games</div>
+                  <div
+                    id="profile-tournaments"
+                    class="text-xl text-white font-vcr"
+                  >
+                    0
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Right Col -->
+            <div class="md:col-span-2 overflow-y-auto">
+              <h3
+                class="text-accent font-vcr uppercase mb-4 border-b border-accent pb-2"
+              >
+                Match History
+              </h3>
+              <div id="profile-recent-activity" class="flex flex-col gap-2">
+                <!-- Populated by JS -->
+                <div class="text-text-muted text-xs font-pixel">
+                  No matches found.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modals (Hidden by default) -->
+      <div
+        id="local-player-login-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
+      >
+        <div
+          class="bg-black border-2 border-accent p-8 w-full max-w-md shadow-glow relative"
+        >
+          <button
+            id="close-local-player-login-modal"
+            class="absolute top-4 right-4 text-white"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+          <h2 class="text-2xl font-vcr text-white mb-6">PLAYER LOGIN</h2>
+          <form id="local-player-login-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="local-player-login-email"
+              placeholder="Username"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <input
+              type="password"
+              id="local-player-login-password"
+              placeholder="Password"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <div
+              id="local-player-login-error"
+              class="text-red-500 text-xs hidden"
+            >
+              Error message
+            </div>
+            <button
+              type="submit"
+              class="p-3 bg-accent text-black font-bold font-vcr uppercase hover:bg-white"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div
+        id="local-player-register-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
+      >
+        <div
+          class="bg-black border-2 border-accent p-8 w-full max-w-md shadow-glow relative"
+        >
+          <button
+            id="close-local-player-register-modal"
+            class="absolute top-4 right-4 text-white"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+          <h2 class="text-2xl font-vcr text-white mb-6">NEW PLAYER</h2>
+          <form id="local-player-register-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="local-player-register-username"
+              placeholder="Username"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <input
+              type="email"
+              id="local-player-register-email"
+              placeholder="Email"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <input
+              type="password"
+              id="local-player-register-password"
+              placeholder="Password"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <div
+              id="local-player-register-error"
+              class="text-red-500 text-xs hidden"
+            >
+              Error message
+            </div>
+            <button
+              type="submit"
+              class="p-3 bg-accent text-black font-bold font-vcr uppercase hover:bg-white"
+            >
+              Create
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Create Tournament Modal -->
+      <div
+        id="create-tournament-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
+      >
+        <div
+          class="bg-black border-2 border-accent p-8 w-full max-w-lg shadow-glow relative"
+        >
+          <h2 class="text-2xl font-vcr text-white mb-6">TOURNAMENT SETUP</h2>
+          <form id="create-tournament-form" class="flex flex-col gap-4">
+            <input
+              type="text"
+              id="tournament-name"
+              placeholder="Tournament Name"
+              class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
+            />
+            <select
+              id="max-participants"
+              class="p-3 bg-black border border-white text-white font-pixel"
+            >
+              <option value="4">4 Players</option>
+              <option value="8">8 Players</option>
+            </select>
+            <div
+              id="tournament-participants-list"
+              class="border border-panel-border p-2 max-h-40 overflow-y-auto"
+            >
+              <!-- JS Injects here -->
+              <div class="text-xs text-text-muted">Select players...</div>
+            </div>
+            <div class="flex gap-4 mt-4">
+              <button
+                type="button"
+                id="cancel-tournament-btn"
+                class="flex-1 p-3 border border-white text-white font-vcr hover:bg-white hover:text-black"
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                class="flex-1 p-3 bg-accent text-black font-bold font-vcr hover:bg-white"
+              >
+                START
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- Scripts -->
-  <script type="module" src="src/main.ts"></script>
-</body>
+  </body>
 </html>

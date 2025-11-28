@@ -66,11 +66,11 @@ export class Router {
     const path = window.location.pathname;
     const route = this.findRoute(path);
     if (route) {
-      if (route.requiresAuth && !this.app.isAuthenticated()) {
-        return '/login';
-      }
+      // if (route.requiresAuth && !this.app.isAuthenticated()) {
+      //   return '/login';
+      // }
       return path;
     }
-    return '/login';
+    return '/main-menu';
   }
 }

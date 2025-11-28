@@ -10,19 +10,68 @@ import { setupLocalPlayerRegisterModal, showLocalPlayerRegisterModal, setupLocal
 
 
 export class App {
+  private currentScreen: string = "login";
+  private router: Router;
+  private gameSettings: GameSettings = {
+    gameMode: "coop",
+    aiDifficulty: "easy",
+    ballSpeed: "medium",
+    paddleSpeed: "medium",
+    powerupsEnabled: false,
+    accelerateOnHit: false,
+    scoreToWin: 5,
+  };
+  private localPlayers: LocalPlayer[] = [];
+  // Persisted set of selected player ids (used to restore highlights after re-renders)
+  private selectedPlayerIds: Set<string> = new Set();
+  // Prevent double-registration of party click handlers
+  private playerSelectionInitialized: boolean = false;
+  // Debounce map to prevent double-clicks on same card
+  private lastClickTimestamps: Map<string, number> = new Map();
+  // Debounce for start game button
+  private lastStartGameClick: number = 0;
+  // Prevent duplicate event listener setup
+  private eventListenersInitialized: boolean = false;
+
+  // Screen elements
+  private loginScreen!: HTMLElement;
+  private registerScreen!: HTMLElement;
+  private mainMenuScreen!: HTMLElement;
+  private playConfigScreen!: HTMLElement;
+  private gameScreen!: HTMLElement;
+  private settingsScreen!: HTMLElement;
+
+  // Form elements
+  private loginForm!: HTMLFormElement;
+  private registerForm!: HTMLFormElement;
+  private forgotPasswordForm!: HTMLFormElement;
+
+  constructor() {
+    console.log('🏗️ [App] Constructor called - Creating new App instance');
+    console.trace();
+    this.router = new Router(this);
+    this.init();
+    // Setup local player modals (now directly in index.html)
+    console.log('[App] Setting up local player modals...');
+    setupLocalPlayerLoginModal(this);
+    setupLocalPlayerRegisterModal(this);
+    this.setupAddPlayerButtons();
+    console.log('[App] Local player modal setup complete');
+  }
+
   // Handles game mode tab click and initialization
   handleGameModeChange(tab: HTMLElement): void {
     const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
     if (!mode) return;
-    
+
     // Update the game settings with the new mode
     this.gameSettings.gameMode = mode;
-    
+
     // Remove active from all tabs
-    document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
+    document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active-tab'));
+    tab.classList.add('active-tab');
     // Show correct mode description
-    document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active'));
+    document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active-tab'));
     const activeDesc = document.getElementById(`mode-desc-${mode}`);
     if (activeDesc) activeDesc.classList.add('active');
     // Show/hide arcade-only settings
@@ -43,26 +92,26 @@ export class App {
     playerCard.className = 'player-card local-player';
     playerCard.dataset.playerId = player.id;
     playerCard.dataset.email = player.email || ''; // Store email for duplicate checking
-    
+
     // Make player card draggable in arcade mode
     playerCard.draggable = true;
     playerCard.dataset.team = (player as any).team || '1';
-    
+
     playerCard.innerHTML = [
       '<div class="player-avatar"><i class="fas fa-home"></i></div>',
       '<div class="player-info">',
-        `<span class="player-name">${player.username}</span>`,
-        '<span class="role-badge local">Local</span>',
+      `<span class="player-name">${player.username}</span>`,
+      '<span class="role-badge local">Local</span>',
       '</div>',
       '<div class="player-actions">',
-        `<button class="remove-btn" type="button"><i class="fas fa-times"></i></button>`,
+      `<button class="remove-btn" type="button"><i class="fas fa-times"></i></button>`,
       '</div>'
     ].join('');
-    
+
     // Add drag event listeners
     playerCard.addEventListener('dragstart', this.handleDragStart.bind(this));
     playerCard.addEventListener('dragend', this.handleDragEnd.bind(this));
-    
+
     // Remove button event
     playerCard.querySelector('.remove-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -80,11 +129,11 @@ export class App {
     const team1List = document.getElementById('team1-list');
     const team2List = document.getElementById('team2-list');
     const tournamentLocalContainer = document.getElementById('tournament-local-players');
-    
+
     console.log('[updateGamePartyDisplay] Current mode:', this.gameSettings.gameMode);
     console.log('[updateGamePartyDisplay] Tournament container exists:', !!tournamentLocalContainer);
     console.log('[updateGamePartyDisplay] Local players count:', this.localPlayers.length);
-    
+
     // Clear tournament local players if it exists
     if (tournamentLocalContainer) {
       tournamentLocalContainer.innerHTML = '';
@@ -93,11 +142,11 @@ export class App {
 
     // Check current game mode to determine which container to update
     const currentMode = this.gameSettings.gameMode;
-    
+
     // If we're in tournament mode, show ALL local players (from any mode)
     if (currentMode === 'tournament' && tournamentLocalContainer) {
       console.log('[updateGamePartyDisplay] Adding ALL local players to tournament container');
-      
+
       // CRITICAL: Ensure host name is correct before updating players
       const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
       const authManager = (window as any).authManager;
@@ -106,13 +155,13 @@ export class App {
         console.log('[updateGamePartyDisplay] Ensuring tournament host name is:', currentUsername);
         hostPlayerNameTournament.textContent = currentUsername;
       }
-      
+
       this.localPlayers.forEach((player, index) => {
         const playerCard = this.createPlayerCard(player);
         const playerId = player.id?.toString();
         console.log(`[updateGamePartyDisplay] Adding player ${index}:`, player.username, 'ID:', playerId);
         tournamentLocalContainer.appendChild(playerCard);
-        
+
         // Restore highlight if this player is selected
         if (playerId && this.selectedPlayerIds.has(playerId)) {
           playerCard.classList.add('active');
@@ -157,14 +206,14 @@ export class App {
         console.log('[updateGamePartyDisplay] Skipping tournament player in arcade mode:', player.username);
         return;
       }
-      
+
       const playerCard = this.createPlayerCard(player);
       const playerId = player.id?.toString();
-      
+
       // Determine which team container to use
       const team = (player as any).team || 1; // Default to team 1 if not specified
       const targetContainer = team === 2 ? team2LocalContainer : team1LocalContainer;
-      
+
       if (targetContainer) {
         targetContainer.appendChild(playerCard);
         // Restore highlight if this player is selected
@@ -244,54 +293,6 @@ export class App {
       console.error(`Error updating stats for user ${userId}:`, error);
     }
   }
-  private currentScreen: string = "login";
-  private router: Router;
-  private gameSettings: GameSettings = {
-    gameMode: "coop",
-    aiDifficulty: "easy",
-    ballSpeed: "medium",
-    paddleSpeed: "medium",
-    powerupsEnabled: false,
-    accelerateOnHit: false,
-    scoreToWin: 5,
-  };
-  private localPlayers: LocalPlayer[] = [];
-  // Persisted set of selected player ids (used to restore highlights after re-renders)
-  private selectedPlayerIds: Set<string> = new Set();
-  // Prevent double-registration of party click handlers
-  private playerSelectionInitialized: boolean = false;
-  // Debounce map to prevent double-clicks on same card
-  private lastClickTimestamps: Map<string, number> = new Map();
-  // Debounce for start game button
-  private lastStartGameClick: number = 0;
-  // Prevent duplicate event listener setup
-  private eventListenersInitialized: boolean = false;
-
-  // Screen elements
-  private loginScreen!: HTMLElement;
-  private registerScreen!: HTMLElement;
-  private mainMenuScreen!: HTMLElement;
-  private playConfigScreen!: HTMLElement;
-  private gameScreen!: HTMLElement;
-  private settingsScreen!: HTMLElement;
-
-  // Form elements
-  private loginForm!: HTMLFormElement;
-  private registerForm!: HTMLFormElement;
-  private forgotPasswordForm!: HTMLFormElement;
-
-  constructor() {
-    console.log('🏗️ [App] Constructor called - Creating new App instance');
-    console.trace();
-    this.router = new Router(this);
-    this.init();
-    // Setup local player modals (now directly in index.html)
-    console.log('[App] Setting up local player modals...');
-    setupLocalPlayerLoginModal(this);
-    setupLocalPlayerRegisterModal(this);
-    this.setupAddPlayerButtons();
-    console.log('[App] Local player modal setup complete');
-  }
 
   setupAddPlayerButtons() {
     console.log('[App] Setting up add player buttons...');
@@ -302,7 +303,7 @@ export class App {
       // Remove old listener by cloning
       const newBtn1 = addTeam1Btn.cloneNode(true) as HTMLElement;
       addTeam1Btn.parentNode?.replaceChild(newBtn1, addTeam1Btn);
-      
+
       newBtn1.addEventListener('click', () => {
         console.log('🎮 [App] TEAM 1 Add Player button clicked');
         (window as any).addPlayerTeam = 1;
@@ -313,14 +314,14 @@ export class App {
     } else {
       console.warn('⚠️ [App] TEAM 1 add player button (#add-team1-player-btn) not found');
     }
-    
+
     // TEAM 2 add player button
     const addTeam2Btn = document.getElementById('add-team2-player-btn');
     if (addTeam2Btn) {
       // Remove old listener by cloning
       const newBtn2 = addTeam2Btn.cloneNode(true) as HTMLElement;
       addTeam2Btn.parentNode?.replaceChild(newBtn2, addTeam2Btn);
-      
+
       newBtn2.addEventListener('click', () => {
         console.log('🎮 [App] TEAM 2 Add Player button clicked');
         (window as any).addPlayerTeam = 2;
@@ -336,7 +337,7 @@ export class App {
   async init(): Promise<void> {
     // IMMEDIATELY hide chat widget before any other logic
     // forceHideChatWidget();
-    
+
     // Set initial body attribute to login screen
     document.body.setAttribute("data-current-screen", "login");
 
@@ -368,16 +369,16 @@ export class App {
     // Setup all event listeners
     this.setupEventListeners();
 
-  // Ensure add-player buttons are wired immediately so UI is responsive
-  // even before optional modal HTML is fetched/inserted.
-  this.setupAddPlayerButtons();
-    
+    // Ensure add-player buttons are wired immediately so UI is responsive
+    // even before optional modal HTML is fetched/inserted.
+    this.setupAddPlayerButtons();
+
     // Setup chat widget (this will also hide it again)
     // this.setupChatWidget();
-    
+
     // Initialize local players with current user
     this.initializeLocalPlayers();
-    
+
     // Initialize coop mode as default (ensure party list is visible)
     console.log('[App.init] Setting up default coop mode');
     this.gameSettings.gameMode = 'coop';
@@ -441,7 +442,7 @@ export class App {
     console.log('✅ Initializing event listeners for the first time');
 
     // Old add-player-modal event listeners removed - now using local-player modals
-    
+
     // Login form
     this.loginForm.addEventListener("submit", (e: Event) => {
       e.preventDefault();
@@ -584,6 +585,7 @@ export class App {
       });
 
     // Game mode tabs
+
     document.querySelectorAll(".game-mode-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         this.handleGameModeChange(tab as HTMLElement);
@@ -646,11 +648,11 @@ export class App {
       // Only zoom when Ctrl key is pressed
       if (e.ctrlKey) {
         e.preventDefault();
-        
+
         // Determine zoom direction
         const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
         const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
-        
+
         if (newZoom !== currentZoom) {
           currentZoom = newZoom;
           this.applyZoom(currentZoom);
@@ -689,11 +691,11 @@ export class App {
     if (app) {
       app.style.transform = `scale(${zoomLevel})`;
       app.style.transformOrigin = 'top left';
-      
+
       // Adjust body size to accommodate zoom
       document.body.style.width = `${100 / zoomLevel}%`;
       document.body.style.height = `${100 / zoomLevel}%`;
-      
+
       // Show zoom level indicator (optional)
       this.showZoomIndicator(zoomLevel);
     }
@@ -728,19 +730,19 @@ export class App {
           this.handleBackspaceShortcut(currentScreen);
           break;
         case 'Escape':
-            e.preventDefault();
-            // Clean up campaign modals and stop any running game
-            const gameManager = (window as any).gameManager;
-            if (gameManager) {
-              // Clean up any campaign modals that might be visible
-              if (typeof gameManager.cleanupCampaignModals === 'function') {
-                gameManager.cleanupCampaignModals();
-              }
-              // Stop the game if it's running
-              if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
-                gameManager.stopGame();
-              }
+          e.preventDefault();
+          // Clean up campaign modals and stop any running game
+          const gameManager = (window as any).gameManager;
+          if (gameManager) {
+            // Clean up any campaign modals that might be visible
+            if (typeof gameManager.cleanupCampaignModals === 'function') {
+              gameManager.cleanupCampaignModals();
             }
+            // Stop the game if it's running
+            if (gameManager.isPlaying && typeof gameManager.stopGame === 'function') {
+              gameManager.stopGame();
+            }
+          }
           this.router.navigate('login');
           break;
         case 'Enter':
@@ -828,7 +830,7 @@ export class App {
     }
   }
 
- 
+
   // Get current active screen
   private getCurrentScreen(): string | null {
     const activeScreen = document.querySelector(".screen.active");
@@ -874,7 +876,7 @@ export class App {
       const coopPartyFrame = document.getElementById('coop-party-frame');
       const tournamentPartyFrame = document.getElementById('tournament-party-frame');
       const teamsRow = document.getElementById('teams-row');
-      
+
       if (coopPartyFrame) coopPartyFrame.style.display = 'none';
       if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
       if (teamsRow) teamsRow.style.display = 'none';
@@ -919,17 +921,13 @@ export class App {
     }
   }
 
-
-  // Unified method: always use router.navigate(screenName) for screen changes
-  // Remove any direct calls to showScreenDirect except from router
-
   async handleLogin(): Promise<void> {
     const usernameInput = document.getElementById('login-username') as HTMLInputElement;
     const passwordInput = document.getElementById('login-password') as HTMLInputElement;
     const username = usernameInput.value;
     const password = passwordInput.value;
     if (!username || !password) {
-  showToast('Please fill in all fields', 'error');
+      showToast('Please fill in all fields', 'error');
       return;
     }
     try {
@@ -944,10 +942,10 @@ export class App {
       } else {
         authManager.currentUser = null;
         localStorage.removeItem('token');
-  showToast('Login failed: ' + result.error, 'error');
+        showToast('Login failed: ' + result.error, 'error');
       }
     } catch (error) {
-  showToast('Login failed: Network error', 'error');
+      showToast('Login failed: Network error', 'error');
     }
   }
 
@@ -959,11 +957,11 @@ export class App {
     const email = emailInput.value;
     const password = passwordInput.value;
     if (!username || !email || !password) {
-  showToast('Please fill in all fields', 'error');
+      showToast('Please fill in all fields', 'error');
       return;
     }
     if (password.length < 6) {
-  showToast('Password must be at least 6 characters long', 'error');
+      showToast('Password must be at least 6 characters long', 'error');
       return;
     }
     try {
@@ -976,10 +974,10 @@ export class App {
         // this.updateChatVisibility();
         this.registerForm.reset();
       } else {
-  showToast('Registration failed: ' + result.error, 'error');
+        showToast('Registration failed: ' + result.error, 'error');
       }
     } catch (error) {
-  showToast('Registration failed: Network error', 'error');
+      showToast('Registration failed: Network error', 'error');
     }
   }
 
@@ -989,25 +987,25 @@ export class App {
     ) as HTMLInputElement;
     const email = emailInput.value.trim();
     if (!email) {
-  showToast('Please enter your email address', 'error');
+      showToast('Please enter your email address', 'error');
       return;
     }
     if (!email.includes('@')) {
-  showToast('Please enter a valid email address', 'error');
+      showToast('Please enter a valid email address', 'error');
       return;
     }
     try {
       const authManager = (window as any).authManager;
       const result: AuthResult = await authManager.forgotPassword(email);
       if (result.success) {
-  showToast('Password reset link sent! Please check your email.', 'success');
+        showToast('Password reset link sent! Please check your email.', 'success');
         this.forgotPasswordForm.reset();
         this.router.navigate("login");
       } else {
-  showToast('Failed to send reset email: ' + result.error, 'error');
+        showToast('Failed to send reset email: ' + result.error, 'error');
       }
     } catch (error) {
-  showToast('Failed to send reset email: Network error', 'error');
+      showToast('Failed to send reset email: Network error', 'error');
     }
   }
 
@@ -1048,17 +1046,17 @@ export class App {
   private getHostUser(): { userId: number; username: string } | null {
     const authManager = (window as any).authManager;
     if (!authManager) return null;
-    
+
     const currentUser = authManager.getCurrentUser();
     if (!currentUser) return null;
-    
+
     // Verify this user matches the stored token
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       // This is the host user (token holder)
       return currentUser;
     }
-    
+
     return currentUser;
   }
 
@@ -1076,13 +1074,13 @@ export class App {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     const token = localStorage.getItem('token') || '';
-    
+
     // IMPORTANT: Do NOT add the host user to localPlayers array
     // The host is displayed separately in the host-player-card elements
     // localPlayers should only contain additional local players that are added via the "Add Player" button
     console.log('[App] Initializing localPlayers array (empty - host is not a local player)');
     this.localPlayers = [];
-    
+
     this.updateLocalPlayersDisplay();
   }
 
@@ -1095,20 +1093,17 @@ export class App {
         (player) => `
       <div class="player-item">
         <div class="player-info">
-          <div class="player-name">${player.username}${
-          player.isCurrentUser ? " (You)" : ""
-        }</div>
-          <div class="player-status">${
-            player.isCurrentUser ? "Host" : "Local Player"
+          <div class="player-name">${player.username}${player.isCurrentUser ? " (You)" : ""
+          }</div>
+          <div class="player-status">${player.isCurrentUser ? "Host" : "Local Player"
           }</div>
         </div>
-        ${
-          !player.isCurrentUser
+        ${!player.isCurrentUser
             ? '<button class="remove-player-btn" data-player-id="' +
-              player.id +
-              '">Remove</button>'
+            player.id +
+            '">Remove</button>'
             : ""
-        }
+          }
       </div>
     `
       )
@@ -1124,6 +1119,7 @@ export class App {
   }
 
   handleConfigOption(button: HTMLElement): void {
+    alert("raas")
     const setting = button.getAttribute('data-setting');
     const value = button.getAttribute('data-value');
     if (!setting || !value) return;
@@ -1142,7 +1138,7 @@ export class App {
       'accelerate-on-hit': 'accelerateOnHit',
       'gameMode': 'gameMode'
     };
-    
+
     const settingKey = settingMap[setting] || setting;
 
     // Update settings
@@ -1197,7 +1193,7 @@ export class App {
         this.populateOnlinePlayers();
         break;
     }
-    
+
     // Initialize the game party display and sync score
     this.updateGamePartyDisplay();
     this.updateScoreDisplay(); // Sync score display with gameSettings
@@ -1260,17 +1256,17 @@ export class App {
     const coopPartyFrame = document.getElementById('coop-party-frame');
     const tournamentPartyFrame = document.getElementById('tournament-party-frame');
     const teamsRow = document.getElementById('teams-row');
-    
+
     // Show coop frame, hide others
     if (coopPartyFrame) coopPartyFrame.style.display = 'block';
     if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
     if (teamsRow) teamsRow.style.display = 'none';
-    
+
     // Activate host and AI cards in coop frame
     const hostPlayerCardCoop = document.getElementById('host-player-card-coop');
     const aiPlayerCardCoop = document.getElementById('ai-player-card-coop');
     const hostPlayerNameCoop = document.getElementById('host-player-name-coop');
-    
+
     // Update host name in coop frame
     const authManager = (window as any).authManager;
     const hostUser = this.getHostUser();
@@ -1279,7 +1275,7 @@ export class App {
       console.log('[setupCoopMode] Setting host name to:', hostUser.username);
       hostPlayerNameCoop.textContent = hostUser.username;
     }
-    
+
     if (hostPlayerCardCoop) {
       hostPlayerCardCoop.classList.add('active');
       // persist host selection
@@ -1291,19 +1287,19 @@ export class App {
       aiPlayerCardCoop.classList.add('active');
       this.selectedPlayerIds.add('ai-player');
     }
-    
+
     // Hide add player buttons for CO-OP mode since it's HOST vs AI only
     const addPlayerButtons = document.querySelectorAll('.add-player-btn');
     addPlayerButtons.forEach(btn => {
       (btn as HTMLElement).style.display = 'none';
     });
-    
+
     // Show CO-OP campaign progress UI
     const coopProgress = document.getElementById('coop-campaign-progress');
     if (coopProgress) {
       coopProgress.style.display = 'block';
     }
-    
+
     // Update CO-OP progress UI to sync AI difficulty
     this.updateCoopProgressUI();
   }
@@ -1313,12 +1309,12 @@ export class App {
     const coopPartyFrame = document.getElementById('coop-party-frame');
     const tournamentPartyFrame = document.getElementById('tournament-party-frame');
     const teamsRow = document.getElementById('teams-row');
-    
+
     // Hide coop frame and teams, show tournament frame
     if (coopPartyFrame) coopPartyFrame.style.display = 'none';
     if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'block';
     if (teamsRow) teamsRow.style.display = 'none';
-    
+
     // Update host player name in tournament frame
     const hostPlayerNameTournament = document.getElementById('host-player-name-tournament');
     const hostUser = this.getHostUser();
@@ -1327,7 +1323,7 @@ export class App {
       console.log('[setupTournamentMode] Setting host name to:', hostUser.username);
       hostPlayerNameTournament.textContent = hostUser.username;
     }
-    
+
     // Set host as active and selected by default
     const hostPlayerCardTournament = document.getElementById('host-player-card-tournament');
     if (hostPlayerCardTournament) {
@@ -1336,23 +1332,23 @@ export class App {
         if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
-    
+
     // Show the add player button for tournament mode
     const addTournamentPlayerBtn = document.getElementById('add-tournament-player-btn');
     if (addTournamentPlayerBtn) {
       addTournamentPlayerBtn.style.display = 'flex';
-      
+
       // Attach event listener for tournament add player button
       addTournamentPlayerBtn.removeEventListener('click', this.handleAddTournamentPlayer);
       addTournamentPlayerBtn.addEventListener('click', this.handleAddTournamentPlayer.bind(this));
     }
-    
+
     // Hide CO-OP campaign progress UI
     const coopProgress = document.getElementById('coop-campaign-progress');
     if (coopProgress) {
       coopProgress.style.display = 'none';
     }
-    
+
     // Display local players that were added in arcade mode (they should appear in tournament too)
     this.updateGamePartyDisplay();
   }
@@ -1369,12 +1365,12 @@ export class App {
     const coopPartyFrame = document.getElementById('coop-party-frame');
     const tournamentPartyFrame = document.getElementById('tournament-party-frame');
     const teamsRow = document.getElementById('teams-row');
-    
+
     // Hide coop and tournament frames, show teams
     if (coopPartyFrame) coopPartyFrame.style.display = 'none';
     if (tournamentPartyFrame) tournamentPartyFrame.style.display = 'none';
     if (teamsRow) teamsRow.style.display = 'flex';
-    
+
     // Arcade mode: Allow adding players, show add player buttons
     const addPlayerButtons = document.querySelectorAll('.add-player-btn');
     addPlayerButtons.forEach(btn => {
@@ -1393,7 +1389,7 @@ export class App {
         if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
-    
+
     // Remove AI player selection in arcade mode
     if (aiPlayerCard) {
       aiPlayerCard.classList.remove('active');
@@ -1408,14 +1404,14 @@ export class App {
 
     // Setup drag-and-drop for team lists
     this.setupDragAndDrop();
-    
+
     // Setup drag for host and AI AFTER team lists are set up
     this.setupHostAndAIDrag();
 
     // Re-attach add player button listeners for arcade mode
     this.setupAddPlayerButtons();
   }
-  
+
   private setupHostAndAIDrag(): void {
     // Make host draggable (re-query after potential DOM updates)
     const hostPlayerCard = document.getElementById('host-player-card');
@@ -1424,7 +1420,7 @@ export class App {
       hostPlayerCard.addEventListener('dragend', this.handleDragEnd.bind(this));
       console.log('[DragDrop] Host player drag listeners attached');
     }
-    
+
     // Make AI draggable (re-query after potential DOM updates)
     const aiPlayerCard = document.getElementById('ai-player-card');
     if (aiPlayerCard) {
@@ -1437,12 +1433,12 @@ export class App {
   private setupDragAndDrop(): void {
     const team1List = document.getElementById('team1-list');
     const team2List = document.getElementById('team2-list');
-    
+
     if (!team1List || !team2List) {
       console.warn('[DragDrop] Team lists not found');
       return;
     }
-    
+
     // Add drop zone event listeners to both team lists
     // Note: We bind each time but the handlers are idempotent
     [team1List, team2List].forEach(list => {
@@ -1450,7 +1446,7 @@ export class App {
       list.addEventListener('dragleave', this.handleDragLeave.bind(this));
       list.addEventListener('drop', this.handleDrop.bind(this));
     });
-    
+
     console.log('[DragDrop] Setup complete for team lists');
   }
 
@@ -1458,85 +1454,85 @@ export class App {
     // TODO: Implement player invitation system
     console.log(`Inviting player ${playerName} (${playerId}) to game`);
     // For now, just show a notification
-  showToast(`Invitation sent to ${playerName}!`, 'info');
+    showToast(`Invitation sent to ${playerName}!`, 'info');
   }
 
   // Drag and Drop handlers for arcade mode team management
   private draggedElement: HTMLElement | null = null;
-  
+
   private handleDragStart(e: DragEvent): void {
     const target = e.target as HTMLElement;
     this.draggedElement = target;
     target.classList.add('dragging');
-    
+
     const playerId = target.dataset.playerId;
     if (e.dataTransfer && playerId) {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', playerId);
     }
-    
+
     console.log('[DragDrop] Started dragging player:', playerId);
   }
-  
+
   private handleDragEnd(e: DragEvent): void {
     const target = e.target as HTMLElement;
     target.classList.remove('dragging');
     this.draggedElement = null;
-    
+
     // Remove drag-over styling from all team lists
     document.querySelectorAll('.team-list').forEach(list => {
       list.classList.remove('drag-over');
     });
-    
+
     console.log('[DragDrop] Drag ended');
   }
-  
+
   private handleDragOver(e: DragEvent): void {
     e.preventDefault();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
-    
+
     const target = e.currentTarget as HTMLElement;
     target.classList.add('drag-over');
   }
-  
+
   private handleDragLeave(e: DragEvent): void {
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-over');
   }
-  
+
   private handleDrop(e: DragEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-over');
-    
+
     const playerId = e.dataTransfer?.getData('text/plain');
     if (!playerId || !this.draggedElement) {
       console.warn('[DragDrop] No player ID or dragged element');
       return;
     }
-    
+
     // Determine which team this list belongs to
     const teamListId = target.id; // 'team1-list' or 'team2-list'
     const newTeam = teamListId === 'team1-list' ? 1 : 2;
     const targetTeamList = document.getElementById(teamListId);
-    
+
     console.log('[DragDrop] Dropping player', playerId, 'into team', newTeam);
-    
+
     // Handle special cases: host and AI players
     if (playerId === 'host-player' || playerId === 'ai-player') {
       const cardElement = this.draggedElement;
       const currentParent = cardElement.parentElement;
       const currentTeam = currentParent?.id === 'team1-list' ? 1 : 2;
-      
+
       if (currentTeam === newTeam) {
         console.log('[DragDrop] Player already in this team');
         return;
       }
-      
+
       // Move the card to the new team list (at the beginning)
       if (targetTeamList) {
         targetTeamList.insertBefore(cardElement, targetTeamList.firstChild);
@@ -1546,7 +1542,7 @@ export class App {
       }
       return;
     }
-    
+
     // Handle regular local players
     const player = this.localPlayers.find(p => p.id === playerId);
     if (player) {
@@ -1555,13 +1551,13 @@ export class App {
         console.log('[DragDrop] Player already in this team');
         return;
       }
-      
+
       (player as any).team = newTeam;
       console.log('[DragDrop] Updated player team from', oldTeam, 'to', newTeam);
-      
+
       // Update the display
       this.updateGamePartyDisplay();
-      
+
       showToast(`${player.username} moved to Team ${newTeam}`, 'success');
     } else {
       console.warn('[DragDrop] Player not found in localPlayers:', playerId);
@@ -1572,9 +1568,9 @@ export class App {
     // Allow score changes in all modes
     const currentScore = this.gameSettings.scoreToWin || 3;
     const newScore = Math.max(1, Math.min(21, currentScore + delta)); // Limit between 1 and 21
-    
+
     this.gameSettings.scoreToWin = newScore;
-    
+
     // Update display
     const scoreDisplay = document.getElementById('score-value');
     if (scoreDisplay) {
@@ -1607,7 +1603,7 @@ export class App {
     if ((window as any).showLocalPlayerRegisterModal) {
       (window as any).showLocalPlayerRegisterModal();
     } else {
-  showToast('Local player registration modal not available', 'error');
+      showToast('Local player registration modal not available', 'error');
     }
   }
 
@@ -1618,11 +1614,11 @@ export class App {
     playerCard.innerHTML = [
       '<div class="player-avatar"><i class="fas fa-robot"></i></div>',
       '<div class="player-info">',
-        '<span class="player-name">AI Player</span>',
-        '<span class="role-badge ai">Computer</span>',
+      '<span class="player-name">AI Player</span>',
+      '<span class="role-badge ai">Computer</span>',
       '</div>'
     ].join('');
-  // Selection handled via event delegation on the party container
+    // Selection handled via event delegation on the party container
     // ensure AI is tracked as selected by default
     this.selectedPlayerIds.add('ai-player');
     return playerCard;
@@ -1645,13 +1641,13 @@ export class App {
 
     // Check current state BEFORE toggling
     const wasActive = playerCard.classList.contains('active');
-    
+
     // Toggle the active class
     playerCard.classList.toggle('active');
-    
+
     // Force immediate reflow to ensure DOM updates before checking state
     void playerCard.offsetHeight;
-    
+
     const isNowActive = playerCard.classList.contains('active');
 
     // Update state based on NEW active status
@@ -1666,9 +1662,9 @@ export class App {
     // Debug: log classes and computed styles
     try {
       const cs = window.getComputedStyle(playerCard);
-      console.log('[toggle]', wasActive ? 'WAS active' : 'was INACTIVE', '→', isNowActive ? 'NOW active' : 'now INACTIVE', 
-                  'classList=', Array.from(playerCard.classList), 
-                  'bg=', cs.backgroundColor, 'transform=', cs.transform);
+      console.log('[toggle]', wasActive ? 'WAS active' : 'was INACTIVE', '→', isNowActive ? 'NOW active' : 'now INACTIVE',
+        'classList=', Array.from(playerCard.classList),
+        'bg=', cs.backgroundColor, 'transform=', cs.transform);
     } catch (e) {
       // ignore
     }
@@ -1692,16 +1688,16 @@ export class App {
     partyContainer.addEventListener('click', (e: Event) => {
       const me = e as MouseEvent;
       const target = (me.target || (e as any).srcElement) as HTMLElement;
-      
+
       // Allow clicks on add-player buttons to pass through
       if (target.closest('.add-player-btn')) {
         console.debug('[App] Add player button clicked, allowing event to propagate');
         return;
       }
-      
+
       // Ignore clicks on remove buttons
       if (target.closest('.remove-player-btn') || target.closest('.remove-btn')) return;
-      
+
       const card = target.closest('.player-card') as HTMLElement | null;
       if (!card) return;
 
@@ -1751,7 +1747,7 @@ export class App {
   async startGame(): Promise<void> {
     console.log('🚀 [App.startGame] === CALLED === Stack trace:');
     console.trace();
-    
+
     // DEBOUNCE: Prevent rapid double-clicks on start button (within 1 second)
     const now = Date.now();
     if (now - this.lastStartGameClick < 1000) {
@@ -1801,8 +1797,8 @@ export class App {
     // Update game UI with player information
     this.updateGameUI();
 
-  // Show game screen
-  this.router.navigate('game');
+    // Show game screen
+    this.router.navigate('game');
 
     // Start the actual game
     if (gameManager && typeof gameManager.startBotMatch === 'function') {
@@ -1847,7 +1843,7 @@ export class App {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
     console.log('[App] Current user:', user);
-    
+
     if (!user) {
       console.warn('[App] No user logged in');
       return;
@@ -1857,7 +1853,7 @@ export class App {
       // Use the ProfileManager for comprehensive profile loading
       const profileManager = (window as any).profileManager;
       console.log('[App] ProfileManager available:', !!profileManager);
-      
+
       if (profileManager) {
         console.log('[App] Calling profileManager.loadProfile()');
         await profileManager.loadProfile();
@@ -1976,67 +1972,13 @@ export class App {
         return `
         <div class="activity-item">
           <span class="activity-text">
-            <span class="${resultClass}">${result}</span> game vs ${
-          activity.opponent || "AI"
-        }
+            <span class="${resultClass}">${result}</span> game vs ${activity.opponent || "AI"
+          }
           </span>
           <span class="activity-time">${timeAgo}</span>
         </div>
       `;
       })
-      .join("");
-  }
-
-  updateAchievements(): void {
-    const container = document.getElementById("profile-achievements");
-    if (!container) return;
-
-    const achievements = [
-      {
-        icon: "🎮",
-        title: "First Game",
-        desc: "Play your first game",
-        unlocked: true,
-      },
-      {
-        icon: "🏆",
-        title: "First Victory",
-        desc: "Win your first game",
-        unlocked: false,
-      },
-      {
-        icon: "🔥",
-        title: "Hot Streak",
-        desc: "Win 5 games in a row",
-        unlocked: false,
-      },
-      { icon: "💯", title: "Century", desc: "Play 100 games", unlocked: false },
-      {
-        icon: "🏅",
-        title: "Champion",
-        desc: "Win a tournament",
-        unlocked: false,
-      },
-      {
-        icon: "⚡",
-        title: "Speed Demon",
-        desc: "Win with fast ball speed",
-        unlocked: false,
-      },
-    ];
-
-    container.innerHTML = achievements
-      .map(
-        (achievement) => `
-      <div class="achievement-card ${achievement.unlocked ? "" : "locked"}">
-        <div class="achievement-icon">${achievement.icon}</div>
-        <div class="achievement-info">
-          <h4>${achievement.title}</h4>
-          <p>${achievement.desc}</p>
-        </div>
-      </div>
-    `
-      )
       .join("");
   }
 

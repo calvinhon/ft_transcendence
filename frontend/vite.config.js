@@ -1,15 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  assetsInclude: ['**/*.glb'],
+  assetsInclude: ["**/*.glb"],
+  plugins: [tailwindcss()],
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     rollupOptions: {
-      input: './index.html'
-    }
+      input: "./index.html",
+    },
   },
   server: {
-    host: '0.0.0.0',
-    port: 3000
-  }
-})
+    host: "0.0.0.0",
+    port: 3000,
+  },
+});
