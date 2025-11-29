@@ -15,8 +15,14 @@ export class App {
     const mode = tab.getAttribute('data-mode') as 'coop' | 'arcade' | 'tournament';
     if (!mode) return;
     
+    // Save current mode's settings and player selections before switching
+    this.saveCurrentModeData();
+    
     // Update the game settings with the new mode
     this.gameSettings.gameMode = mode;
+    
+    // Load the new mode's settings and player selections
+    this.loadModeData(mode);
     
     // Remove active from all tabs
     document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
@@ -37,6 +43,82 @@ export class App {
     });
     // Update players section based on mode
     this.updatePlayersForMode(mode);
+  }
+
+  // Save current mode's settings and player selections
+  private saveCurrentModeData(): void {
+    const currentMode = this.gameSettings.gameMode;
+    if (!currentMode) return;
+
+    // Save mode-specific settings (exclude gameMode itself)
+    const { gameMode, ...settingsToSave } = this.gameSettings;
+    this.modeSettings[currentMode] = { ...settingsToSave };
+
+    // Save mode-specific player selections
+    this.modePlayerSelections[currentMode] = new Set(this.selectedPlayerIds);
+
+    console.log(`[ModePersistence] Saved data for mode ${currentMode}:`, {
+      settings: this.modeSettings[currentMode],
+      players: Array.from(this.modePlayerSelections[currentMode])
+    });
+  }
+
+  // Load mode-specific settings and player selections
+  private loadModeData(mode: 'coop' | 'arcade' | 'tournament'): void {
+    // Load mode-specific settings if they exist
+    if (this.modeSettings[mode]) {
+      // Only load settings that are relevant to this mode
+      const modeSettings = this.modeSettings[mode];
+      const relevantSettings = this.getRelevantSettingsForMode(mode);
+
+      Object.keys(relevantSettings).forEach(setting => {
+        if (modeSettings[setting as keyof GameSettings] !== undefined) {
+          (this.gameSettings as any)[setting] = modeSettings[setting as keyof GameSettings];
+        }
+      });
+
+      console.log(`[ModePersistence] Loaded settings for mode ${mode}:`, this.modeSettings[mode]);
+    }
+
+    // Load mode-specific player selections if they exist
+    if (this.modePlayerSelections[mode]) {
+      this.selectedPlayerIds = new Set(this.modePlayerSelections[mode]);
+      console.log(`[ModePersistence] Loaded player selections for mode ${mode}:`, Array.from(this.selectedPlayerIds));
+    } else {
+      // Initialize default player selections for the mode
+      this.initializeDefaultPlayerSelections(mode);
+    }
+  }
+
+  // Get settings that are relevant for a specific mode
+  private getRelevantSettingsForMode(mode: 'coop' | 'arcade' | 'tournament'): { [key: string]: boolean } {
+    const allSettings = {
+      aiDifficulty: true,
+      ballSpeed: mode === 'arcade', // Only arcade mode uses ball speed
+      paddleSpeed: mode === 'arcade', // Only arcade mode uses paddle speed
+      powerupsEnabled: true,
+      accelerateOnHit: true,
+      scoreToWin: true
+    };
+    return allSettings;
+  }
+
+  // Initialize default player selections for a mode
+  private initializeDefaultPlayerSelections(mode: 'coop' | 'arcade' | 'tournament'): void {
+    this.selectedPlayerIds.clear();
+
+    // Add host player (always selected)
+    const hostUser = this.getHostUser();
+    if (hostUser && hostUser.userId) {
+      this.selectedPlayerIds.add(String(hostUser.userId));
+    }
+
+    // Add AI player for coop and arcade modes
+    if (mode === 'coop' || mode === 'arcade') {
+      this.selectedPlayerIds.add('ai-player');
+    }
+
+    console.log(`[ModePersistence] Initialized default player selections for mode ${mode}:`, Array.from(this.selectedPlayerIds));
   }
   createPlayerCard(player: any): HTMLElement {
     const playerCard = document.createElement('div');
@@ -252,6 +334,10 @@ export class App {
   private localPlayers: LocalPlayer[] = [];
   // Persisted set of selected player ids (used to restore highlights after re-renders)
   private selectedPlayerIds: Set<string> = new Set();
+  // Mode-specific settings storage
+  private modeSettings: { [mode: string]: Partial<GameSettings> } = {};
+  // Mode-specific player selections storage
+  private modePlayerSelections: { [mode: string]: Set<string> } = {};
   // Prevent double-registration of party click handlers
   private playerSelectionInitialized: boolean = false;
   // Debounce map to prevent double-clicks on same card
@@ -364,6 +450,10 @@ export class App {
     console.log('[App.init] Setting up default coop mode');
     this.gameSettings.gameMode = 'coop';
     this.setupCoopMode();
+
+    // Initialize mode-specific data for default mode
+    this.initializeDefaultPlayerSelections('coop');
+    this.saveCurrentModeData();
 
     // Check authentication and update chat visibility
     await this.checkExistingLogin();
@@ -1077,6 +1167,9 @@ export class App {
       console.log(`⚙️ [SETTINGS] Updated ${settingKey} to ${value}`, this.gameSettings);
     }
 
+    // Save the updated settings to mode-specific storage
+    this.saveCurrentModeData();
+
     // Optionally trigger UI updates if needed
     // For mode changes, call handleGameModeChange
     if (setting === 'gameMode') {
@@ -1310,10 +1403,10 @@ export class App {
       } catch (e) { /* ignore */ }
     }
     
-    // Remove AI player selection in arcade mode
+    // Keep AI player selected and visible by default in arcade mode
     if (aiPlayerCard) {
-      aiPlayerCard.classList.remove('active');
-      this.selectedPlayerIds.delete('ai-player');
+      aiPlayerCard.classList.add('active');
+      this.selectedPlayerIds.add('ai-player');
     }
 
     // Hide CO-OP campaign progress UI
@@ -1512,6 +1605,52 @@ export class App {
     this.updateGamePartyDisplay();
     this.initializePlayerSelection();
     this.updateScoreDisplay(); // Sync score display
+
+    // Restore selected game mode tab
+    const gameModeTabs = document.querySelectorAll('.game-mode-tab');
+    gameModeTabs.forEach(tab => {
+      const tabMode = tab.getAttribute('data-mode');
+      if (tabMode === this.gameSettings.gameMode) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+
+    // Restore selected setting options (only relevant ones for current mode)
+    const settingButtons = document.querySelectorAll('.config-option, .setting-option');
+    const relevantSettings = this.getRelevantSettingsForMode(this.gameSettings.gameMode as 'coop' | 'arcade' | 'tournament');
+
+    settingButtons.forEach(button => {
+      const setting = button.getAttribute('data-setting');
+      const value = button.getAttribute('data-value');
+      if (setting && value) {
+        // Convert camelCase setting names back to hyphenated for comparison
+        const settingMap: { [key: string]: string } = {
+          'aiDifficulty': 'ai-difficulty',
+          'ballSpeed': 'ball-speed',
+          'paddleSpeed': 'paddle-speed',
+          'powerupsEnabled': 'powerups-enabled',
+          'accelerateOnHit': 'accelerate-on-hit',
+          'gameMode': 'gameMode'
+        };
+        
+        const hyphenatedSetting = settingMap[setting] || setting;
+        const currentValue = (this.gameSettings as any)[setting];
+        
+        // Only restore if this setting is relevant for the current mode
+        if (relevantSettings[setting]) {
+          if (currentValue === value) {
+            button.classList.add('active');
+          } else {
+            button.classList.remove('active');
+          }
+        }
+      }
+    });
+
+    // Update players for the current mode to ensure party list reflects mode selection
+    this.updatePlayersForMode(this.gameSettings.gameMode as 'coop' | 'arcade' | 'tournament');
   }
 
   // showAddPlayerDialog is deprecated - now using showLocalPlayerLoginModal from local-player.ts
@@ -1578,6 +1717,9 @@ export class App {
       this.selectedPlayerIds.delete(playerId);
       console.log(`❌ Player ${playerId} deselected from game`);
     }
+
+    // Save the updated player selections to mode-specific storage
+    this.saveCurrentModeData();
 
     // Debug: log classes and computed styles
     try {

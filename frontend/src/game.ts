@@ -1288,18 +1288,18 @@ export class GameManager {
 
     const ball = this.gameState.ball;
     const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-    const maxSpeed = 15; // Adjust based on your game's max ball speed
+    const maxSpeed = 12; // Adjust based on your game's max ball speed
     const normalizedSpeed = Math.min(speed / maxSpeed, 1);
     
     // Calculate trail length based on speed AND campaign level
-    const speedTrailLength = Math.floor(normalizedSpeed * 8) + 3;
+    const speedTrailLength = Math.floor(normalizedSpeed * 8) + 5;
     const campaignBonus = this.isCampaignMode ? Math.floor(this.currentCampaignLevel / 2) : 0;
     const trailLength = Math.min(speedTrailLength + campaignBonus, 15); // Cap at 15 for performance
     
     const trailSpacing = normalizedSpeed * 3 + 1;
     
     // Dynamic ball size based on speed (slightly larger when faster)
-    const dynamicRadius = this.gameState.ballRadius * (1 + normalizedSpeed * 0.2);
+    const dynamicRadius = this.gameState.ballRadius * (1 + normalizedSpeed * 0.3);
     
     // Calculate direction opposite to ball movement for trail
     const angle = Math.atan2(ball.vy, ball.vx);
