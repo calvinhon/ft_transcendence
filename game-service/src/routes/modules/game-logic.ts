@@ -109,9 +109,9 @@ export class PongGame {
 
   private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 4;     // Slow and easy to track
+      case 'slow': return 6;     // Slow and easy to track
       case 'medium': return 8;   // Standard speed
-      case 'fast': return 15;    // Very fast and intense!
+      case 'fast': return 12;    // Very fast and intense!
       default: return 8;
     }
   }

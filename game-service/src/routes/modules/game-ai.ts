@@ -28,15 +28,15 @@ export class GameAI {
     // Adjust AI behavior based on difficulty
     switch (this.aiDifficulty) {
       case 'easy':
-        reactionDelay = Math.random() > 0.6; // 40% chance bot doesn't react
+        reactionDelay = Math.random() > 0.4; // 40% chance bot doesn't react
         errorMargin = 30; // Large error margin
         break;
       case 'medium':
-        reactionDelay = Math.random() > 0.8; // 20% chance bot doesn't react
+        reactionDelay = Math.random() > 0.6; // 20% chance bot doesn't react
         errorMargin = 15; // Medium error margin
         break;
       case 'hard':
-        reactionDelay = Math.random() > 0.98; // Only 2% chance bot doesn't react (nearly perfect)
+        reactionDelay = Math.random() > 0.8; // Only 2% chance bot doesn't react (nearly perfect)
         errorMargin = 5; // Very small error margin (nearly perfect aim)
         break;
     }
