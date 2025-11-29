@@ -84,6 +84,12 @@ export interface MovePaddleMessage extends WebSocketMessage {
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
 }
 
+export interface InputMessage extends WebSocketMessage {
+  type: 'input';
+  key: string;
+  pressed: boolean;
+}
+
 export interface GameRecord {
   id: number;
   player1_id: number;
