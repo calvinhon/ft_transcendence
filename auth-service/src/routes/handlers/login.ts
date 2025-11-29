@@ -5,25 +5,25 @@ import { validateRequiredFields, sendError, sendSuccess } from '../../utils/resp
 
 export async function loginHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService(request.server);
-  let username = 'unknown';
+  let identifier = 'unknown';
   try {
     const body = request.body as { username: string; password: string };
-    username = body.username;
+    identifier = body.username;
     const { password } = body;
 
-    console.log('Login attempt for username:', username);
+    console.log('Login attempt for identifier:', identifier);
 
     const validationError = validateRequiredFields(request.body, ['username', 'password']);
     if (validationError) {
-      console.log('Validation failed for', username, 'error:', validationError);
+      console.log('Validation failed for', identifier, 'error:', validationError);
       return sendError(reply, validationError, 400);
     }
 
-    console.log('Validation passed for', username);
+    console.log('Validation passed for', identifier);
 
-    const result = await authService.login(username, password);
+    const result = await authService.login(identifier, password);
 
-    console.log('Login successful for', username);
+    console.log('Login successful for', identifier);
 
     sendSuccess(reply, {
       user: result.user,
@@ -31,7 +31,7 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
     }, 'Login successful');
 
   } catch (error: any) {
-    console.log('Login failed for', username, 'with error:', error.message);
+    console.log('Login failed for', identifier, 'with error:', error.message);
     if (error.message === 'Invalid credentials') {
       sendError(reply, 'Invalid credentials', 401);
     } else {
