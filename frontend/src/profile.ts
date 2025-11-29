@@ -282,7 +282,8 @@ export class ProfileManager {
       });
 
       if (response.ok) {
-        const apiGames: any[] = await response.json();
+        const responseData = await response.json();
+        const apiGames: any[] = responseData.data || [];
         console.log('[ProfileManager] Raw API games:', apiGames);
         console.log('[ProfileManager] Total games returned:', apiGames.length);
         console.log('[ProfileManager] Game modes breakdown:', {
@@ -484,7 +485,8 @@ export class ProfileManager {
       });
 
       if (response.ok) {
-        const rankings = await response.json();
+        const responseData = await response.json();
+        const rankings = responseData.data || [];
         this.displayTournamentRankings(rankings);
       } else {
         this.displayTournamentRankings([]);

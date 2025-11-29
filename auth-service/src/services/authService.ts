@@ -25,12 +25,10 @@ export class AuthService {
   }
 
   async login(identifier: string, password: string): Promise<{ user: User; token: string }> {
-    console.log('AuthService.login called with identifier:', identifier);
     const user = await getQuery<DatabaseUser>(
       'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
     );
-    console.log('User found:', user ? { id: user.id, username: user.username, email: user.email } : 'null');
 
     if (!user) {
       throw new Error('Invalid credentials');

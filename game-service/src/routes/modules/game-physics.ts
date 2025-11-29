@@ -134,7 +134,10 @@ export class GamePhysics {
       paddle = teamPaddles[paddleIndex];
     } else {
       // Handle coop mode with single paddle
-      const paddleKey = playerId === 1 ? 'player1' : 'player2';
+      // For coop mode, the human player always controls the left paddle (player1)
+      // We need to get the actual player IDs from the game context, but since we don't have access to it here,
+      // we'll assume player1 is the human player (left paddle) for coop mode
+      const paddleKey = 'player1'; // Human player always controls left paddle in coop mode
       paddle = paddles[paddleKey as keyof Paddles] as Paddle;
 
       if (!paddle) {

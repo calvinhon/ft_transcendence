@@ -24,7 +24,7 @@ fi
 echo -e "\n\n2. Testing User Registration: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/register" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"password123"}')
+  -d '{"username":"testuser2","email":"test2@example.com","password":"password123"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
@@ -37,7 +37,7 @@ fi
 echo -e "\n\n3. Testing User Login: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}')
+  -d '{"username":"testuser2","password":"password123"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
@@ -49,7 +49,7 @@ fi
 
 TOKEN=$(curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
+  -d '{"username":"testuser2","password":"password123"}' | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
 if [ -z "$TOKEN" ]; then
   echo "❌ Failed to extract token from login response."
@@ -69,7 +69,7 @@ fi
 echo -e "\n\n5. Testing Profile Access (with token):"
 USER_ID=$(curl -s -X POST "$TARGET/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}' | grep -o '"userId":[0-9]*' | grep -o '[0-9]*')
+  -d '{"username":"testuser2","password":"password123"}' | grep -o '"userId":[0-9]*' | grep -o '[0-9]*')
 if [ -z "$USER_ID" ]; then
   echo "❌ Failed to extract userId from login response."
   exit 1
@@ -80,7 +80,7 @@ curl -s -X GET "$TARGET/profile/$USER_ID" \
 echo -e "\n\n6. Testing Forgot Password: (target=$TARGET)"
 RES=$(curl -s -w "\\n%{http_code}" -X POST "$TARGET/forgot-password" \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com"}')
+  -d '{"email":"test2@example.com"}')
 HTTP=$(echo "$RES" | tail -n1)
 BODY=$(echo "$RES" | sed '$d')
 echo "$BODY"
