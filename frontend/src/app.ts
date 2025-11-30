@@ -1310,10 +1310,10 @@ export class App {
       } catch (e) { /* ignore */ }
     }
     
-    // Remove AI player selection in arcade mode
+    // Ensure AI player is active by default in arcade mode
     if (aiPlayerCard) {
-      aiPlayerCard.classList.remove('active');
-      this.selectedPlayerIds.delete('ai-player');
+      aiPlayerCard.classList.add('active');
+      this.selectedPlayerIds.add('ai-player');
     }
 
     // Hide CO-OP campaign progress UI
