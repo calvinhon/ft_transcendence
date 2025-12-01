@@ -6,7 +6,7 @@ OS := $(shell uname)
 
 .PHONY: start check-docker check-compose clean clean-dev up open stop restart rebuild
 
-start: check-docker check-compose clean-dev clean up open
+start: check-docker check-compose clean-dev up open
 
 restart: check-docker check-compose
 	@echo "🔄 Restarting services without rebuild..."
@@ -84,9 +84,8 @@ clean:
 	fi
 
 up: clean-dev
-	@echo "🚀 Running docker compose up --build --no-cache..."
-	docker compose build --no-cache
-	docker compose up -d
+	@echo "🚀 Running docker compose up --build..."
+	docker compose up --build -d
 
 open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
