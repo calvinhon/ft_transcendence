@@ -602,7 +602,7 @@ export class TournamentManager {
         details.participants.map(async (p: any) => {
           try {
             const userResponse = await fetch(`/api/auth/profile/${p.user_id}`, {
-              headers: authManager.getAuthHeaders()
+              credentials: 'include'
             });
             if (userResponse.ok) {
               const result = await userResponse.json();

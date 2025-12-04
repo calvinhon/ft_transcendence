@@ -184,15 +184,13 @@ export class App {
     // Host player
     const authManager = (window as any).authManager;
     const hostUser = authManager?.getCurrentUser();
-    const hostToken = localStorage.getItem('token');
-    if (hostUser && hostToken) {
+    if (hostUser) {
       // Debug: log stats sent to user-service
       console.debug('Submitting host result:', {
         userId: hostUser.userId,
-        stats: results.find(r => r.userId === hostUser.userId)?.stats,
-        token: hostToken
+        stats: results.find(r => r.userId === hostUser.userId)?.stats
       });
-      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats, hostToken);
+      await this.submitResultForUser(hostUser.userId, results.find(r => r.userId === hostUser.userId)?.stats);
     }
 
     // Local players
@@ -221,14 +219,14 @@ export class App {
   /**
    * Submit result for a single user
    */
-  async submitResultForUser(userId: number, stats: any, token: string): Promise<void> {
+  async submitResultForUser(userId: number, stats: any): Promise<void> {
     try {
       const response = await fetch(`/api/game/update-stats/${userId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(stats)
       });
       if (!response.ok) {
@@ -783,8 +781,7 @@ export class App {
     if (!authManager) return false;
     
     const user = authManager.getCurrentUser();
-    const token = localStorage.getItem('token');
-    return !!(user && user.userId && token);
+    return !!(user && user.userId);
   }
 
   // Show screen directly (used by router)
@@ -885,7 +882,6 @@ export class App {
         this.loginForm.reset();
       } else {
         authManager.currentUser = null;
-        localStorage.removeItem('token');
   showToast('Login failed: ' + result.error, 'error');
       }
     } catch (error) {
@@ -990,15 +986,6 @@ export class App {
     if (!authManager) return null;
     
     const currentUser = authManager.getCurrentUser();
-    if (!currentUser) return null;
-    
-    // Verify this user matches the stored token
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      // This is the host user (token holder)
-      return currentUser;
-    }
-    
     return currentUser;
   }
 
@@ -1015,7 +1002,6 @@ export class App {
   initializeLocalPlayers(): void {
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    const token = localStorage.getItem('token') || '';
     
     // IMPORTANT: Do NOT add the host user to localPlayers array
     // The host is displayed separately in the host-player-card elements
@@ -1797,7 +1783,7 @@ export class App {
     
     try {
       // Load profile stats
-      const statsResponse = await fetch(`/api/game/stats/${userId}`, { headers });
+      const statsResponse = await fetch(`/api/game/stats/${userId}`, { credentials: 'include' });
       if (statsResponse.ok) {
         const stats = await statsResponse.json();
         this.updateProfileStats(stats);

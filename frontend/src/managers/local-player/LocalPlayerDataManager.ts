@@ -189,20 +189,15 @@ export class LocalPlayerDataManager {
   }
 
   // Host session management
-  public saveHostSession(): { token: string | null; user: any } {
-    const hostToken = localStorage.getItem('token');
+  public saveHostSession(): { user: any } {
     const savedHostUser = authService?.getCurrentUser?.();
-    console.log('[LocalPlayerDataManager] Saved host token and user for restoration:', savedHostUser);
-    return { token: hostToken, user: savedHostUser };
+    console.log('[LocalPlayerDataManager] Saved host user for restoration:', savedHostUser);
+    return { user: savedHostUser };
   }
 
-  public restoreHostSession(savedSession: { token: string | null; user: any }): void {
-    const { token, user } = savedSession;
+  public restoreHostSession(savedSession: { user: any }): void {
+    const { user } = savedSession;
 
-    if (token) {
-      localStorage.setItem('token', token);
-      console.log('[LocalPlayerDataManager] ✅ Restored host token to localStorage');
-    }
     if (user) {
       try {
         if (authService && typeof authService.setCurrentUser === 'function') {

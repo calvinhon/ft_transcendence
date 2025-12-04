@@ -1,5 +1,5 @@
 // frontend/src/managers/auth/TokenManager.ts
-// Manages JWT token storage, retrieval, and verification
+// Manages JWT token verification (token is now in HTTP-only cookie)
 
 interface VerifyResponse {
   valid: boolean;
@@ -14,43 +14,32 @@ interface VerifyResponse {
 
 export class TokenManager {
   private baseURL: string = '/api/auth';
-  private token: string | null = null;
 
   constructor() {
-    this.token = sessionStorage.getItem('token');
+    // Token is now stored in HTTP-only cookie, not accessible from JS
   }
 
   getToken(): string | null {
-    return this.token;
+    // Token is in HTTP-only cookie, cannot be accessed from JS
+    return null;
   }
 
   setToken(token: string): void {
-    this.token = token;
-    if (token) {
-      sessionStorage.setItem('token', token);
-    } else {
-      sessionStorage.removeItem('token');
-    }
+    // Token is set by backend as HTTP-only cookie, no client-side storage needed
+    console.log('Token is now managed by HTTP-only cookie');
   }
 
   clearToken(): void {
-    this.token = null;
-    sessionStorage.removeItem('token');
+    // Token is cleared by backend logout endpoint
+    console.log('Token clearing is handled by backend logout');
   }
 
   async verifyToken(): Promise<boolean> {
-    if (!this.token) {
-      console.log('No token to verify');
-      return false;
-    }
-
     try {
       console.log('Verifying token with backend...');
       const response = await fetch(`${this.baseURL}/verify`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-        }
+        credentials: 'include'
       });
 
       const data: VerifyResponse = await response.json();
@@ -63,21 +52,21 @@ export class TokenManager {
         if (data.expired) {
           console.log('Token has expired');
         }
-        this.clearToken();
         return false;
       }
     } catch (error) {
       console.log('Token verification error:', error);
-      this.clearToken();
       return false;
     }
   }
 
   getAuthHeaders(): Record<string, string> {
-    return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
+    // No longer needed with HTTP-only cookies
+    return {};
   }
 
-  hasValidToken(): boolean {
-    return !!this.token;
+  hasValidToken(): Promise<boolean> {
+    // Must verify with backend since token is in HTTP-only cookie
+    return this.verifyToken();
   }
 }

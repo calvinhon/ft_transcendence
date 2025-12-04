@@ -34,20 +34,14 @@ interface VerifyResponse {
 export class AuthManager {
   private baseURL: string = '/api/auth';
   public currentUser: User | null = null;
-  private token: string | null;
 
   constructor() {
-    this.token = sessionStorage.getItem('token');
-    
-    // If we have a token, verify it on startup
-    if (this.token) {
-      this.verifyToken().then(isValid => {
-        if (!isValid) {
-          console.log('Stored token is invalid, clearing auth data');
-          this.logout();
-        }
-      });
-    }
+    // Verify token on startup (token is now in HTTP-only cookie)
+    this.verifyToken().then(isValid => {
+      if (!isValid) {
+        console.log('Token verification failed on startup');
+      }
+    });
   }
 
   async register(username: string, email: string, password: string): Promise<AuthResult> {
@@ -61,6 +55,7 @@ export class AuthManager {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(requestBody)
       });
 
@@ -73,15 +68,7 @@ export class AuthManager {
         
         // Extract from nested backend response
         const user = data.data?.user || data.user;
-        const token = data.data?.token || data.token;
-        
-        this.token = token;
-        console.log('Token set:', !!this.token);
-        
-        if (this.token) {
-          sessionStorage.setItem('token', this.token);
-          console.log('Token saved to sessionStorage');
-        }
+        console.log('User registered:', user.username);
         
         this.currentUser = { 
           userId: user.userId, 
@@ -95,7 +82,7 @@ export class AuthManager {
           success: true, 
           data: { 
             success: true, 
-            token, 
+            token: '', 
             user, 
             message: data.message 
           } 
@@ -119,6 +106,7 @@ export class AuthManager {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
 
@@ -127,12 +115,7 @@ export class AuthManager {
       if (response.ok && data.success) {
         // Extract from nested backend response
         const user = data.data?.user || data.user;
-        const token = data.data?.token || data.token;
         
-        this.token = token;
-        if (this.token) {
-          sessionStorage.setItem('token', this.token);
-        }
         this.currentUser = { 
           userId: user.userId, 
           username: user.username,
@@ -142,16 +125,14 @@ export class AuthManager {
           success: true, 
           data: { 
             success: true, 
-            token, 
+            token: '', 
             user, 
             message: data.message 
           } 
         };
       } else {
         // Clear any existing auth data on failed login
-        this.token = null;
         this.currentUser = null;
-        sessionStorage.removeItem('token');
         return { success: false, error: (data as any).error || 'Login failed' };
       }
     } catch (error) {
@@ -166,6 +147,7 @@ export class AuthManager {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email })
       });
 
@@ -183,18 +165,11 @@ export class AuthManager {
   }
 
   async verifyToken(): Promise<boolean> {
-    if (!this.token) {
-      console.log('No token to verify');
-      return false;
-    }
-
     try {
       console.log('Verifying token with backend...');
       const response = await fetch(`${this.baseURL}/verify`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-        }
+        credentials: 'include'
       });
 
       const data: VerifyResponse = await response.json();
@@ -218,18 +193,25 @@ export class AuthManager {
     }
   }
 
-  logout(): void {
-    this.token = null;
+  async logout(): Promise<void> {
+    try {
+      await fetch(`${this.baseURL}/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout request failed:', error);
+    }
     this.currentUser = null;
-    sessionStorage.removeItem('token');
   }
 
   getAuthHeaders(): Record<string, string> {
-    return this.token ? { 'Authorization': `Bearer ${this.token}` } : {};
+    // No longer needed with HTTP-only cookies, but keep for compatibility
+    return {};
   }
 
   isAuthenticated(): boolean {
-    return !!this.token && !!this.currentUser;
+    return !!this.currentUser;
   }
 
   getCurrentUser(): User | null {

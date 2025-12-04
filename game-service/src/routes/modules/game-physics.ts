@@ -132,6 +132,20 @@ export class GamePhysics {
       }
 
       paddle = teamPaddles[paddleIndex];
+    } else if (gameMode === 'tournament') {
+      // Handle tournament mode without paddleIndex (local multiplayer)
+      // playerId: 1 = left paddle (team1), playerId: 2 = right paddle (team2)
+      logger.gameDebug(gameId, 'Tournament mode - playerId:', playerId);
+      team = playerId === 1 ? 'team1' : 'team2';
+      const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
+
+      if (!teamPaddles || !teamPaddles[0]) {
+        logger.gameDebug(gameId, 'No paddle found for tournament team:', team);
+        return false;
+      }
+
+      paddle = teamPaddles[0];
+      logger.gameDebug(gameId, 'Tournament paddle selected for', team, 'at position:', paddle.y);
     } else {
       // Handle coop mode with single paddle
       // For coop mode, the human player always controls the left paddle (player1)

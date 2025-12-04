@@ -79,21 +79,16 @@ export function setupLocalPlayerLoginModal(app: any) {
     
     console.log('[LocalPlayer] Attempting authentication...');
     
-    // Save the host's token AND currentUser before authenticating local player
-    const hostToken = localStorage.getItem('token');
+    // Save the host's currentUser before authenticating local player
     const savedHostUser = authManager.getCurrentUser();
-    console.log('[LocalPlayer] Saved host token and user for restoration:', savedHostUser);
+    console.log('[LocalPlayer] Saved host user for restoration:', savedHostUser);
     
     try {
       const result = await authManager.login(email, password);
       console.log('[LocalPlayer] Auth result:', result.success ? '✅ Success' : '❌ Failed', result);
       console.log('[LocalPlayer] Current authManager.currentUser after login:', authManager.currentUser);
       
-      // CRITICAL: Restore the host's token AND currentUser immediately after local player auth
-      if (hostToken) {
-        localStorage.setItem('token', hostToken);
-        console.log('[LocalPlayer] ✅ Restored host token to localStorage');
-      }
+      // CRITICAL: Restore the host's currentUser immediately after local player auth
       if (savedHostUser) {
         console.log('[LocalPlayer] Restoring host user from:', authManager.currentUser?.username, 'to:', savedHostUser.username);
         authManager.currentUser = savedHostUser;
@@ -645,10 +640,9 @@ export function setupLocalPlayerRegisterModal(app: any) {
     
     console.log('[LocalPlayer] Attempting registration...');
     
-    // Save the host's token AND currentUser before registering local player
-    const hostToken = localStorage.getItem('token');
+    // Save the host's currentUser before registering local player
     const savedHostUser = authManager.getCurrentUser();
-    console.log('[LocalPlayer] Saved host token and user for restoration:', savedHostUser);
+    console.log('[LocalPlayer] Saved host user for restoration:', savedHostUser);
     
     try {
       const result = await authManager.register(username, email, password);
@@ -657,11 +651,7 @@ export function setupLocalPlayerRegisterModal(app: any) {
       console.log('[LocalPlayer] result.data:', result.data);
       console.log('[LocalPlayer] Checking condition: result.success && result.data =', result.success && result.data);
       
-      // CRITICAL: Restore the host's token AND currentUser immediately after local player registration
-      if (hostToken) {
-        localStorage.setItem('token', hostToken);
-        console.log('[LocalPlayer] ✅ Restored host token to localStorage');
-      }
+      // CRITICAL: Restore the host's currentUser immediately after local player registration
       if (savedHostUser && authManager.setCurrentUser) {
         authManager.currentUser = savedHostUser;
         console.log('[LocalPlayer] ✅ Restored host currentUser:', savedHostUser.username);

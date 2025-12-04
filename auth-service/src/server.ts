@@ -1,6 +1,7 @@
 // auth-service/src/server.ts
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
 import authRoutes from './routes/auth';
 import { config } from './utils/config';
@@ -12,6 +13,7 @@ const fastify: FastifyInstance = Fastify({
 export async function buildServer(): Promise<FastifyInstance> {
   // Register plugins
   await fastify.register(cors, config.cors);
+  await fastify.register(cookie);
   await fastify.register(jwt, {
     secret: config.jwt.secret
   });

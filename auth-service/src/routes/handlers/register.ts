@@ -13,7 +13,17 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     if (!validateEmail(email)) return sendError(reply, 'Invalid email format', 400);
     if (password.length < 6) return sendError(reply, 'Password must be at least 6 characters', 400);
     const result = await authService.register(username, email, password);
-    sendSuccess(reply, { user: { userId: result.userId, username }, token: result.token }, 'User registered successfully', 201);
+    
+    // Set JWT as HTTP-only cookie
+    reply.setCookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 24 * 60 * 60 // 24 hours in seconds
+    });
+    
+    sendSuccess(reply, { user: { userId: result.userId, username } }, 'User registered successfully', 201);
   } catch (error: any) {
     if (error.message?.includes('UNIQUE constraint failed')) {
       sendError(reply, 'Username or email already exists', 409);

@@ -259,10 +259,9 @@ export class GameManager {
     try {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
-      const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
       
       if (user && user.userId) {
-        const response = await fetch(`/api/user/profile/${user.userId}`, { headers });
+        const response = await fetch(`/api/user/profile/${user.userId}`, { credentials: 'include' });
         if (response.ok) {
           const profile = await response.json();
           const dbLevel = profile.campaign_level || 1; // Database level (default to 1 if not set)
@@ -784,22 +783,26 @@ export class GameManager {
       if (downTime > upTime) {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
+          playerId: 1,
           direction: 'down'
         }));
       } else {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
+          playerId: 1,
           direction: 'up'
         }));
       }
     } else if (p1UpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
+        playerId: 1,
         direction: 'up'
       }));
     } else if (p1DownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
+        playerId: 1,
         direction: 'down'
       }));
     }

@@ -41,6 +41,7 @@ export interface ServiceConfig {
   host: string;
   cors: {
     origin: boolean | string | string[];
+    credentials?: boolean;
   };
   jwt: {
     secret: string;

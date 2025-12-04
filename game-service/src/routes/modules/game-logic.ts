@@ -119,9 +119,9 @@ export class PongGame {
   private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
       case 'slow': return 8;      // Slower response
-      case 'medium': return 14;   // Standard response
-      case 'fast': return 25;     // Super responsive and intense!
-      default: return 14;
+      case 'medium': return 13;   // Standard response
+      case 'fast': return 18;     // Super responsive and intense!
+      default: return 10;
     }
   }
 

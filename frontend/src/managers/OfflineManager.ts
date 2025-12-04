@@ -232,9 +232,9 @@ export class OfflineManager {
     const response = await fetch(`/api/game/update-stats/${data.userId}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${data.token}`
+        'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data.stats)
     });
 
@@ -250,9 +250,9 @@ export class OfflineManager {
     const response = await fetch(`/api/user/update-stats/${data.userId}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${data.token}`
+        'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data.stats)
     });
 
@@ -269,9 +269,9 @@ export class OfflineManager {
     const response = await fetch(`/api/tournament/${data.action}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${data.token}`
+        'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(data.payload)
     });
 

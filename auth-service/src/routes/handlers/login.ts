@@ -25,9 +25,17 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     console.log('Login successful for', identifier);
 
+    // Set JWT as HTTP-only cookie
+    reply.setCookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 24 * 60 * 60 // 24 hours in seconds
+    });
+
     sendSuccess(reply, {
-      user: result.user,
-      token: result.token
+      user: result.user
     }, 'Login successful');
 
   } catch (error: any) {
