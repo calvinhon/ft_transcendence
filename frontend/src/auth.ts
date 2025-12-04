@@ -70,7 +70,12 @@ export class AuthManager {
       
       if (data.success) {
         console.log('Registration success detected, processing...');
-        this.token = data.token;
+        
+        // Extract from nested backend response
+        const user = data.data?.user || data.user;
+        const token = data.data?.token || data.token;
+        
+        this.token = token;
         console.log('Token set:', !!this.token);
         
         if (this.token) {
@@ -78,19 +83,23 @@ export class AuthManager {
           console.log('Token saved to sessionStorage');
         }
         
-        // Handle both possible response formats
-        const userData = data.user || data.data;
-        console.log('User data extracted:', userData);
-        
         this.currentUser = { 
-          userId: userData.userId, 
-          username: userData.username,
-          ...(userData.email && { email: userData.email })
+          userId: user.userId, 
+          username: user.username,
+          ...(user.email && { email: user.email })
         };
         console.log('Current user set:', this.currentUser);
         
         console.log('Registration success - returning success result');
-        return { success: true, data: data };
+        return { 
+          success: true, 
+          data: { 
+            success: true, 
+            token, 
+            user, 
+            message: data.message 
+          } 
+        };
       } else {
         console.log('Registration failed with response:', data);
         return { success: false, error: data.error || data.message || 'Registration failed' };
@@ -113,17 +122,31 @@ export class AuthManager {
         body: JSON.stringify({ username, password })
       });
 
-      const data: AuthResponse = await response.json();
+      const data: any = await response.json();
       
       if (response.ok && data.success) {
-        this.token = data.token;
-        sessionStorage.setItem('token', this.token);
+        // Extract from nested backend response
+        const user = data.data?.user || data.user;
+        const token = data.data?.token || data.token;
+        
+        this.token = token;
+        if (this.token) {
+          sessionStorage.setItem('token', this.token);
+        }
         this.currentUser = { 
-          userId: data.user.userId, 
-          username: data.user.username,
-          ...(data.user.email && { email: data.user.email })
+          userId: user.userId, 
+          username: user.username,
+          ...(user.email && { email: user.email })
         };
-        return { success: true, data };
+        return { 
+          success: true, 
+          data: { 
+            success: true, 
+            token, 
+            user, 
+            message: data.message 
+          } 
+        };
       } else {
         // Clear any existing auth data on failed login
         this.token = null;

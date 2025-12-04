@@ -11,7 +11,7 @@ COPY vite.config.js ./
 # Install dependencies
 RUN npm install
 
-# Copy source code and shared types
+# Copy source code
 COPY src/ ./src/
 COPY css/ ./css/
 COPY *.html ./

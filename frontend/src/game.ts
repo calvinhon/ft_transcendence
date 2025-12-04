@@ -641,6 +641,14 @@ export class GameManager {
           console.log('🎮 [GAME-MSG] Game ended:', message);
           this.endGame(message);
           break;
+        case 'gamePaused':
+          console.log('🎮 [GAME-MSG] Game paused by server');
+          this.isPaused = true;
+          break;
+        case 'gameResumed':
+          console.log('🎮 [GAME-MSG] Game resumed by server');
+          this.isPaused = false;
+          break;
         default:
         // console.log('🎮 [GAME-MSG] Unknown message type:', message.type);
       }

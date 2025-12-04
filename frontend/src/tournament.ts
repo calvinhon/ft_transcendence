@@ -59,8 +59,9 @@ export class TournamentManager {
   constructor() {
     console.log('TournamentManager constructor called');
     
-    // Check if running in development mode
-    if (window.location.hostname === 'localhost' && window.location.port !== '80') {
+    // Check if running in development mode (direct service access)
+    // Use development URL only when explicitly running on a non-standard port
+    if (window.location.hostname === 'localhost' && window.location.port && window.location.port !== '80') {
       // Direct service access for development
       this.baseURL = 'http://localhost:3003';
       console.log('TournamentManager: Using direct service URL for development');
@@ -263,7 +264,7 @@ export class TournamentManager {
       console.log('📝 Creating tournament with data:', tournamentData);
       
       // Create tournament
-      const createResponse = await fetch(`${this.baseURL}/create`, {
+      const createResponse = await fetch(`${this.baseURL}/tournaments/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,19 +281,19 @@ export class TournamentManager {
         throw new Error(createResult.error || createResult.message || 'Failed to create tournament');
       }
 
-      const tournamentId = createResult.tournamentId;
-      console.log('✅ Tournament created:', tournamentId);
+      const tournamentId = createResult.data.id;
+      console.log('✅ Tournament created:', tournamentId); // Fixed property access
 
       // Add all participants to tournament
       console.log('👥 Adding participants:', participantIds);
       for (const userId of participantIds) {
-        const joinResponse = await fetch(`${this.baseURL}/join`, {
+        const joinResponse = await fetch(`${this.baseURL}/tournaments/${tournamentId}/join`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...authManager.getAuthHeaders()
           },
-          body: JSON.stringify({ tournamentId, userId })
+          body: JSON.stringify({ userId })
         });
         
         if (!joinResponse.ok) {
@@ -305,7 +306,7 @@ export class TournamentManager {
 
       // Start tournament automatically
       console.log('🚀 Starting tournament...');
-      const startResponse = await fetch(`${this.baseURL}/start/${tournamentId}`, {
+      const startResponse = await fetch(`${this.baseURL}/tournaments/${tournamentId}/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -364,7 +365,7 @@ export class TournamentManager {
       console.log('Using headers:', headers);
       console.log('Fetching from:', this.baseURL);
       
-      const response = await fetch(`${this.baseURL}/list`, { headers });
+      const response = await fetch(`${this.baseURL}/tournaments`, { headers });
       console.log('Response status:', response.status);
       
       if (response.ok) {
@@ -583,7 +584,7 @@ export class TournamentManager {
   public async viewTournament(tournamentId: number): Promise<void> {
     try {
       const authManager = (window as any).authManager;
-      const response = await fetch(`${this.baseURL}/details/${tournamentId}`, {
+      const response = await fetch(`${this.baseURL}/tournaments/${tournamentId}`, {
         headers: {
           ...authManager.getAuthHeaders()
         }
@@ -1304,7 +1305,6 @@ export class TournamentManager {
       const authManager = (window as any).authManager;
       
       const requestBody = {
-        matchId,
         winnerId,
         player1Score,
         player2Score
@@ -1312,7 +1312,7 @@ export class TournamentManager {
       
       console.log('🏆 [RECORD] Sending to backend:', requestBody);
       
-      const response = await fetch(`${this.baseURL}/match/result`, {
+      const response = await fetch(`${this.baseURL}/tournaments/${tournamentId}/matches/${matchId}/result`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1338,7 +1338,7 @@ export class TournamentManager {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Reload tournament to check if it's finished and show updated bracket
-      const detailsResponse = await fetch(`${this.baseURL}/details/${tournamentId}?_=${Date.now()}`, {
+      const detailsResponse = await fetch(`${this.baseURL}/tournaments/${tournamentId}?_=${Date.now()}`, {
         headers: {
           ...authManager.getAuthHeaders()
         }

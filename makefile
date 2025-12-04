@@ -1,10 +1,12 @@
 # Makefile for auto-starting Docker Desktop, Docker Compose, and opening browser
+# Ensures all development artifacts (node_modules, dist, build files) are cleaned from host
+# since everything should run inside containers
 
 OS := $(shell uname)
 
-.PHONY: start check-docker check-compose clean up open stop restart rebuild
+.PHONY: start check-docker check-compose clean clean-dev up open stop restart rebuild
 
-start: check-docker check-compose clean up open
+start: check-docker check-compose clean-dev clean up open
 
 restart: check-docker check-compose
 	@echo "🔄 Restarting services without rebuild..."
@@ -12,10 +14,10 @@ restart: check-docker check-compose
 	docker compose up -d
 	@echo "✅ Services restarted!"
 
-rebuild: check-docker check-compose
+rebuild: check-docker check-compose clean-dev
 	@echo "🔨 Rebuilding and restarting services..."
 	docker compose down
-	docker compose build
+	docker compose build --no-cache
 	docker compose up -d
 	@echo "✅ Services rebuilt and started!"
 
@@ -48,6 +50,18 @@ check-compose:
 		echo "✅ Docker Compose v2 available."; \
 	fi
 
+clean-dev:
+	@echo "🧹 Cleaning development artifacts from host..."
+	@find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "dist" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "*.tsbuildinfo" -type f -delete 2>/dev/null || true
+	@find . -name ".vite" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".next" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".cache" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".nuxt" -type d -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Development artifacts cleaned from host"
+
 clean:
 	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."
 	@if [ -f docker-compose.yml ]; then \
@@ -69,7 +83,7 @@ clean:
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
-up:
+up: clean-dev
 	@echo "🚀 Running docker compose up --build --no-cache..."
 	docker compose build --no-cache
 	docker compose up -d

@@ -1,7 +1,7 @@
 // tournament-service/src/server.ts
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
-import tournamentRoutes from './routes/tournament';
+import routes from './routes';
 
 const fastify = Fastify({ 
   logger: true
@@ -38,10 +38,14 @@ fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, p
   }
 });
 
-// Register routes
-fastify.register(tournamentRoutes);
-
-const start = async (): Promise<void> => {
+// Initialize and start the server
+async function init(): Promise<void> {
+  console.log('🏆 [SERVER] Initializing server...');
+  // Register routes by calling the function directly
+  await routes(fastify);
+  console.log('🏆 [SERVER] Routes registered');
+  
+  // Start the server
   try {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     console.log('Tournament service running on port 3000');
@@ -49,6 +53,6 @@ const start = async (): Promise<void> => {
     fastify.log.error(err);
     process.exit(1);
   }
-};
+}
 
-start();
+init();
