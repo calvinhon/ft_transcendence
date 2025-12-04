@@ -1894,6 +1894,9 @@ export class GameManager {
     // Update arcade UI to show controls
     this.updateArcadeUI();
     
+    // Hide campaign UI elements
+    this.updateCampaignUI();
+    
     // Start the arcade match
     await this.startArcadeMatchWithSettings();
   }
