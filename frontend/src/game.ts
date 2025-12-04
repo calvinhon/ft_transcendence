@@ -1417,8 +1417,6 @@ export class GameManager {
       // Tournament mode: Use player names from match data
       leftPlayerName = tournamentMatch.player1Name;
       rightPlayerName = tournamentMatch.player2Name;
-      leftPlayerLevel = 1; // Can enhance later with actual player levels
-      rightPlayerLevel = 1;
     } else if (isArcadeMode) {
       // Arcade mode: Show team names (no levels needed for teams)
       leftPlayerName = 'Team 1';
@@ -1450,7 +1448,6 @@ export class GameManager {
       50, // x position
       25, // y position  
       leftPlayerName,
-      leftPlayerLevel,
       this.gameState.leftScore,
       isArcadeMode ? '👥' : '👤', // icon
       'left'
@@ -1461,7 +1458,6 @@ export class GameManager {
       this.canvas.width - 50, // x position
       25, // y position
       rightPlayerName,
-      rightPlayerLevel,
       this.gameState.rightScore,
       isArcadeMode ? '👥' : '🤖', // icon
       'right'
@@ -1503,7 +1499,7 @@ export class GameManager {
     this.ctx.restore();
   }
 
-  private drawPlayerInfoSection(x: number, y: number, name: string, level: number, score: number, icon: string, alignment: 'left' | 'right'): void {
+  private drawPlayerInfoSection(x: number, y: number, name: string, score: number, icon: string, alignment: 'left' | 'right'): void {
     if (!this.ctx) return;
 
     this.ctx.save();
@@ -2299,17 +2295,17 @@ export class GameManager {
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
-        console.log('Connected to game server for bot match');
+        console.log('Connected to game server');
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
-        
+        console.log('Current user:', user);
         if (!user || !user.userId) {
           console.error('No valid user logged in!');
           reject(new Error('No valid user'));
           return;
         }
 
-        // Send authentication only
+        // Send authentication
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
@@ -2817,7 +2813,7 @@ export class GameManager {
     message.innerHTML = `
       <div style="color: #77e6ff; margin-bottom: 10px;">🎯 LEVEL UP!</div>
       <div>Level ${this.currentCampaignLevel}</div>
-      <div style="font-size: 16px; margin-top: 10px; color: #cccccc;">
+      <div style="font-size: 16px; margin-top: 10px; color: #ffcccc;">
         Get ready for the next challenge!
       </div>
       <button id="next-level-confirm-btn" style="
@@ -3359,10 +3355,14 @@ export class GameManager {
     // Record match result via tournament manager
     const tournamentManager = (window as any).tournamentManager;
     if (tournamentManager && tournamentManager.recordMatchResult) {
+      // In this version, send the username instead of ID
+      const winnerUsername =
+        actualWinnerId === originalPlayer1Id ? tournamentMatch.player1Name : tournamentMatch.player2Name;
+
       tournamentManager.recordMatchResult(
         tournamentMatch.tournamentId,
         tournamentMatch.matchId,
-        actualWinnerId,
+        winnerUsername,            // send username
         actualPlayer1Score,
         actualPlayer2Score
       ).then(() => {
@@ -3489,8 +3489,3 @@ export class GameManager {
     }, 3000);
   }
 }
-
-// Do not create a global GameManager here. The app entrypoint (`frontend/src/main.ts`)
-// is responsible for creating and assigning the singleton instance to window.gameManager.
-// Creating it here would produce duplicate managers during module import/HMR and
-// can cause multiple websockets/render loops to run.

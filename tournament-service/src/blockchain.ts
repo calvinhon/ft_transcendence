@@ -2,6 +2,7 @@
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 // TournamentRankings contract ABI
 const CONTRACT_ABI = [
@@ -129,4 +130,17 @@ export async function isBlockchainAvailable(): Promise<boolean> {
     console.error('[Blockchain] Service not available:', error);
     return false;
   }
+}
+
+// External API
+const BLOCKCHAIN_URL = process.env.BLOCKCHAIN_URL || 'http://blockchain-service:3000';
+
+export async function recordWinner(tournamentId: number, walletAddress: string) {
+  const res = await fetch(`${BLOCKCHAIN_URL}/record`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tournamentId, playerAddress: walletAddress, rank: 1 })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }

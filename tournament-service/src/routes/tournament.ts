@@ -2,9 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { recordTournamentOnBlockchain, isBlockchainAvailable } from '../blockchain';
+import { recordTournamentOnBlockchain, isBlockchainAvailable, recordRank } from '../blockchain';
 
-// Type definitions (simplified)
 interface Tournament {
   id: number;
   current_participants: number;
@@ -16,6 +15,7 @@ interface Tournament {
 
 interface TournamentParticipant {
   id: number;
+  username: string;
   tournament_id: number;
   user_id: number;
   eliminated_at: string | null;
@@ -33,18 +33,22 @@ interface TournamentMatch {
   player1_score: number;
   player2_score: number;
   status: 'pending' | 'completed';
-  played_at: string | null;
+}
+
+interface TournamentMatchWithNames extends TournamentMatch {
+  player1_username: string | null;
+  player2_username: string | null;
 }
 
 interface MatchResultBody {
   matchId: number;
-  winnerId: number;
+  winner_username: string;
   player1Score: number;
   player2Score: number;
 }
 
 interface CreateFromPartyBody {
-  participants: number[];
+  participants: { id: number; username: string }[];
 }
 
 declare const __dirname: string;
@@ -63,7 +67,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.error('🏆 FATAL: Error opening database:', err);
     process.exit(1);  // Exit if can't open database
   }
-  console.log('🏆 Connected to Tournaments SQLite database at:', dbPath);
+  console.log('🏆 Connected to Tournament SQLite database at:', dbPath);
 });
 
 // Promisified database helpers
@@ -95,7 +99,7 @@ const dbAll = <T>(sql: string, params: any[] = []): Promise<T[]> => {
 };
 
 // Initialize database tables - returns a promise
-async function initializeDatabase(): Promise<void> {
+async function initializeDatabases(): Promise<void> {
   try {
     // Create tables in order, fail fast if any error
     await dbRun(`
@@ -113,6 +117,7 @@ async function initializeDatabase(): Promise<void> {
     await dbRun(`
       CREATE TABLE IF NOT EXISTS tournament_participants (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+  		username TEXT,
         tournament_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         eliminated_at DATETIME,
@@ -134,7 +139,6 @@ async function initializeDatabase(): Promise<void> {
         player1_score INTEGER DEFAULT 0,
         player2_score INTEGER DEFAULT 0,
         status TEXT DEFAULT 'pending',
-        played_at DATETIME,
         FOREIGN KEY (tournament_id) REFERENCES tournaments (id)
       )
     `);
@@ -147,11 +151,10 @@ async function initializeDatabase(): Promise<void> {
   }
 }
 
-// Initialize database immediately
-initializeDatabase();
-
 // Route definitions
 async function routes(fastify: FastifyInstance): Promise<void> {
+
+  await initializeDatabases();
 
   // ✅ KEEP: Create tournament directly from party (main entry point)
   fastify.post<{
@@ -163,15 +166,9 @@ async function routes(fastify: FastifyInstance): Promise<void> {
     try {
       const { participants } = request.body;
 
-      // Validate
-      if (!participants || participants.length < 2) {
-        console.log('🏆 [Tournament API] Error: Need at least 2 participants');
-        return reply.status(400).send({ error: 'Need at least 2 participants' });
-      }
-
-      if (![2, 4, 8, 16].includes(participants.length)) {
+      if (![4, 8].includes(participants.length)) {
         console.log('🏆 [Tournament API] Error: Invalid count:', participants.length);
-        return reply.status(400).send({ error: 'Need 2, 4, 8, or 16 players' });
+        return reply.status(400).send({ error: 'Need 4 or 8 players' });
       }
 
       console.log('🏆 [Tournament API] Creating tournament with', participants.length, 'players');
@@ -187,15 +184,34 @@ async function routes(fastify: FastifyInstance): Promise<void> {
       console.log('🏆 [Tournament API] Created tournament ID:', tournamentId);
 
       // Add participants
-      for (const participantId of participants) {
+      for (const participant of participants) {
         await dbRun(
-          'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
-          [tournamentId, participantId]
+          'INSERT INTO tournament_participants (tournament_id, user_id, username) VALUES (?, ?, ?)',
+          [tournamentId, participant.id, participant.username]
         );
       }
 
+	  const participantsData = await dbAll<{ user_id: number; username: string }>(
+	  'SELECT user_id, username FROM tournament_participants WHERE tournament_id = ?',
+	  [tournamentId]
+	  );
+
       // Generate bracket matches
-      const matches = await generateBracketMatches(tournamentId, participants);
+      await generateBracketMatches(tournamentId, participantsData.map(p => p.user_id));
+
+      const matches = await dbAll<TournamentMatchWithNames>(
+        `SELECT tm.*,
+                tp1.username AS player1_username,
+                tp2.username AS player2_username
+         FROM tournament_matches tm
+         LEFT JOIN tournament_participants tp1
+           ON tp1.tournament_id = tm.tournament_id AND tp1.user_id = tm.player1_id
+         LEFT JOIN tournament_participants tp2
+           ON tp2.tournament_id = tm.tournament_id AND tp2.user_id = tm.player2_id
+         WHERE tm.tournament_id = ?
+         ORDER BY tm.round, tm.match_number`,
+        [tournamentId]
+      );
 
       // Get tournament data
       const tournament = await dbGet<Tournament>(
@@ -205,7 +221,6 @@ async function routes(fastify: FastifyInstance): Promise<void> {
 
       return reply.send({
         success: true,
-        tournamentId,
         tournament,
         matches
       });
@@ -241,8 +256,17 @@ async function routes(fastify: FastifyInstance): Promise<void> {
         [tournamentId]
       );
 
-      const matches = await dbAll<TournamentMatch>(
-        'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
+      const matches = await dbAll<TournamentMatchWithNames>(
+        `SELECT tm.*,
+                tp1.username AS player1_username,
+                tp2.username AS player2_username
+         FROM tournament_matches tm
+         LEFT JOIN tournament_participants tp1
+           ON tp1.tournament_id = tm.tournament_id AND tp1.user_id = tm.player1_id
+         LEFT JOIN tournament_participants tp2
+           ON tp2.tournament_id = tm.tournament_id AND tp2.user_id = tm.player2_id
+         WHERE tm.tournament_id = ?
+         ORDER BY tm.round, tm.match_number`,
         [tournamentId]
       );
 
@@ -257,29 +281,40 @@ async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{
     Body: MatchResultBody;
   }>('/match/result', async (request, reply) => {
-    const { matchId, winnerId, player1Score, player2Score } = request.body;
+    const { matchId, winner_username, player1Score, player2Score } = request.body;
 
-    if (!matchId || !winnerId || player1Score === undefined || player2Score === undefined) {
+    if (!matchId || !winner_username || player1Score === undefined || player2Score === undefined) {
       return reply.status(400).send({ error: 'Missing required fields' });
     }
 
-    try {
-      await dbRun(
-        `UPDATE tournament_matches 
-         SET winner_id = ?, player1_score = ?, player2_score = ?, 
-             status = 'completed', played_at = CURRENT_TIMESTAMP 
-         WHERE id = ?`,
-        [winnerId, player1Score, player2Score, matchId]
-      );
-
-      // Check if we need to create next round matches
-      await checkAndCreateNextRound(fastify, matchId);
-
-      return reply.send({ message: 'Match result updated successfully' });
-    } catch (err) {
-      fastify.log.error(err, 'Update match result error');
-      return reply.status(500).send({ error: 'Database error' });
+    // Look up winner user_id from username (or change client to send winnerId directly)
+    const winnerParticipant = await dbGet<{ user_id: number }>(
+      'SELECT user_id FROM tournament_participants WHERE tournament_id = (SELECT tournament_id FROM tournament_matches WHERE id = ?) AND username = ?',
+      [matchId, winner_username]
+    );
+    if (!winnerParticipant) {
+      return reply.status(400).send({ error: 'Winner not found in tournament' });
     }
+
+    await dbRun(
+      `UPDATE tournament_matches 
+       SET winner_id = ?, player1_score = ?, player2_score = ?, status = 'completed' WHERE id = ?`,
+      [winnerParticipant.user_id, player1Score, player2Score, matchId]
+    );
+
+    // Ensure next round is created/linked if needed
+    await checkAndCreateNextRound(fastify, matchId);
+
+    // Find tournamentId for this match
+    const meta = await dbGet<{ tournament_id: number }>(
+      'SELECT tournament_id FROM tournament_matches WHERE id = ?',
+      [matchId]
+    );
+    if meta?.tournament_id) {
+      await finalizeTournamentIfComplete(meta.tournament_id);
+    }
+
+    return reply.send({ message: 'Match result updated successfully' });
   });
 
   // ✅ KEEP: Get match by ID
@@ -369,11 +404,11 @@ async function routes(fastify: FastifyInstance): Promise<void> {
 
   // ✅ KEEP: Record on blockchain
   fastify.post<{
-    Body: { tournamentId: number; winnerId: number };
+    Body: { tournamentId: number; winner_username: number };
   }>('/blockchain/record', async (request, reply) => {
-    const { tournamentId, winnerId } = request.body;
+    const { tournamentId, winner_username } = request.body;
 
-    if (!tournamentId || !winnerId) {
+    if (!tournamentId || !winner_username) {
       return reply.status(400).send({ error: 'Tournament ID and winner ID required' });
     }
 
@@ -413,7 +448,7 @@ async function routes(fastify: FastifyInstance): Promise<void> {
         message: 'Tournament recorded on blockchain',
         transactionHash: txHash,
         participants: participants.length,
-        winner: winnerId
+        winner: winner_username
       });
     } catch (err) {
       fastify.log.error(err, 'Blockchain record error');
@@ -453,7 +488,6 @@ async function generateBracketMatches(tournamentId: number, participants: number
       player1_score: 0,
       player2_score: 0,
       status: 'pending',
-      played_at: null
     });
   }
   
@@ -485,7 +519,6 @@ async function generateBracketMatches(tournamentId: number, participants: number
         player1_score: 0,
         player2_score: 0,
         status: 'pending',
-        played_at: null
       });
     }
     matchesInRound = Math.max(1, Math.floor(matchesInRound / 2));  // Prevent 0
@@ -531,7 +564,7 @@ async function checkAndCreateNextRound(fastify: FastifyInstance, matchId: number
         [match.tournament_id, match.winner_id]
       );
 
-      fastify.log.info({ tournamentId: match.tournament_id, winnerId: match.winner_id }, 'Tournament finished');
+      fastify.log.info({ tournamentId: match.tournament_id, winner_username: match.winner_id }, 'Tournament finished');
       return;
     }
 
@@ -557,6 +590,50 @@ async function checkAndCreateNextRound(fastify: FastifyInstance, matchId: number
     fastify.log.info({ tournamentId: match.tournament_id, nextRound }, 'Created next round matches');
   } catch (err) {
     fastify.log.error(err, 'Check and create next round error');
+  }
+}
+
+// helper to check completion and finalize
+async function finalizeTournamentIfComplete(tournamentId: number) {
+  // Are there any pending matches left?
+  const pending = await dbGet<{ c: number }>(
+    'SELECT COUNT(*) as c FROM tournament_matches WHERE tournament_id = ? AND status != "completed"',
+    [tournamentId]
+  );
+  if (pending && pending.c > 0) return;
+
+  // Mark finished with finished_at
+  await dbRun('UPDATE tournaments SET status = "finished", finished_at = CURRENT_TIMESTAMP WHERE id = ?', [tournamentId]);
+
+  // Winner is the winner_id of the last round, highest round number
+  const finalMatch = await dbGet<{ winner_id: number }>(
+    `SELECT winner_id FROM tournament_matches
+     WHERE tournament_id = ?
+     ORDER BY round DESC, match_number DESC
+     LIMIT 1`,
+    [tournamentId]
+  );
+  if (!finalMatch?.winner_id) return;
+
+  // Get winner wallet address from users table (adjust to your schema)
+  const winner = await dbGet<{ wallet_address?: string; username: string }>(
+    `SELECT u.wallet_address, tp.username
+     FROM tournament_participants tp
+     JOIN users u ON u.id = tp.user_id
+     WHERE tp.tournament_id = ? AND tp.user_id = ?`,
+    [tournamentId, finalMatch.winner_id]
+  );
+
+  if (!winner?.wallet_address) {
+    console.warn('[Blockchain] Winner has no wallet address; skipping on-chain record.');
+    return;
+  }
+
+  try {
+    const tx = await recordRank(tournamentId, winner.wallet_address, 1); // rank 1 = Champion
+    console.log('[Blockchain] Recorded winner on-chain:', tx);
+  } catch (e) {
+    console.error('[Blockchain] Failed to record winner rank:', e);
   }
 }
 

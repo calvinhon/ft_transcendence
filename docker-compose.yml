@@ -48,6 +48,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=tournament-service
+      - BLOCKCHAIN_URL=http://blockchain-service:3000
     networks:
       - transcendence-network
 

@@ -4,6 +4,7 @@ import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import path from 'path';
+import { Wallet } from 'ethers';
 
 // Local type definitions
 interface User {
@@ -37,13 +38,11 @@ interface ApiResponse<T = any> {
 
 const dbPath = path.join(__dirname, '../../database/auth.db');
 
-// Initialize database
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
     console.log('Connected to SQLite database');
-    // Create users table
     db.run(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,7 +50,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        last_login DATETIME
+        last_login DATETIME,
+		wallet_address TEXT
       )
     `);
   }
@@ -97,11 +97,13 @@ async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+      const wallet = Wallet.createRandom();
+      const walletAddress = wallet.address;
+
       return new Promise<void>((resolve, reject) => {
         db.run(
-          'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-          [username, email, hashedPassword],
+          'INSERT INTO users (username, email, password_hash, wallet_address) VALUES (?, ?, ?, ?)',
+          [username, email, hashedPassword, walletAddress],
           function(this: sqlite3.RunResult, err: Error | null) {
             if (err) {
               if (err.message.includes('UNIQUE constraint failed')) {
@@ -125,9 +127,11 @@ async function authRoutes(fastify: FastifyInstance): Promise<void> {
               reply.send({ 
                 success: true,
                 message: 'User registered successfully',
-                data: {
+                user: {
                   userId: this.lastID,
-                  username: username
+                  username: username,
+                  email: email,
+                  wallet_address: walletAddress
                 },
                 token: token
               } as AuthResponse);
