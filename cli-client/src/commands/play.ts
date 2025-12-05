@@ -1,7 +1,9 @@
 import chalk from 'chalk';
-import * as keypress from 'keypress';
 import { gameClient, GameState } from '../api/client.js';
 import { displayGameBoard } from '../ui/game-display.js';
+
+// @ts-ignore: keypress has no proper types
+const keypress = require('keypress');
 
 export async function playCommand(): Promise<void> {
   if (!gameClient.isAuthenticated()) {

@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { Table } from 'table';
+import { table as createTable } from 'table';
 import { gameClient } from '../api/client.js';
 
 export async function statsCommand(): Promise<void> {
@@ -27,8 +27,8 @@ export async function statsCommand(): Promise<void> {
       [chalk.yellow('Average Score'), chalk.blue(stats.averageScore.toFixed(2))],
     ];
 
-    const table = new Table({ data: tableData });
-    console.log(table.toString());
+    const output = createTable(tableData);
+    console.log(output);
 
     console.log(chalk.green('\n✓ Statistics loaded successfully.\n'));
   } catch (error) {

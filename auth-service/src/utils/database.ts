@@ -29,6 +29,8 @@ function initializeDatabase(): void {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       avatar_url TEXT,
+      two_factor_secret TEXT,
+      two_factor_enabled BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_login DATETIME
     )

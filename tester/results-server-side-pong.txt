@@ -1,7 +1,7 @@
 === Server-Side Pong Test Results ===
-Date: Fri Dec  5 16:58:41 +04 2025
+Date: Fri Dec  5 19:27:02 +04 2025
 
-[PASS] Test 1: Game Initialization
+[FAIL] Test 1: Game Initialization
 [PASS] Test 2: Physics Engine
 [PASS] Test 3: Ball Movement
 [PASS] Test 4: Paddle Control
@@ -15,6 +15,6 @@ Date: Fri Dec  5 16:58:41 +04 2025
 [PASS] Test 12: Game Termination
 
 === Summary ===
-Passed: 12
-Failed: 0
+Passed: 11
+Failed: 1
 Total: 12

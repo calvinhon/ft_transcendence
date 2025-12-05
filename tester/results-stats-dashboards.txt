@@ -1,20 +1,20 @@
 === Stats Dashboards Test Results ===
-Date: Fri Dec  5 17:03:30 +04 2025
+Date: Fri Dec  5 19:27:02 +04 2025
 
-[FAIL] Test 1: Dashboard Endpoint
-[PASS] Test 2: Leaderboard API
-[PASS] Test 3: User Profile Stats
-[PASS] Test 4: Game Statistics
-[PASS] Test 5: Win/Loss Ratio
-[PASS] Test 6: Ranking System
-[PASS] Test 7: Historical Data
-[PASS] Test 8: Performance Metrics
+[PASS] Test 1: Dashboard Endpoint
+[FAIL] Test 2: Leaderboard API
+[FAIL] Test 3: User Profile Stats
+[FAIL] Test 4: Game Statistics
+[FAIL] Test 5: Win/Loss Ratio
+[FAIL] Test 6: Ranking System
+[FAIL] Test 7: Historical Data
+[FAIL] Test 8: Performance Metrics
 [PASS] Test 9: Dashboard UI Accessibility
 [PASS] Test 10: Real-time Updates
 [PASS] Test 11: Data Export
 [FAIL] Test 12: Caching Strategy
 
 === Summary ===
-Passed: 10
-Failed: 2
+Passed: 4
+Failed: 8
 Total: 12

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-interface GameState {
+export interface GameState {
   gameId: string;
   ballX: number;
   ballY: number;

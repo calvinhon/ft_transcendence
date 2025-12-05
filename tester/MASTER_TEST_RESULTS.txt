@@ -2,11 +2,11 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Fri Dec  5 16:58:14 +04 2025
+Date: Fri Dec  5 19:27:01 +04 2025
 Project: FT_Transcendence
 
 
-✓ PASSED: Backend Framework (Fastify)
+✗ FAILED: Backend Framework (Fastify)
 
 ✗ FAILED: Database (SQLite)
 
@@ -18,24 +18,26 @@ Project: FT_Transcendence
 
 ✗ FAILED: Microservices Architecture
 
-✓ PASSED: Server-Side Pong
+✗ FAILED: Server-Side Pong
 
 ✗ FAILED: OAuth/SSO
 
 ✗ FAILED: WAF & Vault
 
-✓ PASSED: ELK Logging
+✗ FAILED: ELK Logging
 
-✓ PASSED: Monitoring (Prometheus/Grafana)
+✗ FAILED: Monitoring (Prometheus/Grafana)
 
 ✗ FAILED: GDPR Compliance
+
+✓ PASSED: CLI Pong Client
 
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  5
-Failed:  7
-Total:   12
+Passed:  2
+Failed:  11
+Total:   13
 
 Status: SOME TESTS FAILED ✗
-Generated: Fri Dec  5 16:58:46 +04 2025
+Generated: Fri Dec  5 19:27:04 +04 2025

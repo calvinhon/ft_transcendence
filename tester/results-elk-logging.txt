@@ -1,20 +1,20 @@
 === ELK Logging Test Results ===
-Date: Fri Dec  5 16:58:44 +04 2025
+Date: Fri Dec  5 19:27:03 +04 2025
 
-[PASS] Test 1: Elasticsearch Health Check
+[FAIL] Test 1: Elasticsearch Health Check
 [PASS] Test 2: Index Creation
 [PASS] Test 3: Log Ingestion
-[PASS] Test 4: Kibana Access
-[PASS] Test 5: Document Indexing
-[PASS] Test 6: Full-Text Search
-[PASS] Test 7: Aggregations
-[PASS] Test 8: Kibana Dashboards
+[FAIL] Test 4: Kibana Access
+[FAIL] Test 5: Document Indexing
+[FAIL] Test 6: Full-Text Search
+[FAIL] Test 7: Aggregations
+[FAIL] Test 8: Kibana Dashboards
 [PASS] Test 9: Filebeat Integration
-[PASS] Test 10: Index Management
+[FAIL] Test 10: Index Management
 [PASS] Test 11: Query Performance
-[PASS] Test 12: Data Retention
+[FAIL] Test 12: Data Retention
 
 === Summary ===
-Passed: 12
-Failed: 0
+Passed: 4
+Failed: 8
 Total: 12

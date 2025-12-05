@@ -14,14 +14,14 @@ export async function loginCommand(): Promise<void> {
         type: 'input',
         name: 'username',
         message: 'Username:',
-        validate: (input) => input.trim().length > 0 || 'Username cannot be empty',
+        validate: (input: string) => input.trim().length > 0 || 'Username cannot be empty',
       },
       {
         type: 'password',
         name: 'password',
         message: 'Password:',
         mask: '*',
-        validate: (input) => input.length > 0 || 'Password cannot be empty',
+        validate: (input: string) => input.length > 0 || 'Password cannot be empty',
       },
     ]);
 

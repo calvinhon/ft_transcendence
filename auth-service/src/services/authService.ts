@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { User, DatabaseUser, JWTPayload } from '../types';
 import { getQuery, runQuery } from '../utils/database';
+import { twoFactorService } from './twoFactorService.js';
 
 export class AuthService {
   constructor(private fastify: FastifyInstance) {}
@@ -24,9 +25,9 @@ export class AuthService {
     return { userId: (result as any).lastID, token };
   }
 
-  async login(identifier: string, password: string): Promise<{ user: User; token: string }> {
-    const user = await getQuery<DatabaseUser>(
-      'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
+  async login(identifier: string, password: string, totpToken?: string): Promise<{ user: User; token: string; requires2FA?: boolean }> {
+    const user = await getQuery<DatabaseUser & { two_factor_enabled: boolean }>(
+      'SELECT id, username, email, password_hash, two_factor_enabled FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
     );
 
@@ -37,6 +38,28 @@ export class AuthService {
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
       throw new Error('Invalid credentials');
+    }
+
+    // Check if 2FA is enabled
+    if (user.two_factor_enabled) {
+      if (!totpToken) {
+        // Return special response indicating 2FA is required
+        return {
+          user: {
+            userId: user.id,
+            username: user.username,
+            email: user.email
+          },
+          token: '', // No token yet
+          requires2FA: true
+        };
+      }
+
+      // Verify TOTP token
+      const isValidToken = await twoFactorService.verifyToken(user.id, totpToken);
+      if (!isValidToken) {
+        throw new Error('Invalid 2FA token');
+      }
     }
 
     // Update last login
