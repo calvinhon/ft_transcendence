@@ -758,31 +758,17 @@ export class GameManager {
   }
 
   private handleTournamentInputs(): void {
-    // Tournament mode: Local multiplayer - two players on the same keyboard
-    // Player 1 (left): W/S or Arrow keys
-    // Player 2 (right): U/J keys
+    // Tournament mode: Position-based controls
+    // LEFT paddle (team1): W/S or Arrow keys
+    // RIGHT paddle (team2): U/J keys
+    // Keys are tied to paddle POSITION, not player identity
     
-    // Get actual player IDs from tournament match data
-    const player1Id = this.team1Players[0]?.userId || this.currentTournamentMatch?.player1Id;
-    const player2Id = this.team2Players[0]?.userId || this.currentTournamentMatch?.player2Id;
+    // LEFT paddle (team1[0]) - W/S or Arrow keys
+    const leftUpPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
+    const leftDownPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
     
-    if (!player1Id || !player2Id) {
-      console.warn('🏆 [TOURNAMENT] Missing player IDs, cannot send paddle movements');
-      return;
-    }
-    
-    // Debug log once per second
-    if (!this.lastTournamentDebugTime || Date.now() - this.lastTournamentDebugTime > 1000) {
-      console.log('🏆 [TOURNAMENT-INPUT] Using player IDs:', player1Id, 'vs', player2Id);
-      this.lastTournamentDebugTime = Date.now();
-    }
-    
-    // Player 1 (left paddle) - W/S or Arrow keys
-    const p1UpPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
-    const p1DownPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
-    
-    // Handle Player 1 input with priority for most recent key
-    if (p1UpPressed && p1DownPressed) {
+    // Handle LEFT paddle input
+    if (leftUpPressed && leftDownPressed) {
       const upTime = Math.max(
         this.lastKeyPressTime['w'] || 0,
         this.lastKeyPressTime['W'] || 0,
@@ -799,62 +785,70 @@ export class GameManager {
       if (downTime > upTime) {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: player1Id,
+          side: 'left',
+          paddleIndex: 0,
           direction: 'down'
         }));
       } else {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: player1Id,
+          side: 'left',
+          paddleIndex: 0,
           direction: 'up'
         }));
       }
-    } else if (p1UpPressed) {
+    } else if (leftUpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: player1Id,
+        side: 'left',
+        paddleIndex: 0,
         direction: 'up'
       }));
-    } else if (p1DownPressed) {
+    } else if (leftDownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: player1Id,
+        side: 'left',
+        paddleIndex: 0,
         direction: 'down'
       }));
     }
     
-    // Player 2 (right paddle) - U/J keys
-    const p2UpPressed = this.keys['u'] || this.keys['U'];
-    const p2DownPressed = this.keys['j'] || this.keys['J'];
+    // RIGHT paddle (team2[0]) - U/J keys
+    const rightUpPressed = this.keys['u'] || this.keys['U'];
+    const rightDownPressed = this.keys['j'] || this.keys['J'];
     
-    // Handle Player 2 input
-    if (p2UpPressed && p2DownPressed) {
+    // Handle RIGHT paddle input
+    if (rightUpPressed && rightDownPressed) {
       const upTime = this.lastKeyPressTime['u'] || this.lastKeyPressTime['U'] || 0;
       const downTime = this.lastKeyPressTime['j'] || this.lastKeyPressTime['J'] || 0;
       
       if (downTime > upTime) {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: player2Id,
+          side: 'right',
+          paddleIndex: 0,
           direction: 'down'
         }));
       } else {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: player2Id,
+          side: 'right',
+          paddleIndex: 0,
           direction: 'up'
         }));
       }
-    } else if (p2UpPressed) {
+    } else if (rightUpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: player2Id,
+        side: 'right',
+        paddleIndex: 0,
         direction: 'up'
       }));
-    } else if (p2DownPressed) {
+    } else if (rightDownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: player2Id,
+        side: 'right',
+        paddleIndex: 0,
         direction: 'down'
       }));
     }
@@ -1016,10 +1010,10 @@ export class GameManager {
     }
     
     if (team1Direction) {
-      // Arcade mode always uses team numbers (1 = left team)
+      // Arcade mode: position-based control for left side
       const message = {
         type: 'movePaddle',
-        playerId: 1, // Team 1 / Left side
+        side: 'left',
         paddleIndex: team1PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team1Direction
       };
@@ -1048,10 +1042,10 @@ export class GameManager {
     }
     
     if (team2Direction) {
-      // Arcade mode always uses team numbers (2 = right team)
+      // Arcade mode: position-based control for right side
       const message = {
         type: 'movePaddle',
-        playerId: 2, // Team 2 / Right side
+        side: 'right',
         paddleIndex: team2PaddleIndex, // Which paddle (0, 1, or 2)
         direction: team2Direction
       };

@@ -21,20 +21,24 @@ export class GameHandlers {
           game.player1.userId : game.player2.userId;
         logger.gameDebug(gameId, 'Found game', gameId, 'for socket player', socketPlayerId, 'direction:', data.direction);
 
-        // For tournament local multiplayer, use data.playerId to distinguish which paddle
-        // For other modes, use the socket-determined playerId
-        const targetPlayerId = data.playerId || socketPlayerId;
-        logger.gameDebug(gameId, 'Target paddle playerId:', targetPlayerId, '(from data.playerId:', data.playerId, ')');
-
-        // Pass paddleIndex for arcade mode
-        if (data.paddleIndex !== undefined) {
-          logger.gameDebug(gameId, 'Arcade mode - paddleIndex:', data.paddleIndex);
-          game.movePaddle(targetPlayerId, data.direction, data.paddleIndex);
-        } else {
-          game.movePaddle(targetPlayerId, data.direction);
+        // Position-based control for tournament/arcade modes
+        if (data.side !== undefined) {
+          logger.gameDebug(gameId, 'Position-based control - side:', data.side, 'paddleIndex:', data.paddleIndex);
+          game.movePaddleBySide(data.side, data.direction, data.paddleIndex);
+        }
+        // Player ID-based control for other modes
+        else {
+          const targetPlayerId = data.playerId || socketPlayerId;
+          logger.gameDebug(gameId, 'Player-based control - playerId:', targetPlayerId);
+          
+          if (data.paddleIndex !== undefined) {
+            game.movePaddle(targetPlayerId, data.direction, data.paddleIndex);
+          } else {
+            game.movePaddle(targetPlayerId, data.direction);
+          }
         }
 
-        logger.gameDebug(gameId, 'Paddle movement executed for playerId', targetPlayerId);
+        logger.gameDebug(gameId, 'Paddle movement executed');
         return; // Found the game, no need to continue
       }
     }
