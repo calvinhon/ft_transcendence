@@ -45,7 +45,7 @@ test_elasticsearch_health() {
     
     local response=$(curl -s http://localhost:9200/_cluster/health 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 1 "Elasticsearch Health Check" "PASS"
         return 0
     fi
@@ -89,7 +89,7 @@ test_kibana_access() {
     
     local response=$(curl -s http://localhost:5601/api/status 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 4 "Kibana Access" "PASS"
         return 0
     fi
@@ -107,7 +107,7 @@ test_document_indexing() {
         -H "Content-Type: application/json" \
         -d '{"timestamp": "'$(date -u +'%Y-%m-%dT%H:%M:%SZ')'", "message": "test"}' 2>/dev/null)
     
-    if echo "$response" | jq ._id > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 5 "Document Indexing" "PASS"
         return 0
     fi
@@ -122,7 +122,7 @@ test_full_text_search() {
     
     local response=$(curl -s -X GET "http://localhost:9200/test-index/_search?q=message:test" 2>/dev/null)
     
-    if echo "$response" | jq .hits > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Full-Text Search" "PASS"
         return 0
     fi
@@ -139,7 +139,7 @@ test_aggregations() {
         -H "Content-Type: application/json" \
         -d '{"aggs": {"messages": {"terms": {"field": "message"}}}}' 2>/dev/null)
     
-    if echo "$response" | jq .aggregations > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Aggregations" "PASS"
         return 0
     fi
@@ -154,7 +154,7 @@ test_kibana_dashboards() {
     
     local response=$(curl -s http://localhost:5601/api/saved_objects/dashboard 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 8 "Kibana Dashboards" "PASS"
         return 0
     fi
@@ -183,7 +183,7 @@ test_index_management() {
     # Check if we can get index settings
     local response=$(curl -s -X GET "http://localhost:9200/_cat/indices?format=json" 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 10 "Index Management" "PASS"
         return 0
     fi
@@ -217,7 +217,7 @@ test_data_retention() {
     # Check if index templates are configured
     local response=$(curl -s -X GET "http://localhost:9200/_index_template" 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Data Retention" "PASS"
         return 0
     fi

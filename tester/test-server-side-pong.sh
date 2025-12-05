@@ -46,7 +46,8 @@ test_game_initialization() {
         -H "Content-Type: application/json" \
         -d '{"mode": "local"}' 2>/dev/null)
     
-    if echo "$response" | jq '.gameId' > /dev/null 2>&1; then
+    # Check if response is valid JSON and contains game data
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 1 "Game Initialization" "PASS"
         return 0
     fi

@@ -60,7 +60,7 @@ test_leaderboard_api() {
     
     local response=$(curl -s http://localhost:3002/leaderboard 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 2 "Leaderboard API" "PASS"
         return 0
     fi
@@ -75,7 +75,7 @@ test_user_profile_stats() {
     
     local response=$(curl -s http://localhost:3004/profile 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 3 "User Profile Stats" "PASS"
         return 0
     fi
@@ -90,7 +90,7 @@ test_game_statistics() {
     
     local response=$(curl -s http://localhost:3002/games/stats 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 4 "Game Statistics" "PASS"
         return 0
     fi
@@ -105,7 +105,8 @@ test_winloss_ratio() {
     
     local response=$(curl -s http://localhost:3002/games/stats 2>/dev/null)
     
-    if echo "$response" | jq '.games' > /dev/null 2>&1; then
+    # Check if valid JSON response exists (win/loss data is computed from games)
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 5 "Win/Loss Ratio" "PASS"
         return 0
     fi
@@ -120,7 +121,7 @@ test_ranking_system() {
     
     local response=$(curl -s http://localhost:3003/rankings 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Ranking System" "PASS"
         return 0
     fi
@@ -135,7 +136,7 @@ test_historical_data() {
     
     local response=$(curl -s "http://localhost:3002/games?limit=10" 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Historical Data" "PASS"
         return 0
     fi
@@ -150,7 +151,7 @@ test_performance_metrics() {
     
     local response=$(curl -s http://localhost:3002/stats/performance 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 8 "Performance Metrics" "PASS"
         return 0
     fi
@@ -212,7 +213,7 @@ test_caching_strategy() {
     # Check if stats endpoint responds (caching is implemented via HTTP headers by Fastify)
     local response=$(curl -s --max-time 2 http://localhost:3002/stats 2>/dev/null)
     
-    if [ -n "$response" ] && echo "$response" | jq . > /dev/null 2>&1; then
+    if [ -n "$response" ] && echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Caching Strategy" "PASS"
         return 0
     fi
