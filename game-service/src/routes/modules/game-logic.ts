@@ -188,21 +188,57 @@ export class PongGame {
       this.gameSettings.gameMode,
       paddleSpeed,
       this.gameId,
-      paddleIndex
+      paddleIndex,
+      this.player1.userId,
+      this.player2.userId
     );
 
     if (moved) {
-      // Sync tournament paddles
+      // Sync tournament paddles - team arrays are the source of truth, sync TO player1/player2 paddles
       if (this.gameSettings.gameMode === 'tournament') {
         if (playerId === this.player1.userId && this.paddles.team1 && this.paddles.team1[0]) {
-          this.paddles.team1[0].y = this.paddles.player1.y;
+          this.paddles.player1.y = this.paddles.team1[0].y;
         } else if (playerId === this.player2.userId && this.paddles.team2 && this.paddles.team2[0]) {
-          this.paddles.team2[0].y = this.paddles.player2.y;
+          this.paddles.player2.y = this.paddles.team2[0].y;
         }
       }
 
       this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
     }
+  }
+
+  movePaddleBySide(side: 'left' | 'right', direction: 'up' | 'down', paddleIndex?: number): void {
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    const team = side === 'left' ? 'team1' : 'team2';
+    const index = paddleIndex ?? 0;
+    
+    logger.gameDebug(this.gameId, `Moving ${side} paddle (${team}[${index}]) ${direction}`);
+    
+    const teamPaddles = this.paddles[team as keyof Paddles] as any[];
+    if (!teamPaddles || !teamPaddles[index]) {
+      logger.gameDebug(this.gameId, `No paddle found at ${team}[${index}]`);
+      return;
+    }
+
+    const paddle = teamPaddles[index];
+    const oldY = paddle.y;
+
+    if (direction === 'up' && paddle.y > 0) {
+      paddle.y = Math.max(0, paddle.y - paddleSpeed);
+      logger.gameDebug(this.gameId, `Paddle moved UP from ${oldY} to ${paddle.y}`);
+    } else if (direction === 'down' && paddle.y < 500) {
+      paddle.y = Math.min(500, paddle.y + paddleSpeed);
+      logger.gameDebug(this.gameId, `Paddle moved DOWN from ${oldY} to ${paddle.y}`);
+    }
+
+    // Sync to player1/player2 paddles for rendering compatibility
+    if (side === 'left' && index === 0) {
+      this.paddles.player1.y = paddle.y;
+    } else if (side === 'right' && index === 0) {
+      this.paddles.player2.y = paddle.y;
+    }
+
+    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
   }
 
   pauseGame(): void {

@@ -116,13 +116,13 @@ export class GamePhysics {
     ball.frozen = false;
   }
 
-  movePaddle(paddles: Paddles, playerId: number, direction: 'up' | 'down', gameMode: string, paddleSpeed: number, gameId: number, paddleIndex?: number): boolean {
+  movePaddle(paddles: Paddles, playerId: number, direction: 'up' | 'down', gameMode: string, paddleSpeed: number, gameId: number, paddleIndex?: number, player1Id?: number, player2Id?: number): boolean {
     let paddle: Paddle | undefined;
     let team: string;
 
     // Handle arcade/tournament mode with multiple paddles
     if ((gameMode === 'arcade' || gameMode === 'tournament') && paddleIndex !== undefined) {
-      const isPlayer1 = playerId === 1; // Assuming player1 has lower ID
+      const isPlayer1 = player1Id !== undefined ? playerId === player1Id : playerId === 1;
       team = isPlayer1 ? 'team1' : 'team2';
       const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
 
@@ -134,9 +134,10 @@ export class GamePhysics {
       paddle = teamPaddles[paddleIndex];
     } else if (gameMode === 'tournament') {
       // Handle tournament mode without paddleIndex (local multiplayer)
-      // playerId: 1 = left paddle (team1), playerId: 2 = right paddle (team2)
-      logger.gameDebug(gameId, 'Tournament mode - playerId:', playerId);
-      team = playerId === 1 ? 'team1' : 'team2';
+      // Compare playerId with actual player1Id/player2Id from game
+      logger.gameDebug(gameId, 'Tournament mode - playerId:', playerId, 'player1Id:', player1Id, 'player2Id:', player2Id);
+      const isPlayer1 = player1Id !== undefined && playerId === player1Id;
+      team = isPlayer1 ? 'team1' : 'team2';
       const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
 
       if (!teamPaddles || !teamPaddles[0]) {
