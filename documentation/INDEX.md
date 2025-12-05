@@ -8,10 +8,9 @@
 ## 📋 Quick Links
 
 ### Executive Summaries (Start Here)
-1. **[SUBJECT_COMPLIANCE_REPORT.md](SUBJECT_COMPLIANCE_REPORT.md)** - ⭐ Complete subject compliance with all modules
-2. **[FINAL_IMPLEMENTATION_REPORT.md](FINAL_IMPLEMENTATION_REPORT.md)** - Complete overview of all work done
-3. **[TESTING_INFRASTRUCTURE.md](TESTING_INFRASTRUCTURE.md)** - Comprehensive test suite (180 tests)
-4. **[IMPLEMENTATION_PROGRESS_SUMMARY.md](IMPLEMENTATION_PROGRESS_SUMMARY.md)** - Detailed progress status
+1. **[FINAL_IMPLEMENTATION_REPORT.md](FINAL_IMPLEMENTATION_REPORT.md)** - Complete overview of all work done
+2. **[POINTS_SUMMARY.md](POINTS_SUMMARY.md)** - Points breakdown and remaining opportunities
+3. **[IMPLEMENTATION_PROGRESS_SUMMARY.md](IMPLEMENTATION_PROGRESS_SUMMARY.md)** - Detailed progress status
 
 ### Module Implementation Guides
 4. **[SELECTED_MODULES_IMPLEMENTATION_PLAN.md](SELECTED_MODULES_IMPLEMENTATION_PLAN.md)** - Strategy document
