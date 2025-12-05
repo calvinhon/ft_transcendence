@@ -1,38 +1,15 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Install npm explicitly
-RUN apk add --no-cache npm
-
-# Install dependencies
 COPY package*.json ./
 COPY tsconfig.json ./
 RUN npm install
 
-# Copy source code
 COPY src/ ./src/
-COPY scripts/ ./scripts/
-COPY hardhat.config.js ./
 
-# Build TypeScript if src exists
-RUN if [ -d "src" ]; then npm run build; else echo "No TypeScript source found, using JavaScript"; fi
+RUN npm run build
 
-# Copy JavaScript files for backward compatibility
-COPY *.js ./
+EXPOSE 3000
 
-# Compile contracts
-RUN npx hardhat compile
-
-# Create startup script with TypeScript support
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'npx hardhat node --hostname 0.0.0.0 &' >> /app/start.sh && \
-    echo 'sleep 10' >> /app/start.sh && \
-    echo 'if [ -f "dist/server.js" ]; then node dist/server.js; else node server.js; fi' >> /app/start.sh && \
-    chmod +x /app/start.sh
-
-# Expose ports
-EXPOSE 8545 3000
-
-# Start both hardhat node and API server
-CMD ["/app/start.sh"]
+CMD ["node", "dist/server.js"]

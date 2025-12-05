@@ -51,7 +51,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         password_hash TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_login DATETIME,
-		wallet_address TEXT
+		    wallet_address TEXT
       )
     `);
   }

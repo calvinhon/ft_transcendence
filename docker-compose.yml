@@ -10,7 +10,7 @@ services:
       - game-service
       - tournament-service
       - user-service
-      - hardhat-node
+      - blockchain
     networks:
       - transcendence-network
 
@@ -64,9 +64,9 @@ services:
     networks:
       - transcendence-network
 
-  hardhat-node:
+  blockchain:
     build: ./blockchain
-    container_name: hardhat-node
+    container_name: blockchain
     ports:
       - "8545:8545"
     volumes:
@@ -74,15 +74,31 @@ services:
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
       - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
     env_file:
       - .env
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      test:
+        - CMD-SHELL
+        - wget -q --spider http://localhost:8545 || exit 1
       interval: 10s
       timeout: 5s
       retries: 5
+
+  blockchain-deploy:
+    build: ./blockchain
+    depends_on:
+      blockchain:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./blockchain:/app
+    entrypoint: [ "sh", "-c" ]
+    command: "npx hardhat run scripts/deploy.ts --network docker"
+    networks:
+      - transcendence-network
 
   blockchain-service:
     build: ./blockchain-service
@@ -91,14 +107,16 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=blockchain-service
-      - BLOCKCHAIN_RPC_URL=http://hardhat-node:8545
-      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - BLOCKCHAIN_RPC_URL=http://blockchain:8545
       - PRIVATE_KEY=${PRIVATE_KEY}
     volumes:
       - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
     depends_on:
-      hardhat-node:
+      blockchain:
         condition: service_healthy
+      blockchain-deploy:
+        condition: service_completed_successfully
     networks:
       - transcendence-network
 

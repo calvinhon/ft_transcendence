@@ -19,7 +19,8 @@
     "bcrypt": "^5.1.1",
     "fastify": "^4.29.1",
     "jsonwebtoken": "^9.0.2",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "ethers": "^6.9.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
