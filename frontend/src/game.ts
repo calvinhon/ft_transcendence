@@ -89,10 +89,21 @@ export class GameManager {
 
     console.log(`✅ [GM#${this.instanceId}] Starting game...`);
     
+    // Preserve tournament mode - don't let backend overwrite it
+    const isTournamentMode = this.gameSettings.gameMode === 'tournament';
+    
     // Apply game settings from the server if provided
     if (message.gameSettings) {
       console.log(`🎮 [GM#${this.instanceId}] Applying gameSettings from server:`, message.gameSettings);
       this.gameSettings = { ...this.gameSettings, ...message.gameSettings };
+      
+      // CRITICAL: Restore tournament mode if it was set before
+      if (isTournamentMode) {
+        this.gameSettings.gameMode = 'tournament';
+        this.gameSettings.team1PlayerCount = 1;
+        this.gameSettings.team2PlayerCount = 1;
+        console.log('🏆 [TOURNAMENT] Preserved tournament mode after server settings merge');
+      }
     }
     
     // Example: set isPlaying, initialize game state, start input handler
