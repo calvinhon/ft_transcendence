@@ -45,9 +45,9 @@ test_database_files() {
     
     local db_files=(
         "$PROJECT_ROOT/auth-service/database/auth.db"
-        "$PROJECT_ROOT/game-service/database/game.db"
-        "$PROJECT_ROOT/tournament-service/database/tournament.db"
-        "$PROJECT_ROOT/user-service/database/user.db"
+        "$PROJECT_ROOT/game-service/database/games.db"
+        "$PROJECT_ROOT/tournament-service/database/tournaments.db"
+        "$PROJECT_ROOT/user-service/database/users.db"
     )
     
     local all_exist=true
@@ -238,9 +238,9 @@ test_multi_database_access() {
     
     local db_files=(
         "$PROJECT_ROOT/auth-service/database/auth.db"
-        "$PROJECT_ROOT/game-service/database/game.db"
-        "$PROJECT_ROOT/tournament-service/database/tournament.db"
-        "$PROJECT_ROOT/user-service/database/user.db"
+        "$PROJECT_ROOT/game-service/database/games.db"
+        "$PROJECT_ROOT/tournament-service/database/tournaments.db"
+        "$PROJECT_ROOT/user-service/database/users.db"
     )
     
     local all_accessible=true

@@ -17,6 +17,10 @@ output.elasticsearch:
   hosts: ["${ELASTICSEARCH_HOSTS:elasticsearch:9200}"]
   index: "transcendence-%{+yyyy.MM.dd}"
 
+setup.template.name: "transcendence"
+setup.template.pattern: "transcendence-*"
+setup.template.enabled: true
+
 logging.level: info
 logging.to_files: true
 logging.files:

@@ -45,7 +45,7 @@ test_prometheus_health() {
     
     local response=$(curl -s http://localhost:9090/-/healthy 2>/dev/null)
     
-    if [ "$response" = "Prometheus is healthy." ]; then
+    if [[ "$response" == *"Healthy"* ]]; then
         log_result 1 "Prometheus Health Check" "PASS"
         return 0
     fi

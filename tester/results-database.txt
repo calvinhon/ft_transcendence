@@ -1,7 +1,7 @@
 === Database Test Results ===
-Date: Fri Dec  5 16:46:05 +04 2025
+Date: Fri Dec  5 17:03:03 +04 2025
 
-[FAIL] Test 1: Database Files Creation
+[PASS] Test 1: Database Files Creation
 [FAIL] Test 2: Schema Creation
 [PASS] Test 3: User Creation
 [FAIL] Test 4: Data Integrity
@@ -15,6 +15,6 @@ Date: Fri Dec  5 16:46:05 +04 2025
 [PASS] Test 12: Database Persistence
 
 === Summary ===
-Passed: 4
-Failed: 8
+Passed: 5
+Failed: 7
 Total: 12

@@ -47,7 +47,7 @@ test_service_discovery() {
     local all_running=true
     
     for service in "${services[@]}"; do
-        if ! docker compose -f "$PROJECT_ROOT/docker compose.yml" ps "$service" 2>/dev/null | grep -q "Up"; then
+        if ! docker compose -f "$PROJECT_ROOT/docker-compose.yml" ps "$service" 2>/dev/null | grep -q "Up"; then
             all_running=false
             break
         fi
@@ -97,7 +97,7 @@ test_load_balancing() {
     echo -e "${YELLOW}Running Test 4: Load Balancing${NC}"
     
     # Check docker compose for multiple instances or load balancing config
-    if grep -q "load_balancing\|upstream\|replica" "$PROJECT_ROOT/docker compose.yml"; then
+    if grep -q "load_balancing\|upstream\|replica" "$PROJECT_ROOT/docker-compose.yml"; then
         log_result 4 "Load Balancing" "PASS"
         return 0
     fi
@@ -189,7 +189,7 @@ test_scalability() {
     echo -e "${YELLOW}Running Test 10: Scalability${NC}"
     
     # Check if services can be scaled (Docker compose config)
-    if grep -q "deploy:\|scale\|replicas" "$PROJECT_ROOT/docker compose.yml"; then
+    if grep -q "deploy:\|scale\|replicas" "$PROJECT_ROOT/docker-compose.yml"; then
         log_result 10 "Scalability" "PASS"
         return 0
     fi

@@ -4,6 +4,11 @@ global:
   external_labels:
     monitor: 'transcendence-monitor'
 
+# Data retention configuration
+storage:
+  retention:
+    time: 30d  # Keep data for 30 days
+
 alerting:
   alertmanagers:
     - static_configs:
@@ -17,11 +22,6 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
-  # Docker daemon metrics (if available) - DISABLED for faster startup
-  # - job_name: 'docker'
-  #   static_configs:
-  #     - targets: ['unix:///var/run/docker.sock']
 
   # Auth Service
   - job_name: 'auth-service'
