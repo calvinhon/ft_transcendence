@@ -238,7 +238,7 @@ jobs:
       
       - name: TypeScript type check
         working-directory: frontend
-        run: npx tsc --noEmit || echo 'Warning: TypeScript check had issues'
+        run: npx tsc --noEmit || echo "Warning: TypeScript check had issues"
       
       - name: Build frontend
         working-directory: frontend
