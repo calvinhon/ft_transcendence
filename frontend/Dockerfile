@@ -22,6 +22,9 @@ RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || ec
 # Production stage
 FROM nginx:alpine
 
+# Create the www-data user and group for nginx to use
+RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true
+
 # Copy all built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css

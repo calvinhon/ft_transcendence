@@ -4,19 +4,19 @@ services:
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
-    mem_limit: 1g
+    mem_limit: 512m
     networks:
       - transcendence-network
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 3s
+      timeout: 2s
+      retries: 10
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.0
@@ -26,15 +26,16 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
     mem_limit: 512m
     networks:
       - transcendence-network
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:5601 >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 8
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.17.0
@@ -47,8 +48,9 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
-      - elasticsearch
-    mem_limit: 256m
+      elasticsearch:
+        condition: service_healthy
+    mem_limit: 128m
     networks:
       - transcendence-network
     command: filebeat -e -strict.perms=false
@@ -64,14 +66,14 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    mem_limit: 512m
+    mem_limit: 256m
     networks:
       - transcendence-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 8
 
   grafana:
     image: grafana/grafana:latest
@@ -96,7 +98,7 @@ services:
       retries: 5
 
   vault:
-    image: vault:latest
+    image: hashicorp/vault:latest
     container_name: vault-server
     ports:
       - "8200:8200"

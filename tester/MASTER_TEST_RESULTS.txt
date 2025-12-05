@@ -1,0 +1,11 @@
+╔════════════════════════════════════════════════════════════╗
+║          MASTER TEST SUITE RESULTS                         ║
+╚════════════════════════════════════════════════════════════╝
+
+Date: Fri Dec  5 16:42:08 +04 2025
+Project: FT_Transcendence
+
+
+✗ FAILED: Backend Framework (Fastify)
+
+✗ FAILED: Database (SQLite)
