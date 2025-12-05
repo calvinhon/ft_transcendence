@@ -211,6 +211,168 @@ Without proper CORS + credentials configuration, the authentication would fail b
 
 ## Deployment
 
+### Q: Why do all services use port 3000 internally but different ports externally (3001, 3002, 3003, 3004)?
+
+**A:** This is Docker port mapping - each service runs on port 3000 **inside its own container**, but is mapped to a different port on the **host machine**.
+
+#### Port Mapping Explanation
+
+**Internal Port (Inside Container)**: All services listen on port `3000`
+```typescript
+// In each service's server.ts
+const PORT = process.env.PORT || 3000;
+fastify.listen({ port: PORT, host: '0.0.0.0' });
+```
+
+**External Port (Host Machine)**: Each service maps to a unique external port
+```yaml
+# docker-compose.yml
+auth-service:
+  ports:
+    - "3001:3000"  # host:container
+    
+game-service:
+  ports:
+    - "3002:3000"
+    
+tournament-service:
+  ports:
+    - "3003:3000"
+    
+user-service:
+  ports:
+    - "3004:3000"
+```
+
+#### Port Mapping Format: `HOST:CONTAINER`
+
+- **`3001:3000`** means:
+  - **Left (3001)**: Port on your **host machine** (your laptop/computer)
+  - **Right (3000)**: Port **inside the Docker container**
+  - Traffic to `localhost:3001` gets forwarded to container's port `3000`
+
+#### Why This Design?
+
+1. **Simplicity**: Each service uses the same internal port (3000) - simpler configuration
+2. **Isolation**: Containers are isolated - they can all use port 3000 without conflicts
+3. **External Access**: Different external ports let you access each service directly:
+   - `http://localhost:3001` → auth-service
+   - `http://localhost:3002` → game-service
+   - `http://localhost:3003` → tournament-service
+   - `http://localhost:3004` → user-service
+
+#### Service-to-Service Communication
+
+**Inside Docker network**, services talk to each other using **service names** and **internal port**:
+```typescript
+// From tournament-service talking to auth-service
+fetch('http://auth-service:3000/verify')  // NOT localhost:3001!
+```
+
+**From your browser/host machine**, you use **localhost** and **external ports**:
+```bash
+curl http://localhost:3001/verify  # Access auth-service from host
+```
+
+#### nginx Routing
+
+nginx (running on port 80) routes requests to services using **internal addresses**:
+```nginx
+upstream auth_backend {
+    server auth-service:3000;  # Service name + internal port
+}
+
+upstream game_backend {
+    server game-service:3000;
+}
+```
+
+So when you visit `http://localhost/api/auth/login`:
+1. Request goes to nginx (port 80)
+2. nginx forwards to `auth-service:3000` (internal)
+3. auth-service processes request
+4. Response returns through nginx to your browser
+
+#### Complete Port Map
+
+| Service | Internal Port | External Port | Access From Host | Internal Access |
+|---------|--------------|---------------|------------------|-----------------|
+| nginx | 80 | 80 | `http://localhost` | `nginx:80` |
+| auth-service | 3000 | 3001 | `http://localhost:3001` | `auth-service:3000` |
+| game-service | 3000 | 3002 | `http://localhost:3002` | `game-service:3000` |
+| tournament-service | 3000 | 3003 | `http://localhost:3003` | `tournament-service:3000` |
+| user-service | 3000 | 3004 | `http://localhost:3004` | `user-service:3000` |
+| hardhat-node | 8545 | 8545 | `http://localhost:8545` | `hardhat-node:8545` |
+
+**In practice**: You only access through `http://localhost` (port 80) via nginx, which handles all routing internally.
+
+---
+
+### Q: Why does blockchain (hardhat-node) listen on port 8545 instead of 3000 like other services?
+
+**A:** This is because **Hardhat** (the Ethereum development framework) uses **port 8545 as its standard default port** for the local blockchain node. This is an industry convention for Ethereum JSON-RPC APIs.
+
+#### Why Port 8545?
+
+1. **Ethereum Standard**: Port 8545 is the conventional port for Ethereum JSON-RPC servers
+2. **Different Protocol**: Hardhat node uses JSON-RPC protocol, not HTTP REST like other services
+3. **Compatibility**: Using 8545 ensures compatibility with Ethereum tools and libraries
+
+#### Port Configuration
+
+```yaml
+# docker-compose.yml
+hardhat-node:
+  ports:
+    - "8545:8545"  # Both internal and external use 8545
+```
+
+Unlike other services, hardhat-node uses the **same port internally and externally** (8545:8545) because:
+- It's already a standard port
+- No need to remap for clarity
+- Ethereum tools expect this port
+
+#### How Services Connect to Blockchain
+
+**From tournament-service (inside Docker network)**:
+```typescript
+const provider = new ethers.JsonRpcProvider('http://hardhat-node:8545');
+```
+
+**From your computer (testing)**:
+```bash
+curl -X POST http://localhost:8545 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+```
+
+#### nginx Configuration Note
+
+⚠️ **Important**: There's a discrepancy in the nginx configuration file:
+
+```nginx
+upstream blockchain_backend {
+    server hardhat-node:3001;  # ❌ INCORRECT - should be 8545
+}
+```
+
+This should be corrected to:
+```nginx
+upstream blockchain_backend {
+    server hardhat-node:8545;  # ✅ CORRECT
+}
+```
+
+**However**, the blockchain is not accessed through nginx in the current implementation. The tournament-service connects **directly** to `hardhat-node:8545` within the Docker network, so this nginx config line is unused.
+
+#### Summary
+
+- **Other services**: Use port 3000 internally (by design choice)
+- **Hardhat node**: Uses port 8545 (Ethereum standard convention)
+- **Access pattern**: Direct connection, not through nginx
+
+---
+
 ### Q: How do I start the entire system?
 
 **A:** Use the Makefile:
