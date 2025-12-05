@@ -112,20 +112,43 @@ npm install
 - **tournament_participants**: Tournament registrations
 ### Available Scripts
 ```bash
-# Start all services
-make up
+# ⚡ Fast dev mode (core only, NO 2GB images, ~15s)
+make dev
 
-# Stop all services
-make down
+# 📊 Full stack with monitoring (~2-3 min, includes Kibana/Grafana)
+make full
+
+# Quick start (legacy, all services, ~30-60s)
+make start
+
+# Apply monitoring optimizations (run after first 'make full')
+make optimize-monitoring
+
+# Restart services (no rebuild, ~10s)
+make restart
+
+# Force rebuild (dependency changes, ~5-7 min)
+make rebuild
+
+# Stop services
+make stop
 
 # View logs
 make logs
 
+# Maintenance commands
+make cleanup-logs           # Remove old Elasticsearch data (30+ days)
+make clean                  # Remove all containers/volumes
+make clean-dev              # Clean node_modules and build artifacts
+
+# Check status
+make ps
+
 # Run comprehensive test suite (180 tests)
 cd tester && ./run-tests-in-docker.sh
 
-# Clean up
-make clean
+# See all commands
+make help
 ```
 
 ### Code Organization

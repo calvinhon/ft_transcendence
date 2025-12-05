@@ -7,15 +7,32 @@ filebeat.inputs:
 processors:
   - add_docker_metadata:
       host: "unix:///var/run/docker.sock"
+  - drop_fields:
+      fields: ["host.name", "agent.ephemeral_id", "agent.id", "ecs.version"]
+      ignore_missing: true
+  - truncate_fields:
+      fields: ["message"]
+      max_bytes: 2048
+      fail_on_error: false
   - add_fields:
       target: ''
       fields:
         service: transcendence
         environment: development
 
+# Performance optimization
+queue.mem:
+  events: 2048
+  flush.min_events: 512
+  flush.timeout: 1s
+
 output.elasticsearch:
   hosts: ["${ELASTICSEARCH_HOSTS:elasticsearch:9200}"]
   index: "transcendence-%{+yyyy.MM.dd}"
+  bulk_max_size: 50
+  worker: 2
+  compression_level: 1
+  loadbalance: true
 
 setup.template.name: "transcendence"
 setup.template.pattern: "transcendence-*"

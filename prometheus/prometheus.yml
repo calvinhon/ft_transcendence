@@ -1,6 +1,7 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 30s  # Increased from 15s for better performance
+  evaluation_interval: 30s  # Increased from 15s
+  scrape_timeout: 10s
   external_labels:
     monitor: 'transcendence-monitor'
 
@@ -28,7 +29,7 @@ scrape_configs:
     static_configs:
       - targets: ['auth-service:3000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 60s  # Less frequent for stable services
     relabel_configs:
       - source_labels: [__scheme__]
         target_label: __scheme__
@@ -39,28 +40,28 @@ scrape_configs:
     static_configs:
       - targets: ['game-service:3000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 60s
 
   # Tournament Service
   - job_name: 'tournament-service'
     static_configs:
       - targets: ['tournament-service:3000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 60s
 
   # User Service
   - job_name: 'user-service'
     static_configs:
       - targets: ['user-service:3000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 60s
 
   # Elasticsearch
   - job_name: 'elasticsearch'
     static_configs:
       - targets: ['elasticsearch:9200']
     metrics_path: '/_prometheus/metrics'
-    scrape_interval: 30s
+    scrape_interval: 60s
 
   # Vault
   - job_name: 'vault'
@@ -69,4 +70,4 @@ scrape_configs:
     metrics_path: '/v1/sys/metrics'
     params:
       format: ['prometheus']
-    scrape_interval: 30s
+    scrape_interval: 60s

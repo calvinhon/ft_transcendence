@@ -1,0 +1,25 @@
+# Elasticsearch Configuration
+# Performance and query optimization settings
+
+# Search optimization
+search.max_buckets: 10000
+search.default_search_timeout: 30s
+
+# Index optimization - limit deep pagination
+index.max_result_window: 10000
+
+# Cache settings for better performance
+indices.queries.cache.size: 10%
+indices.fielddata.cache.size: 20%
+
+# Refresh interval - reduce for better write performance
+index.refresh_interval: 30s
+
+# Thread pool settings
+thread_pool.search.queue_size: 1000
+thread_pool.write.queue_size: 1000
+
+# Memory circuit breaker
+indices.breaker.total.limit: 70%
+indices.breaker.fielddata.limit: 40%
+indices.breaker.request.limit: 40%

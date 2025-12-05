@@ -20,6 +20,11 @@
 8. **[GDPR_IMPLEMENTATION.md](GDPR_IMPLEMENTATION.md)** - Privacy compliance
 9. **[TESTING_INFRASTRUCTURE.md](TESTING_INFRASTRUCTURE.md)** - Comprehensive test suite (180 tests)
 
+### Performance & Optimization
+10. **[STARTUP_OPTIMIZATION.md](STARTUP_OPTIMIZATION.md)** - Docker startup optimization (5-6x faster)
+11. **[MONITORING_OPTIMIZATION.md](MONITORING_OPTIMIZATION.md)** - Large data query optimization for ELK/Grafana
+12. **[MONITORING_QUICK_REFERENCE.md](MONITORING_QUICK_REFERENCE.md)** - Quick reference for monitoring commands
+
 ### Compliance & Assignment Reports
 9. **[MODULE_COMPLIANCE_AND_COMPLETENESS_REPORT.md](MODULE_COMPLIANCE_AND_COMPLETENESS_REPORT.md)** - Module-by-module status
 10. **[MEMBER_ASSIGNMENT_COMPLETENESS_REPORT.md](MEMBER_ASSIGNMENT_COMPLETENESS_REPORT.md)** - Member assignment tracking

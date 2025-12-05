@@ -4,14 +4,83 @@
 
 OS := $(shell uname)
 
-.PHONY: start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders
+.PHONY: start full-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help
 
-start: check-docker check-compose clean-dev clean up open
+.DEFAULT_GOAL := help
+
+help:
+	@echo "📚 FT_TRANSCENDENCE - Available Commands:"
+	@echo ""
+	@echo "🚀 Main Commands:"
+	@echo "  make start              - Quick start (FASTEST - uses cache)"
+	@echo "  make dev                - ⚡ DEV MODE: Core only (no monitoring, ~15s)"
+	@echo "  make full               - Full stack with monitoring (slower, ~2-3min)"
+	@echo "  make full-start         - Full clean start (slower, fresh build)"
+	@echo "  make restart            - Restart services without rebuild"
+	@echo "  make rebuild            - Force rebuild from scratch (slowest)"
+	@echo "  make stop               - Stop all services"
+	@echo "  make logs               - View service logs"
+	@echo ""
+	@echo "🔧 Maintenance:"
+	@echo "  make clean              - Remove containers, images, volumes"
+	@echo "  make clean-dev          - Clean node_modules and build artifacts"
+	@echo "  make optimize-monitoring - Apply monitoring stack optimizations"
+	@echo "  make cleanup-logs       - Delete old Elasticsearch indices"
+	@echo ""
+	@echo "💡 Tip: Use 'make dev' for daily coding (fastest, no 400MB images)"
+	@echo "💡 Use 'make full' when you need monitoring/logging"
+	@echo "💡 Run 'make optimize-monitoring' after first 'make full'"
+	@echo ""
+
+# Quick start - fastest option (use cached builds)
+start: check-docker check-compose ensure-database-folders
+	@echo "🚀 Quick starting services with cache..."
+	docker compose up -d --build
+	@$(MAKE) open
+	@echo "✅ Services started! Visit http://localhost"
+
+# Dev mode - core services only (no monitoring stack)
+dev: check-docker check-compose ensure-database-folders
+	@echo "⚡ Starting DEV MODE (core services only, no monitoring)..."
+	docker compose -f docker-compose.core.yml up -d --build
+	@$(MAKE) open
+	@echo "✅ Core services started! Visit http://localhost"
+	@echo "💡 To add monitoring: make monitoring-start"
+
+# Full stack with monitoring
+full: check-docker check-compose ensure-database-folders
+	@echo "🚀 Starting FULL STACK (with monitoring)..."
+	docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up -d --build
+	@$(MAKE) open
+	@echo "✅ Full stack started! Visit http://localhost"
+	@echo "📊 Monitoring: Kibana (5601), Grafana (3000), Prometheus (9090)"
+
+# Start only monitoring services (assumes core is running)
+monitoring-start: check-docker check-compose
+	@echo "📊 Starting monitoring services..."
+	docker compose -f docker-compose.monitoring.yml up -d
+	@echo "✅ Monitoring started!"
+	@echo "📊 Kibana: http://localhost:5601"
+	@echo "📊 Grafana: http://localhost:3000 (admin/admin)"
+	@echo "📊 Prometheus: http://localhost:9090"
+
+# Stop only monitoring services
+monitoring-stop: check-docker check-compose
+	@echo "🛑 Stopping monitoring services..."
+	docker compose -f docker-compose.monitoring.yml down
+	@echo "✅ Monitoring stopped!"
+
+# Full start with clean (slower but ensures fresh build)
+full-start: check-docker check-compose clean-dev clean ensure-database-folders
+	@echo "🚀 Full start with clean build..."
+	docker compose build
+	docker compose up -d
+	@$(MAKE) open
+	@echo "✅ Services started! Visit http://localhost"
 
 restart: check-docker check-compose
 	@echo "🔄 Restarting services without rebuild..."
-	docker compose down
-	docker compose up -d
+	docker compose restart
 	@echo "✅ Services restarted!"
 
 rebuild: check-docker check-compose clean-dev ensure-database-folders
@@ -52,15 +121,15 @@ check-compose:
 
 clean-dev:
 	@echo "🧹 Cleaning development artifacts from host..."
-	@find . -name "node_modules" -type d -exec rm -rf {} + 2>/dev/null || true
-	@find . -name "dist" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "node_modules" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "dist" -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	@find . -name "*.tsbuildinfo" -type f -delete 2>/dev/null || true
-	@find . -name ".vite" -type d -exec rm -rf {} + 2>/dev/null || true
-	@find . -name ".next" -type d -exec rm -rf {} + 2>/dev/null || true
-	@find . -name "build" -type d -exec rm -rf {} + 2>/dev/null || true
-	@find . -name ".cache" -type d -exec rm -rf {} + 2>/dev/null || true
-	@find . -name ".nuxt" -type d -exec rm -rf {} + 2>/dev/null || true
-	@echo "✅ Development artifacts cleaned from host"
+	@find . -name ".vite" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".next" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "build" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".cache" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".nuxt" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	@echo "✅ Development artifacts cleaned"
 
 clean:
 	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."
@@ -83,10 +152,9 @@ clean:
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
-up: clean-dev ensure-database-folders
-	@echo "🚀 Running docker compose up --build --no-cache..."
-	docker compose build --no-cache
-	docker compose up -d
+up: ensure-database-folders
+	@echo "🚀 Running docker compose up with build cache..."
+	docker compose up -d --build
 
 ensure-database-folders:
 	@echo "📁 Ensuring database folders exist for all services..."
@@ -137,3 +205,33 @@ open:
 stop:
 	@echo "🛑 Stopping running containers..."
 	docker compose down --remove-orphans
+
+logs:
+	@echo "📋 Showing service logs (Ctrl+C to exit)..."
+	docker compose logs -f
+
+down:
+	@echo "🛑 Stopping and removing containers..."
+	docker compose down --remove-orphans
+
+optimize-monitoring:
+	@echo "🔧 Applying monitoring stack optimizations..."
+	@if ! docker ps | grep -q elasticsearch; then \
+		echo "⚠️  Services not running. Start services first with 'make start'"; \
+		exit 1; \
+	fi
+	@./scripts/apply-elasticsearch-optimization.sh
+	@echo "✅ Optimizations applied!"
+
+cleanup-logs:
+	@echo "🧹 Cleaning up old Elasticsearch data..."
+	@if ! docker ps | grep -q elasticsearch; then \
+		echo "⚠️  Elasticsearch not running. Start services first with 'make start'"; \
+		exit 1; \
+	fi
+	@./scripts/cleanup-elasticsearch.sh
+	@echo "✅ Cleanup complete!"
+
+ps:
+	@echo "📊 Container status:"
+	@docker compose ps

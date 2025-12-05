@@ -1,0 +1,32 @@
+# Kibana Configuration
+# Performance and optimization settings
+
+# Server settings
+server.host: "0.0.0.0"
+server.name: "kibana"
+
+# Elasticsearch connection
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.requestTimeout: 30000
+elasticsearch.shardTimeout: 30000
+
+# Discover optimization - limit results
+discover.sampleSize: 500
+
+# Search optimization
+elasticsearch.pingTimeout: 30000
+elasticsearch.requestHeadersWhitelist: ["authorization"]
+
+# Monitoring
+monitoring.ui.container.elasticsearch.enabled: false
+
+# Performance settings
+ops.interval: 5000
+elasticsearch.maxSockets: 100
+elasticsearch.compression: true
+
+# Logging
+logging.dest: stdout
+logging.silent: false
+logging.quiet: false
+logging.verbose: false
