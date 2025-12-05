@@ -1,0 +1,259 @@
+
+
+// Backend uses fixed 800x600 canvas. We scale to actual canvas size.
+const GAME_WIDTH = 800;
+const GAME_HEIGHT = 600;
+
+// Backend doesn't send dimensions, use fixed Pong defaults
+const PADDLE_WIDTH = 10;
+const PADDLE_HEIGHT = 100;
+const BALL_RADIUS = 6;
+
+export class GameRenderer {
+    private ctx: CanvasRenderingContext2D;
+    private canvas: HTMLCanvasElement;
+
+    // Cached grid for performance
+    private gridCanvas: HTMLCanvasElement | null = null;
+
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d')!;
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+    }
+
+    public resize(): void {
+        const parent = this.canvas.parentElement;
+        if (parent) {
+            this.canvas.width = parent.clientWidth;
+            this.canvas.height = parent.clientHeight;
+            this.gridCanvas = null; // Force grid rebuild
+        }
+    }
+
+    // Scale from game coordinates (800x600) to actual canvas size
+    private scaleX(val: number): number {
+        return (val / GAME_WIDTH) * this.canvas.width;
+    }
+
+    private scaleY(val: number): number {
+        return (val / GAME_HEIGHT) * this.canvas.height;
+    }
+
+    public render(gameState: any): void {
+        if (!this.ctx || !this.canvas) return;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const ctx = this.ctx;
+
+        // Clear and Draw Background
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw Grid
+        this.drawGrid(width, height);
+
+        if (!gameState) {
+            this.drawWaiting(width, height);
+            return;
+        }
+
+        // Draw Game Elements
+        this.drawPaddles(gameState.paddles);
+        this.drawBall(gameState.ball);
+        this.drawScores(gameState.scores, width);
+        this.drawCenterLine(height);
+        this.drawBorder(width, height);
+
+        // Draw Countdown if active
+        if (gameState.countdownValue !== undefined && gameState.gameState === 'countdown') {
+            this.drawCountdown(gameState.countdownValue, width, height);
+        }
+
+        // Draw Game Over if finished
+        if (gameState.gameState === 'finished') {
+            this.drawGameOver(gameState, width, height);
+        }
+    }
+
+    private drawBorder(w: number, h: number): void {
+        const ctx = this.ctx;
+        ctx.strokeStyle = '#77e6ff';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#77e6ff';
+        ctx.shadowBlur = 10;
+        ctx.strokeRect(0, 0, w, h);
+        ctx.shadowBlur = 0;
+    }
+
+    private drawCenterLine(h: number): void {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+
+        ctx.strokeStyle = 'rgba(119, 230, 255, 0.2)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 0);
+        ctx.lineTo(w / 2, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    private drawGrid(w: number, h: number): void {
+        // Use cached grid if available
+        if (this.gridCanvas && this.gridCanvas.width === w && this.gridCanvas.height === h) {
+            this.ctx.drawImage(this.gridCanvas, 0, 0);
+            return;
+        }
+
+        // Create cache
+        this.gridCanvas = document.createElement('canvas');
+        this.gridCanvas.width = w;
+        this.gridCanvas.height = h;
+        const gCtx = this.gridCanvas.getContext('2d')!;
+
+        gCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        gCtx.lineWidth = 1;
+        const cellSize = 40;
+
+        for (let x = 0; x < w; x += cellSize) {
+            gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, h); gCtx.stroke();
+        }
+        for (let y = 0; y < h; y += cellSize) {
+            gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(w, y); gCtx.stroke();
+        }
+
+        // Use the newly created cache
+        this.ctx.drawImage(this.gridCanvas, 0, 0);
+    }
+
+    private drawPaddles(paddles: any): void {
+        if (!paddles) return;
+
+        const paddleWidth = this.scaleX(PADDLE_WIDTH);
+        const paddleHeight = this.scaleY(PADDLE_HEIGHT);
+        const color = '#ffffff';
+
+        // Prefer TEAM paddles if present (Arcade/Tournament)
+        // If team1 exists, we assume it supersedes player1 single paddle to avoid ghosts
+        if (paddles.team1 && paddles.team1.length > 0) {
+            paddles.team1.forEach((p: any) => {
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, color);
+            });
+        } else if (paddles.player1) {
+            this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, paddleHeight, color);
+        }
+
+        if (paddles.team2 && paddles.team2.length > 0) {
+            paddles.team2.forEach((p: any) => {
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, color);
+            });
+        } else if (paddles.player2) {
+            this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, paddleHeight, color);
+        }
+    }
+
+    private drawSinglePaddle(gameX: number, gameY: number, w: number, h: number, color: string): void {
+        const ctx = this.ctx;
+        const x = this.scaleX(gameX);
+        const y = this.scaleY(gameY);
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+
+        ctx.shadowBlur = 0;
+    }
+
+    private drawBall(ball: any): void {
+        if (!ball) return;
+        const ctx = this.ctx;
+
+        const x = this.scaleX(ball.x);
+        const y = this.scaleY(ball.y);
+        const radius = this.scaleX(BALL_RADIUS);
+
+        const color = '#ffffff';
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = color;
+
+        // Square Ball for Retro Feel
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+
+        ctx.shadowBlur = 0;
+    }
+
+    private drawScores(scores: any, w: number): void {
+        if (!scores) return;
+        const ctx = this.ctx;
+
+        ctx.font = 'bold 48px "VCR OSD Mono", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.textAlign = 'center';
+
+        const p1Score = scores.player1 || 0;
+        const p2Score = scores.player2 || 0;
+
+        ctx.fillText(`${p1Score} - ${p2Score}`, w / 2, 80);
+    }
+
+    private drawWaiting(w: number, h: number): void {
+        const ctx = this.ctx;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '24px "PixelCode", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('AWAITING SIGNAL...', w / 2, h / 2);
+
+        // Animated dots
+        const time = Date.now() * 0.002;
+        const dots = Math.floor(time % 4);
+        ctx.fillText('.'.repeat(dots), w / 2 + 140, h / 2);
+    }
+
+    private drawCountdown(val: number, w: number, h: number): void {
+        const ctx = this.ctx;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px "VCR OSD Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const text = val > 0 ? val.toString() : 'GO!';
+        ctx.fillText(text, w / 2, h / 2);
+        ctx.shadowBlur = 0;
+    }
+
+    private drawGameOver(gameState: any, w: number, h: number): void {
+        const ctx = this.ctx;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px "VCR OSD Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const scores = gameState.scores;
+        let winnerText = "GAME OVER";
+        if (scores.player1 > scores.player2) winnerText = "PLAYER 1 WINS";
+        if (scores.player2 > scores.player1) winnerText = "PLAYER 2 WINS";
+
+        ctx.fillText(winnerText, w / 2, h / 2);
+
+        ctx.font = '20px "PixelCode", monospace';
+        ctx.fillText("PRESS EXIT TO RETURN", w / 2, h / 2 + 60);
+
+        ctx.shadowBlur = 0;
+    }
+}

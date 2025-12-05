@@ -1,139 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-bg-primary">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ft_transcendence</title>
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <script type="module" crossorigin src="./src/main.ts"></script>
-    <link rel="stylesheet" crossorigin href="./css/style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FT_TRANSCENDENCE | PRO</title>
   </head>
-  <body class="h-full bg-bg-primary overflow-hidden text-white">
-    <div id="root"></div>
-    <!-- SPA container - router injects page content here -->
-    <div id="app" class="h-screen w-screen relative"></div>
-
-    <!-- Local Player Modals (Global) -->
+  <body>
     <div
-      id="local-player-login-modal"
-      class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
+      id="app"
+      class="h-screen w-screen flex flex-col relative overflow-hidden"
     >
+      <!-- Routing will inject fragments here -->
       <div
-        class="bg-black border-2 border-accent p-8 w-full max-w-md shadow-glow relative"
+        id="loading"
+        class="absolute inset-0 flex items-center justify-center bg-cyber-dark z-50"
       >
-        <button
-          id="close-local-player-login-modal"
-          class="absolute top-4 right-4 text-white"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-        <h2 class="text-2xl font-vcr text-white mb-6">PLAYER LOGIN</h2>
-        <form id="local-player-login-form" class="flex flex-col gap-4">
-          <input
-            type="text"
-            id="local-player-login-email"
-            placeholder="Username"
-            class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
-          />
-          <input
-            type="password"
-            id="local-player-login-password"
-            placeholder="Password"
-            class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
-          />
-          <div
-            id="local-player-login-error"
-            class="text-red-500 text-xs hidden"
-          >
-            Error message
-          </div>
-          <button
-            type="submit"
-            class="p-3 bg-accent text-black font-bold font-vcr uppercase hover:bg-white"
-          >
-            Login
-          </button>
-        </form>
-        <div class="mt-4 flex flex-col gap-2 text-center text-xs">
-          <a
-            href="#"
-            id="local-player-forgot-password-link"
-            class="text-accent hover:text-white"
-          >
-            Forgot Password?
-          </a>
-          <span class="text-text-muted">OR</span>
-          <a
-            href="#"
-            id="local-player-create-account-link"
-            class="text-accent hover:text-white"
-          >
-            Create an Account
-          </a>
+        <div class="text-cyber-accent animate-pulse text-2xl cyber-font">
+          LOADING SYSTEM...
         </div>
       </div>
     </div>
-
-    <div
-      id="local-player-register-modal"
-      class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80"
-    >
-      <div
-        class="bg-black border-2 border-accent p-8 w-full max-w-md shadow-glow relative"
-      >
-        <button
-          id="close-local-player-register-modal"
-          class="absolute top-4 right-4 text-white"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-        <h2 class="text-2xl font-vcr text-white mb-6">NEW PLAYER</h2>
-        <form id="local-player-register-form" class="flex flex-col gap-4">
-          <input
-            type="text"
-            id="local-player-register-username"
-            placeholder="Username"
-            class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
-          />
-          <input
-            type="email"
-            id="local-player-register-email"
-            placeholder="Email"
-            class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
-          />
-          <input
-            type="password"
-            id="local-player-register-password"
-            placeholder="Password"
-            class="p-3 bg-black border border-white text-white font-pixel focus:border-accent"
-          />
-          <div
-            id="local-player-register-error"
-            class="text-red-500 text-xs hidden"
-          >
-            Error message
-          </div>
-          <button
-            type="submit"
-            class="p-3 bg-accent text-black font-bold font-vcr uppercase hover:bg-white"
-          >
-            Create Account
-          </button>
-        </form>
-        <div class="mt-4 text-center text-xs">
-          <a
-            href="#"
-            id="local-player-back-to-login-link"
-            class="text-accent hover:text-white"
-          >
-            Back to Login
-          </a>
-        </div>
-      </div>
-    </div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

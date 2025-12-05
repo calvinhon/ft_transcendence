@@ -118,46 +118,39 @@ export class GamePhysics {
 
   movePaddle(paddles: Paddles, playerId: number, direction: 'up' | 'down', gameMode: string, paddleSpeed: number, gameId: number, paddleIndex?: number): boolean {
     let paddle: Paddle | undefined;
-    let team: string;
 
-    // Handle arcade/tournament mode with multiple paddles
-    if ((gameMode === 'arcade' || gameMode === 'tournament') && paddleIndex !== undefined) {
-      const isPlayer1 = playerId === 1; // Assuming player1 has lower ID
-      team = isPlayer1 ? 'team1' : 'team2';
-      const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
-
-      if (!teamPaddles || !teamPaddles[paddleIndex]) {
-        logger.gameDebug(gameId, 'Invalid paddle index:', paddleIndex, 'for team:', team);
-        return false;
-      }
-
-      paddle = teamPaddles[paddleIndex];
-    } else {
-      // Handle coop mode with single paddle
-      // For coop mode, the human player always controls the left paddle (player1)
-      // We need to get the actual player IDs from the game context, but since we don't have access to it here,
-      // we'll assume player1 is the human player (left paddle) for coop mode
-      const paddleKey = 'player1'; // Human player always controls left paddle in coop mode
-      paddle = paddles[paddleKey as keyof Paddles] as Paddle;
-
-      if (!paddle) {
-        logger.gameDebug(gameId, 'Invalid player for paddle movement:', playerId);
-        return false;
-      }
+    // Search for paddle with matching ID
+    // Check Team 1
+    if (paddles.team1) {
+      paddle = paddles.team1.find(p => p.playerId === playerId);
     }
 
-    if (!paddle) return false;
+    // Check Team 2 if not found
+    if (!paddle && paddles.team2) {
+      paddle = paddles.team2.find(p => p.playerId === playerId);
+    }
+
+    // Check Single Paddles if not found
+    if (!paddle) {
+      if (paddles.player1.playerId === playerId) paddle = paddles.player1;
+      else if (paddles.player2.playerId === playerId) paddle = paddles.player2;
+    }
+
+    if (!paddle) {
+      logger.gameDebug(gameId, 'No paddle found for playerId:', playerId);
+      return false;
+    }
 
     const oldY = paddle.y;
     const moveSpeed = paddleSpeed;
 
     if (direction === 'up' && paddle.y > 0) {
       paddle.y = Math.max(0, paddle.y - moveSpeed);
-      logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y);
+      logger.gameDebug(gameId, 'Paddle moved UP for', playerId, 'from', oldY, 'to', paddle.y);
       return true;
     } else if (direction === 'down' && paddle.y < 500) {
       paddle.y = Math.min(500, paddle.y + moveSpeed);
-      logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
+      logger.gameDebug(gameId, 'Paddle moved DOWN for', playerId, 'from', oldY, 'to', paddle.y);
       return true;
     } else {
       logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 500]');

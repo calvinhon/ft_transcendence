@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* ============================
    1. Custom Fonts
@@ -23,14 +25,14 @@
    ============================ */
 @layer base {
   html {
-    font-family: var(--font-family-pixel);
-    color: var(--color-white);
+    font-family: "PixelCode", monospace;
+    color: #ffffff;
   }
 
   html,
   body {
     height: 100%;
-    background-color: var(--color-bg-primary);
+    background-color: #000000;
     overflow: hidden;
   }
 
@@ -53,58 +55,8 @@
   }
 }
 
-@theme {
-  --font-family-pixel: "PixelCode", monospace;
-  --color-white: #fff;
-  --color-bg-primary: #111;
-  --color-accent: #0066ffff;
-  --color-accent-dim: #0066ffff;
-}
-
-@layer utilities {
-  /* Opacity Utilities */
-  .bg-black\/80 {
-    background-color: rgba(0, 0, 0, 0.8);
-  }
-  .bg-black\/50 {
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-}
-
 @layer components {
-  .active-tab {
-    @apply bg-accent text-black font-bold border-r border-accent hover:brightness-110;
-  }
-
-  .game-mode-tab {
-    /* @apply hover:bg-blue; */
-  }
-
-  /* ============================
-   5. Component Styles
-   ============================ */
-
-  .screen {
-    visibility: hidden;
-    opacity: 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    transition: opacity 0.2s ease;
-    z-index: 0;
-    background: black;
-  }
-
-  .screen.active {
-    visibility: visible;
-    opacity: 1;
-    z-index: 10;
-    display: flex;
-  }
-
-  /* Scrollbar styling for the retro lists */
+  /* Legacy Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -112,37 +64,9 @@
     background: #111;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-accent-dim);
+    background: #185574;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-accent);
+    background: #29b6f6;
   }
-}
-
-/* Animation Utils */
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-.animate-blink {
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes modalSlideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-.animate-modalSlideIn {
-  animation: modalSlideIn 0.3s ease-out forwards;
 }

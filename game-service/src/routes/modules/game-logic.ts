@@ -73,13 +73,15 @@ export class PongGame {
 
     // Initialize paddles based on game mode
     this.paddles = {
-      player1: { x: 50, y: 250 },
-      player2: { x: 750, y: 250 }
+      player1: { x: 50, y: 250, playerId: this.player1.userId },
+      player2: { x: 750, y: 250, playerId: this.player2.userId }
     };
 
     if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
       const team1Count = this.gameSettings.team1PlayerCount || 1;
       const team2Count = this.gameSettings.team2PlayerCount || 1;
+      const t1p = this.gameSettings.team1Players || [];
+      const t2p = this.gameSettings.team2Players || [];
 
       this.paddles.team1 = [];
       this.paddles.team2 = [];
@@ -87,17 +89,21 @@ export class PongGame {
       // Distribute paddles across height
       const team1Spacing = 600 / (team1Count + 1);
       for (let i = 0; i < team1Count; i++) {
+        const pid = t1p[i]?.userId || (i === 0 ? this.player1.userId : 0);
         this.paddles.team1.push({
           x: 50,
-          y: team1Spacing * (i + 1) - 50 // Center each paddle in its section
+          y: team1Spacing * (i + 1) - 50, // Center each paddle in its section
+          playerId: pid
         });
       }
 
       const team2Spacing = 600 / (team2Count + 1);
       for (let i = 0; i < team2Count; i++) {
+        const pid = t2p[i]?.userId || (i === 0 ? this.player2.userId : 0);
         this.paddles.team2.push({
           x: 750,
-          y: team2Spacing * (i + 1) - 50
+          y: team2Spacing * (i + 1) - 50,
+          playerId: pid
         });
       }
 
@@ -109,19 +115,19 @@ export class PongGame {
 
   private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 6;     // Slow and easy to track
-      case 'medium': return 8;   // Standard speed
-      case 'fast': return 12;    // Very fast and intense!
-      default: return 8;
+      case 'slow': return 4;
+      case 'medium': return 6;
+      case 'fast': return 9;
+      default: return 6;
     }
   }
 
   private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 8;      // Slower response
-      case 'medium': return 14;   // Standard response
-      case 'fast': return 25;     // Super responsive and intense!
-      default: return 14;
+      case 'slow': return 5;
+      case 'medium': return 9;
+      case 'fast': return 15;
+      default: return 9;
     }
   }
 
@@ -170,12 +176,12 @@ export class PongGame {
           // Reset ball after a delay
           setTimeout(() => {
             this.physics.unfreezeBall(this.ball);
-            this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+            this.broadcastGameState();
           }, 1000);
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcastGameState();
     });
   }
 
@@ -201,7 +207,7 @@ export class PongGame {
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcastGameState();
     }
   }
 

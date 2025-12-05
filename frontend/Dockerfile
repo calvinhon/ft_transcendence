@@ -3,30 +3,31 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
-# Copy all configuration files
+# Copy configuration files
 COPY package*.json ./
-COPY ../tsconfig.json ./tsconfig.json
+COPY tsconfig.json ./
 COPY vite.config.js ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
+COPY index.html ./
 COPY src/ ./src/
 COPY css/ ./css/
-COPY *.html ./
 COPY assets/ ./assets/
-# COPY ../shared/ ./shared/
 
-# Clean any existing build artifacts and build the application
-RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"
+# Build the application
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Copy all built files to nginx
-COPY --from=builder /app/dist /usr/share/nginx/html/
-COPY --from=builder /app/css /usr/share/nginx/html/css
+# Copy built files to nginx
+# Vite builds to 'dist' by default
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf

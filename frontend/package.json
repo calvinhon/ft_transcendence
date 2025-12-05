@@ -1,28 +1,21 @@
 {
-  "name": "frontend",
-  "version": "1.0.0",
+  "name": "ft_transcendence-frontend",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
-  "description": "Frontend for Transcendence Pong Game",
   "scripts": {
-    "build": "vite build",
     "dev": "vite",
-    "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.22",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.17",
-    "typescript": "^5.9.3"
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.9.3",
+    "vite": "^5.0.8"
   },
   "dependencies": {
-    "@babylonjs/addons": "^8.37.0",
-    "@babylonjs/loaders": "^8.37.0",
-    "@fortawesome/fontawesome-free": "^7.1.0",
-    "@tailwindcss/postcss": "^4.1.17",
-    "@tailwindcss/vite": "^4.1.17",
-    "babylonjs": "^8.37.0",
-    "rimraf": "^6.1.0",
-    "vite": "^7.2.2"
+    "@fortawesome/fontawesome-free": "^7.1.0"
   }
 }

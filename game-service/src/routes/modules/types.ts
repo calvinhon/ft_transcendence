@@ -22,6 +22,7 @@ export interface Ball {
 export interface Paddle {
   x: number;
   y: number;
+  playerId?: number;
 }
 
 export interface Paddles {
