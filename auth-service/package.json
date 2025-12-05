@@ -17,6 +17,7 @@
     "@fastify/cookie": "^9.0.0",
     "@fastify/cors": "^8.4.0",
     "@fastify/jwt": "^7.2.4",
+    "axios": "^1.6.0",
     "bcrypt": "^5.1.1",
     "fastify": "^4.29.1",
     "jsonwebtoken": "^9.0.2",

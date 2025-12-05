@@ -7,6 +7,7 @@ import { logoutHandler } from './handlers/logout';
 import { profileHandler } from './handlers/profile';
 import { forgotPasswordHandler } from './handlers/forgotPassword';
 import { resetPasswordHandler } from './handlers/resetPassword';
+import { oauthInitHandler, oauthCallbackHandler } from './handlers/oauth';
 
 async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
   // Register routes
@@ -18,6 +19,10 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.post('/forgot-password', forgotPasswordHandler);
   fastify.post('/reset-password', resetPasswordHandler);
 
+  // OAuth routes
+  fastify.get('/oauth/init', oauthInitHandler);
+  fastify.get('/oauth/callback', oauthCallbackHandler);
+
   // Also register with /auth prefix for direct access (e.g., from Vite proxy)
   fastify.post('/auth/register', registerHandler);
   fastify.post('/auth/login', loginHandler);
@@ -26,6 +31,8 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.get('/auth/profile/:userId', profileHandler);
   fastify.post('/auth/forgot-password', forgotPasswordHandler);
   fastify.post('/auth/reset-password', resetPasswordHandler);
+  fastify.get('/auth/oauth/init', oauthInitHandler);
+  fastify.get('/auth/oauth/callback', oauthCallbackHandler);
 
   return Promise.resolve();
 }
