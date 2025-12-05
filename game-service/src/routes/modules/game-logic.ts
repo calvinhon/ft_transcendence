@@ -188,7 +188,9 @@ export class PongGame {
       this.gameSettings.gameMode,
       paddleSpeed,
       this.gameId,
-      paddleIndex
+      paddleIndex,
+      this.player1.userId,
+      this.player2.userId
     );
 
     if (moved) {

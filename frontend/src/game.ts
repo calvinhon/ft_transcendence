@@ -761,6 +761,15 @@ export class GameManager {
     // Player 1 (left): W/S or Arrow keys
     // Player 2 (right): U/J keys
     
+    // Get actual player IDs from tournament match data
+    const player1Id = this.team1Players[0]?.userId || this.currentTournamentMatch?.player1Id;
+    const player2Id = this.team2Players[0]?.userId || this.currentTournamentMatch?.player2Id;
+    
+    if (!player1Id || !player2Id) {
+      console.warn('🏆 [TOURNAMENT] Missing player IDs, cannot send paddle movements');
+      return;
+    }
+    
     // Player 1 (left paddle) - W/S or Arrow keys
     const p1UpPressed = this.keys['w'] || this.keys['W'] || this.keys['arrowup'] || this.keys['ArrowUp'];
     const p1DownPressed = this.keys['s'] || this.keys['S'] || this.keys['arrowdown'] || this.keys['ArrowDown'];
@@ -783,26 +792,26 @@ export class GameManager {
       if (downTime > upTime) {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: 1,
+          playerId: player1Id,
           direction: 'down'
         }));
       } else {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: 1,
+          playerId: player1Id,
           direction: 'up'
         }));
       }
     } else if (p1UpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: 1,
+        playerId: player1Id,
         direction: 'up'
       }));
     } else if (p1DownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: 1,
+        playerId: player1Id,
         direction: 'down'
       }));
     }
@@ -816,31 +825,29 @@ export class GameManager {
       const upTime = this.lastKeyPressTime['u'] || this.lastKeyPressTime['U'] || 0;
       const downTime = this.lastKeyPressTime['j'] || this.lastKeyPressTime['J'] || 0;
       
-      // For player 2, we need to send a different command to control the right paddle
-      // We'll use playerId: 2 to indicate this is for player2/right paddle
       if (downTime > upTime) {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: 2,
+          playerId: player2Id,
           direction: 'down'
         }));
       } else {
         this.websocket?.send(JSON.stringify({
           type: 'movePaddle',
-          playerId: 2,
+          playerId: player2Id,
           direction: 'up'
         }));
       }
     } else if (p2UpPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: 2,
+        playerId: player2Id,
         direction: 'up'
       }));
     } else if (p2DownPressed) {
       this.websocket?.send(JSON.stringify({
         type: 'movePaddle',
-        playerId: 2,
+        playerId: player2Id,
         direction: 'down'
       }));
     }
