@@ -2,13 +2,13 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Fri Dec  5 20:04:38 +04 2025
+Date: Fri Dec  5 20:19:50 +04 2025
 Project: FT_Transcendence
 
 
-✗ FAILED: Backend Framework (Fastify)
+✓ PASSED: Backend Framework (Fastify)
 
-✗ FAILED: Database (SQLite)
+✓ PASSED: Database (SQLite)
 
 ✓ PASSED: Blockchain (Solidity/Hardhat)
 
@@ -39,9 +39,9 @@ Project: FT_Transcendence
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  4
-Failed:  11
+Passed:  6
+Failed:  9
 Total:   15
 
 Status: SOME TESTS FAILED ✗
-Generated: Fri Dec  5 20:04:40 +04 2025
+Generated: Fri Dec  5 20:19:54 +04 2025

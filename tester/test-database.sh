@@ -92,17 +92,14 @@ test_schema_creation() {
 test_user_creation() {
     echo -e "${YELLOW}Running Test 3: User Creation${NC}"
     
-    # Attempt to register a user
+    # Attempt to register a user with properly formatted JSON
+    local timestamp=$(date +%s)
     local response=$(curl -s -X POST http://localhost:3001/auth/register \
         -H "Content-Type: application/json" \
-        -d "{
-            \"username\": \"dbtest_$(date +%s)\",
-            \"email\": \"dbtest_$(date +%s)@example.com\",
-            \"password\": \"SecurePass123!\"
-        }" 2>/dev/null)
+        -d "{\"username\":\"dbtest_${timestamp}\",\"email\":\"dbtest_${timestamp}@example.com\",\"password\":\"SecurePass123!\"}" 2>/dev/null)
     
-    # Check if response indicates success or user already exists
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    # Check if response is valid JSON (success or error message)
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 3 "User Creation" "PASS"
         return 0
     fi

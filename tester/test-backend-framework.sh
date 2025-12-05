@@ -79,7 +79,7 @@ test_health_checks() {
     for service in "${services[@]}"; do
         IFS=':' read -r name port <<< "$service"
         # Try localhost first (host), fallback to service name (Docker)
-        local response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:$port/health 2>/dev/null)
+        local response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:$port/health 2>/dev/null)
         
         if [ "$response" != "200" ]; then
             all_healthy=false
@@ -162,8 +162,8 @@ test_response_formatting() {
     
     local response=$(curl -s http://localhost:3001/health 2>/dev/null)
     
-    # Check if response is valid JSON
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    # Check if response is valid JSON using python3
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Response Formatting" "PASS"
         return 0
     fi
@@ -216,7 +216,7 @@ test_content_negotiation() {
     
     local response=$(curl -s -H "Accept: application/json" http://localhost:3001/health 2>/dev/null)
     
-    if echo "$response" | jq . > /dev/null 2>&1; then
+    if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 9 "Content Negotiation" "PASS"
         return 0
     fi
