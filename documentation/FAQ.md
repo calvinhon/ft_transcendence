@@ -373,6 +373,396 @@ upstream blockchain_backend {
 
 ---
 
+### Q: What are the two types of communication in this program (REST API vs WebSocket) and how are they applied?
+
+**A:** The ft_transcendence project uses **two different communication protocols** for different purposes:
+
+## 1. REST API (Request-Response Pattern)
+
+### What is REST API?
+
+**REST** (Representational State Transfer) is a **stateless**, **request-response** protocol using HTTP methods:
+- **Client sends request** → **Server processes** → **Server sends response** → **Connection closes**
+- Each request is independent
+- Traditional web API pattern
+
+### HTTP Methods Used:
+- **GET**: Retrieve data (e.g., get user profile, get tournament details)
+- **POST**: Create data or trigger actions (e.g., register user, create tournament)
+- **PUT**: Update data (e.g., update profile)
+- **DELETE**: Remove data (e.g., delete tournament)
+
+### Where REST API is Used in This Program:
+
+#### 1. **Authentication Service** (auth-service)
+```typescript
+// User registration
+POST /api/auth/register
+Body: { username, email, password }
+Response: { success: true, userId: 123 }
+
+// User login (sets HTTP-only cookie)
+POST /api/auth/login
+Body: { username, password }
+Response: { success: true, user: {...} }
+Set-Cookie: token=jwt_token; HttpOnly; SameSite=Strict
+
+// Token verification
+POST /api/auth/verify
+Cookie: token=jwt_token
+Response: { valid: true, user: {...} }
+
+// Logout (clears cookie)
+POST /api/auth/logout
+Response: { success: true }
+```
+
+**Why REST for Auth?**
+- One-time operations (login once, not continuously)
+- Stateless verification (each request can be verified independently)
+- Standard HTTP security (cookies, headers)
+
+#### 2. **Tournament Service** (tournament-service)
+```typescript
+// Create tournament
+POST /api/tournament/create
+Body: { name, description, maxParticipants }
+Response: { success: true, tournamentId: 5 }
+
+// Join tournament
+POST /api/tournament/join
+Body: { tournamentId: 5, userId: 123 }
+Response: { success: true }
+
+// Get tournament details
+GET /api/tournament/details/5
+Response: { tournament: {...}, participants: [...], matches: [...] }
+
+// Submit match result
+POST /api/tournament/match/result
+Body: { tournamentId, matchId, winnerId, scores }
+Response: { success: true, nextRound: [...] }
+
+// Start tournament
+POST /api/tournament/start/5
+Response: { success: true, matches: [...] }
+```
+
+**Why REST for Tournaments?**
+- CRUD operations (Create, Read, Update, Delete)
+- Infrequent updates (create once, query occasionally)
+- Complex data structures (brackets, participants, matches)
+- No need for real-time push notifications
+
+#### 3. **User Service** (user-service)
+```typescript
+// Get user profile
+GET /api/user/profile/123
+Response: { userId, username, stats: {...}, campaignLevel: 5 }
+
+// Update profile
+PUT /api/user/profile/123
+Body: { displayName, bio, avatar }
+Response: { success: true }
+
+// Get user statistics
+GET /api/user/stats/123
+Response: { wins, losses, winRate, tournaments, achievements }
+
+// Get leaderboard
+GET /api/user/leaderboard
+Response: [{ rank: 1, username, wins, winRate }, ...]
+
+// Get achievements
+GET /api/user/achievements/123
+Response: [{ id, name, description, unlocked: true }, ...]
+```
+
+**Why REST for User Data?**
+- Standard CRUD operations
+- Data retrieval and updates
+- No real-time requirements
+- Client-initiated requests
+
+#### REST API Flow Example:
+```
+User clicks "Create Tournament" button
+    ↓
+Frontend: fetch('http://localhost/api/tournament/create', {
+    method: 'POST',
+    credentials: 'include',  // Send cookies
+    body: JSON.stringify({ name, description, maxParticipants })
+})
+    ↓
+nginx receives request at port 80
+    ↓
+nginx routes to tournament-service:3000
+    ↓
+tournament-service processes request
+    ↓
+tournament-service queries SQLite database
+    ↓
+tournament-service returns response
+    ↓
+nginx forwards response to frontend
+    ↓
+Frontend updates UI with tournament data
+```
+
+---
+
+## 2. WebSocket (Persistent Bi-directional Connection)
+
+### What is WebSocket?
+
+**WebSocket** is a **persistent**, **full-duplex** communication protocol:
+- **Connection stays open** for the entire session
+- **Bi-directional**: Both client and server can send messages anytime
+- **Real-time**: No polling needed, instant message delivery
+- **Low latency**: Minimal overhead after connection established
+
+### WebSocket Protocol:
+1. **Handshake**: HTTP upgrade request → WebSocket connection
+2. **Persistent Connection**: Stays open
+3. **Message Exchange**: Both directions, anytime
+4. **Close**: Either side can close the connection
+
+### Where WebSocket is Used in This Program:
+
+#### **Game Service** (game-service) - **ONLY WebSocket Usage**
+
+All real-time gameplay happens over WebSocket at `/api/game/ws`
+
+```typescript
+// Connection establishment
+const ws = new WebSocket('ws://localhost/api/game/ws');
+
+ws.onopen = () => {
+    console.log('Connected to game server');
+};
+```
+
+### WebSocket Message Flow:
+
+#### 1. **Join Game** (Client → Server)
+```json
+{
+  "type": "joinGame",
+  "userId": 123,
+  "username": "player1",
+  "gameSettings": {
+    "gameMode": "coop",
+    "aiDifficulty": "medium",
+    "ballSpeed": "medium",
+    "paddleSpeed": "medium",
+    "scoreToWin": 3
+  }
+}
+```
+
+#### 2. **Game Start** (Server → Client)
+```json
+{
+  "type": "gameStart",
+  "gameId": 42,
+  "gameSettings": {...},
+  "gameState": {
+    "ball": {"x": 400, "y": 300, "dx": 5, "dy": 3, "frozen": true},
+    "paddles": {"player1": {"x": 50, "y": 250}, "player2": {"x": 750, "y": 250}},
+    "scores": {"player1": 0, "player2": 0},
+    "status": "countdown"
+  },
+  "config": {
+    "canvasWidth": 800,
+    "canvasHeight": 600,
+    "paddleWidth": 10,
+    "paddleHeight": 100,
+    "ballRadius": 5
+  }
+}
+```
+
+#### 3. **Countdown** (Server → Client)
+```json
+{"type": "countdown", "value": 3}
+{"type": "countdown", "value": 2}
+{"type": "countdown", "value": 1}
+{"type": "countdown", "value": "GO!"}
+```
+
+#### 4. **Paddle Movement** (Client → Server) - **60 FPS**
+```json
+// Player pressing W key (up)
+{"type": "movePaddle", "direction": "up"}
+
+// Player pressing S key (down)
+{"type": "movePaddle", "direction": "down"}
+
+// Tournament mode - left player
+{"type": "movePaddle", "direction": "up", "playerId": 1}
+
+// Arcade mode - specific paddle
+{"type": "movePaddle", "direction": "up", "playerId": 1, "paddleIndex": 0}
+```
+
+#### 5. **Game State Updates** (Server → Client) - **60 FPS (every 16.67ms)**
+```json
+{
+  "type": "gameStateUpdate",
+  "gameState": {
+    "ball": {"x": 405.5, "y": 303.2, "dx": 5.5, "dy": 3.2, "frozen": false},
+    "paddles": {
+      "player1": {"x": 50, "y": 248},
+      "player2": {"x": 750, "y": 252}
+    },
+    "scores": {"player1": 0, "player2": 0},
+    "status": "playing"
+  }
+}
+```
+
+#### 6. **Score Event** (Server → Client)
+```json
+{
+  "type": "score",
+  "scorer": "player1",
+  "scores": {"player1": 1, "player2": 0}
+}
+```
+
+#### 7. **Game Over** (Server → Client)
+```json
+{
+  "type": "gameOver",
+  "winner": "player1",
+  "finalScores": {"player1": 3, "player2": 1},
+  "gameId": 42
+}
+```
+
+### Why WebSocket for Game?
+
+1. **Real-time Requirements**:
+   - Game state updates at 60 FPS (16.67ms intervals)
+   - Immediate paddle movement feedback
+   - Ball physics synchronization
+
+2. **Low Latency**:
+   - No HTTP overhead per message
+   - Connection already established
+   - Minimal delay for player inputs
+
+3. **Bi-directional**:
+   - Server pushes game state continuously
+   - Client sends paddle inputs anytime
+   - No polling needed
+
+4. **Efficiency**:
+   - One connection for entire game session
+   - Less bandwidth than REST polling
+   - Server controls game loop timing
+
+### WebSocket Connection Flow:
+```
+Frontend creates WebSocket connection
+    ↓
+ws = new WebSocket('ws://localhost/api/game/ws')
+    ↓
+Browser sends HTTP Upgrade request to nginx
+    ↓
+nginx upgrades connection and proxies to game-service:3000
+
+
+    ↓
+game-service accepts WebSocket connection
+    ↓
+Connection stays open (persistent)
+    ↓
+[Game Loop Runs]
+While game is active:
+    - Client sends paddle inputs (on key press)
+    - Server calculates physics (60 FPS)
+    - Server broadcasts state (60 FPS)
+    - Client renders state (60 FPS)
+    ↓
+Game ends
+    ↓
+Server sends gameOver message
+    ↓
+Connection closes
+```
+
+---
+
+## Comparison Table: REST API vs WebSocket in This Program
+
+| Aspect | REST API | WebSocket |
+|--------|----------|-----------|
+| **Pattern** | Request-Response | Persistent Connection |
+| **Direction** | Client-initiated only | Bi-directional |
+| **Connection** | New connection per request | Single persistent connection |
+| **Use Cases** | Auth, Tournaments, User Profiles | Real-time Game |
+| **Services** | auth, tournament, user | game only |
+| **Frequency** | Occasional (user actions) | Continuous (60 FPS) |
+| **Data Size** | Larger payloads | Small frequent messages |
+| **Latency** | Higher (new connection) | Lower (persistent) |
+| **Overhead** | HTTP headers per request | Minimal after handshake |
+| **State** | Stateless | Stateful (connection persists) |
+
+---
+
+## nginx Configuration for Both Protocols:
+
+### REST API Proxy (HTTP)
+```nginx
+location /api/auth/ {
+    proxy_pass http://auth-service:3000/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    # ... standard HTTP proxy
+}
+```
+
+### WebSocket Proxy (Upgrade)
+```nginx
+location /api/game/ws {
+    proxy_pass http://game-service:3000/ws;
+    proxy_http_version 1.1;
+    
+    # WebSocket-specific headers
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    
+    proxy_set_header Host $host;
+    # ... other headers
+}
+```
+
+The key difference: `Upgrade` and `Connection "upgrade"` headers tell nginx to switch from HTTP to WebSocket protocol.
+
+---
+
+## Summary
+
+**REST API** = Traditional web requests for standard operations (login, create tournament, get stats)
+- ✅ Simple, stateless, well-understood
+- ✅ Good for CRUD operations
+- ✅ HTTP caching possible
+- ❌ Not suitable for real-time
+
+**WebSocket** = Real-time bi-directional communication for live gameplay
+- ✅ Real-time, low latency
+- ✅ Server can push updates
+- ✅ Efficient for continuous data
+- ❌ More complex to implement
+- ❌ No HTTP caching
+
+**This program uses BOTH**:
+- REST API for everything except gameplay
+- WebSocket ONLY for real-time Pong game synchronization
+
+---
+
 ### Q: How do I start the entire system?
 
 **A:** Use the Makefile:
@@ -445,6 +835,758 @@ paddle = paddles[team][0];
 ```
 
 **Fix Location**: `frontend/src/game.ts` in `handleTournamentInputs()` function
+
+---
+
+### Q: Why does this program use port 80 with HTTP instead of port 8080 with HTTPS for better security?
+
+**A:** Great security question! Here's why HTTP on port 80 is used for this **localhost development environment**:
+
+## For Development (Current Setup)
+
+### Why HTTP + Port 80:
+
+1. **Localhost Isolation**:
+   - Only accessible from `127.0.0.1` (your own computer)
+   - Not exposed to the internet
+   - No external attackers can intercept traffic
+
+2. **Development Simplicity**:
+   - No SSL certificate management needed
+   - Faster iteration and testing
+   - Easier debugging (can inspect traffic easily)
+
+3. **Docker Simplicity**:
+   - Port 80 is the standard HTTP port (no need to specify `:8080`)
+   - Access via `http://localhost` instead of `http://localhost:8080`
+
+4. **Security Already Implemented**:
+   - **HTTP-only cookies** (prevents XSS attacks)
+   - **SameSite=Strict** (prevents CSRF attacks)
+   - **CORS** properly configured
+   - Traffic never leaves your machine
+
+### Why Port 8080 Wouldn't Add Security on Localhost:
+- Port number doesn't affect encryption
+- Port 8080 is just a convention for alternate HTTP servers
+- Traffic is still unencrypted on port 8080 without HTTPS
+- **HTTPS requires SSL certificates**, not just a different port
+
+---
+
+## For Production (What You MUST Change)
+
+If you deploy this to a **public server**, you **MUST** switch to HTTPS:
+
+### Production Setup Requirements:
+
+#### 1. **Get SSL Certificate**:
+```bash
+# Using Let's Encrypt (free)
+certbot certonly --nginx -d yourdomain.com
+```
+
+#### 2. **Update nginx Configuration**:
+```nginx
+server {
+    listen 443 ssl http2;  # HTTPS port
+    server_name yourdomain.com;
+
+    # SSL Certificate paths
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    # Strong SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # ... rest of your nginx config
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+#### 3. **Update docker-compose.yml**:
+```yaml
+nginx:
+  ports:
+    - "80:80"      # HTTP (redirects to HTTPS)
+    - "443:443"    # HTTPS
+  volumes:
+    - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf
+    - /etc/letsencrypt:/etc/letsencrypt  # SSL certificates
+```
+
+#### 4. **Update Cookie Configuration**:
+```typescript
+// In auth-service
+res.cookie('token', token, {
+  httpOnly: true,
+  sameSite: 'strict',
+  secure: true,  // ✅ ADD THIS for production HTTPS
+  maxAge: 86400000
+});
+```
+
+The `secure: true` flag ensures cookies are **only sent over HTTPS**, never HTTP.
+
+#### 5. **Update Frontend URLs**:
+```typescript
+// Change WebSocket protocol
+const ws = new WebSocket('wss://yourdomain.com/api/game/ws');  // wss = secure WebSocket
+
+// Update fetch calls (automatic with https://)
+fetch('https://yourdomain.com/api/auth/login', { ... });
+```
+
+---
+
+## Security Comparison: Development vs Production
+
+| Aspect | Development (HTTP) | Production (HTTPS) |
+|--------|-------------------|-------------------|
+| **Port** | 80 | 443 (+ 80 for redirect) |
+| **Protocol** | HTTP | HTTPS |
+| **Encryption** | None (not needed) | TLS 1.2/1.3 |
+| **Access** | localhost only | Public internet |
+| **Certificates** | None | SSL/TLS certificates |
+| **Cookie `secure`** | false | true |
+| **WebSocket** | ws:// | wss:// |
+| **Risk** | Very low (isolated) | High without HTTPS |
+
+---
+
+## Why HTTPS is CRITICAL for Production:
+
+1. **Encryption**: Prevents man-in-the-middle attacks
+2. **Authentication**: Verifies server identity (prevents impersonation)
+3. **Data Integrity**: Prevents data tampering in transit
+4. **Browser Requirements**: Modern browsers require HTTPS for:
+   - Geolocation
+   - Camera/Microphone access
+   - Service Workers
+   - HTTP/2 protocol
+5. **SEO**: Google penalizes HTTP sites
+6. **User Trust**: Browsers show "Not Secure" warning for HTTP
+
+---
+
+## Summary
+
+**Development (localhost)**: HTTP on port 80 is fine
+- ✅ Isolated environment
+- ✅ Faster development
+- ✅ No certificate management
+- ✅ Already using HTTP-only cookies + SameSite
+
+**Production (public server)**: HTTPS on port 443 is MANDATORY
+- ⚠️ HTTP exposes passwords and session tokens
+- ⚠️ Vulnerable to packet sniffing
+- ⚠️ Browsers will show security warnings
+- ⚠️ Violates security best practices
+
+**Port number doesn't provide security** - encryption protocol (HTTPS) does!
+
+---
+
+### Q: What is TypeScript and how/why is it used in this program for both frontend (Vite) and backend services (Node.js + Fastify)?
+
+**A:** TypeScript is JavaScript with **static type checking** - it adds type safety to JavaScript code.
+
+## What is TypeScript?
+
+**TypeScript** = JavaScript + Type System
+
+```typescript
+// JavaScript (no types)
+function add(a, b) {
+  return a + b;
+}
+add(5, "hello");  // ❌ Bug! Returns "5hello" instead of error
+
+// TypeScript (with types)
+function add(a: number, b: number): number {
+  return a + b;
+}
+add(5, "hello");  // ✅ Compiler error: "hello" is not a number
+```
+
+### Key Features:
+
+1. **Type Safety**: Catch errors at compile-time, not runtime
+2. **IntelliSense**: Better autocomplete and IDE support
+3. **Refactoring**: Rename variables/functions safely across codebase
+4. **Documentation**: Types serve as inline documentation
+5. **Compiles to JavaScript**: TypeScript → JavaScript for browsers/Node.js
+
+---
+
+## TypeScript in This Program
+
+This project uses TypeScript for **ALL code** - both frontend and backend:
+
+```
+Frontend (Vite):         TypeScript → JavaScript (bundled)
+Backend Services:        TypeScript → JavaScript (Node.js)
+```
+
+---
+
+## Frontend: TypeScript + Vite
+
+### Stack:
+- **TypeScript**: Type-safe source code
+- **Vite**: Modern build tool and dev server
+- **Browser**: Runs compiled JavaScript
+
+### File Structure:
+```
+frontend/
+├── src/
+│   ├── game.ts          ← TypeScript source
+│   ├── auth.ts
+│   ├── tournament.ts
+│   └── types.ts         ← Type definitions
+├── tsconfig.json        ← TypeScript configuration
+├── vite.config.js       ← Vite build configuration
+└── package.json
+```
+
+### TypeScript Configuration (`frontend/tsconfig.json`):
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",           // Compile to ES2020 JavaScript
+    "module": "ES2020",            // Use ES modules (import/export)
+    "moduleResolution": "node",
+    "outDir": "./dist",            // Output compiled JS here
+    "rootDir": "./src",            // Source TypeScript files
+    "strict": true,                // Enable all strict type checks
+    "lib": ["ES2020", "DOM"],      // Browser APIs available
+    "types": ["node"]
+  }
+}
+```
+
+### Example: Type-Safe Frontend Code
+
+#### Type Definitions (`frontend/src/game.ts`):
+```typescript
+interface User {
+  userId: number;
+  username: string;
+  email?: string;  // Optional property
+}
+
+interface GameState {
+  leftPaddle: { y: number; speed: number };
+  rightPaddle: { y: number; speed: number };
+  ball: { x: number; y: number; vx: number; vy: number };
+  leftScore: number;
+  rightScore: number;
+  status: string;
+  gameWidth: number;
+  gameHeight: number;
+}
+
+interface GameConfig {
+  canvasWidth: number;
+  canvasHeight: number;
+  paddleWidth: number;
+  paddleHeight: number;
+  ballRadius: number;
+  paddleSpeed: number;
+}
+```
+
+#### Type-Safe Functions:
+```typescript
+// TypeScript catches type errors at compile time
+function handleGameState(state: GameState): void {
+  canvas.width = state.gameWidth;    // ✅ OK
+  canvas.height = state.gameHeight;  // ✅ OK
+  
+  // state.invalidProp  // ❌ Compile error: Property doesn't exist
+}
+
+// WebSocket message with type checking
+function sendPaddleMove(direction: 'up' | 'down'): void {
+  ws.send(JSON.stringify({
+    type: 'movePaddle',
+    direction: direction  // ✅ Only 'up' or 'down' allowed
+  }));
+  
+  // sendPaddleMove('left');  // ❌ Compile error: 'left' not valid
+}
+
+// API call with typed response
+async function login(username: string, password: string): Promise<User> {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password })
+  });
+  
+  const data: User = await response.json();
+  return data;  // ✅ TypeScript knows this is a User
+}
+```
+
+### How Vite Processes TypeScript:
+
+```
+1. Development (npm run dev):
+   ┌──────────────┐
+   │ game.ts      │ ← TypeScript source
+   └──────┬───────┘
+          │ Vite compiles on-the-fly
+          ↓
+   ┌──────────────┐
+   │ game.js      │ ← JavaScript (in memory)
+   └──────┬───────┘
+          │ Hot reload
+          ↓
+   ┌──────────────┐
+   │ Browser      │
+   └──────────────┘
+
+2. Production Build (npm run build):
+   ┌──────────────┐
+   │ src/*.ts     │ ← All TypeScript files
+   └──────┬───────┘
+          │ TypeScript compiler (tsc)
+          ↓
+   ┌──────────────┐
+   │ JavaScript   │
+   └──────┬───────┘
+          │ Vite bundles, minifies, optimizes
+          ↓
+   ┌──────────────┐
+   │ dist/        │ ← Optimized JavaScript bundles
+   │ ├── index.js │   (served by nginx)
+   │ └── style.css│
+   └──────────────┘
+```
+
+### Why TypeScript + Vite for Frontend?
+
+1. **Type Safety**: Catch bugs before deployment
+   ```typescript
+   // ❌ Would crash at runtime in JavaScript
+   const score: number = "10";  // ✅ TypeScript error at compile time
+   ```
+
+2. **Better Refactoring**: Rename `GameState` → IDE updates all usages
+3. **Autocomplete**: IDE suggests `state.leftScore` after typing `state.`
+4. **Team Collaboration**: Types document what data structures look like
+5. **Fast Builds**: Vite uses esbuild (written in Go) for blazing fast compilation
+6. **Hot Module Replacement**: Changes appear instantly during development
+
+---
+
+## Backend: TypeScript + Node.js + Fastify
+
+### Stack (All 4 Services):
+- **TypeScript**: Type-safe source code
+- **Node.js**: JavaScript runtime
+- **Fastify**: Fast web framework
+- **ts-node-dev**: Development server with auto-reload
+
+### File Structure (Example: auth-service):
+```
+auth-service/
+├── src/
+│   ├── server.ts           ← TypeScript source
+│   ├── routes/
+│   │   └── auth.ts
+│   ├── services/
+│   │   └── authService.ts
+│   ├── types/
+│   │   └── index.ts        ← Type definitions
+│   └── utils/
+│       ├── config.ts
+│       └── database.ts
+├── dist/                   ← Compiled JavaScript (generated)
+│   └── server.js
+├── tsconfig.json           ← TypeScript configuration
+└── package.json
+```
+
+### TypeScript Configuration (`auth-service/tsconfig.json`):
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",           // Compile to ES2020
+    "module": "commonjs",          // Use CommonJS (Node.js modules)
+    "outDir": "./dist",            // Output compiled JS
+    "rootDir": "./src",            // Source TS files
+    "strict": true,                // Strict type checking
+    "esModuleInterop": true,
+    "declaration": true,           // Generate .d.ts files
+    "sourceMap": true              // Generate source maps for debugging
+  }
+}
+```
+
+### Example: Type-Safe Backend Code
+
+#### Type Definitions (`auth-service/src/types/index.ts`):
+```typescript
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  password_hash: string;
+  created_at: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface JWTPayload {
+  userId: number;
+  username: string;
+}
+```
+
+#### Type-Safe Server (`auth-service/src/server.ts`):
+```typescript
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
+
+const fastify: FastifyInstance = Fastify({
+  logger: true
+});
+
+// TypeScript knows fastify's methods and types
+await fastify.register(cors, {
+  origin: 'http://localhost',
+  credentials: true
+});
+
+await fastify.register(cookie);
+```
+
+#### Type-Safe Routes (`auth-service/src/routes/auth.ts`):
+```typescript
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { RegisterRequest, LoginRequest, User } from '../types';
+
+export default async function authRoutes(fastify: FastifyInstance) {
+  
+  // Register endpoint with typed request body
+  fastify.post<{ Body: RegisterRequest }>(
+    '/register',
+    async (request: FastifyRequest<{ Body: RegisterRequest }>, reply: FastifyReply) => {
+      const { username, email, password } = request.body;
+      
+      // TypeScript ensures these properties exist
+      // username is string (not number or undefined)
+      
+      // ... registration logic
+      
+      return reply.status(201).send({
+        success: true,
+        userId: newUser.id
+      });
+    }
+  );
+  
+  // Login endpoint with typed request body
+  fastify.post<{ Body: LoginRequest }>(
+    '/login',
+    async (request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) => {
+      const { username, password } = request.body;
+      
+      // ... authentication logic
+      
+      // Type-safe cookie setting
+      reply.setCookie('token', token, {
+        httpOnly: true,       // ✅ TypeScript knows this is boolean
+        sameSite: 'strict',   // ✅ Only allows 'strict' | 'lax' | 'none'
+        maxAge: 86400000      // ✅ TypeScript knows this is number
+      });
+      
+      return { success: true, user: userData };
+    }
+  );
+}
+```
+
+#### Type-Safe Database Queries (`auth-service/src/services/authService.ts`):
+```typescript
+import { User } from '../types';
+
+export class AuthService {
+  
+  // Return type is Promise<User | null>
+  async getUserByUsername(username: string): Promise<User | null> {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM users WHERE username = ?',
+        [username],
+        (err, row: User) => {  // ✅ row is typed as User
+          if (err) reject(err);
+          resolve(row || null);
+        }
+      );
+    });
+  }
+  
+  // TypeScript ensures we pass correct parameter types
+  async createUser(username: string, email: string, passwordHash: string): Promise<number> {
+    // ... insert logic
+    return userId;  // ✅ Must return number
+  }
+}
+```
+
+### Build Process (Development vs Production):
+
+#### Development (`npm run dev`):
+```bash
+# package.json script
+"dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+```
+
+```
+┌──────────────┐
+│ src/         │ ← TypeScript source files
+│ server.ts    │
+└──────┬───────┘
+       │ ts-node-dev compiles & runs
+       ↓
+┌──────────────┐
+│ Node.js      │ ← Runs JavaScript in memory
+└──────┬───────┘
+       │ Auto-restart on file changes
+       ↓
+┌──────────────┐
+│ Fastify      │ ← Server listening on port 3000
+│ :3000        │
+└──────────────┘
+```
+
+#### Production (`npm run build` → `npm start`):
+```bash
+# package.json scripts
+"build": "tsc"
+"start": "node dist/server.js"
+```
+
+```
+1. Compile TypeScript:
+   ┌──────────────┐
+   │ src/*.ts     │ ← TypeScript source
+   └──────┬───────┘
+          │ tsc (TypeScript compiler)
+          ↓
+   ┌──────────────┐
+   │ dist/*.js    │ ← Compiled JavaScript
+   │ dist/*.d.ts  │ ← Type definition files
+   │ dist/*.js.map│ ← Source maps
+   └──────────────┘
+
+2. Run Compiled JavaScript:
+   ┌──────────────┐
+   │ node         │
+   │ dist/server.js│
+   └──────┬───────┘
+          │
+          ↓
+   ┌──────────────┐
+   │ Fastify      │
+   │ :3000        │
+   └──────────────┘
+```
+
+### Why TypeScript + Node.js + Fastify for Backend?
+
+1. **Type Safety**: Catch errors before deployment
+   ```typescript
+   // ❌ Would cause runtime error in JavaScript
+   fastify.register(cors, {
+     origin: 123  // ✅ TypeScript error: should be string or array
+   });
+   ```
+
+2. **API Contract Enforcement**:
+   ```typescript
+   // Request body MUST have username and password
+   interface LoginRequest {
+     username: string;
+     password: string;
+   }
+   // Missing properties = compile error
+   ```
+
+3. **Database Type Safety**:
+   ```typescript
+   const user: User = await getUserById(123);
+   console.log(user.username);  // ✅ OK
+   console.log(user.invalidProp);  // ❌ Compile error
+   ```
+
+4. **Refactoring**: Rename `User.id` → `User.userId` updates everywhere
+5. **Team Collaboration**: Types document API contracts
+6. **IDE Support**: Autocomplete for Fastify methods, request/reply objects
+7. **Fewer Runtime Errors**: Most bugs caught at compile time
+
+---
+
+## Comparison: JavaScript vs TypeScript in This Program
+
+### Without TypeScript (JavaScript):
+```javascript
+// ❌ No type checking - bugs at runtime
+function handleGameState(state) {
+  canvas.width = state.gameWidth;     // What if undefined?
+  canvas.height = state.gameHieght;   // Typo! No error until runtime
+}
+
+// ❌ No autocomplete - have to remember exact property names
+const user = await getUser(123);
+console.log(user.usrname);  // Typo! Returns undefined silently
+
+// ❌ Unclear API contracts
+fastify.post('/login', async (request, reply) => {
+  const { username, password } = request.body;
+  // What properties does request.body have? Unknown!
+});
+```
+
+### With TypeScript:
+```typescript
+// ✅ Type checking - bugs at compile time
+function handleGameState(state: GameState): void {
+  canvas.width = state.gameWidth;     // ✅ OK
+  canvas.height = state.gameHieght;   // ❌ Compile error: typo detected
+}
+
+// ✅ Autocomplete - IDE suggests properties
+const user: User = await getUser(123);
+console.log(user.usrname);  // ❌ Compile error: should be 'username'
+
+// ✅ Clear API contracts
+fastify.post<{ Body: LoginRequest }>(
+  '/login',
+  async (request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) => {
+    const { username, password } = request.body;
+    // TypeScript knows exactly what properties exist
+  }
+);
+```
+
+---
+
+## Complete Data Flow with TypeScript:
+
+```
+1. Frontend sends login request:
+   ┌─────────────────────────────┐
+   │ frontend/src/auth.ts        │
+   │                             │
+   │ interface LoginRequest {    │ ← Type definition
+   │   username: string;         │
+   │   password: string;         │
+   │ }                           │
+   │                             │
+   │ fetch('/api/auth/login', {  │
+   │   body: JSON.stringify({    │
+   │     username: "player1",    │ ✅ Matches type
+   │     password: "pass123"     │
+   │   })                        │
+   │ })                          │
+   └──────────┬──────────────────┘
+              │ Compiled to JavaScript by Vite
+              ↓
+   ┌──────────────────────────────┐
+   │ nginx → auth-service:3000    │
+   └──────────┬───────────────────┘
+              ↓
+2. Backend receives typed request:
+   ┌─────────────────────────────┐
+   │ auth-service/src/routes/    │
+   │ auth.ts                     │
+   │                             │
+   │ interface LoginRequest {    │ ← Same type definition
+   │   username: string;         │
+   │   password: string;         │
+   │ }                           │
+   │                             │
+   │ fastify.post<{              │
+   │   Body: LoginRequest        │ ✅ Type-safe
+   │ }>(                         │
+   │   '/login',                 │
+   │   async (req, reply) => {   │
+   │     const { username,       │
+   │             password } =     │
+   │       req.body;             │ ✅ TypeScript validates
+   │   }                         │
+   │ )                           │
+   └──────────┬──────────────────┘
+              │ Compiled to JavaScript by tsc
+              ↓
+   ┌─────────────────────────────┐
+   │ Node.js runs dist/server.js │
+   └─────────────────────────────┘
+```
+
+---
+
+## TypeScript Tools in This Project:
+
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| **tsc** | TypeScript Compiler | Compiles `.ts` → `.js` |
+| **ts-node-dev** | Development Runner | Runs TypeScript directly (dev mode) |
+| **Vite** | Frontend Build Tool | Compiles & bundles frontend TS |
+| **@types/node** | Node.js Type Definitions | Types for Node.js APIs |
+| **@types/bcrypt** | Bcrypt Type Definitions | Types for bcrypt library |
+| **tsconfig.json** | TypeScript Configuration | Compiler options |
+
+---
+
+## Summary
+
+**TypeScript** = JavaScript + Types
+
+**Why Use TypeScript in This Program?**
+
+✅ **Catch bugs early**: Type errors at compile-time, not runtime  
+✅ **Better IDE support**: Autocomplete, refactoring, inline documentation  
+✅ **Team collaboration**: Types serve as API contracts  
+✅ **Fewer runtime errors**: Most bugs caught before deployment  
+✅ **Easier maintenance**: Refactoring is safer with type checking  
+✅ **Self-documenting**: Types explain what data structures look like  
+
+**Frontend (Vite)**:
+- TypeScript source (`src/*.ts`)
+- Vite compiles to JavaScript
+- Browser runs JavaScript
+- Fast development with hot reload
+
+**Backend (Node.js + Fastify)**:
+- TypeScript source (`src/*.ts`)
+- `tsc` compiles to JavaScript (`dist/*.js`)
+- Node.js runs JavaScript
+- Type-safe API routes and database queries
+
+**Result**: Fewer bugs, better developer experience, more maintainable code!
 
 ---
 
