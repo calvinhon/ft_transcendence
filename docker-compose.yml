@@ -134,6 +134,7 @@ services:
       - game-service
       - tournament-service
       - user-service
+      - ssr-service
       - hardhat-node
     environment:
       - VAULT_ADDR=http://vault:8200
@@ -191,6 +192,18 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=user-service
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  ssr-service:
+    build: ./ssr-service
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - SERVICE_NAME=ssr-service
+      - BASE_URL=http://localhost
     mem_limit: 256m
     networks:
       - transcendence-network

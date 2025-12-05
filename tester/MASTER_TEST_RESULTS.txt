@@ -2,7 +2,7 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Fri Dec  5 19:27:01 +04 2025
+Date: Fri Dec  5 20:04:38 +04 2025
 Project: FT_Transcendence
 
 
@@ -32,12 +32,16 @@ Project: FT_Transcendence
 
 ✓ PASSED: CLI Pong Client
 
+✓ PASSED: 2FA/TOTP
+
+✓ PASSED: SSR Integration
+
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  2
+Passed:  4
 Failed:  11
-Total:   13
+Total:   15
 
 Status: SOME TESTS FAILED ✗
-Generated: Fri Dec  5 19:27:04 +04 2025
+Generated: Fri Dec  5 20:04:40 +04 2025
