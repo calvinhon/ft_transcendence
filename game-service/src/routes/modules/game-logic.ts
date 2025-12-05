@@ -194,12 +194,12 @@ export class PongGame {
     );
 
     if (moved) {
-      // Sync tournament paddles
+      // Sync tournament paddles - team arrays are the source of truth, sync TO player1/player2 paddles
       if (this.gameSettings.gameMode === 'tournament') {
         if (playerId === this.player1.userId && this.paddles.team1 && this.paddles.team1[0]) {
-          this.paddles.team1[0].y = this.paddles.player1.y;
+          this.paddles.player1.y = this.paddles.team1[0].y;
         } else if (playerId === this.player2.userId && this.paddles.team2 && this.paddles.team2[0]) {
-          this.paddles.team2[0].y = this.paddles.player2.y;
+          this.paddles.player2.y = this.paddles.team2[0].y;
         }
       }
 

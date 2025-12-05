@@ -173,6 +173,7 @@ export class GameManager {
   private inputInterval: ReturnType<typeof setInterval> | null = null;
   private arcadeInputWarningShown: boolean = false; // Track if arcade input warnings have been shown
   private lastModeLogTime: number = 0; // Track when we last logged the game mode
+  private lastTournamentDebugTime: number = 0; // Track tournament debug logging
   
   // Countdown state
   private countdownValue: number | null = null;
@@ -768,6 +769,12 @@ export class GameManager {
     if (!player1Id || !player2Id) {
       console.warn('🏆 [TOURNAMENT] Missing player IDs, cannot send paddle movements');
       return;
+    }
+    
+    // Debug log once per second
+    if (!this.lastTournamentDebugTime || Date.now() - this.lastTournamentDebugTime > 1000) {
+      console.log('🏆 [TOURNAMENT-INPUT] Using player IDs:', player1Id, 'vs', player2Id);
+      this.lastTournamentDebugTime = Date.now();
     }
     
     // Player 1 (left paddle) - W/S or Arrow keys
