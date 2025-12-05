@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: start check-docker check-compose clean clean-dev up open stop restart rebuild
+.PHONY: start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders
 
 start: check-docker check-compose clean-dev clean up open
 
@@ -14,7 +14,7 @@ restart: check-docker check-compose
 	docker compose up -d
 	@echo "✅ Services restarted!"
 
-rebuild: check-docker check-compose clean-dev
+rebuild: check-docker check-compose clean-dev ensure-database-folders
 	@echo "🔨 Rebuilding and restarting services..."
 	docker compose down
 	docker compose build --no-cache
@@ -83,10 +83,27 @@ clean:
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
-up: clean-dev
+up: clean-dev ensure-database-folders
 	@echo "🚀 Running docker compose up --build --no-cache..."
 	docker compose build --no-cache
 	docker compose up -d
+
+ensure-database-folders:
+	@echo "📁 Ensuring database folders exist for all services..."
+	@mkdir -p auth-service/database
+	@mkdir -p game-service/database
+	@mkdir -p tournament-service/database
+	@mkdir -p user-service/database
+	@touch auth-service/database/.gitkeep
+	@touch game-service/database/.gitkeep
+	@touch tournament-service/database/.gitkeep
+	@touch user-service/database/.gitkeep
+	@if [ ! -f .env ]; then \
+		echo "📝 Creating empty .env file..."; \
+		touch .env; \
+		echo "✅ .env file created"; \
+	fi
+	@echo "✅ Database folders and .env file ensured"
 
 open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."
