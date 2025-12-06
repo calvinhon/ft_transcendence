@@ -331,7 +331,7 @@ export class GameCoordinator {
     console.log('🎮 [COORDINATOR] Finding match...');
 
     const user = authService?.getCurrentUser?.();
-    if (!user || !user.userId) {
+    if (!user || !(user.userId || user.id)) {
       alert('You must be logged in to play. Redirecting to login page.');
       const gameScreen = document.getElementById('game-screen');
       const loginScreen = document.getElementById('login-screen');
@@ -397,7 +397,7 @@ export class GameCoordinator {
   private sendJoinBotGameMessage(): void {
     const user = authService?.getCurrentUser?.();
 
-    if (!user || !user.userId || !this.gameNetworkManager.isConnected()) {
+    if (!user || !(user.userId || user.id) || !this.gameNetworkManager.isConnected()) {
       return;
     }
 
@@ -412,7 +412,7 @@ export class GameCoordinator {
 
     const message: any = {
       type: 'joinBotGame',
-      userId: user.userId,
+      userId: (user.userId || user.id),
       username: user.username,
       gameSettings: gameSettings
     };

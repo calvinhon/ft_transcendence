@@ -1857,7 +1857,7 @@ export class App {
         console.warn('[App] ProfileManager not available, using fallback');
         // Fallback to basic loading if ProfileManager not available
         this.updateBasicProfileInfo(user);
-        this.loadBasicStats(user.userId);
+        this.loadBasicStats((user.userId || user.id));
       }
     } catch (error) {
       console.error('Failed to load profile data:', error);
@@ -1898,7 +1898,7 @@ export class App {
     const memberSinceEl = document.getElementById('profile-member-since');
 
     if (usernameEl) usernameEl.textContent = user.username;
-    if (userIdEl) userIdEl.textContent = `User ID: ${user.userId}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${(user.userId || user.id)}`;
     if (memberSinceEl) memberSinceEl.textContent = 'Member since: Recent';
   }
 

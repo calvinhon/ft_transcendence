@@ -64,7 +64,7 @@ export class TournamentGameManager {
 
     // Get the winner from game (this is based on displayed positions)
     const gameWinnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = gameWinnerId === user.userId;
+    const playerWon = gameWinnerId === (user.userId || user.id);
 
     // Get final scores (based on displayed positions)
     const scores = gameData.scores || { player1: 0, player2: 0 };
@@ -73,7 +73,7 @@ export class TournamentGameManager {
     console.log('🏆 [TOURNAMENT] Game result:', {
       gameWinnerId,
       gameScores: scores,
-      currentUserId: user.userId,
+      currentUserId: user.userId || user.id,
       playerWon
     });
 

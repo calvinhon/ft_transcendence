@@ -72,7 +72,7 @@ export class AppScreenManager {
   isAuthenticated(): boolean {
     const user = authService?.getCurrentUser?.();
     const token = localStorage.getItem('token');
-    return !!(user && user.userId && token);
+    return !!(user && (user.userId || user.id) && token);
   }
 
   /**

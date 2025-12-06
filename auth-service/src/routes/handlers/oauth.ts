@@ -67,9 +67,9 @@ export async function oauthCallbackHandler(
       }
     }
 
-    // Create JWT token
+    // Create JWT token with userId field (standard format)
     const token = jwt.sign(
-      { id: user.id, email: user.email, username: user.username },
+      { userId: user.id, email: user.email, username: user.username },
       config.jwt.secret,
       { expiresIn: '7d' }
     );

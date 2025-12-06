@@ -152,7 +152,7 @@ export class TournamentListManager {
     }
 
     try {
-      await this.networkManager.joinTournament(tournamentId, user.userId);
+      await this.networkManager.joinTournament(tournamentId, (user.userId || user.id));
       showToast('Successfully joined tournament!', 'success');
       this.loadTournaments();
     } catch (error) {

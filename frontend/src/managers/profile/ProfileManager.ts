@@ -44,7 +44,7 @@ export class ProfileManager {
 
     try {
       // Load user profile info
-      const userProfile = await this.dataManager.loadUserProfile(user.userId);
+      const userProfile = await this.dataManager.loadUserProfile((user.userId || user.id));
       if (userProfile) {
         this.uiManager.displayUserProfile(userProfile);
       } else {
@@ -52,19 +52,19 @@ export class ProfileManager {
       }
 
       // Load game statistics
-      const gameStats = await this.dataManager.loadGameStats(user.userId);
+      const gameStats = await this.dataManager.loadGameStats((user.userId || user.id));
       this.uiManager.displayGameStats(gameStats);
 
       // Load recent games
-      const recentGames = await this.dataManager.loadRecentGames(user.userId);
+      const recentGames = await this.dataManager.loadRecentGames((user.userId || user.id));
       this.uiManager.displayRecentGames(recentGames);
 
       // Load tournament count
-      const tournamentCount = await this.dataManager.loadTournamentCount(user.userId);
+      const tournamentCount = await this.dataManager.loadTournamentCount((user.userId || user.id));
       this.uiManager.displayTournamentCount(tournamentCount);
 
       // Load tournament rankings
-      const tournamentRankings = await this.dataManager.loadTournamentRankings(user.userId);
+      const tournamentRankings = await this.dataManager.loadTournamentRankings((user.userId || user.id));
       this.uiManager.displayTournamentRankings(tournamentRankings);
 
       logger.info('ProfileManager', 'Profile loading complete');

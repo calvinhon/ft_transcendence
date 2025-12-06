@@ -241,7 +241,7 @@ export class GameManager {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
       
-      if (user && user.userId) {
+      if (user && (user.userId || user.id)) {
         // Sync from database asynchronously
         this.syncCampaignLevelFromDatabase().then(() => {
           console.log('🎯 [CAMPAIGN] Database sync completed');
@@ -249,7 +249,7 @@ export class GameManager {
           console.warn('Background sync failed:', err);
         });
         
-        const savedLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+        const savedLevel = localStorage.getItem(`campaign_level_${(user.userId || user.id)}`);
         if (savedLevel) {
           const level = parseInt(savedLevel, 10);
           if (level >= 1 && level <= this.maxCampaignLevel) {
@@ -272,17 +272,17 @@ export class GameManager {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
       
-      if (user && user.userId) {
-        const response = await fetch(`/api/user/profile/${user.userId}`, { credentials: 'include' });
+      if (user && (user.userId || user.id)) {
+        const response = await fetch(`/api/user/profile/${(user.userId || user.id)}`, { credentials: 'include' });
         if (response.ok) {
           const profile = await response.json();
           const dbLevel = profile.campaign_level || 1; // Database level (default to 1 if not set)
-          const localLevel = localStorage.getItem(`campaign_level_${user.userId}`);
+          const localLevel = localStorage.getItem(`campaign_level_${(user.userId || user.id)}`);
           const localLevelNum = localLevel ? parseInt(localLevel, 10) : 1;
           
           // Always sync to match database value (handles both upgrades and resets)
           if (dbLevel !== localLevelNum) {
-            localStorage.setItem(`campaign_level_${user.userId}`, dbLevel.toString());
+            localStorage.setItem(`campaign_level_${(user.userId || user.id)}`, dbLevel.toString());
             this.currentCampaignLevel = dbLevel;
             console.log(`🎯 [CAMPAIGN] Synced level ${dbLevel} from database (was ${localLevelNum} in localStorage)`);
           }
@@ -298,8 +298,8 @@ export class GameManager {
       const authManager = (window as any).authManager;
       const user = authManager?.getCurrentUser();
       
-      if (user && user.userId) {
-        localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
+      if (user && (user.userId || user.id)) {
+        localStorage.setItem(`campaign_level_${(user.userId || user.id)}`, level.toString());
         console.log(`🎯 [CAMPAIGN] Saved level ${level} for player ${user.username}`);
       }
     } catch (error) {
@@ -438,7 +438,7 @@ export class GameManager {
     // Check if user is logged in before attempting to find match
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    if (!user || !user.userId) {
+    if (!user || !(user.userId || user.id)) {
       alert('You must be logged in to play. Redirecting to login page.');
       // Redirect to login page
       const gameScreen = document.getElementById('game-screen');
@@ -495,7 +495,7 @@ export class GameManager {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         console.log('Current user:', user);
-        if (!user || !user.userId) {
+        if (!user || !(user.userId || user.id)) {
           console.error('No valid user logged in!');
           reject(new Error('No valid user'));
           return;
@@ -505,7 +505,7 @@ export class GameManager {
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
-            userId: user.userId,
+            userId: user.userId || user.id,
             username: user.username
           }));
           
@@ -529,7 +529,7 @@ export class GameManager {
               // Prepare message with tournament player data if available
               const message: any = {
                 type: 'joinBotGame',
-                userId: user.userId,
+                userId: user.userId || user.id,
                 username: user.username,
                 gameSettings: gameSettings
               };
@@ -589,7 +589,7 @@ export class GameManager {
           // Send joinBotGame only after connectionAck
           const authManager = (window as any).authManager;
           const user = authManager?.getCurrentUser();
-          if (user && user.userId && this.websocket) {
+          if (user && (user.userId || user.id) && this.websocket) {
             let gameSettings: any;
             if (this.isCampaignMode) {
               gameSettings = this.getCampaignLevelSettings();
@@ -602,7 +602,7 @@ export class GameManager {
             // Prepare message with tournament player data if available
             const message: any = {
               type: 'joinBotGame',
-              userId: user.userId,
+              userId: user.userId || user.id,
               username: user.username,
               gameSettings: gameSettings
             };
@@ -903,8 +903,9 @@ export class GameManager {
     const authManager = (window as any).authManager;
     const hostUser = authManager?.getCurrentUser();
     const hostCard = document.getElementById('host-player-card');
+    const hostUserId = hostUser ? (hostUser.userId || hostUser.id).toString() : null;
     const isHostSelected = hostCard && hostCard.classList.contains('active') && 
-                           hostUser && app.selectedPlayerIds.has(hostUser.userId.toString());
+                           hostUser && hostUserId && app.selectedPlayerIds.has(hostUserId);
     
     // Log detailed player detection info every frame
     console.log('🎮 [ARCADE-INPUT] 🔍 Player Detection:');
@@ -916,9 +917,9 @@ export class GameManager {
     if (isHostSelected) {
       // Host is always first in Team 1
       team1Players.push({
-        userId: hostUser.userId,
+        userId: hostUser.userId || hostUser.id,
         username: hostUser.username,
-        id: hostUser.userId.toString(),
+        id: hostUserId,
         team: 1,
         paddleIndex: 0
       });
@@ -1734,7 +1735,7 @@ export class GameManager {
     let winnerMessage = 'Game Over!';
     
     if (result.winner && user) {
-      if (result.winner === user.userId) {
+      if (result.winner === (user.userId || user.id)) {
         winnerMessage = '🎉 You Win!';
       } else {
         winnerMessage = '😔 You Lost!';
@@ -1794,7 +1795,7 @@ export class GameManager {
   //   if (this.chatSocket && this.chatSocket.readyState === WebSocket.OPEN) {
   //     this.chatSocket.send(JSON.stringify({
   //       type: 'userConnect',
-  //       userId: user.userId,
+  //       userId: user.userId || user.id,
   //       username: user.username
   //     }));
   //   }
@@ -1808,7 +1809,7 @@ export class GameManager {
       console.log('Authenticating existing game socket');
       this.websocket.send(JSON.stringify({
         type: 'userConnect',
-        userId: user.userId,
+        userId: user.userId || user.id,
         username: user.username
       }));
     }
@@ -2020,7 +2021,7 @@ export class GameManager {
     // Check if user is logged in
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    if (!user || !user.userId) {
+    if (!user || !(user.userId || user.id)) {
       alert('You must be logged in to play. Redirecting to login page.');
       // Redirect to login page
       const gameScreen = document.getElementById('game-screen');
@@ -2078,7 +2079,7 @@ export class GameManager {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         
-        if (!user || !user.userId) {
+        if (!user || !(user.userId || user.id)) {
           console.error('🕹️ [ARCADE] No valid user logged in!');
           reject(new Error('No valid user'));
           return;
@@ -2091,14 +2092,15 @@ export class GameManager {
         
         // First, check if host player is selected - host is ALWAYS first in team 1
         const hostCard = document.getElementById('host-player-card');
+        const hostUserId = (user.userId || user.id).toString();
         const isHostSelected = hostCard && hostCard.classList.contains('active') && 
-                               app.selectedPlayerIds && app.selectedPlayerIds.has(user.userId.toString());
+                               app.selectedPlayerIds && app.selectedPlayerIds.has(hostUserId);
         
         if (isHostSelected) {
           const hostPlayer = {
-            userId: user.userId,
+            userId: user.userId || user.id,
             username: user.username,
-            id: user.userId.toString(),
+            id: hostUserId,
             team: 1,
             paddleIndex: 0 // Host is always first paddle in team 1
           };
@@ -2188,7 +2190,7 @@ export class GameManager {
         if (this.websocket) {
           const arcadeRequest: any = {
             type: 'userConnect',
-            userId: user.userId,
+            userId: user.userId || user.id,
             username: user.username,
             gameMode: gameSettings.gameMode || 'arcade', // Use actual game mode (could be 'tournament')
             // Game settings
@@ -2231,7 +2233,7 @@ export class GameManager {
               gamePlayer2: arcadeRequest.player2Id, // Always tournament player2
               tournamentId: arcadeRequest.tournamentId,
               matchId: arcadeRequest.tournamentMatchId,
-              currentUser: user.userId
+              currentUser: (user.userId || user.id)
             });
           }
           
@@ -2269,7 +2271,7 @@ export class GameManager {
     // Check if user is logged in
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    if (!user || !user.userId) {
+    if (!user || !(user.userId || user.id)) {
       alert('You must be logged in to play. Redirecting to login page.');
       // Redirect to login page
       const gameScreen = document.getElementById('game-screen');
@@ -2336,7 +2338,7 @@ export class GameManager {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         
-        if (!user || !user.userId) {
+        if (!user || !(user.userId || user.id)) {
           console.error('No valid user logged in!');
           reject(new Error('No valid user'));
           return;
@@ -2346,7 +2348,7 @@ export class GameManager {
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
-            userId: user.userId,
+            userId: user.userId || user.id,
             username: user.username
           }));
         }
@@ -2785,8 +2787,8 @@ export class GameManager {
         const authManager = (window as any).authManager;
         const user = authManager?.getCurrentUser();
         const headers = authManager?.getAuthHeaders ? authManager.getAuthHeaders() : {};
-        if (user && user.userId) {
-          const url = `/api/user/game/update-stats/${user.userId}`;
+        if (user && (user.userId || user.id)) {
+          const url = `/api/user/game/update-stats/${(user.userId || user.id)}`;
           const body = { campaign_level: this.currentCampaignLevel };
           console.log('🎯 [CAMPAIGN] Sending POST to:', url, 'with body:', body);
           console.log('🎯 [CAMPAIGN] Using headers:', headers);
@@ -3029,7 +3031,7 @@ export class GameManager {
     // Check if user is logged in
     const authManager = (window as any).authManager;
     const user = authManager?.getCurrentUser();
-    if (!user || !user.userId) {
+    if (!user || !(user.userId || user.id)) {
       alert('You must be logged in to play. Redirecting to login page.');
       const gameScreen = document.getElementById('game-screen');
       const loginScreen = document.getElementById('login-screen');
@@ -3083,7 +3085,7 @@ export class GameManager {
         const user = authManager?.getCurrentUser();
         
         // In CO-OP campaign mode, always use the latest campaign level from localStorage
-        if (!user || !user.userId) {
+        if (!user || !(user.userId || user.id)) {
           console.error('No valid user logged in!');
           reject(new Error('No valid user'));
           return;
@@ -3100,7 +3102,7 @@ export class GameManager {
         if (this.websocket) {
           this.websocket.send(JSON.stringify({
             type: 'userConnect',
-            userId: user.userId,
+            userId: user.userId || user.id,
             username: user.username
           }));
           
@@ -3159,7 +3161,7 @@ export class GameManager {
     
     // Check if player won (accept either `winner` or `winnerId` from backend)
     const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = winnerId === user.userId;
+    const playerWon = winnerId === (user.userId || user.id);
     
     if (playerWon && this.isCampaignMode) {
       console.log('🎯 [CAMPAIGN] Player won! Progressing to next level');
@@ -3187,7 +3189,7 @@ export class GameManager {
     
     // Check if player won
     const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = winnerId === user.userId;
+    const playerWon = winnerId === (user.userId || user.id);
     
     // Get final scores
     const scores = gameData.scores || { player1: 0, player2: 0 };
@@ -3291,7 +3293,7 @@ export class GameManager {
     
     // Get the winner from game (this is based on displayed positions)
     const gameWinnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = gameWinnerId === user.userId;
+    const playerWon = gameWinnerId === (user.userId || user.id);
     
     // Get final scores (based on displayed positions)
     const scores = gameData.scores || { player1: 0, player2: 0 };
@@ -3300,7 +3302,7 @@ export class GameManager {
     console.log('🏆 [TOURNAMENT] Game result:', {
       gameWinnerId,
       gameScores: scores,
-      currentUserId: user.userId,
+      currentUserId: user.userId || user.id,
       playerWon
     });
     

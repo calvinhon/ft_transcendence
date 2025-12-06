@@ -77,22 +77,22 @@ export class ProfileManager {
     }
 
     try {
-      console.log('[ProfileManager] Loading profile for user:', user.userId);
+      console.log('[ProfileManager] Loading profile for user:', (user.userId || user.id));
       
       // Load user profile info
-      await this.loadUserInfo(user.userId);
+      await this.loadUserInfo((user.userId || user.id));
       
       // Load game statistics
-      await this.loadGameStats(user.userId);
+      await this.loadGameStats((user.userId || user.id));
       
       // Load recent games
-      await this.loadRecentGames(user.userId);
+      await this.loadRecentGames((user.userId || user.id));
       
       // Load tournament count
-      await this.loadTournamentCount(user.userId);
+      await this.loadTournamentCount((user.userId || user.id));
       
       // Load tournament rankings
-      await this.loadTournamentRankings(user.userId);
+      await this.loadTournamentRankings((user.userId || user.id));
       
       console.log('[ProfileManager] Profile loading complete');
     } catch (error) {

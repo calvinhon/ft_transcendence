@@ -59,7 +59,7 @@ export class BlockchainManager {
           ...authManager.getAuthHeaders()
         },
         body: JSON.stringify({
-          userId: user.userId,
+          userId: (user.userId || user.id),
           tournamentId: 1, // Placeholder - should be from actual tournament
           prizeName: 'Tournament Victory'
         })

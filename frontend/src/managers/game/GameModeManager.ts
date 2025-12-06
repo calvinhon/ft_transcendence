@@ -211,13 +211,13 @@ export class GameModeManager {
       // Check if host is selected
       const hostCard = document.getElementById('host-player-card');
       const isHostSelected = hostCard && hostCard.classList.contains('active') &&
-                 playerManager.isPlayerSelected(user.userId.toString());
+                 playerManager.isPlayerSelected((user.userId || user.id).toString());
 
       if (isHostSelected) {
         team1Players.push({
-          userId: user.userId,
+          userId: (user.userId || user.id),
           username: user.username,
-          id: user.userId.toString(),
+          id: (user.userId || user.id).toString(),
           team: 1,
           paddleIndex: 0
         });
@@ -327,7 +327,7 @@ export class GameModeManager {
     if (!user) return;
 
     const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = winnerId === user.userId;
+    const playerWon = winnerId === (user.userId || user.id);
 
     this.campaignManager.handleGameEnd(playerWon,
       () => this.gameUIManager.showLevelUpMessage(() => this.restartCampaignLevel()),
@@ -342,7 +342,7 @@ export class GameModeManager {
     if (!user) return;
 
     const winnerId = (typeof gameData.winner === 'number') ? gameData.winner : gameData.winnerId;
-    const playerWon = winnerId === user.userId;
+    const playerWon = winnerId === (user.userId || user.id);
 
     const scores = gameData.scores || { player1: 0, player2: 0 };
     const finalScoreText = `${scores.player1} - ${scores.player2}`;
@@ -368,7 +368,7 @@ export class GameModeManager {
     let winnerMessage = 'Game Over!';
 
     if (gameData.winner && user) {
-      winnerMessage = gameData.winner === user.userId ? '🎉 You Win!' : '😔 You Lost!';
+      winnerMessage = gameData.winner === (user.userId || user.id) ? '🎉 You Win!' : '😔 You Lost!';
     }
 
     const finalScores = gameData.scores ?
