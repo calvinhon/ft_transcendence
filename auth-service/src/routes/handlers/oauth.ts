@@ -30,7 +30,9 @@ export async function oauthCallbackHandler(
     let userInfo: any;
 
     // Handle different OAuth providers
-    if (provider === 'google') {
+    if (provider === '42') {
+      userInfo = await exchange42Code(code);
+    } else if (provider === 'google') {
       userInfo = await exchangeGoogleCode(code);
     } else if (provider === 'github') {
       userInfo = await exchangeGithubCode(code);
@@ -81,12 +83,55 @@ export async function oauthCallbackHandler(
       maxAge: 7 * 24 * 60 * 60 // 7 days
     });
 
-    // Redirect to frontend with token in query (fallback)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    reply.redirect(`${frontendUrl}?token=${token}&userId=${user.id}`);
+    // Redirect to frontend with success parameters
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost';
+    console.log(`✅ OAuth success for provider ${provider}, user: ${user.username}, redirecting to: ${frontendUrl}?code=success&provider=${provider}`);
+    reply.redirect(`${frontendUrl}?code=success&provider=${provider}`);
   } catch (err) {
-    console.error('OAuth callback error:', err);
-    reply.status(500).send({ error: 'OAuth authentication failed' });
+    console.error('❌ OAuth callback error:', err);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost';
+    reply.redirect(`${frontendUrl}?code=error&message=${encodeURIComponent((err as Error).message)}`);
+  }
+}
+
+/**
+ * Exchange 42 School authorization code for access token and user info
+ */
+async function exchange42Code(code: string): Promise<any> {
+  try {
+    const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=42`;
+    console.log(`🔄 Exchanging 42 code for token, callback URL: ${callbackUrl}`);
+    
+    const response = await axios.post('https://api.intra.42.fr/oauth/token', {
+      code,
+      client_id: process.env.SCHOOL42_CLIENT_ID,
+      client_secret: process.env.SCHOOL42_CLIENT_SECRET,
+      redirect_uri: callbackUrl,
+      grant_type: 'authorization_code'
+    });
+
+    const { access_token } = response.data;
+    console.log(`✅ Got 42 access token`);
+
+    // Get user info from 42 API
+    const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    // Transform 42 API response to match our format
+    const user42 = userResponse.data;
+    console.log(`✅ Got 42 user info: ${user42.login} (${user42.email})`);
+    
+    return {
+      email: user42.email,
+      name: user42.login,
+      login: user42.login,
+      picture: user42.image?.link || user42.image_url,
+      id: user42.id
+    };
+  } catch (error: any) {
+    console.error('❌ 42 OAuth exchange error:', error.response?.data || error.message);
+    throw error;
   }
 }
 
@@ -141,7 +186,7 @@ async function exchangeGithubCode(code: string): Promise<any> {
 export async function oauthInitHandler(
   request: FastifyRequest<{
     Querystring: {
-      provider: 'google' | 'github';
+      provider: '42' | 'google' | 'github';
     };
   }>,
   reply: FastifyReply
@@ -149,7 +194,7 @@ export async function oauthInitHandler(
   try {
     const { provider } = request.query;
 
-    if (!provider || !['google', 'github'].includes(provider)) {
+    if (!provider || !['42', 'google', 'github'].includes(provider)) {
       reply.status(400).send({ error: 'Invalid provider' });
       return;
     }
@@ -159,7 +204,16 @@ export async function oauthInitHandler(
 
     let authUrl: string;
 
-    if (provider === 'google') {
+    if (provider === '42') {
+      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=42`;
+      authUrl = `https://api.intra.42.fr/oauth/authorize?${new URLSearchParams({
+        client_id: process.env.SCHOOL42_CLIENT_ID || '',
+        redirect_uri: callbackUrl,
+        response_type: 'code',
+        scope: 'public',
+        state
+      }).toString()}`;
+    } else if (provider === 'google') {
       authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID || '',
         redirect_uri: `${process.env.AUTH_SERVICE_URL || 'http://localhost:3000'}/oauth/callback?provider=google`,

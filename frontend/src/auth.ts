@@ -172,17 +172,16 @@ export class AuthManager {
         credentials: 'include'
       });
 
-      const data: VerifyResponse = await response.json();
+      const result: any = await response.json();
+      console.log('Verify response:', result);
       
-      if (response.ok && data.valid) {
-        console.log('Token verified successfully');
-        this.currentUser = data.user || null;
+      // Handle nested response structure: { success: true, data: { valid: true, user: {...} } }
+      if (response.ok && result.success && result.data?.valid) {
+        console.log('Token verified successfully, user:', result.data.user);
+        this.currentUser = result.data.user || null;
         return true;
       } else {
-        console.log('Token verification failed:', data.error);
-        if (data.expired) {
-          console.log('Token has expired');
-        }
+        console.log('Token verification failed:', result.error || 'No valid data');
         this.logout();
         return false;
       }
@@ -216,6 +215,69 @@ export class AuthManager {
 
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  // OAuth Sign-In Methods
+  async loginWithSchool42(): Promise<void> {
+    console.log('Initiating 42 School OAuth login...');
+    window.location.href = `${this.baseURL}/oauth/init?provider=42`;
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    console.log('Initiating Google OAuth login...');
+    window.location.href = `${this.baseURL}/oauth/init?provider=google`;
+  }
+
+  async loginWithGithub(): Promise<void> {
+    console.log('Initiating GitHub OAuth login...');
+    window.location.href = `${this.baseURL}/oauth/init?provider=github`;
+  }
+
+  // Handle OAuth callback
+  async handleOAuthCallback(): Promise<AuthResult> {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const provider = urlParams.get('provider');
+
+    if (!code || !provider) {
+      return {
+        success: false,
+        error: 'Missing OAuth parameters'
+      };
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/oauth/callback?code=${code}&provider=${provider}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      const data: AuthResponse = await response.json();
+
+      if (response.ok && data.success) {
+        this.currentUser = data.user;
+        console.log('OAuth login successful:', this.currentUser);
+        
+        // Clear OAuth parameters from URL
+        window.history.replaceState({}, document.title, '/');
+        
+        return {
+          success: true,
+          data
+        };
+      } else {
+        return {
+          success: false,
+          error: data.message || 'OAuth authentication failed'
+        };
+      }
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'OAuth callback failed'
+      };
+    }
   }
 }
 

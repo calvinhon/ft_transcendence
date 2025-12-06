@@ -4177,3 +4177,93 @@ html {
     order: -1;
   }
 }
+
+/* OAuth Sign-In Buttons */
+.oauth-divider {
+  position: relative;
+  margin: 20px 0;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: var(--panel-border);
+}
+
+.oauth-divider::before {
+  left: 0;
+}
+
+.oauth-divider::after {
+  right: 0;
+}
+
+.oauth-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.oauth-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  font-family: var(--font-secondary);
+  transition: all 0.3s ease;
+}
+
+.oauth-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.oauth-btn:active {
+  transform: translateY(0);
+}
+
+.oauth-btn i {
+  font-size: var(--font-size-lg);
+}
+
+.school42-btn {
+  background: #00babc;
+  color: white;
+}
+
+.school42-btn:hover {
+  background: #009fa0;
+}
+
+.google-btn {
+  background: #4285f4;
+  color: white;
+}
+
+.google-btn:hover {
+  background: #357ae8;
+}
+
+.github-btn {
+  background: #333;
+  color: white;
+}
+
+.github-btn:hover {
+  background: #24292e;
+}
+

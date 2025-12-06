@@ -34,16 +34,20 @@ export class Router {
   }
 
   navigateToPath(path: string, pushState: boolean = true): void {
+    console.log(`[Router] navigateToPath() called with path: ${path}, pushState: ${pushState}`);
     const route = this.findRoute(path);
     if (!route) {
+      console.error(`[Router] No route found for path: ${path}, redirecting to /login`);
       this.navigateToPath('/login');
       return;
     }
+    console.log(`[Router] Found route, screen: ${route.screen}, requiresAuth: ${route.requiresAuth}`);
     if (pushState) {
       window.history.pushState({ path }, route.title, path);
     }
     document.title = route.title;
     this.currentRoute = route;
+    console.log(`[Router] Calling app.showScreenDirect(${route.screen})`);
     this.app.showScreenDirect(route.screen);
   }
 
@@ -56,9 +60,13 @@ export class Router {
   }
 
   navigate(screen: string): void {
+    console.log(`[Router] navigate() called with screen: ${screen}`);
     const route = this.routes.find(r => r.screen === screen);
     if (route) {
+      console.log(`[Router] Found route for ${screen}, path: ${route.path}`);
       this.navigateToPath(route.path);
+    } else {
+      console.error(`[Router] No route found for screen: ${screen}`);
     }
   }
 

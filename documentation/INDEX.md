@@ -105,7 +105,7 @@
 ```
 ✅ Backend Framework (Fastify)                 10 pts
 ✅ Database (SQLite)                           10 pts
-✅ Blockchain (Solidity/Hardhat)              10 pts
+✅ Blockchain (Solidity/Hardhat)               10 pts
 ✅ AI Opponent                                 10 pts
 ✅ Stats Dashboards                            10 pts
 ✅ Microservices Architecture                  10 pts

@@ -166,6 +166,13 @@ services:
       - PORT=3000
       - SERVICE_NAME=auth-service
       - NODE_ENV=development
+      - SCHOOL42_CLIENT_ID=${SCHOOL42_CLIENT_ID}
+      - SCHOOL42_CLIENT_SECRET=${SCHOOL42_CLIENT_SECRET}
+      - SCHOOL42_CALLBACK_URL=${SCHOOL42_CALLBACK_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
     mem_limit: 256m
     networks:
       - transcendence-network
