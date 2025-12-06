@@ -10,7 +10,7 @@ services:
       - game-service
       - tournament-service
       - user-service
-      - blockchain
+      - blockchain-service
     networks:
       - transcendence-network
 
@@ -75,14 +75,14 @@ services:
       - ./blockchain/scripts:/app/scripts
       - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments
-    env_file:
-      - .env
     networks:
       - transcendence-network
     healthcheck:
       test:
         - CMD-SHELL
-        - wget -q --spider http://localhost:8545 || exit 1
+        - |
+          curl -fsS http://localhost:8545 >/dev/null \
+          && test -f /app/deployments/contract-address.json
       interval: 10s
       timeout: 5s
       retries: 5
@@ -112,6 +112,8 @@ services:
     volumes:
       - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments
+    env_file:
+      - .env
     depends_on:
       blockchain:
         condition: service_healthy

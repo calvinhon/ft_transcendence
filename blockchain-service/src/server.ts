@@ -1,53 +1,84 @@
-import express from 'express';
-import cors from 'cors';
+import 'dotenv/config';
+import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import cors from '@fastify/cors';
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const fastify = Fastify({ logger: true });
 
-const RPC = process.env.BLOCKCHAIN_RPC_URL || 'http://hardhat-node:8545';
-
-const PK = process.env.PRIVATE_KEY;
-if (!PK)
-  throw new Error('PRIVATE_KEY environment variable is required to create signer');
+// Env and config
+const RPC = process.env.BLOCKCHAIN_RPC_URL || 'http://blockchain:8545';
+const DEFAULT_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+const PK = process.env.PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 let CONTRACT = process.env.CONTRACT_ADDRESS;
 if (!CONTRACT) {
-  const deploymentPath = path.join(__dirname, '/app/deployments/contract-address.json');
-  if (fs.existsSync(deploymentPath))
-    CONTRACT = JSON.parse(fs.readFileSync(deploymentPath, 'utf8')).address as string;
-  else
-    throw new Error('Contract address is required for blockchain interaction');
+  const deploymentPath = path.join('/app/deployments', 'contract-address.json');
+  if (fs.existsSync(deploymentPath)) {
+    try {
+      const { address } = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
+      CONTRACT = address;
+    } catch (e) {
+      fastify.log.error({ err: e }, '[blockchain-service] Failed to parse deployment file');
+    }
+  }
 }
 
+if (!PK) {
+  fastify.log.error('[blockchain-service] PRIVATE_KEY missing');
+  process.exit(1);
+}
+if (!CONTRACT) {
+  fastify.log.error('[blockchain-service] CONTRACT_ADDRESS not set and deployments file missing');
+  process.exit(1);
+}
+
+// Ethers setup
 const provider = new ethers.JsonRpcProvider(RPC);
 const signer = new ethers.Wallet(PK, provider);
 
-const abiPath = path.join(__dirname, '/app/artifacts/contracts/TournamentRankings.sol/TournamentRankings.json');
+const abiPath = '/app/artifacts/contracts/TournamentRankings.sol/TournamentRankings.json';
+if (!fs.existsSync(abiPath)) {
+  fastify.log.error('[blockchain-service] ABI not found at ' + abiPath);
+  process.exit(1);
+}
 const abi = JSON.parse(fs.readFileSync(abiPath, 'utf8')).abi;
 const contract = new ethers.Contract(CONTRACT, abi, signer);
 
-app.post('/record', async (req, res) => {
+// Routes
+fastify.post('/record', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { tournamentId, walletAddress, rank } = req.body;
-    const tx = await contract.recordRank(tournamentId, walletAddress, rank);
+    const body = request.body as { tournamentId: number; walletAddress: string; rank: number };
+    const tx = await contract.recordRank(body.tournamentId, body.walletAddress, body.rank);
     const receipt = await tx.wait();
-    res.json({ ok: true, txHash: receipt?.hash });
+    return reply.send({ ok: true, txHash: receipt?.hash });
   } catch (e: any) {
-    res.status(500).json({ ok: false, error: e.message });
+    fastify.log.error({ err: e }, '[blockchain-service] /record error');
+    return reply.status(500).send({ ok: false, error: e.message });
   }
 });
 
-app.get('/rank/:tid/:addr', async (req, res) => {
+fastify.get('/rank/:tid/:addr', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const r = await contract.getRank(+req.params.tid, req.params.addr);
-    res.json({ rank: Number(r) });
+    const { tid, addr } = request.params as { tid: string; addr: string };
+    const r = await contract.getRank(Number(tid), addr);
+    return reply.send({ rank: Number(r) });
   } catch (e: any) {
-    res.status(500).json({ ok: false, error: e.message });
+    fastify.log.error({ err: e }, '[blockchain-service] /rank error');
+    return reply.status(500).send({ ok: false, error: e.message });
   }
 });
 
-export default app;
+// Bootstrap without top-level await
+async function start() {
+  try {
+    await fastify.register(cors, { origin: true });
+    await fastify.listen({ port: Number(process.env.PORT || 3000), host: '0.0.0.0' });
+    fastify.log.info(`[blockchain-service] Listening on ${Number(process.env.PORT || 3000)}, RPC=${RPC}, contract=${CONTRACT}`);
+  } catch (err) {
+    fastify.log.error({ err }, 'Failed to start blockchain-service');
+    process.exit(1);
+  }
+}
+start();

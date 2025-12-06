@@ -6,6 +6,8 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN apk add --no-cache curl
+
 COPY hardhat.config.cjs ./
 COPY contracts ./contracts
 COPY scripts ./scripts

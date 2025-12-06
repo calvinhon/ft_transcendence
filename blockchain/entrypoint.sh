@@ -1,15 +1,17 @@
 #!/bin/sh
+set -e
 
-# Start Hardhat node in background
-npx hardhat node --hostname 0.0.0.0 &
+# start hardhat node
+npx hardhat node --hostname 0.0.0.0 --port 8545 &
 
-# Wait for the node to be ready
-echo "Waiting for Hardhat node to start..."
-sleep 5
+# wait a moment for node
+sleep 3
 
-# Deploy contracts
-echo "Deploying contracts..."
-npx hardhat run scripts/deploy.ts --network localhost
+# compile and deploy
+npx hardhat compile
+npx hardhat run scripts/deploy.ts --network localhost || {
+  echo "Deploy failed"; exit 1;
+}
 
-# Keep the node running in foreground
-wait
+# keep container alive (node already running)
+tail -f /dev/null

@@ -297,7 +297,6 @@ async function routes(fastify: FastifyInstance): Promise<void> {
       [winnerParticipant.user_id, player1Score, player2Score, matchId]
     );
 
-    // Ensure next round is created/linked if needed
     await checkAndCreateNextRound(fastify, matchId);
 
     // Find tournamentId for this match

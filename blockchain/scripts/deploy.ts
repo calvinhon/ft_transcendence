@@ -1,26 +1,24 @@
-import { ethers } from "hardhat";
-import fs from "fs";
-import path from "path";
+import pkg from 'hardhat';
+const { ethers } = pkg;
 
 async function main() {
-  const TournamentRankings = await ethers.getContractFactory("TournamentRankings");
+  const [deployer] = await ethers.getSigners();
+  console.log('Deploying with:', await deployer.getAddress());
+
+  const TournamentRankings = await ethers.getContractFactory('TournamentRankings');
   const contract = await TournamentRankings.deploy();
   await contract.waitForDeployment();
-
   const address = await contract.getAddress();
-  console.log("TournamentRankings deployed to:", address);
+  console.log('TournamentRankings deployed at:', address);
 
-  const deploymentInfo = {
-    address: address,
-    deployedAt: new Date().toISOString()
-  };
-  
-  const outputPath = path.join(__dirname, "../deployments/contract-address.json");
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, JSON.stringify(deploymentInfo, null, 2));
+  const fs = await import('fs');
+  const path = await import('path');
+  const dir = path.join(process.cwd(), 'deployments');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'contract-address.json'), JSON.stringify({ address }, null, 2));
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
 });
