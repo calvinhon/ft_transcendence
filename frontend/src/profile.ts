@@ -135,7 +135,7 @@ export class ProfileManager {
     const memberSinceEl = document.getElementById('profile-member-since');
     
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
-    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || 'Unknown'}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || user?.id || 'Unknown'}`;
     if (memberSinceEl) memberSinceEl.textContent = `Member since: ${new Date().toLocaleDateString()}`;
   }
 
@@ -161,7 +161,7 @@ export class ProfileManager {
     console.log('[ProfileManager] Campaign level value from API:', userInfo.campaign_level);
     
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
-    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || 'Unknown'}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || user?.id || 'Unknown'}`;
     if (memberSinceEl) memberSinceEl.textContent = `Member since: ${new Date(userInfo.created_at).toLocaleDateString()}`;
     if (displayNameEl) displayNameEl.textContent = userInfo.display_name || user?.username || 'Unknown';
     if (bioEl) bioEl.textContent = userInfo.bio || 'No bio provided';
