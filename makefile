@@ -35,14 +35,14 @@ help:
 # Quick start - fastest option (use cached builds)
 start: check-docker check-compose ensure-database-folders
 	@echo "🚀 Quick starting services with cache..."
-	docker compose up -d --build
+	docker compose up -d --build --force-recreate
 	@$(MAKE) open
 	@echo "✅ Services started! Visit http://localhost"
 
 # Dev mode - core services only (no monitoring stack)
 dev: check-docker check-compose ensure-database-folders
 	@echo "⚡ Starting DEV MODE (core services only, no monitoring)..."
-	docker compose -f docker-compose.core.yml up -d --build
+	docker compose -f docker-compose.core.yml up -d --build --force-recreate
 	@$(MAKE) open
 	@echo "✅ Core services started! Visit http://localhost"
 	@echo "💡 To add monitoring: make monitoring-start"
@@ -50,7 +50,7 @@ dev: check-docker check-compose ensure-database-folders
 # Full stack with monitoring
 full: check-docker check-compose ensure-database-folders
 	@echo "🚀 Starting FULL STACK (with monitoring)..."
-	docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up -d --build
+	docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up -d --build --force-recreate
 	@$(MAKE) open
 	@echo "✅ Full stack started! Visit http://localhost"
 	@echo "📊 Monitoring: Kibana (5601), Grafana (3000), Prometheus (9090)"
@@ -74,7 +74,7 @@ monitoring-stop: check-docker check-compose
 full-start: check-docker check-compose clean-dev clean ensure-database-folders
 	@echo "🚀 Full start with clean build..."
 	docker compose build
-	docker compose up -d
+	docker compose up -d --force-recreate
 	@$(MAKE) open
 	@echo "✅ Services started! Visit http://localhost"
 
@@ -87,7 +87,7 @@ rebuild: check-docker check-compose clean-dev ensure-database-folders
 	@echo "🔨 Rebuilding and restarting services..."
 	docker compose down
 	docker compose build --no-cache
-	docker compose up -d
+	docker compose up -d --force-recreate
 	@echo "✅ Services rebuilt and started!"
 
 check-docker:
@@ -154,7 +154,7 @@ clean:
 
 up: ensure-database-folders
 	@echo "🚀 Running docker compose up with build cache..."
-	docker compose up -d --build
+	docker compose up -d --build --force-recreate
 
 ensure-database-folders:
 	@echo "📁 Ensuring database folders exist for all services..."
