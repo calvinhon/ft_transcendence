@@ -171,7 +171,7 @@ export class AppAuthManager {
 
     if (user) {
       return {
-        userId: user.userId,
+        userId: (user.userId || user.id),
         username: user.username
       };
     }

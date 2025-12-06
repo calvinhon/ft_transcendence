@@ -270,7 +270,7 @@ export class AppUIManager {
         console.warn('[AppUIManager] ProfileManager not available, using fallback');
         // Fallback to basic loading if ProfileManager not available
         this.updateBasicProfileInfo(user);
-        await this.loadBasicStats(user.userId);
+        await this.loadBasicStats((user.userId || user.id));
       }
     } catch (error) {
       logger.error('AppUIManager', 'Failed to load profile data', error);
@@ -288,7 +288,7 @@ export class AppUIManager {
     const memberSinceEl = document.getElementById('profile-member-since');
 
     if (usernameEl) usernameEl.textContent = user.username;
-    if (userIdEl) userIdEl.textContent = `User ID: ${user.userId}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${(user.userId || user.id)}`;
     if (memberSinceEl) memberSinceEl.textContent = 'Member since: Recent';
   }
 

@@ -7,6 +7,13 @@ import { logoutHandler } from './handlers/logout';
 import { profileHandler } from './handlers/profile';
 import { forgotPasswordHandler } from './handlers/forgotPassword';
 import { resetPasswordHandler } from './handlers/resetPassword';
+import { oauthInitHandler, oauthCallbackHandler } from './handlers/oauth';
+import {
+  handleSetup2FA,
+  handleVerify2FA,
+  handleDisable2FA,
+  handleGet2FAStatus,
+} from './handlers/twoFactorHandlers.js';
 
 async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
   // Register routes
@@ -18,6 +25,16 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.post('/forgot-password', forgotPasswordHandler);
   fastify.post('/reset-password', resetPasswordHandler);
 
+  // OAuth routes
+  fastify.get('/oauth/init', oauthInitHandler);
+  fastify.get('/oauth/callback', oauthCallbackHandler);
+
+  // 2FA routes
+  fastify.post('/2fa/setup', handleSetup2FA);
+  fastify.post('/2fa/verify', handleVerify2FA);
+  fastify.post('/2fa/disable', handleDisable2FA);
+  fastify.get('/2fa/status', handleGet2FAStatus);
+
   // Also register with /auth prefix for direct access (e.g., from Vite proxy)
   fastify.post('/auth/register', registerHandler);
   fastify.post('/auth/login', loginHandler);
@@ -26,6 +43,14 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.get('/auth/profile/:userId', profileHandler);
   fastify.post('/auth/forgot-password', forgotPasswordHandler);
   fastify.post('/auth/reset-password', resetPasswordHandler);
+  fastify.get('/auth/oauth/init', oauthInitHandler);
+  fastify.get('/auth/oauth/callback', oauthCallbackHandler);
+  
+  // 2FA routes with /auth prefix
+  fastify.post('/auth/2fa/setup', handleSetup2FA);
+  fastify.post('/auth/2fa/verify', handleVerify2FA);
+  fastify.post('/auth/2fa/disable', handleDisable2FA);
+  fastify.get('/auth/2fa/status', handleGet2FAStatus);
 
   return Promise.resolve();
 }

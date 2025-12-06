@@ -53,7 +53,7 @@ export class AuthManager {
       // Store token and user data
       this.tokenManager.setToken(result.data.token);
       this.sessionManager.setCurrentUser({
-        userId: result.data.user.userId,
+        userId: result.data.(user.userId || user.id),
         username: result.data.user.username,
         ...(result.data.user.email && { email: result.data.user.email })
       });
@@ -69,7 +69,7 @@ export class AuthManager {
       // Store token and user data
       this.tokenManager.setToken(result.data.token);
       this.sessionManager.setCurrentUser({
-        userId: result.data.user.userId,
+        userId: result.data.(user.userId || user.id),
         username: result.data.user.username,
         ...(result.data.user.email && { email: result.data.user.email })
       });

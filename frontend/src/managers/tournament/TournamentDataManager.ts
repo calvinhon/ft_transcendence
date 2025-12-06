@@ -118,7 +118,7 @@ export class TournamentDataManager {
 
     // Get selected participants
     const selectedCheckboxes = document.querySelectorAll('.participant-checkbox:checked');
-    const participantIds: number[] = [user.userId]; // Host is always included
+    const participantIds: number[] = [(user.userId || user.id)]; // Host is always included
 
     selectedCheckboxes.forEach((checkbox: any) => {
       const userId = parseInt(checkbox.getAttribute('data-user-id'));
@@ -149,7 +149,7 @@ export class TournamentDataManager {
       name: tournamentName,
       description: formData.get('tournament-description') as string || '',
       maxParticipants: parseInt(formData.get('max-participants') as string) || 8,
-      createdBy: user.userId,
+      createdBy: (user.userId || user.id),
       participants: participantIds
     };
 

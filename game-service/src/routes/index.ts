@@ -41,6 +41,22 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
+  // Get overall statistics dashboard
+  fastify.get('/stats', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const onlineUsers = getOnlineUsers();
+      const stats = {
+        onlineUsers: onlineUsers.length,
+        timestamp: new Date().toISOString(),
+        service: 'game-service'
+      };
+      sendSuccess(reply, stats);
+    } catch (error) {
+      logger.error('Error fetching stats:', error);
+      sendError(reply, 'Error fetching statistics', 500);
+    }
+  });
+
   // Get game statistics
   fastify.get<{
     Params: { userId: string };

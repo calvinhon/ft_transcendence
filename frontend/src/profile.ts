@@ -77,22 +77,22 @@ export class ProfileManager {
     }
 
     try {
-      console.log('[ProfileManager] Loading profile for user:', user.userId);
+      console.log('[ProfileManager] Loading profile for user:', (user.userId || user.id));
       
       // Load user profile info
-      await this.loadUserInfo(user.userId);
+      await this.loadUserInfo((user.userId || user.id));
       
       // Load game statistics
-      await this.loadGameStats(user.userId);
+      await this.loadGameStats((user.userId || user.id));
       
       // Load recent games
-      await this.loadRecentGames(user.userId);
+      await this.loadRecentGames((user.userId || user.id));
       
       // Load tournament count
-      await this.loadTournamentCount(user.userId);
+      await this.loadTournamentCount((user.userId || user.id));
       
       // Load tournament rankings
-      await this.loadTournamentRankings(user.userId);
+      await this.loadTournamentRankings((user.userId || user.id));
       
       console.log('[ProfileManager] Profile loading complete');
     } catch (error) {
@@ -135,7 +135,7 @@ export class ProfileManager {
     const memberSinceEl = document.getElementById('profile-member-since');
     
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
-    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || 'Unknown'}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || user?.id || 'Unknown'}`;
     if (memberSinceEl) memberSinceEl.textContent = `Member since: ${new Date().toLocaleDateString()}`;
   }
 
@@ -161,7 +161,7 @@ export class ProfileManager {
     console.log('[ProfileManager] Campaign level value from API:', userInfo.campaign_level);
     
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
-    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || 'Unknown'}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || user?.id || 'Unknown'}`;
     if (memberSinceEl) memberSinceEl.textContent = `Member since: ${new Date(userInfo.created_at).toLocaleDateString()}`;
     if (displayNameEl) displayNameEl.textContent = userInfo.display_name || user?.username || 'Unknown';
     if (bioEl) bioEl.textContent = userInfo.bio || 'No bio provided';

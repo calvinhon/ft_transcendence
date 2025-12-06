@@ -434,6 +434,38 @@ export class App {
       this.handleRegister();
     });
 
+    // OAuth buttons - Login
+    document.getElementById('school42-login-btn')?.addEventListener('click', () => {
+      console.log('🔵 42 School login button clicked');
+      this.handleOAuthLogin('42');
+    });
+
+    document.getElementById('google-login-btn')?.addEventListener('click', () => {
+      console.log('🔵 Google login button clicked');
+      this.handleOAuthLogin('google');
+    });
+
+    document.getElementById('github-login-btn')?.addEventListener('click', () => {
+      console.log('🔵 GitHub login button clicked');
+      this.handleOAuthLogin('github');
+    });
+
+    // OAuth buttons - Register
+    document.getElementById('school42-register-btn')?.addEventListener('click', () => {
+      console.log('🔵 42 School register button clicked');
+      this.handleOAuthLogin('42');
+    });
+
+    document.getElementById('google-register-btn')?.addEventListener('click', () => {
+      console.log('🔵 Google register button clicked');
+      this.handleOAuthLogin('google');
+    });
+
+    document.getElementById('github-register-btn')?.addEventListener('click', () => {
+      console.log('🔵 GitHub register button clicked');
+      this.handleOAuthLogin('github');
+    });
+
     // Forgot password form
     this.forgotPasswordForm.addEventListener('submit', (e: Event) => {
       e.preventDefault();
@@ -781,7 +813,8 @@ export class App {
     if (!authManager) return false;
     
     const user = authManager.getCurrentUser();
-    return !!(user && user.userId);
+    // Check for both userId (normal login) and id (OAuth login)
+    return !!(user && (user.userId || user.id));
   }
 
   // Show screen directly (used by router)
@@ -921,6 +954,23 @@ export class App {
     }
   }
 
+  handleOAuthLogin(provider: '42' | 'google' | 'github'): void {
+    console.log(`Initiating ${provider} OAuth login...`);
+    const authManager = (window as any).authManager;
+    if (authManager) {
+      if (provider === '42') {
+        authManager.loginWithSchool42();
+      } else if (provider === 'google') {
+        authManager.loginWithGoogle();
+      } else if (provider === 'github') {
+        authManager.loginWithGithub();
+      }
+    } else {
+      console.error('AuthManager not found');
+      showToast('Authentication system not ready', 'error');
+    }
+  }
+
   async handleForgotPassword(): Promise<void> {
     const emailInput = document.getElementById('forgot-password-email') as HTMLInputElement;
     const email = emailInput.value.trim();
@@ -958,6 +1008,45 @@ export class App {
   async checkExistingLogin(): Promise<void> {
     const authManager = (window as any).authManager;
     if (!authManager) return;
+
+    // Check if this is an OAuth callback success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('code') === 'success' && urlParams.has('provider')) {
+      console.log('✅ OAuth callback detected, verifying token...');
+      
+      // Verify the token that was set by OAuth callback
+      const isValid = await authManager.verifyToken();
+      console.log('Token verification result:', isValid);
+      
+      if (isValid) {
+        const user = authManager.getCurrentUser();
+        console.log('✅ Current user after OAuth:', user);
+        if (user) {
+          // Clear OAuth parameters from URL AFTER successful verification
+          window.history.replaceState({}, document.title, '/');
+          console.log('🎯 Showing welcome toast and navigating to main-menu...');
+          showToast(`Welcome, ${user.username}!`, 'success');
+          console.log('🚀 Calling router.navigate(main-menu)...');
+          this.router.navigate('main-menu');
+          console.log('📊 Updating user display...');
+          this.updateUserDisplay();
+          this.updateHostPlayerDisplay();
+          console.log('✅ OAuth login complete, should be on main-menu now');
+          return;
+        } else {
+          console.error('❌ User is null after valid token verification');
+        }
+      } else {
+        console.error('❌ Token verification returned false');
+      }
+      // Clear URL even on failure
+      window.history.replaceState({}, document.title, '/');
+      showToast('OAuth login failed - please try again', 'error');
+      this.router.navigate('login');
+      return;
+    }
+
+    // Normal token verification
     const isValid = await authManager.verifyToken();
     if (isValid) {
       const user = authManager.getCurrentUser();
@@ -1768,7 +1857,7 @@ export class App {
         console.warn('[App] ProfileManager not available, using fallback');
         // Fallback to basic loading if ProfileManager not available
         this.updateBasicProfileInfo(user);
-        this.loadBasicStats(user.userId);
+        this.loadBasicStats((user.userId || user.id));
       }
     } catch (error) {
       console.error('Failed to load profile data:', error);
@@ -1809,7 +1898,7 @@ export class App {
     const memberSinceEl = document.getElementById('profile-member-since');
 
     if (usernameEl) usernameEl.textContent = user.username;
-    if (userIdEl) userIdEl.textContent = `User ID: ${user.userId}`;
+    if (userIdEl) userIdEl.textContent = `User ID: ${(user.userId || user.id)}`;
     if (memberSinceEl) memberSinceEl.textContent = 'Member since: Recent';
   }
 
