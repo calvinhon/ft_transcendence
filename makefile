@@ -34,6 +34,9 @@ help:
 
 # Quick start - fastest option (use cached builds)
 start: check-docker check-compose ensure-database-folders
+	@echo "🛑 Stopping any running containers first..."
+	@docker compose down --remove-orphans 2>/dev/null || true
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Quick starting services with cache..."
 	docker compose up -d --build --force-recreate
 	@$(MAKE) open
@@ -41,6 +44,10 @@ start: check-docker check-compose ensure-database-folders
 
 # Dev mode - core services only (no monitoring stack)
 dev: check-docker check-compose ensure-database-folders
+	@echo "🛑 Stopping any running containers first..."
+	@docker compose down --remove-orphans 2>/dev/null || true
+	@docker compose -f docker-compose.core.yml down --remove-orphans 2>/dev/null || true
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "⚡ Starting DEV MODE (core services only, no monitoring)..."
 	docker compose -f docker-compose.core.yml up -d --build --force-recreate
 	@$(MAKE) open
@@ -49,6 +56,10 @@ dev: check-docker check-compose ensure-database-folders
 
 # Full stack with monitoring
 full: check-docker check-compose ensure-database-folders
+	@echo "🛑 Stopping any running containers first..."
+	@docker compose down --remove-orphans 2>/dev/null || true
+	@docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml down --remove-orphans 2>/dev/null || true
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Starting FULL STACK (with monitoring)..."
 	docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up -d --build --force-recreate
 	@$(MAKE) open
@@ -72,6 +83,8 @@ monitoring-stop: check-docker check-compose
 
 # Full start with clean (slower but ensures fresh build)
 full-start: check-docker check-compose clean-dev clean ensure-database-folders
+	@echo "🛑 Stopping any running containers first..."
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Full start with clean build..."
 	docker compose build
 	docker compose up -d --force-recreate
