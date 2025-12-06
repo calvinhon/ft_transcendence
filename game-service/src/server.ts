@@ -17,11 +17,11 @@ const config: ServiceConfig = {
   host: '0.0.0.0'
 };
 
-const fastify: FastifyInstance = Fastify({ 
-  logger: true
-});
-
 async function buildServer(): Promise<FastifyInstance> {
+  const fastify: FastifyInstance = Fastify({ 
+    logger: true
+  });
+
   // Register plugins
   await fastify.register(cors, {
     origin: true
@@ -69,5 +69,4 @@ if (require.main === module) {
   start();
 }
 
-export { buildServer, start };
-export default fastify;
+export { buildServer, start }; // important for testing
