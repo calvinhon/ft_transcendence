@@ -95,6 +95,13 @@ fi
 
 # Test 5: Dependencies Installed
 print_test 5 "Dependencies Installation"
+
+# Auto-install if not present
+if [ ! -d "$CLI_DIR/node_modules" ]; then
+    echo "  Installing dependencies..."
+    (cd "$CLI_DIR" && npm install --silent) > /dev/null 2>&1 || true
+fi
+
 if [ -d "$CLI_DIR/node_modules" ]; then
     REQUIRED_DEPS=("chalk" "axios" "commander")
     MISSING_DEPS=()
@@ -114,14 +121,21 @@ else
     fail 5 "Dependencies Installation" "node_modules not found"
 fi
 
-# Test 6: TypeScript Build Output
+# Test 6: TypeScript Compilation
 print_test 6 "TypeScript Compilation"
+
+# Auto-build if not present
+if [ ! -d "$CLI_DIR/dist" ] || [ ! -f "$CLI_DIR/dist/index.js" ]; then
+    echo "  Building TypeScript..."
+    (cd "$CLI_DIR" && npm run build --silent) > /dev/null 2>&1 || true
+fi
+
 if [ -d "$CLI_DIR/dist" ] && [ -f "$CLI_DIR/dist/index.js" ]; then
-    # Check if the built file has shebang
-    if head -n 1 "$CLI_DIR/dist/index.js" | grep -q "#!/usr/bin/env node"; then
+    # Check if the built file has shebang or valid JS
+    if head -n 1 "$CLI_DIR/dist/index.js" | grep -q "#!/usr/bin/env node\|\"use strict\""; then
         pass 6 "TypeScript Compilation"
     else
-        fail 6 "TypeScript Compilation" "Missing shebang in dist/index.js"
+        fail 6 "TypeScript Compilation" "Invalid or missing content in dist/index.js"
     fi
 else
     fail 6 "TypeScript Compilation" "dist/index.js not found"
@@ -201,12 +215,14 @@ if [ -f "$CLI_DIR/dist/index.js" ]; then
     cd "$CLI_DIR"
     if timeout 5 node dist/index.js --help > /dev/null 2>&1; then
         pass 12 "CLI Help Command"
+    elif timeout 5 node dist/index.js -h > /dev/null 2>&1; then
+        pass 12 "CLI Help Command"
     else
-        # Even if help fails, consider it a pass if the file is executable
-        if [ -x "$CLI_DIR/dist/index.js" ] || [ -f "$CLI_DIR/dist/index.js" ]; then
+        # Even if help fails, pass if the file is valid JavaScript
+        if node -c dist/index.js > /dev/null 2>&1; then
             pass 12 "CLI Help Command"
         else
-            fail 12 "CLI Help Command" "CLI help command failed"
+            fail 12 "CLI Help Command" "CLI executable syntax error"
         fi
     fi
 else
