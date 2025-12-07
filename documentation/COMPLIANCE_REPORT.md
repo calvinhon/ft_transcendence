@@ -3,8 +3,9 @@
 **Project:** ft_transcendence  
 **Status:** 125/125 Points ✅  
 **Test Results:** 180/180 Tests Passing ✅  
-**Date:** December 6, 2025  
-**Version:** 16.1
+**Date:** December 7, 2025  
+**Version:** 16.1  
+**Architecture:** Microservices with SQLite (optimized, no external DB)
 
 ---
 
@@ -1989,12 +1990,11 @@ Retry-After: 1
 
 *Store Secret:*
 ```bash
-# Input: Write secret to Vault
-vault kv put secret/database/auth \
-  username=postgres \
-  password=secure_password_123 \
-  host=postgres-auth \
-  port=5432
+# Input: Write secret to Vault (JWT signing key example)
+vault kv put secret/jwt \
+  secret=your-secure-jwt-key-change-in-production \
+  algorithm=HS256 \
+  expiry=24h
 
 # Output:
 Key              Value
@@ -2008,7 +2008,7 @@ version          1
 *Retrieve Secret:*
 ```bash
 # Input: Read secret from Vault
-vault kv get -format=json secret/database/auth
+vault kv get -format=json secret/jwt
 
 # Output:
 {
@@ -2018,10 +2018,9 @@ vault kv get -format=json secret/database/auth
     "lease_duration": 0,
     "data": {
         "data": {
-            "username": "postgres",
-            "password": "secure_password_123",
-            "host": "postgres-auth",
-            "port": 5432
+            "secret": "your-secure-jwt-key-change-in-production",
+            "algorithm": "HS256",
+            "expiry": "24h"
         },
         "metadata": {
             "created_time": "2025-12-06T10:15:00.123456Z",
@@ -2044,30 +2043,27 @@ const client = vault({
     token: process.env.VAULT_TOKEN
 });
 
-// Input: Get database credentials
-const result = await client.read('secret/data/database/auth');
+// Input: Get JWT secret
+const result = await client.read('secret/data/jwt');
 
 // Output:
-const dbConfig = {
-    username: result.data.data.username,     // "postgres"
-    password: result.data.data.password,     // "secure_password_123"
-    host: result.data.data.host,             // "postgres-auth"
-    port: result.data.data.port              // 5432
+const jwtConfig = {
+    secret: result.data.data.secret,         // "your-secure-jwt-key-..."
+    algorithm: result.data.data.algorithm,   // "HS256"
+    expiry: result.data.data.expiry          // "24h"
 };
 
-// Use credentials securely (never logged or exposed)
+// Use JWT secret securely (never logged or exposed)
 ```
 
 *Secrets Stored in Vault:*
 ```
-secret/database/auth          - Database credentials
-secret/database/game          - Game DB credentials
-secret/database/tournament    - Tournament DB credentials
-secret/database/user          - User DB credentials
-secret/jwt/secret             - JWT signing key
+secret/jwt                    - JWT signing key and configuration
 secret/oauth/google           - Google OAuth credentials
 secret/oauth/github           - GitHub OAuth credentials
 secret/oauth/42               - 42 School OAuth credentials
+secret/blockchain/private-key - Blockchain deployment private key
+secret/session/secret         - Session encryption key
 secret/blockchain/private_key - Ethereum private key
 ```
 

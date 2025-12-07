@@ -13,8 +13,8 @@ help:
 	@echo ""
 	@echo "🚀 Main Commands:"
 	@echo "  make start              - Quick start (FASTEST - uses cache)"
-	@echo "  make dev                - ⚡ DEV MODE: Core only (no monitoring, ~15s)"
-	@echo "  make full               - Full stack with monitoring (slower, ~2-3min)"
+	@echo "  make dev                - ⚡ DEV MODE: Core only (7 services, ~15s)"
+	@echo "  make full               - Full stack with monitoring (12 services, ~2-3min)"
 	@echo "  make full-start         - Full clean start (slower, fresh build)"
 	@echo "  make restart            - Restart services without rebuild"
 	@echo "  make rebuild            - Force rebuild from scratch (slowest)"
@@ -27,9 +27,10 @@ help:
 	@echo "  make optimize-monitoring - Apply monitoring stack optimizations"
 	@echo "  make cleanup-logs       - Delete old Elasticsearch indices"
 	@echo ""
-	@echo "💡 Tip: Use 'make dev' for daily coding (fastest, no 400MB images)"
-	@echo "💡 Use 'make full' when you need monitoring/logging"
+	@echo "💡 Tip: Use 'make dev' for daily coding (7 services, SQLite DB)"
+	@echo "💡 Use 'make full' when you need monitoring/logging (12 services)"
 	@echo "💡 Run 'make optimize-monitoring' after first 'make full'"
+	@echo "💡 Architecture: Microservices with SQLite (no external DB needed)"
 	@echo ""
 
 # Quick start - fastest option (use cached builds)

@@ -1,9 +1,10 @@
 # FT_TRANSCENDENCE - Evaluation Guide
 
 **Purpose:** Step-by-step demonstration of all 18 modules for evaluators  
-**Version:** 1.0.0  
-**Date:** December 6, 2025  
-**Total Points:** 125/125 ✅
+**Version:** 1.1.0  
+**Date:** December 7, 2025  
+**Total Points:** 125/125 ✅  
+**Architecture:** Microservices with SQLite (no external database required)
 
 ---
 
@@ -60,19 +61,27 @@ docker compose ps
 # Check all containers
 docker compose ps
 
-# Expected output: All services showing "Up" status
-# ✅ ft_transcendence-auth-service-1
-# ✅ ft_transcendence-game-service-1
-# ✅ ft_transcendence-user-service-1
-# ✅ ft_transcendence-tournament-service-1
-# ✅ ft_transcendence-nginx-1
-# ✅ ft_transcendence-ssr-service-1
-# ✅ hardhat-node
-# ✅ vault-server
-# ✅ elasticsearch
-# ✅ kibana
-# ✅ grafana
-# ✅ filebeat
+# Expected: 7 services in dev mode, 13 in full stack
+# 
+# DEV MODE (make dev - 7 services):
+# ✅ vault              - Secrets management
+# ✅ hardhat            - Blockchain network
+# ✅ auth-service       - Authentication (SQLite DB)
+# ✅ user-service       - User profiles (SQLite DB)
+# ✅ game-service       - Game logic (SQLite DB)
+# ✅ tournament-service - Tournaments (SQLite DB)
+# ✅ frontend           - Web interface (nginx)
+# 
+# FULL STACK (make start - adds 6 more):
+# ✅ nginx              - Reverse proxy with ModSecurity
+# ✅ ssr-service        - Server-side rendering
+# ✅ elasticsearch      - Log storage
+# ✅ kibana             - Log visualization (port 5601)
+# ✅ grafana            - Metrics dashboards (port 3000)
+# ✅ prometheus         - Metrics collection (port 9090)
+# ✅ filebeat           - Log shipping
+# 
+# 💡 Architecture: Each service uses embedded SQLite - no PostgreSQL needed!
 ```
 
 ### 4. Access Application
@@ -107,7 +116,7 @@ docker exec ft_transcendence-auth-service-1 ls -lah dist/
 
 # Verify service is running
 curl http://localhost:3001/health
-# Expected: {"status":"ok","timestamp":"2025-12-06T..."}
+# Expected: {"status":"healthy","timestamp":"2025-12-06T..."}
 
 # Check all 4 microservices
 curl http://localhost:3001/health  # auth-service
@@ -115,14 +124,14 @@ curl http://localhost:3002/health  # game-service
 curl http://localhost:3004/health  # user-service
 curl http://localhost:3003/health  # tournament-service
 
-# All should return: {"status":"ok",...}
+# All should return: {"status":"healthy",...}
 ```
 
 **Visual Verification:**
 - Browser console should show API calls to `/api/auth/`, `/api/game/`, etc.
 - Network tab shows JSON responses from backend
 
-**Points:** 0 (Framework is Major Module worth 10 points)
+**Points:** 10 (Framework is Major Module worth 10 points)
 
 ---
 
@@ -168,9 +177,19 @@ docker exec ft_transcendence-nginx-1 ls -lah /usr/share/nginx/html/assets/
 **Verification Steps:**
 
 ```bash
-# Check router implementation
-docker exec ft_transcendence-nginx-1 cat /usr/share/nginx/html/assets/index-*.js | grep -o "router\|pushState" | head -5
+# Find the compiled JavaScript file
+docker exec ft_transcendence-nginx-1 ls /usr/share/nginx/html/assets/
+# Expected: index-[hash].js file (e.g., index-902b6f4a.js)
+
+# Check router implementation using the actual filename
+docker exec ft_transcendence-nginx-1 grep -o "router\|pushState" /usr/share/nginx/html/assets/index-902b6f4a.js | head -5
 # Expected: Multiple occurrences of "router" and "pushState"
+# Example output:
+# router
+# router
+# router
+# router
+# router
 ```
 
 **Interactive Test:**
@@ -252,11 +271,12 @@ make start
 
 # Verify all services start
 docker compose ps | grep -c "Up"
-# Expected: 15+ (number of services)
+# Expected: 12 (number of services)
 
 # Check logs for errors
 docker compose logs | grep -i "error\|fatal" | grep -v "error_page"
-# Expected: Minimal or no critical errors
+# Expected: Some startup connection errors (Kibana/Filebeat waiting for Elasticsearch)
+# These are transient and resolve once all services are ready
 ```
 
 **Alternative Commands:**
@@ -2079,13 +2099,15 @@ done
 ```
 Client (Browser)
     ↓
-Nginx (API Gateway) :80
+Frontend (Nginx) :80
     ↓
-├─→ auth-service:3001       → postgres-auth:5432       → auth.db
-├─→ game-service:3002       → postgres-game:5432       → games.db
-├─→ user-service:3003       → postgres-user:5432       → users.db
-└─→ tournament-service:3004 → postgres-tournament:5432 → tournaments.db
-                            → hardhat-node:8545        → Blockchain
+├─→ auth-service:3001       → SQLite: /app/database/auth.db
+├─→ game-service:3003       → SQLite: /app/database/games.db
+├─→ user-service:3002       → SQLite: /app/database/users.db
+├─→ tournament-service:3004 → SQLite: /app/database/tournaments.db
+│                           → hardhat:8545 (Blockchain)
+├─→ vault:8200             → Secrets Management
+└─→ ssr-service:3005       → Server-Side Rendering
 ```
 
 **Points:** 10/10 ✅

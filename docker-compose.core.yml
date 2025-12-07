@@ -10,96 +10,17 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: "dev-token"
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: "http://127.0.0.1:8200"
     cap_add:
       - IPC_LOCK
     mem_limit: 256m
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "vault", "status"]
+      test: ["CMD", "sh", "-c", "wget --spider -q http://127.0.0.1:8200/v1/sys/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 5s
-
-  postgres-auth:
-    image: postgres:15-alpine
-    container_name: postgres-auth
-    environment:
-      POSTGRES_DB: auth_db
-      POSTGRES_USER: auth_user
-      POSTGRES_PASSWORD: auth_password
-    volumes:
-      - postgres-auth-data:/var/lib/postgresql/data
-      - ./auth-service/database:/docker-entrypoint-initdb.d
-    mem_limit: 256m
-    networks:
-      - transcendence-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-
-  postgres-user:
-    image: postgres:15-alpine
-    container_name: postgres-user
-    environment:
-      POSTGRES_DB: user_db
-      POSTGRES_USER: user_user
-      POSTGRES_PASSWORD: user_password
-    volumes:
-      - postgres-user-data:/var/lib/postgresql/data
-      - ./user-service/database:/docker-entrypoint-initdb.d
-    mem_limit: 256m
-    networks:
-      - transcendence-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user_user -d user_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-
-  postgres-game:
-    image: postgres:15-alpine
-    container_name: postgres-game
-    environment:
-      POSTGRES_DB: game_db
-      POSTGRES_USER: game_user
-      POSTGRES_PASSWORD: game_password
-    volumes:
-      - postgres-game-data:/var/lib/postgresql/data
-      - ./game-service/database:/docker-entrypoint-initdb.d
-    mem_limit: 256m
-    networks:
-      - transcendence-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U game_user -d game_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-
-  postgres-tournament:
-    image: postgres:15-alpine
-    container_name: postgres-tournament
-    environment:
-      POSTGRES_DB: tournament_db
-      POSTGRES_USER: tournament_user
-      POSTGRES_PASSWORD: tournament_password
-    volumes:
-      - postgres-tournament-data:/var/lib/postgresql/data
-      - ./tournament-service/database:/docker-entrypoint-initdb.d
-    mem_limit: 256m
-    networks:
-      - transcendence-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tournament_user -d tournament_db"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
       start_period: 10s
 
   hardhat:
@@ -128,20 +49,17 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://auth_user:auth_password@postgres-auth:5432/auth_db
       - JWT_SECRET=your-secret-key-here-change-in-production
       - VAULT_ADDR=http://vault:8200
       - VAULT_TOKEN=dev-token
     depends_on:
-      postgres-auth:
-        condition: service_healthy
       vault:
         condition: service_healthy
     mem_limit: 512m
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -156,18 +74,15 @@ services:
       - "3002:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://user_user:user_password@postgres-user:5432/user_db
       - AUTH_SERVICE_URL=http://auth-service:3000
     depends_on:
-      postgres-user:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
     mem_limit: 512m
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -182,18 +97,15 @@ services:
       - "3003:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://game_user:game_password@postgres-game:5432/game_db
       - AUTH_SERVICE_URL=http://auth-service:3000
     depends_on:
-      postgres-game:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
     mem_limit: 512m
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -208,12 +120,9 @@ services:
       - "3004:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://tournament_user:tournament_password@postgres-tournament:5432/tournament_db
       - AUTH_SERVICE_URL=http://auth-service:3000
       - BLOCKCHAIN_RPC_URL=http://hardhat:8545
     depends_on:
-      postgres-tournament:
-        condition: service_healthy
       auth-service:
         condition: service_healthy
       hardhat:
@@ -222,7 +131,7 @@ services:
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -249,7 +158,7 @@ services:
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:80 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -259,8 +168,4 @@ networks:
   transcendence-network:
     driver: bridge
 
-volumes:
-  postgres-auth-data:
-  postgres-user-data:
-  postgres-game-data:
-  postgres-tournament-data:
+
