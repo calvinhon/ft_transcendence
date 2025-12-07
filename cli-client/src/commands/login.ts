@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { gameClient } from '../api/client.js';
+import { authStorage } from '../utils/storage.js';
 
 export async function loginCommand(): Promise<void> {
   try {
@@ -29,9 +30,22 @@ export async function loginCommand(): Promise<void> {
 
     const result = await gameClient.login(answers.username, answers.password);
 
+    // Save auth data including username
+    authStorage.saveAuth({
+      token: result.token,
+      userId: result.userId,
+      username: answers.username
+    });
+
     console.log(chalk.green('\n✓ Login successful!'));
-    console.log(chalk.cyan(`User ID: ${result.userId}`));
-    console.log(chalk.cyan(`Token: ${result.token.substring(0, 20)}...`));
+    if (result.userId) {
+      console.log(chalk.cyan(`User ID: ${result.userId}`));
+    }
+    if (result.token && result.token.length > 20) {
+      console.log(chalk.cyan(`Token saved: ${result.token.substring(0, 20)}...`));
+    } else if (result.token) {
+      console.log(chalk.cyan('Token saved successfully'));
+    }
   } catch (error) {
     console.error(chalk.red(`✗ Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
     process.exit(1);

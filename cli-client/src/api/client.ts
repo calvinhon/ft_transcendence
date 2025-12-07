@@ -43,7 +43,7 @@ export class GameServiceClient {
   private token: string | null = null;
   private tokenPath: string;
 
-  constructor(baseURL: string = 'http://localhost:3002') {
+  constructor(baseURL: string = 'http://localhost') {
     this.tokenPath = path.join(os.homedir(), '.pong-cli', 'token.txt');
     this.client = axios.create({
       baseURL,
@@ -88,13 +88,31 @@ export class GameServiceClient {
 
   async login(username: string, password: string): Promise<AuthResponse> {
     try {
-      const response = await this.client.post<AuthResponse>('/auth/login', {
+      const response = await this.client.post('/api/auth/login', {
         username,
         password,
       });
-      this.token = response.data.token;
-      this.saveToken(this.token);
-      return response.data;
+      
+      // Extract token from Set-Cookie header
+      const setCookie = response.headers['set-cookie'];
+      if (setCookie && Array.isArray(setCookie)) {
+        const tokenCookie = setCookie.find(cookie => cookie.startsWith('token='));
+        if (tokenCookie) {
+          // Extract token value from cookie string
+          const tokenMatch = tokenCookie.match(/token=([^;]+)/);
+          if (tokenMatch) {
+            this.token = tokenMatch[1];
+            this.saveToken(this.token);
+          }
+        }
+      }
+      
+      // Return user info from response
+      const user = response.data.user || response.data;
+      return {
+        token: this.token || '',
+        userId: user.id || user.userId || ''
+      };
     } catch (error: any) {
       throw new Error(`Login failed: ${error.response?.data?.message || error.message}`);
     }
@@ -102,7 +120,7 @@ export class GameServiceClient {
 
   async startGame(): Promise<GameStartResponse> {
     try {
-      const response = await this.client.post<GameStartResponse>('/game/start');
+      const response = await this.client.post<GameStartResponse>('/api/game/start');
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to start game: ${error.response?.data?.message || error.message}`);
@@ -111,7 +129,7 @@ export class GameServiceClient {
 
   async getGameState(gameId: string): Promise<GameState> {
     try {
-      const response = await this.client.get<GameState>(`/game/${gameId}/state`);
+      const response = await this.client.get<GameState>(`/api/game/${gameId}/state`);
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to get game state: ${error.response?.data?.message || error.message}`);
@@ -120,7 +138,7 @@ export class GameServiceClient {
 
   async movePaddle(gameId: string, direction: 'up' | 'down'): Promise<void> {
     try {
-      await this.client.post(`/game/${gameId}/move`, { direction });
+      await this.client.post(`/api/game/${gameId}/move`, { direction });
     } catch (error: any) {
       throw new Error(`Failed to move paddle: ${error.response?.data?.message || error.message}`);
     }
@@ -128,7 +146,7 @@ export class GameServiceClient {
 
   async endGame(gameId: string, result: 'win' | 'lose'): Promise<void> {
     try {
-      await this.client.post(`/game/${gameId}/end`, { result });
+      await this.client.post(`/api/game/${gameId}/end`, { result });
     } catch (error: any) {
       throw new Error(`Failed to end game: ${error.response?.data?.message || error.message}`);
     }
@@ -136,7 +154,7 @@ export class GameServiceClient {
 
   async getStats(userId: string): Promise<StatsResponse> {
     try {
-      const response = await this.client.get<StatsResponse>(`/stats/${userId}`);
+      const response = await this.client.get<StatsResponse>(`/api/game/stats/${userId}`);
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to get stats: ${error.response?.data?.message || error.message}`);

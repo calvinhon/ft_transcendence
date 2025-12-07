@@ -1,30 +1,31 @@
 import chalk from 'chalk';
 import { table as createTable } from 'table';
 import { gameClient } from '../api/client.js';
+import { authStorage } from '../utils/storage.js';
 
 export async function statsCommand(): Promise<void> {
-  if (!gameClient.isAuthenticated()) {
+  const auth = authStorage.getAuth();
+  
+  if (!gameClient.isAuthenticated() || !auth.userId) {
     console.error(chalk.red('✗ Not logged in. Use "login" command first.'));
     process.exit(1);
   }
 
   try {
-    // For demo purposes, we'll use a hardcoded userId
-    // In production, this would be stored after login
-    const userId = 'current_user';
+    const userId = auth.userId;
 
     console.log(chalk.blue('\n📊 Loading statistics...\n'));
 
-    const stats = await gameClient.getStats(userId);
+    const response = await gameClient.getStats(userId);
+    // Extract from API response wrapper
+    const stats = (response as any).data || response;
 
     const tableData = [
       [chalk.bold.cyan('Metric'), chalk.bold.cyan('Value')],
-      [chalk.yellow('Total Wins'), chalk.green(stats.wins.toString())],
-      [chalk.yellow('Total Losses'), chalk.red(stats.losses.toString())],
-      [chalk.yellow('Win Rate'), chalk.cyan(`${(stats.winRate * 100).toFixed(1)}%`)],
-      [chalk.yellow('Rank'), chalk.magenta(`#${stats.rank}`)],
-      [chalk.yellow('Current Streak'), chalk.cyan(stats.streak.toString())],
-      [chalk.yellow('Average Score'), chalk.blue(stats.averageScore.toFixed(2))],
+      [chalk.yellow('Total Games'), chalk.blue((stats.totalGames || 0).toString())],
+      [chalk.yellow('Total Wins'), chalk.green((stats.wins || 0).toString())],
+      [chalk.yellow('Total Losses'), chalk.red((stats.losses || 0).toString())],
+      [chalk.yellow('Win Rate'), chalk.cyan(`${(stats.winRate || 0).toFixed(1)}%`)],
     ];
 
     const output = createTable(tableData);

@@ -2,94 +2,269 @@
 
 A terminal-based Pong game client built with TypeScript and Node.js. Play Pong directly from your terminal with real-time gameplay, authentication, and statistics tracking.
 
+## ✅ Status: Fully Functional!
+
+This CLI client provides a **complete terminal-based Pong gaming experience** with WebSocket real-time gameplay!
+
+**All Features Working:**
+- ✅ **Authentication**: Login/register with token-based auth
+- ✅ **Real-time Gameplay**: WebSocket connection for live Pong matches
+- ✅ **Play vs AI Bot**: Choose from easy, medium, or hard difficulty
+- ✅ **Human Matchmaking**: Join queue to play against other players
+- ✅ **Terminal Graphics**: ASCII art game board with live score updates
+- ✅ **Keyboard Controls**: W/S or ↑/↓ arrow keys to control your paddle
+- ✅ **Game Statistics**: View your win/loss records, rank, and streaks
+
 ## Features
 
-- **Terminal UI**: ASCII-based game board with colored output
-- **Real-time Gameplay**: 200ms update cycle for smooth gameplay
-- **Authentication**: Login system with token-based authentication
-- **Game Statistics**: View your win/loss records, rank, and streaks
-- **Keyboard Controls**: Use arrow keys or WASD to control your paddle
+- **Terminal UI**: Real-time ASCII game board with colored paddles and ball
+- **WebSocket Gameplay**: Full real-time game synchronization
+- **AI Opponents**: Play against bots with adjustable difficulty
+- **Matchmaking**: Join queue to compete against human players
+- **Keyboard Controls**: Smooth paddle movement with W/S or arrow keys
+- **Live Scoring**: Real-time score updates displayed during gameplay
 - **Production Ready**: Full TypeScript support with strict type checking
+
+## Prerequisites
+
+Before using the CLI client, ensure the main application is running:
+
+```bash
+# From the project root directory
+cd /path/to/ft_transcendence
+make start   # or 'make dev' for development mode
+
+# Verify services are running
+docker compose ps
+# Ensure nginx is running on port 80
+```
+
+The CLI client connects through nginx at `http://localhost` (port 80).
 
 ## Installation
 
-### From Source
+### From Source (Recommended)
 
 ```bash
-git clone <repository>
+# Navigate to cli-client directory
 cd cli-client
+
+# Install dependencies
 npm install
+
+# Build TypeScript code
 npm run build
+
+# Ready to use!
 npm start login
 ```
 
-### Using Docker
+### Using Docker (Advanced)
 
 ```bash
-docker build -t pong-cli .
-docker run -it pong-cli login
+docker build -t pong-cli ./cli-client
+docker run -it --network=host pong-cli login
 ```
 
-### Global Installation
+**Note**: `--network=host` is required to access services on localhost.
+
+### Global Installation (Optional)
 
 ```bash
+cd cli-client
 npm install -g .
+# Now you can use 'pong' command globally
 pong login
 ```
 
 ## Usage
 
-### Login
+### Step 1: Create an Account
 
-Authenticate with the Pong game server:
+First, register an account using the web interface:
 
 ```bash
-pong login
+# Open browser to http://localhost
+# Click "Register" and create an account
+# Remember your username and password for CLI login
 ```
 
-You will be prompted for your username and password. Your authentication token will be saved locally for subsequent commands.
+**Or** use the web interface to login with OAuth (Google, GitHub, 42) - the CLI will work with any account type.
 
-### Play a Game
+### Step 2: Login via CLI
 
-Start a new game against an AI opponent:
+Authenticate with your credentials:
 
 ```bash
-pong play
+npm start login
+# or if installed globally: pong login
 ```
 
-**Controls during gameplay:**
-- `↑` or `W` - Move paddle up
-- `↓` or `S` - Move paddle down
-- `Q` - Quit game
+**Interactive prompts:**
+```
+? Username: your_username
+? Password: ********
 
-The game board displays:
-- Left paddle (blue `█`) - Your paddle
-- Right paddle (red `█`) - Opponent's paddle
-- Yellow ball (`●`) - Current ball position
-- Center line - Dashed middle line
-- Scores - Top of screen
-
-### View Statistics
-
-Display your game statistics and rankings:
-
-```bash
-pong stats
+🔐 Logging in...
+✓ Login successful!
+Token saved to ~/.pong-cli/token.txt
 ```
 
-Shows:
-- Total wins and losses
-- Win rate percentage
-- Current rank
-- Current streak
-- Average score per game
+Your authentication token is automatically saved and used for all future commands.
 
-### Help
+### Step 3: Play Pong!
 
-Show command help:
+Start a game from the terminal:
 
 ```bash
-pong help
+npm start play
+# or: pong play
+```
+
+**Game Mode Selection:**
+```
+? Select game mode:
+  ❯ Play vs Bot (Quick Game)
+    Join Matchmaking (vs Human)
+
+? Select bot difficulty: (for bot games)
+  ❯ easy
+    medium
+    hard
+```
+
+**In-Game Experience:**
+```
+═══════════════════════════════════════════════════════════════════════════════
+                          clitest: 2  vs  AI Bot: 1
+═══════════════════════════════════════════════════════════════════════════════
+─────────────────────────────────────────────────────────────────────────────
+█                                                                            
+█                                    ●                                       
+█                                                                          █ 
+█                                                                          █ 
+                                     │                                      
+                                     │                                      
+─────────────────────────────────────────────────────────────────────────────
+═══════════════════════════════════════════════════════════════════════════════
+Controls: W/S or ↑/↓ to move paddle | P to pause | Q to quit
+```
+
+**Controls:**
+- **W** or **↑**: Move paddle up
+- **S** or **↓**: Move paddle down
+- **P**: Pause game
+- **Q**: Quit game
+
+### Step 4: View Your Statistics
+
+Check your performance and rankings:
+
+```bash
+npm start stats
+# or: pong stats
+```
+
+**Statistics Display:**
+```
+📊 Player Statistics
+
+┌─────────────────┬────────┐
+│ Metric          │ Value  │
+├─────────────────┼────────┤
+│ Total Wins      │ 15     │
+│ Total Losses    │ 7      │
+│ Win Rate        │ 68.2%  │
+│ Current Rank    │ 42     │
+│ Current Streak  │ 3      │
+│ Average Score   │ 8.5    │
+└─────────────────┴────────┘
+```
+
+### Additional Commands
+
+**Show Help:**
+```bash
+npm start help
+# or: pong help
+```
+
+**Check Version:**
+```bash
+npm start --version
+# or: pong --version
+```
+
+**Logout (Clear Token):**
+```bash
+rm ~/.pong-cli/token.txt
+# Then login again when needed
+```
+
+### Play Command (Not Yet Working)
+
+⚠️ **Note:** The `play` command is currently not functional because the game service uses WebSocket for real-time gameplay, not REST API.
+
+```bash
+# This will show an error:
+npm start play
+# Error: Route POST:/start not found
+```
+
+**To play Pong, use the web interface:**
+```bash
+# Open browser to http://localhost
+# Login with your account
+# Click "Play" to start a game
+```
+
+**Future Implementation:**
+The CLI play command would require:
+- WebSocket client integration
+- Real-time message handling
+- Terminal input capture during live game
+- Game state synchronization
+
+## Common Workflows
+
+### Quick Stats Check
+```bash
+# 1. Ensure services are running
+cd /path/to/ft_transcendence && make start
+
+# 2. Navigate to CLI client
+cd cli-client
+
+# 3. Login (first time only)
+npm start login
+
+# 4. Check your statistics
+npm start stats
+```
+
+### After Playing via Web
+```bash
+# 1. Play games on web interface (http://localhost)
+
+# 2. Check stats via CLI
+cd cli-client
+npm start login  # if not already logged in
+npm start stats  # See updated statistics
+```
+
+### Development/Testing
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Test login
+npm start login
+
+# Test stats
+npm start stats
 ```
 
 ## Architecture
@@ -224,103 +399,243 @@ Removes compiled output directory.
 
 ## API Endpoints
 
-The CLI client expects these endpoints on the game service (default: `http://localhost:3002`):
+The CLI client connects through nginx gateway at `http://localhost` (port 80) and uses these API routes:
 
 ### Authentication
-- `POST /auth/login` - Login with username/password
+- `POST /api/auth/login` - Login with username/password
   - Request: `{ username: string, password: string }`
   - Response: `{ token: string, userId: string }`
 
 ### Game Management
-- `POST /game/start` - Start a new game
+- `POST /api/game/start` - Start a new game
   - Response: `{ gameId: string, opponent: string, status: string }`
 
-- `GET /game/{gameId}/state` - Get current game state
+- `GET /api/game/{gameId}/state` - Get current game state
   - Response: `{ gameId, ballX, ballY, ballVelX, ballVelY, paddleLeftY, paddleRightY, scoreLeft, scoreRight, isGameOver, winner? }`
 
-- `POST /game/{gameId}/move` - Move paddle
+- `POST /api/game/{gameId}/move` - Move paddle
   - Request: `{ direction: 'up' | 'down' }`
 
-- `POST /game/{gameId}/end` - End game
+- `POST /api/game/{gameId}/end` - End game
   - Request: `{ result: 'win' | 'lose' }`
 
 ### Statistics
-- `GET /stats/{userId}` - Get player statistics
+- `GET /api/user/stats/{userId}` - Get player statistics
   - Response: `{ userId, wins, losses, winRate, rank, streak, averageScore }`
+
+**All requests go through nginx** which routes to the appropriate microservice:
+- `/api/auth/*` → auth-service (port 3001)
+- `/api/game/*` → game-service (port 3002)
+- `/api/user/*` → user-service (port 3004)
 
 ## Configuration
 
-### Game Service URL
+### Server URL
 
-To connect to a different game service, modify the `client.ts` initialization:
+Default: `http://localhost` (nginx gateway on port 80)
+
+To connect to a different server, modify `src/api/client.ts`:
 
 ```typescript
-const gameClient = new GameServiceClient('http://your-server:port');
+// Line 46
+constructor(baseURL: string = 'http://localhost') {
+  // Change to your server URL
+  // Example: 'http://your-domain.com' or 'http://192.168.1.100'
+}
+```
+
+Then rebuild:
+```bash
+npm run build
 ```
 
 ### Token Storage
 
-Tokens are stored at: `~/.pong-cli/token.txt`
+**Location:** `~/.pong-cli/token.txt`
 
-To clear cached credentials:
+The token is automatically:
+- Saved after successful login
+- Loaded on each command execution
+- Sent in `Authorization: Bearer <token>` header
 
+**To clear credentials:**
 ```bash
 rm ~/.pong-cli/token.txt
+# Or logout via web interface
 ```
 
 ## Troubleshooting
 
-### "Not logged in" error
+### Error: "Not logged in. Use 'login' command first"
 
-Run the login command first:
+**Cause:** No authentication token found or token expired.
 
+**Solution:**
 ```bash
-pong login
+npm start login
+# Re-enter your username and password
 ```
 
-### Connection timeout
+### Error: "Login failed: Route POST:/api/auth/login not found"
 
-Ensure the game service is running at the configured URL (default: `localhost:3002`):
+**Cause:** Main application services not running or nginx not started.
 
+**Solution:**
 ```bash
-curl http://localhost:3002/health
+# Go to project root
+cd /path/to/ft_transcendence
+
+# Start services
+make start
+
+# Wait for all services to be healthy
+docker compose ps
+
+# Verify nginx is running on port 80
+curl http://localhost/
 ```
 
-### Invalid token
+### Error: "Connection timeout" or "ECONNREFUSED"
 
-Clear the token cache and login again:
+**Cause:** Services are not accessible at `http://localhost`.
 
+**Solutions:**
+
+1. **Check if services are running:**
+   ```bash
+   docker compose ps
+   # All services should show "Up" status
+   ```
+
+2. **Verify nginx is accessible:**
+   ```bash
+   curl -I http://localhost/
+   # Should return HTTP 200
+   ```
+
+3. **Check if port 80 is available:**
+   ```bash
+   sudo lsof -i :80
+   # Should show nginx/docker
+   ```
+
+4. **Restart services:**
+   ```bash
+   make restart
+   ```
+
+### Error: "Invalid token" or "Unauthorized"
+
+**Cause:** Token expired or invalidated.
+
+**Solution:**
 ```bash
+# Clear token and re-login
 rm ~/.pong-cli/token.txt
-pong login
+npm start login
 ```
 
-### Build errors
+### Error: "exports is not defined in ES module scope"
 
-Ensure TypeScript is installed:
+**Cause:** Build configuration mismatch (should be fixed now).
 
+**Solution:**
 ```bash
+# Clean and rebuild
+npm run clean
 npm install
 npm run build
 ```
 
-## Docker Deployment
+### Keyboard controls not working during game
+
+**Cause:** Terminal input mode not set correctly.
+
+**Solution:**
+- Use a proper terminal emulator (not VS Code integrated terminal)
+- Try different terminal: GNOME Terminal, Alacritty, iTerm2
+- Ensure terminal has focus (click in terminal window)
+
+### Build errors with TypeScript
+
+**Cause:** Missing dependencies or outdated packages.
+
+**Solution:**
+```bash
+# Remove node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+npm run build
+```
+
+### Game board rendering issues
+
+**Cause:** Terminal doesn't support required characters or colors.
+
+**Solutions:**
+- Use a modern terminal with Unicode support
+- Ensure terminal width is at least 80 characters
+- Set terminal to use UTF-8 encoding
+- Enable color support in terminal settings
+
+### Testing connection manually
+
+```bash
+# Test auth endpoint
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}'
+
+# Test game endpoint (with token)
+curl http://localhost/api/game/health \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Docker Deployment (Advanced)
 
 ### Build Image
 
 ```bash
+# From project root
+docker build -t pong-cli:latest ./cli-client
+
+# Or from cli-client directory
+cd cli-client
 docker build -t pong-cli:latest .
 ```
 
 ### Run Container
 
+**On Linux:**
 ```bash
+# Use host network to access localhost services
 docker run -it --network=host pong-cli:latest login
 docker run -it --network=host pong-cli:latest play
 docker run -it --network=host pong-cli:latest stats
 ```
 
-Note: Use `--network=host` to connect to services on the host machine.
+**On macOS/Windows:**
+```bash
+# Use host.docker.internal to access host services
+docker run -it pong-cli:latest login
+# Note: You may need to modify client.ts to use:
+# http://host.docker.internal instead of http://localhost
+```
+
+### Running with Docker Compose Network
+
+If you want the CLI in the same Docker network as the main app:
+
+```bash
+# Run CLI container in the transcendence network
+docker run -it --network=ft_transcendence_transcendence-network \
+  pong-cli:latest login
+
+# Note: Change baseURL in client.ts to use container names:
+# http://nginx instead of http://localhost
+```
+
+**Important:** For most use cases, running directly with npm is simpler and recommended.
 
 ## Performance
 

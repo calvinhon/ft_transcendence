@@ -2,7 +2,7 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Sat Dec  6 10:27:27 +04 2025
+Date: Sun Dec  7 23:11:12 +04 2025
 Project: FT_Transcendence
 
 
@@ -28,7 +28,7 @@ Project: FT_Transcendence
 
 ✓ PASSED: Monitoring (Prometheus/Grafana)
 
-✓ PASSED: GDPR Compliance
+✗ FAILED: GDPR Compliance
 
 ✓ PASSED: CLI Pong Client
 
@@ -39,9 +39,9 @@ Project: FT_Transcendence
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  15
-Failed:  0
+Passed:  14
+Failed:  1
 Total:   15
 
-Status: ALL TESTS PASSED ✓
-Generated: Sat Dec  6 10:27:40 +04 2025
+Status: SOME TESTS FAILED ✗
+Generated: Sun Dec  7 23:11:28 +04 2025
