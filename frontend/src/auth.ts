@@ -166,27 +166,28 @@ export class AuthManager {
 
   async verifyToken(): Promise<boolean> {
     try {
-      console.log('Verifying token with backend...');
       const response = await fetch(`${this.baseURL}/verify`, {
         method: 'POST',
         credentials: 'include'
       });
 
       const result: any = await response.json();
-      console.log('Verify response:', result);
       
       // Handle nested response structure: { success: true, data: { valid: true, user: {...} } }
       if (response.ok && result.success && result.data?.valid) {
-        console.log('Token verified successfully, user:', result.data.user);
+        console.log('🔐 Token verified successfully, user:', result.data.user);
         this.currentUser = result.data.user || null;
         return true;
       } else {
-        console.log('Token verification failed:', result.error || 'No valid data');
+        // 401 Unauthorized is expected when no token exists - don't log as error
+        if (response.status !== 401) {
+          console.log('⚠️ Token verification failed:', result.error || 'No valid data');
+        }
         this.logout();
         return false;
       }
     } catch (error) {
-      console.log('Token verification error:', error);
+      console.log('❌ Token verification error:', error);
       this.logout();
       return false;
     }
