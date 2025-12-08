@@ -47,10 +47,10 @@ test_database_files() {
     local base_path="${PROJECT_ROOT:-.}"
     
     local db_files=(
-        "$base_path/auth/database/auth.db"
-        "$base_path/game/database/games.db"
-        "$base_path/tournament/database/tournaments.db"
-        "$base_path/user/database/users.db"
+        "$base_path/auth-service/database/auth.db"
+        "$base_path/game-service/database/games.db"
+        "$base_path/tournament-service/database/tournaments.db"
+        "$base_path/user-service/database/users.db"
     )
     
     local all_exist=true
@@ -75,7 +75,7 @@ test_schema_creation() {
     echo -e "${YELLOW}Running Test 2: Schema Creation${NC}"
     
     local base_path="${PROJECT_ROOT:-.}"
-    local auth_db="$base_path/auth/database/auth.db"
+    local auth_db="$base_path/auth-service/database/auth.db"
     
     # Check if database file exists (schema created)
     if [ -f "$auth_db" ] && [ -s "$auth_db" ]; then
