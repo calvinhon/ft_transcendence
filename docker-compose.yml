@@ -135,8 +135,8 @@ services:
       - "443:443"
     volumes:
       - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/modsecurity.conf:/etc/nginx/modsecurity.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./frontend/nginx/modsecurity.conf:/etc/nginx/modsecurity.conf:ro
+      - ./frontend/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - vault
       - auth-service
