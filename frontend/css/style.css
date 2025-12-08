@@ -1909,7 +1909,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: 40px var(--space) var(--space) var(--space);
+  padding: var(--space-lg) var(--space) var(--space) var(--space);
   background: var(--bg-primary);
   overflow-y: auto;
 }
@@ -2025,6 +2025,8 @@ body {
   font-weight: 600;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   margin-bottom: var(--space-lg);
+  margin-left: auto;
+  margin-right: auto;
   width: fit-content;
   white-space: normal;
   word-wrap: break-word;
