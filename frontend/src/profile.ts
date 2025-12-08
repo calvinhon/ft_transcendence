@@ -72,7 +72,7 @@ export class ProfileManager {
     console.log('[ProfileManager] Current user:', user);
     
     if (!user) {
-      console.warn('[ProfileManager] No user logged in, cannot load profile');
+      console.log('[ProfileManager] No user logged in, skipping profile load');
       return;
     }
 

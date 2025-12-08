@@ -1406,5 +1406,4 @@ export class TournamentManager {
   }
 }
 
-// Global tournament manager instance
-(window as any).tournamentManager = new TournamentManager();
+// Global tournament manager instance is created in main.ts to avoid duplicates
