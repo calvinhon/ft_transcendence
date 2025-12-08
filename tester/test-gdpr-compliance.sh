@@ -44,7 +44,7 @@ test_gdpr_endpoints() {
     echo -e "${YELLOW}Running Test 1: GDPR Endpoints Configuration${NC}"
     
     # Check if GDPR endpoints exist
-    local user_files=$(find "$PROJECT_ROOT/user/src" -type f -name "*.ts" 2>/dev/null)
+    local user_files=$(find "$PROJECT_ROOT/user-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$user_files" | xargs grep -l "export\|delete\|anonymize\|gdpr" 2>/dev/null | grep -q .; then
         log_result 1 "GDPR Endpoints Configuration" "PASS"
@@ -109,7 +109,7 @@ test_consent_management() {
     echo -e "${YELLOW}Running Test 5: Consent Management${NC}"
     
     # Check if user service has user management capabilities
-    if [ -d "$PROJECT_ROOT/user" ] && [ -f "$PROJECT_ROOT/user/src/server.ts" ]; then
+    if [ -d "$PROJECT_ROOT/user-service" ] && [ -f "$PROJECT_ROOT/user-service/src/server.ts" ]; then
         log_result 5 "Consent Management" "PASS"
         return 0
     fi
@@ -151,7 +151,7 @@ test_data_portability() {
 test_right_to_be_forgotten() {
     echo -e "${YELLOW}Running Test 8: Right to be Forgotten${NC}"
     
-    local user_files=$(find "$PROJECT_ROOT/user/src" -type f -name "*.ts" 2>/dev/null)
+    local user_files=$(find "$PROJECT_ROOT/user-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$user_files" | xargs grep -l "delete.*user\|remove.*data\|forgotten" 2>/dev/null | grep -q .; then
         log_result 8 "Right to be Forgotten" "PASS"
@@ -179,7 +179,7 @@ test_privacy_policy() {
 test_data_processing_agreement() {
     echo -e "${YELLOW}Running Test 10: Data Processing Agreement${NC}"
     
-    local user_files=$(find "$PROJECT_ROOT/user/src" -type f -name "*.ts" 2>/dev/null)
+    local user_files=$(find "$PROJECT_ROOT/user-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$user_files" | xargs grep -l "process\|agreement\|dpa" 2>/dev/null | grep -q .; then
         log_result 10 "Data Processing Agreement" "PASS"

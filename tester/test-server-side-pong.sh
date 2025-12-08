@@ -61,7 +61,7 @@ test_physics_engine() {
     echo -e "${YELLOW}Running Test 2: Physics Engine${NC}"
     
     # Check for physics implementation
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "physics\|velocity\|acceleration\|collision" 2>/dev/null | grep -q .; then
         log_result 2 "Physics Engine" "PASS"
@@ -76,7 +76,7 @@ test_physics_engine() {
 test_ball_movement() {
     echo -e "${YELLOW}Running Test 3: Ball Movement${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "ball\|move.*ball\|update.*position" 2>/dev/null | grep -q .; then
         log_result 3 "Ball Movement" "PASS"
@@ -91,7 +91,7 @@ test_ball_movement() {
 test_paddle_control() {
     echo -e "${YELLOW}Running Test 4: Paddle Control${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "paddle\|movement\|up\|down" 2>/dev/null | grep -q .; then
         log_result 4 "Paddle Control" "PASS"
@@ -106,7 +106,7 @@ test_paddle_control() {
 test_collision_detection() {
     echo -e "${YELLOW}Running Test 5: Collision Detection${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "collision\|intersect\|boundary\|wall" 2>/dev/null | grep -q .; then
         log_result 5 "Collision Detection" "PASS"
@@ -121,7 +121,7 @@ test_collision_detection() {
 test_scoring_system() {
     echo -e "${YELLOW}Running Test 6: Scoring System${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "score\|point\|track.*score" 2>/dev/null | grep -q .; then
         log_result 6 "Scoring System" "PASS"
@@ -136,7 +136,7 @@ test_scoring_system() {
 test_websocket_communication() {
     echo -e "${YELLOW}Running Test 7: WebSocket Real-time Communication${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "websocket\|ws\|socket\|emit\|subscribe" 2>/dev/null | grep -q .; then
         log_result 7 "WebSocket Real-time Communication" "PASS"
@@ -151,7 +151,7 @@ test_websocket_communication() {
 test_game_state_management() {
     echo -e "${YELLOW}Running Test 8: Game State Management${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "state\|store\|game.*state" 2>/dev/null | grep -q .; then
         log_result 8 "Game State Management" "PASS"
@@ -166,7 +166,7 @@ test_game_state_management() {
 test_anticheat_verification() {
     echo -e "${YELLOW}Running Test 9: Anti-Cheat Verification${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "verify\|validate\|cheat\|illegal" 2>/dev/null | grep -q .; then
         log_result 9 "Anti-Cheat Verification" "PASS"
@@ -181,7 +181,7 @@ test_anticheat_verification() {
 test_game_recording() {
     echo -e "${YELLOW}Running Test 10: Game Recording${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "record\|replay\|history\|log.*game" 2>/dev/null | grep -q .; then
         log_result 10 "Game Recording" "PASS"
@@ -214,7 +214,7 @@ test_performance_optimization() {
 test_game_termination() {
     echo -e "${YELLOW}Running Test 12: Game Termination${NC}"
     
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "end\|finish\|terminate\|cleanup" 2>/dev/null | grep -q .; then
         log_result 12 "Game Termination" "PASS"

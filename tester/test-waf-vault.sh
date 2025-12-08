@@ -43,7 +43,7 @@ log_result() {
 test_modsecurity_configuration() {
     echo -e "${YELLOW}Running Test 1: ModSecurity Configuration${NC}"
     
-    if [ -f "$PROJECT_ROOT/nginx/modsecurity.conf" ]; then
+    if [ -f "$PROJECT_ROOT/frontend/nginx/modsecurity.conf" ]; then
         log_result 1 "ModSecurity Configuration" "PASS"
         return 0
     fi
@@ -69,7 +69,7 @@ test_vault_initialization() {
 test_sql_injection_prevention() {
     echo -e "${YELLOW}Running Test 3: SQL Injection Prevention${NC}"
     
-    if grep -q "sql\|injection\|rule" "$PROJECT_ROOT/nginx/modsecurity.conf"; then
+    if grep -q "sql\|injection\|rule" "$PROJECT_ROOT/frontend/nginx/modsecurity.conf"; then
         log_result 3 "SQL Injection Prevention" "PASS"
         return 0
     fi
@@ -82,7 +82,7 @@ test_sql_injection_prevention() {
 test_xss_protection() {
     echo -e "${YELLOW}Running Test 4: XSS Protection${NC}"
     
-    if grep -q "xss\|script\|html" "$PROJECT_ROOT/nginx/modsecurity.conf"; then
+    if grep -q "xss\|script\|html" "$PROJECT_ROOT/frontend/nginx/modsecurity.conf"; then
         log_result 4 "XSS Protection" "PASS"
         return 0
     fi
@@ -156,7 +156,7 @@ test_certificate_management() {
 test_access_control_lists() {
     echo -e "${YELLOW}Running Test 9: Access Control Lists${NC}"
     
-    if grep -q "deny\|allow\|acl" "$PROJECT_ROOT/nginx/modsecurity.conf"; then
+    if grep -q "deny\|allow\|acl" "$PROJECT_ROOT/frontend/nginx/modsecurity.conf"; then
         log_result 9 "Access Control Lists" "PASS"
         return 0
     fi
@@ -183,7 +183,7 @@ test_audit_logging() {
 test_rate_limiting() {
     echo -e "${YELLOW}Running Test 11: Rate Limiting${NC}"
     
-    if grep -q "rate\|limit\|throttle" "$PROJECT_ROOT/nginx/modsecurity.conf"; then
+    if grep -q "rate\|limit\|throttle" "$PROJECT_ROOT/frontend/nginx/modsecurity.conf"; then
         log_result 11 "Rate Limiting" "PASS"
         return 0
     fi
@@ -197,7 +197,7 @@ test_security_policy_enforcement() {
     echo -e "${YELLOW}Running Test 12: Security Policy Enforcement${NC}"
     
     # Check for security configuration files
-    if [ -f "$PROJECT_ROOT/nginx/modsecurity.conf" ] || [ -f "$PROJECT_ROOT/frontend/nginx/nginx.conf" ]; then
+    if [ -f "$PROJECT_ROOT/frontend/nginx/modsecurity.conf" ] || [ -f "$PROJECT_ROOT/frontend/nginx/nginx.conf" ]; then
         log_result 12 "Security Policy Enforcement" "PASS"
         return 0
     fi

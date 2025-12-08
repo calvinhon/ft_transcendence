@@ -58,7 +58,7 @@ test_oauth_initialization() {
 test_csrf_protection() {
     echo -e "${YELLOW}Running Test 2: CSRF Protection${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "csrf\|state\|nonce" 2>/dev/null | grep -q .; then
         log_result 2 "CSRF Protection" "PASS"
@@ -73,7 +73,7 @@ test_csrf_protection() {
 test_code_exchange() {
     echo -e "${YELLOW}Running Test 3: Code Exchange${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*oauth*" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*oauth*" 2>/dev/null)
     
     if [ -n "$auth_files" ]; then
         log_result 3 "Code Exchange" "PASS"
@@ -88,7 +88,7 @@ test_code_exchange() {
 test_token_storage() {
     echo -e "${YELLOW}Running Test 4: Token Storage${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "token\|cookie\|session" 2>/dev/null | grep -q .; then
         log_result 4 "Token Storage" "PASS"
@@ -103,7 +103,7 @@ test_token_storage() {
 test_user_profile_sync() {
     echo -e "${YELLOW}Running Test 5: User Profile Sync${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "sync\|profile\|avatar\|email" 2>/dev/null | grep -q .; then
         log_result 5 "User Profile Sync" "PASS"
@@ -118,7 +118,7 @@ test_user_profile_sync() {
 test_google_oauth() {
     echo -e "${YELLOW}Running Test 6: Google OAuth${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "google\|Google" 2>/dev/null | grep -q .; then
         log_result 6 "Google OAuth" "PASS"
@@ -133,7 +133,7 @@ test_google_oauth() {
 test_github_oauth() {
     echo -e "${YELLOW}Running Test 7: GitHub OAuth${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "github\|GitHub" 2>/dev/null | grep -q .; then
         log_result 7 "GitHub OAuth" "PASS"
@@ -148,7 +148,7 @@ test_github_oauth() {
 test_token_validation() {
     echo -e "${YELLOW}Running Test 8: Token Validation${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "verify\|validate.*token\|jwt" 2>/dev/null | grep -q .; then
         log_result 8 "Token Validation" "PASS"
@@ -178,7 +178,7 @@ test_logout_functionality() {
 test_session_management() {
     echo -e "${YELLOW}Running Test 10: Session Management${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "session\|refresh\|expir" 2>/dev/null | grep -q .; then
         log_result 10 "Session Management" "PASS"
@@ -209,7 +209,7 @@ test_security_headers() {
 test_error_handling() {
     echo -e "${YELLOW}Running Test 12: Error Handling${NC}"
     
-    local auth_files=$(find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" 2>/dev/null)
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$auth_files" | xargs grep -l "error\|catch\|throw" 2>/dev/null | grep -q .; then
         log_result 12 "Error Handling" "PASS"

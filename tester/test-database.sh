@@ -115,7 +115,7 @@ test_data_integrity() {
     local base_path="${PROJECT_ROOT:-.}"
     
     # Check all database files exist and are valid (non-empty)
-    local dbs=("$base_path/auth/database/auth.db" "$base_path/game/database/games.db")
+    local dbs=("$base_path/auth-service/database/auth.db" "$base_path/game-service/database/games.db")
     local all_valid=true
     
     for db in "${dbs[@]}"; do
@@ -183,7 +183,7 @@ test_transaction_support() {
     echo -e "${YELLOW}Running Test 7: Transaction Support${NC}"
     
     local base_path="${PROJECT_ROOT:-.}"
-    local auth_db="$base_path/auth/database/auth.db"
+    local auth_db="$base_path/auth-service/database/auth.db"
     
     # SQLite always supports transactions if DB exists
     if [ -f "$auth_db" ] && [ -s "$auth_db" ]; then
@@ -200,7 +200,7 @@ test_index_creation() {
     echo -e "${YELLOW}Running Test 8: Index Creation${NC}"
     
     local base_path="${PROJECT_ROOT:-.}"
-    local auth_db="$base_path/auth/database/auth.db"
+    local auth_db="$base_path/auth-service/database/auth.db"
     
     # SQLite creates indexes automatically for PRIMARY KEY and UNIQUE constraints
     if [ -f "$auth_db" ] && [ -s "$auth_db" ]; then
@@ -217,11 +217,11 @@ test_index_creation() {
 test_database_backup() {
     echo -e "${YELLOW}Running Test 9: Database Backup${NC}"
     
-    local auth_db="$PROJECT_ROOT/auth/database/auth.db"
+    local auth_db="$PROJECT_ROOT/auth-service/database/auth.db"
     
     if [ -f "$auth_db" ]; then
         # Check if backup directory exists or can be created
-        local backup_dir="$PROJECT_ROOT/auth/database/backups"
+        local backup_dir="$PROJECT_ROOT/auth-service/database/backups"
         
         if mkdir -p "$backup_dir" 2>/dev/null; then
             log_result 9 "Database Backup" "PASS"
@@ -239,10 +239,10 @@ test_multi_database_access() {
     
     local base_path="${PROJECT_ROOT:-.}"
     local db_files=(
-        "$base_path/auth/database/auth.db"
-        "$base_path/game/database/games.db"
-        "$base_path/tournament/database/tournaments.db"
-        "$base_path/user/database/users.db"
+        "$base_path/auth-service/database/auth.db"
+        "$base_path/game-service/database/games.db"
+        "$base_path/tournament-service/database/tournaments.db"
+        "$base_path/user-service/database/users.db"
     )
     
     # Check all database files exist and are non-empty (accessible)
@@ -268,7 +268,7 @@ test_database_encryption() {
     echo -e "${YELLOW}Running Test 11: Database Encryption${NC}"
     
     local base_path="${PROJECT_ROOT:-.}"
-    local auth_db="$base_path/auth/database/auth.db"
+    local auth_db="$base_path/auth-service/database/auth.db"
     
     # Check if passwords are hashed (not encrypted at DB level, but at application level)
     # Since we hash passwords with bcrypt, encryption is at application level - PASS
@@ -285,7 +285,7 @@ test_database_encryption() {
 test_database_persistence() {
     echo -e "${YELLOW}Running Test 12: Database Persistence${NC}"
     
-    local auth_db="$PROJECT_ROOT/auth/database/auth.db"
+    local auth_db="$PROJECT_ROOT/auth-service/database/auth.db"
     
     if [ -f "$auth_db" ]; then
         # Check file size (should be > 0 after initialization)

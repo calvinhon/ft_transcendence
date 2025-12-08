@@ -180,7 +180,7 @@ test_realtime_updates() {
     echo -e "${YELLOW}Running Test 10: Real-time Updates${NC}"
     
     # Check if WebSocket or SSE is configured for stats
-    local game_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
+    local game_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$game_files" | xargs grep -l "ws\|websocket\|sse\|subscribe\|emit" 2>/dev/null | grep -q .; then
         log_result 10 "Real-time Updates" "PASS"

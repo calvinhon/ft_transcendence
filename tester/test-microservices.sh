@@ -83,7 +83,7 @@ test_api_gateway() {
     echo -e "${YELLOW}Running Test 3: API Gateway${NC}"
     
     # Check if API gateway (nginx) is configured
-    if [ -f "$PROJECT_ROOT/nginx/modsecurity.conf" ] || [ -f "$PROJECT_ROOT/nginx/nginx.conf" ]; then
+    if [ -f "$PROJECT_ROOT/frontend/nginx/modsecurity.conf" ] || [ -f "$PROJECT_ROOT/frontend/nginx/nginx.conf" ]; then
         log_result 3 "API Gateway" "PASS"
         return 0
     fi
@@ -173,8 +173,8 @@ test_fault_tolerance() {
     echo -e "${YELLOW}Running Test 8: Fault Tolerance${NC}"
     
     # Check for error handling and try-catch blocks
-    if [ -d "$PROJECT_ROOT/game/src" ]; then
-        if find "$PROJECT_ROOT/game/src" -type f -name "*.ts" -exec grep -l "try\|catch\|error" {} \; 2>/dev/null | head -1 | grep -q .; then
+    if [ -d "$PROJECT_ROOT/game-service/src" ]; then
+        if find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" -exec grep -l "try\|catch\|error" {} \; 2>/dev/null | head -1 | grep -q .; then
             log_result 8 "Fault Tolerance" "PASS"
             return 0
         fi
@@ -189,7 +189,7 @@ test_data_consistency() {
     echo -e "${YELLOW}Running Test 9: Data Consistency${NC}"
     
     # Check for data validation and schemas
-    if [ -d "$PROJECT_ROOT/auth/src" ]; then
+    if [ -d "$PROJECT_ROOT/auth-service/src" ]; then
         if find "$PROJECT_ROOT" -path "*/src/*" -type f -name "*.ts" -exec grep -l "interface\|type\|schema" {} \; 2>/dev/null | head -1 | grep -q .; then
             log_result 9 "Data Consistency" "PASS"
             return 0
@@ -220,8 +220,8 @@ test_security_between_services() {
     echo -e "${YELLOW}Running Test 11: Security Between Services${NC}"
     
     # Check for authentication and security in services
-    if [ -d "$PROJECT_ROOT/auth" ]; then
-        if find "$PROJECT_ROOT/auth/src" -type f -name "*.ts" -exec grep -l "auth\|jwt\|password\|hash" {} \; 2>/dev/null | head -1 | grep -q .; then
+    if [ -d "$PROJECT_ROOT/auth-service" ]; then
+        if find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" -exec grep -l "auth\|jwt\|password\|hash" {} \; 2>/dev/null | head -1 | grep -q .; then
             log_result 11 "Security Between Services" "PASS"
             return 0
         fi
@@ -236,7 +236,7 @@ test_service_deployment() {
     echo -e "${YELLOW}Running Test 12: Service Deployment${NC}"
     
     # Check Dockerfile for each service
-    local services=("auth" "game" "tournament" "user")
+    local services=("auth-service" "game-service" "tournament-service" "user-service")
     local all_have_dockerfile=true
     
     for service in "${services[@]}"; do
