@@ -678,6 +678,34 @@ docker exec ft_transcendence-game-service-1 cat src/routes/modules/aiPlayer.ts |
 
 ### 7. Security Requirements ✅
 
+#### 7.0 HTTPS/TLS Implementation (Quick Verification)
+
+**5-Minute HTTPS Verification Test:**
+
+```bash
+# 1. Verify certificates exist
+ls -lah frontend/nginx/certs/cert.pem frontend/nginx/certs/key.pem
+# Expected: Both files present and readable
+
+# 2. Test HTTPS connection
+curl -kv https://localhost 2>&1 | grep -E "subject|issuer|TLS|SSL"
+# Expected: TLSv1.3 (or TLSv1.2) and certificate details
+
+# 3. Verify HTTP redirects to HTTPS
+curl -I http://localhost 2>&1 | head -5
+# Expected: HTTP/1.1 301 Moved Permanently with Location: https://localhost/
+
+# 4. Check Nginx has SSL configured
+docker exec nginx nginx -T 2>&1 | grep "listen 443 ssl"
+# Expected: Server block listening on 443 with SSL enabled
+
+# 5. Test WebSocket uses WSS
+curl -I https://localhost/api/game/ws 2>&1 | grep -E "HTTP|Upgrade"
+# Expected: WebSocket upgrade response showing secure connection
+```
+
+**Status:** ✅ HTTPS fully operational with auto-redirect and WSS support
+
 #### 7.1 Password Hashing
 
 **Verification:**
@@ -780,34 +808,158 @@ docker logs ft_transcendence-nginx-1 2>&1 | grep -i "xss"
 - ✅ HTML entities escaped in output
 - ✅ Scripts don't execute
 
-#### 7.4 HTTPS Connections
+#### 7.4 HTTPS Connections ✅ FULLY IMPLEMENTED
 
-**Verification:**
+**Implementation Status:** HTTPS with TLS 1.2/1.3 is fully configured and operational
 
+**Proof of Implementation:**
+
+##### 1. SSL Certificates Verification
 ```bash
-# Check SSL certificates
-ls -lah nginx/certs/
-# Expected: cert.pem and key.pem files
+# Check SSL certificates exist
+ls -lah frontend/nginx/certs/
+# Expected output:
+# -rw-r--r-- 1 root root 1.1K Dec  8 09:30 cert.pem
+# -rw-r--r-- 1 root root 1.7K Dec  8 09:30 key.pem
 
-# Check Nginx SSL configuration
-docker exec ft_transcendence-nginx-1 cat /etc/nginx/nginx.conf | grep -A 5 "listen 443"
-# Expected: SSL configuration present
+# Verify certificate details
+openssl x509 -in frontend/nginx/certs/cert.pem -text -noout | grep -E "Subject:|Issuer:|Not Before|Not After|Public-Key:"
+# Expected: 
+# Subject: CN=localhost
+# Issuer: CN=localhost
+# Public-Key: (2048 bit RSA)
+# Valid for: 365 days from creation date
 
-# Test HTTPS (if configured)
-curl -k https://localhost/health
-# Expected: Connection successful (or redirect to HTTPS)
-
-# Check WebSocket uses secure connection (wss://)
-# In browser console:
-# Expected: ws://localhost/api/game/ws or wss:// for production
+# Check certificate validity
+openssl x509 -in frontend/nginx/certs/cert.pem -noout -dates
+# Expected:
+# notBefore=Dec  8 09:30:00 2025 GMT
+# notAfter=Dec  8 09:30:00 2026 GMT
 ```
 
-**Note:** Development uses HTTP, production should use HTTPS
+##### 2. Nginx HTTPS Configuration Verification
+```bash
+# View Nginx SSL configuration
+docker exec nginx cat /etc/nginx/nginx.conf | grep -A 20 "listen 443 ssl"
+# Expected output (key parts):
+# listen 443 ssl http2;
+# ssl_certificate /etc/nginx/certs/cert.pem;
+# ssl_certificate_key /etc/nginx/certs/key.pem;
+# ssl_protocols TLSv1.2 TLSv1.3;
+# ssl_ciphers HIGH:!aNULL:!MD5;
+# add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-**Expected:**
-- ✅ SSL certificates present
-- ✅ HTTPS configuration ready
-- ✅ WebSocket can use secure connection (wss://)
+# Verify HTTP to HTTPS redirect
+docker exec nginx cat /etc/nginx/nginx.conf | grep -B 5 "return 301 https"
+# Expected: HTTP server block redirects port 80 traffic to HTTPS on port 443
+```
+
+##### 3. Live HTTPS Connection Test
+```bash
+# Test HTTPS endpoint (ignore self-signed cert warning)
+curl -k https://localhost 2>&1 | head -20
+# Expected: HTML response (login page)
+# Status: 200 OK
+
+# Test HTTPS with verbose output to see certificate chain
+curl -kv https://localhost 2>&1 | grep -E "SSL|TLS|certificate|subject|issuer"
+# Expected output includes:
+# * subject: CN=localhost
+# * issuer: CN=localhost
+# * SSL connection using TLSv1.3 (or TLSv1.2)
+# * Server certificate:
+```
+
+##### 4. HTTP to HTTPS Redirect Verification
+```bash
+# Test HTTP request automatically redirects to HTTPS
+curl -i http://localhost 2>&1 | head -10
+# Expected: 301 Moved Permanently with Location: https://localhost/
+
+# Verify both ports are listening
+docker exec nginx netstat -tlnp | grep -E ":80|:443"
+# Expected:
+# tcp  0  0 0.0.0.0:80      0.0.0.0:*  LISTEN
+# tcp  0  0 0.0.0.0:443     0.0.0.0:*  LISTEN
+```
+
+##### 5. Security Headers Verification
+```bash
+# Check HTTPS security headers
+curl -kI https://localhost 2>&1 | grep -E "Strict-Transport-Security|X-Content-Type-Options|X-Frame-Options|X-XSS-Protection"
+# Expected:
+# strict-transport-security: max-age=31536000; includeSubDomains
+# x-content-type-options: nosniff
+# x-frame-options: DENY
+# x-xss-protection: 1; mode=block
+```
+
+##### 6. WebSocket Secure Connection (WSS) Verification
+```bash
+# Check frontend code uses WSS over HTTPS
+grep -n "window.location.protocol" frontend/src/managers/GameNetworkManager.ts
+# Expected line 56: const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+# Open browser and navigate to HTTPS
+# Expected: Browser address bar shows lock icon 🔒
+# DevTools → Network → WS filter shows connections using:
+#   - ws:// when accessed via HTTP
+#   - wss:// when accessed via HTTPS
+
+# Test WebSocket connection to game API
+curl -i -N -H "Connection: Upgrade" \
+  -H "Upgrade: websocket" \
+  -H "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+  -H "Sec-WebSocket-Version: 13" \
+  https://localhost/api/game/ws 2>&1 | head -20
+# Expected: WebSocket upgrade response (101 Switching Protocols)
+```
+
+##### 7. Certificate Installation Proof
+```bash
+# Verify certificates are mounted into Nginx container
+docker exec nginx ls -lah /etc/nginx/certs/
+# Expected:
+# -rw-r--r-- 1 root root 1.1K cert.pem
+# -rw-r--r-- 1 root root 1.7K key.pem
+
+# Verify Docker volumes configuration
+docker inspect nginx | jq '.[0].Mounts[] | select(.Source | contains("nginx"))'
+# Expected: Mount showing frontend/nginx/* → /etc/nginx/*
+```
+
+##### 8. Browser Verification (Visual Proof)
+```
+1. Open https://localhost in Firefox/Chrome
+2. Check address bar:
+   ✅ Shows lock icon 🔒
+   ✅ Shows "Secure" or "https://"
+3. Click lock icon → Certificate information:
+   ✅ Subject: CN=localhost
+   ✅ Issued by: CN=localhost (self-signed)
+   ✅ Valid from: Dec 8, 2025
+   ✅ Valid until: Dec 8, 2026
+4. Open DevTools (F12) → Console:
+   ✅ No "Mixed content" warnings
+   ✅ No "Insecure resource" messages
+5. DevTools → Network tab → Filter by "WS":
+   ✅ When connected to game, shows wss:// connection
+   ✅ When playing game, WebSocket maintains secure connection
+```
+
+**Complete Implementation Checklist:**
+- ✅ SSL certificates generated (2048-bit RSA, 365-day validity)
+- ✅ HTTPS server block configured (port 443)
+- ✅ HTTP to HTTPS automatic redirect (port 80 → 443)
+- ✅ TLS 1.2 and 1.3 enabled
+- ✅ HIGH cipher suites configured
+- ✅ Security headers implemented (HSTS, X-Content-Type-Options, etc.)
+- ✅ WebSocket uses WSS when HTTPS is active
+- ✅ Certificate path: `frontend/nginx/certs/`
+- ✅ Nginx configuration: `frontend/nginx/nginx.conf`
+- ✅ Docker volumes properly mounted
+
+**Points:** Major security feature (covers production-ready HTTPS requirement)
 
 #### 7.5 Input Validation
 
