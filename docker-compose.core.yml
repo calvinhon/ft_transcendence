@@ -17,11 +17,11 @@ services:
     networks:
       - transcendence-network
 
-  hardhat:
+  hardhat-node:
     build:
       context: ./blockchain
       dockerfile: Dockerfile
-    container_name: hardhat
+    container_name: hardhat-node
     ports:
       - "8545:8545"
     mem_limit: 512m
@@ -115,11 +115,11 @@ services:
     environment:
       - NODE_ENV=production
       - AUTH_SERVICE_URL=http://auth-service:3000
-      - BLOCKCHAIN_RPC_URL=http://hardhat:8545
+      - BLOCKCHAIN_RPC_URL=http://hardhat-node:8545
     depends_on:
       auth-service:
         condition: service_healthy
-      hardhat:
+      hardhat-node:
         condition: service_healthy
     mem_limit: 512m
     networks:
