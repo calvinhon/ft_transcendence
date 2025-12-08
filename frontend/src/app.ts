@@ -1736,19 +1736,19 @@ export class App {
     }
 
     // Gather ALL participants (no selection needed - everyone in party plays)
-    const participants: { id: number; username: string }[] = [];
+    const participants: { userId: number; username: string }[] = [];
 
     // Add host player
     const authManager = (window as any).authManager;
     const hostUser = authManager?.getCurrentUser();
     if (hostUser) {
-      participants.push({ id: hostUser.userId, username: hostUser.username });
+      participants.push({ userId: hostUser.userId, username: hostUser.username });
     }
 
     // Add all local players in the party
     for (const player of this.localPlayers) {
       const playerId = player.userId || Math.floor(Math.random() * 100000) + 10000;
-      participants.push({ id: playerId, username: player.username });
+      participants.push({ userId: playerId, username: player.username });
     }
 
     console.log('🏆 [Tournament] All participants:', participants);

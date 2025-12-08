@@ -4,10 +4,10 @@ import cors from '@fastify/cors';
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import process from 'node:process';
 
 const fastify = Fastify({ logger: true });
 
-// Env and config
 const RPC = process.env.BLOCKCHAIN_RPC_URL || 'http://blockchain:8545';
 const DEFAULT_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 const PK = process.env.PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -34,7 +34,6 @@ if (!CONTRACT) {
   process.exit(1);
 }
 
-// Ethers setup
 const provider = new ethers.JsonRpcProvider(RPC);
 const signer = new ethers.Wallet(PK, provider);
 
@@ -46,23 +45,22 @@ if (!fs.existsSync(abiPath)) {
 const abi = JSON.parse(fs.readFileSync(abiPath, 'utf8')).abi;
 const contract = new ethers.Contract(CONTRACT, abi, signer);
 
-// Routes
 fastify.post('/record', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const body = request.body as { tournamentId: number; walletAddress: string; rank: number };
-    const tx = await contract.recordRank(body.tournamentId, body.walletAddress, body.rank);
+    const body = request.body as { tournamentId: number; userId: number; rank: number };
+    const tx = await contract.recordRank(body.tournamentId, body.userId, body.rank);
     const receipt = await tx.wait();
-    return reply.send({ ok: true, txHash: receipt?.hash });
+    return reply.send({ ok: true, txHash: receipt?.transactionHash });
   } catch (e: any) {
     fastify.log.error({ err: e }, '[blockchain-service] /record error');
     return reply.status(500).send({ ok: false, error: e.message });
   }
 });
 
-fastify.get('/rank/:tid/:addr', async (request: FastifyRequest, reply: FastifyReply) => {
+fastify.get('/rank/:tid/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { tid, addr } = request.params as { tid: string; addr: string };
-    const r = await contract.getRank(Number(tid), addr);
+    const { tid, userId } = request.params as { tid: string; userId: number };
+    const r = await contract.getRank(Number(tid), userId);
     return reply.send({ rank: Number(r) });
   } catch (e: any) {
     fastify.log.error({ err: e }, '[blockchain-service] /rank error');

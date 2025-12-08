@@ -11,7 +11,7 @@ interface Tournament {
 
 interface TournamentDetails {
   tournament: Tournament;
-  participants: { user_id: number; username: string }[];
+  participants: { userId: number; username: string }[];
   matches: {
     id: number;
     tournament_id: number;
@@ -32,7 +32,7 @@ export class TournamentManager {
   private baseURL = '/api/tournament';
   private lastDetails: TournamentDetails | null = null; // cache for playMatch
 
-  async startTournament(participants: { id: number; username: string }[]): Promise<void> {
+  async startTournament(participants: { userId: number; username: string }[]): Promise<void> {
     if (![4, 8].includes(participants.length)) {
       showToast(`Need 4 or 8 players. Currently have ${participants.length}!`, 'error');
       return;
@@ -59,7 +59,7 @@ export class TournamentManager {
       showToast('Tournament started!', 'success');
       const details: TournamentDetails = {
         tournament: data.tournament,
-        participants: participants.map(p => ({ user_id: p.id, username: p.username })),
+        participants: participants.map(p => ({ userId: p.userId, username: p.username })),
         matches: data.matches
       };
       this.showBracket(details);
@@ -107,7 +107,7 @@ export class TournamentManager {
     `).join('');
 
     const winnerName = details.tournament.winner_id != null
-      ? (details.participants.find(p => p.user_id === details.tournament.winner_id)?.username
+      ? (details.participants.find(p => p.userId === details.tournament.winner_id)?.username
          || `Player ${details.tournament.winner_id}`)
       : '';
 

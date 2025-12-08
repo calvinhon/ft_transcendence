@@ -8,7 +8,7 @@ const config = {
       url: "http://blockchain:8545",
       chainId: 1337
     }
-  },
+  }
 };
 
 module.exports = config;

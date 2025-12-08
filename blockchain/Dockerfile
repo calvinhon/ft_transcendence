@@ -16,8 +16,6 @@ COPY entrypoint.sh ./
 
 RUN chmod +x entrypoint.sh
 
-RUN npx hardhat compile
-
 RUN mkdir -p /app/data /app/deployments
 
 EXPOSE 8545
