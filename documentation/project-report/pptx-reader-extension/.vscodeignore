@@ -1,0 +1,21 @@
+{
+  "name": "pptx-reader",
+  "displayName": "PPTX Reader",
+  "description": "Integrated PPTX presentation reader and viewer",
+  "version": "1.0.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/pptx-reader"
+  },
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "presentation",
+    "reader",
+    "viewer"
+  ]
+}

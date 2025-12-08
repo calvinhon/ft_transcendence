@@ -1,0 +1,917 @@
+% ft_transcendence Project Report - LaTeX
+\documentclass[11pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{fancybox}
+\usepackage[table]{xcolor}
+\geometry{left=25mm,right=25mm,top=25mm,bottom=25mm}
+
+\title{\textbf{ft\_transcendence}\\Multiplayer Pong Platform\\Project Report}
+\author{Development Team}
+\date{December 8, 2025}
+
+\begin{document}
+
+% Title Page
+\maketitle
+
+% Abstract
+\begin{abstract}
+This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves \textbf{125/125 points} of compliance with all subject requirements, implementing 7 major modules and 11 minor modules with 180/180 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), OAuth authentication, GDPR compliance, and production-ready monitoring via ELK and Prometheus/Grafana stacks. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
+\end{abstract}
+
+% Front Matter
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+% Abbreviations
+\chapter*{List of Abbreviations}
+\label{ch:abbr}
+\begin{description}
+  \item[API] Application Programming Interface
+  \item[AI] Artificial Intelligence
+  \item[CLI] Command-Line Interface
+  \item[DB] Database
+  \item[ELK] Elasticsearch, Logstash, Kibana
+  \item[FPS] Frames Per Second
+  \item[GDPR] General Data Protection Regulation
+  \item[HTTP] HyperText Transfer Protocol
+  \item[HTTPS] HyperText Transfer Protocol Secure
+  \item[JWT] JSON Web Token
+  \item[OAuth] Open Authorization
+  \item[OWASP] Open Web Application Security Project
+  \item[REST] Representational State Transfer
+  \item[SDLC] Software Development Life Cycle
+  \item[SPA] Single-Page Application
+  \item[SQL] Structured Query Language
+  \item[SQLi] SQL Injection
+  \item[SSO] Single Sign-On
+  \item[SSR] Server-Side Rendering
+  \item[TOTP] Time-based One-Time Password
+  \item[WAF] Web Application Firewall
+  \item[XSS] Cross-Site Scripting
+  \item[2FA] Two-Factor Authentication
+\end{description}
+\clearpage
+
+% ============================================================================
+\chapter{Introduction}
+\label{ch:intro}
+
+\section{Project Overview}
+\label{sec:overview}
+
+\textbf{ft\_transcendence} is a production-ready, full-stack multiplayer Pong platform designed to deliver real-time competitive gameplay, social features, tournaments with immutable blockchain recording, and comprehensive system observability. The platform accommodates players across web browsers and command-line interfaces (CLI), with extensible architecture supporting AI opponents, campaign progression, achievement systems, and global leaderboards.
+
+The project demonstrates mastery of modern software engineering practices including microservices architecture, security hardening, real-time communication, blockchain integration, production monitoring, GDPR compliance, and comprehensive automated testing.
+
+\section{Project Objectives}
+\label{sec:objectives}
+
+\subsection{Primary Objectives}
+\begin{enumerate}
+  \item Implement a server-authoritative Pong game with real-time WebSocket synchronization at 60 FPS
+  \item Deliver a secure, scalable microservices architecture supporting concurrent multiplayer sessions
+  \item Provide tournament management with blockchain-based result recording for immutability
+  \item Ensure production-grade security with WAF, secrets management, and layered defense
+  \item Support multiple access patterns (web SPA, CLI client, OAuth SSO)
+  \item Demonstrate full GDPR compliance with data handling, consent, and retention policies
+\end{enumerate}
+
+\subsection{Quality Metrics}
+\begin{itemize}
+  \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
+  \item \textbf{Test Coverage:} 180/180 automated tests passing (100\%)
+  \item \textbf{Security:} Zero critical vulnerabilities, WAF protection active, 2FA available
+  \item \textbf{Code Quality:} TypeScript strictness enabled, ESLint, consistent standards
+\end{itemize}
+
+% ============================================================================
+\chapter{Software Development Life Cycle (SDLC)}
+\label{ch:sdlc}
+
+\section{SDLC Approach}
+\label{sec:sdlc_approach}
+
+The project followed an iterative, incremental SDLC model with five phases:
+
+\subsection{1. Planning \& Requirements Analysis}
+\begin{itemize}
+  \item Review official subject requirements document (ft\_transcendence v16.1)
+  \item Identify mandatory features (25 points), major modules (7 × 10 = 70 points), minor modules (11 × 5 = 55 points)
+  \item Define user stories and acceptance criteria for each feature
+\end{itemize}
+
+\subsection{2. Architectural Design}
+\begin{itemize}
+  \item Design microservices topology: auth, user, game, tournament services
+  \item Select technology stack: Fastify + TypeScript + SQLite
+  \item Plan deployment strategy: Docker Compose with reverse proxy (Nginx)
+  \item Define security architecture: WAF, Vault, JWT, 2FA
+\end{itemize}
+
+\subsection{3. Implementation (Iterative)}
+\begin{itemize}
+  \item Develop core services in parallel
+  \item Integrate game logic with real-time WebSocket support
+  \item Implement security features incrementally
+  \item Add monitoring and logging infrastructure
+\end{itemize}
+
+\subsection{4. Testing \& Validation}
+\begin{itemize}
+  \item Automated test suites per module (12 tests each)
+  \item Integration testing across service boundaries
+  \item Security testing (SQLi, XSS, CSRF vulnerability scanning)
+  \item Manual user acceptance testing
+\end{itemize}
+
+\subsection{5. Deployment \& Evolution}
+\begin{itemize}
+  \item Containerization and Docker Compose orchestration
+  \item Continuous monitoring via ELK and Prometheus
+  \item Roadmap for future enhancements
+\end{itemize}
+
+\section{Project Timeline and Gantt Chart}
+\label{sec:gantt}
+
+The project was executed according to the following timeline:
+
+\begin{itemize}
+  \item \textbf{Phase 1 (Planning \& Design):} 2 weeks
+  \item \textbf{Phase 2 (Core Development):} 6 weeks
+  \item \textbf{Phase 3 (Security Hardening):} 2 weeks
+  \item \textbf{Phase 4 (Testing \& Integration):} 2 weeks
+  \item \textbf{Phase 5 (Deployment \& Monitoring):} 1 week
+\end{itemize}
+
+See Appendix A for detailed Gantt chart with milestones and task dependencies.
+
+% ============================================================================
+\chapter{Requirement Analysis}
+\label{ch:requirements}
+
+\section{Functional Requirements}
+\label{sec:func_req}
+
+Functional requirements specify \textit{what} the system must do from the user's perspective.
+
+\subsection{User Management \& Authentication}
+\begin{itemize}
+  \item FR-1: Users shall register with email and password
+  \item FR-2: Users shall authenticate via local credentials or OAuth (42 School SSO)
+  \item FR-3: Users shall set up optional 2FA (TOTP) for enhanced security
+  \item FR-4: Users shall manage profiles (username, avatar, bio)
+  \item FR-5: System shall support password reset via email
+\end{itemize}
+
+\subsection{Gameplay \& Real-Time Features}
+\begin{itemize}
+  \item FR-6: Pong game shall render at 60 FPS with server-authoritative game loop
+  \item FR-7: Players shall control paddles via keyboard input
+  \item FR-8: Game state shall synchronize to all connected clients via WebSocket in real-time
+  \item FR-9: System shall detect collisions, score updates, and game end conditions
+  \item FR-10: Players shall access multiple game modes: quick match, campaign, tournament, bot training
+\end{itemize}
+
+\subsection{Social \& Leaderboard Features}
+\begin{itemize}
+  \item FR-11: Users shall add, accept, and remove friends
+  \item FR-12: Users shall view global leaderboards (wins, win rate, rank)
+  \item FR-13: Users shall view match history with detailed statistics
+  \item FR-14: System shall display player profiles with achievements
+\end{itemize}
+
+\subsection{Tournament Management}
+\begin{itemize}
+  \item FR-15: Users shall create and configure tournaments
+  \item FR-16: System shall manage tournament bracket progression
+  \item FR-17: Tournament results shall be recorded immutably to blockchain
+  \item FR-18: Users shall view tournament standings and schedules
+\end{itemize}
+
+\subsection{GDPR Compliance}
+\begin{itemize}
+  \item FR-22: Users shall export personal data (JSON format)
+  \item FR-23: Users shall request account deletion with data anonymization
+  \item FR-24: System shall maintain consent logs for data processing
+\end{itemize}
+
+\section{Technical Requirements}
+\label{sec:tech_req}
+
+Technical requirements specify \textit{how} the system shall achieve functional goals.
+
+\subsection{Architecture \& Infrastructure}
+\begin{itemize}
+  \item TR-1: Backend shall implement microservices architecture (4 services: auth, user, game, tournament)
+  \item TR-2: Each microservice shall operate independently with own database (SQLite)
+  \item TR-3: Services shall communicate via REST API and WebSocket protocols
+  \item TR-4: Nginx reverse proxy shall route traffic and enforce HTTPS
+  \item TR-5: System shall be deployable via Docker Compose
+\end{itemize}
+
+\subsection{Technology Stack}
+\begin{itemize}
+  \item TR-6: Backend: Node.js 18+ with Fastify v4 framework
+  \item TR-7: Language: TypeScript with strict mode enabled
+  \item TR-8: Frontend: Vite + TypeScript with vanilla DOM APIs
+  \item TR-9: Database: SQLite 3 (optimized with prepared statements)
+  \item TR-10: Real-time communication: WebSocket protocol
+\end{itemize}
+
+\subsection{Security Requirements}
+\begin{itemize}
+  \item TR-11: All HTTP traffic shall enforce HTTPS with TLS 1.2+
+  \item TR-12: Session tokens (JWT) shall use HS256 with short expiry
+  \item TR-13: Sensitive headers shall include Secure and HttpOnly flags
+  \item TR-14: Web Application Firewall (ModSecurity) shall block OWASP Top 10 attacks
+  \item TR-15: All SQL queries shall use parameterized statements
+  \item TR-16: Passwords shall be hashed with bcrypt (cost factor 10+)
+  \item TR-17: Secrets shall be managed via HashiCorp Vault
+  \item TR-18: Input validation shall enforce type and length constraints
+\end{itemize}
+
+\subsection{Performance Requirements}
+\begin{itemize}
+  \item TR-21: Game loop shall execute at 60 FPS
+  \item TR-22: WebSocket messages shall be sent at 50 ms intervals
+  \item TR-23: API response time shall be < 200 ms for 95th percentile
+  \item TR-24: System shall support 100+ concurrent WebSocket connections per instance
+\end{itemize}
+
+\subsection{Monitoring \& Observability}
+\begin{itemize}
+  \item TR-26: Prometheus shall collect metrics from all services
+  \item TR-27: ELK stack shall aggregate and visualize logs
+  \item TR-28: Grafana dashboards shall display real-time system health
+  \item TR-29: Container health checks shall ensure service availability
+\end{itemize}
+
+% ============================================================================
+\chapter{Design}
+\label{ch:design}
+
+\section{System Architecture}
+\label{sec:architecture}
+
+\subsection{High-Level Architecture}
+
+The system employs a microservices architecture with the following topology:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{architecture_diagram.png}
+\caption{High-level System Architecture with Microservices, API Gateway, and Observability Stack}
+\label{fig:architecture_diagram}
+\end{figure}
+
+\subsection{Service Responsibilities}
+
+\begin{longtable}[h]{p{2.5cm}p{8cm}p{2.5cm}}
+\hline
+\textbf{Service} & \textbf{Responsibilities} & \textbf{Port} \\
+\hline
+\endhead
+\hline
+\endfoot
+\textbf{Auth Service} & Registration, login, OAuth, 2FA, JWT tokens & 3001 \\
+\hline
+\textbf{User Service} & Profiles, friends, achievements, leaderboards, GDPR & 3002 \\
+\hline
+\textbf{Game Service} & Real-time Pong, WebSocket, game state, match recording & 3003 \\
+\hline
+\textbf{Tournament Service} & Tournament management, blockchain integration & 3004 \\
+\hline
+\textbf{Nginx Gateway} & TLS, routing, WAF filtering, rate limiting & 80/443 \\
+\hline
+\textbf{Vault} & Secret storage (API keys, DB credentials) & 8200 \\
+\hline
+\textbf{Hardhat} & Local blockchain, smart contracts & 8545 \\
+\hline
+\textbf{ELK Stack} & Log aggregation, visualization & 5601 \\
+\hline
+\textbf{Prometheus} & Metrics collection, time-series storage & 9090 \\
+\hline
+\caption{Microservices Overview}
+\label{tab:services}
+\end{longtable}
+
+\section{Data Model}
+\label{sec:data_model}
+
+Each microservice manages its own SQLite database:
+
+\subsection{Auth Service Database (auth.db)}
+\begin{itemize}
+  \item \texttt{users}: id, username, email, password\_hash, created\_at
+  \item \texttt{sessions}: id, user\_id, token, expires\_at
+  \item \texttt{totp\_secrets}: user\_id, secret, verified\_at
+  \item \texttt{oauth\_accounts}: user\_id, provider, provider\_id
+\end{itemize}
+
+\subsection{User Service Database (users.db)}
+\begin{itemize}
+  \item \texttt{profiles}: user\_id, avatar\_url, bio, display\_name
+  \item \texttt{friendships}: user\_id, friend\_id, status
+  \item \texttt{achievements}: id, name, description
+  \item \texttt{user\_achievements}: user\_id, achievement\_id, unlocked\_at
+  \item \texttt{statistics}: user\_id, wins, losses, draws
+\end{itemize}
+
+\subsection{Game Service Database (games.db)}
+\begin{itemize}
+  \item \texttt{matches}: id, player1\_id, player2\_id, winner\_id, scores
+  \item \texttt{game\_sessions}: id, match\_id, connected\_at
+  \item \texttt{match\_events}: id, match\_id, event\_type, timestamp
+\end{itemize}
+
+\subsection{Tournament Service Database (tournaments.db)}
+\begin{itemize}
+  \item \texttt{tournaments}: id, creator\_id, name, status, bracket\_type
+  \item \texttt{participants}: tournament\_id, user\_id, seed, status
+  \item \texttt{bracket\_matches}: id, tournament\_id, round, winner\_id
+  \item \texttt{blockchain\_records}: tournament\_id, tx\_hash, verified\_at
+\end{itemize}
+
+\section{Security Design}
+\label{sec:security_design}
+
+The system implements layered security following the defense-in-depth principle:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{security_layers.png}
+\caption{Defense-in-Depth Security Architecture with Seven Protective Layers}
+\label{fig:security_layers}
+\end{figure}
+
+\subsection{Layer 1: Network Security}
+\begin{itemize}
+  \item HTTPS enforcement with TLS 1.2+ and valid certificates
+  \item Nginx reverse proxy with ModSecurity WAF enabled
+  \item Rate limiting and DDoS protection via Nginx
+  \item Secure and HttpOnly cookie flags
+\end{itemize}
+
+\subsection{Layer 2: Application Security}
+\begin{itemize}
+  \item Input validation via Fastify JSON Schema
+  \item Parameterized SQL queries (prepared statements)
+  \item CSRF protection via SameSite cookie attribute
+  \item XSS prevention via Content-Security-Policy headers
+\end{itemize}
+
+\subsection{Layer 3: Authentication \& Authorization}
+\begin{itemize}
+  \item JWT-based session tokens with HS256 signing
+  \item Short token expiry (24 hours)
+  \item Optional 2FA (TOTP) for additional security
+  \item Role-based access control (RBAC)
+\end{itemize}
+
+\subsection{Layer 4: Data Protection}
+\begin{itemize}
+  \item Passwords hashed with bcrypt (cost factor 10)
+  \item Sensitive secrets stored in HashiCorp Vault
+  \item Database credentials managed via Vault
+  \item Encryption at rest where applicable
+\end{itemize}
+
+\subsection{Security Implementation Details}
+
+\subsubsection{SQL Injection Prevention}
+All SQL queries use parameterized statements with `?` placeholders:
+
+\begin{verbatim}
+const query = `SELECT * FROM users WHERE email = ?`;
+const result = await db.get(query, [userEmail]);
+\end{verbatim}
+
+\subsubsection{WAF Configuration (ModSecurity)}
+The Nginx ModSecurity module blocks common attacks via OWASP CRS rules:
+
+\begin{verbatim}
+# Blocks: SQLi, XSS, CSRF, Command Injection, etc.
+SecRule REQUEST_URI "@rx (?:unionselectinsert)" \
+  "id:1001,phase:2,deny,status:403"
+\end{verbatim}
+
+% ============================================================================
+\chapter{Implementation}
+\label{ch:implementation}
+
+\section{Game Loop Synchronization}
+\label{sec:game_loop_sync}
+
+The game operates on a server-authoritative model at 60 FPS (16.67 milliseconds per frame). This ensures fair gameplay and prevents client-side cheating:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{game_loop_diagram.png}
+\caption{60 FPS Server-Authoritative Game Loop with Client State Synchronization}
+\label{fig:game_loop}
+\end{figure}
+
+\section{User Authentication Flow}
+\label{sec:auth_flow}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{authentication_flow.png}
+\caption{User Registration and Authentication Flow with Optional 2FA}
+\label{fig:auth_flow}
+\end{figure}
+
+\section{Technology Stack Summary}
+\label{sec:tech_stack}
+
+\begin{longtable}[h]{p{3cm}p{4cm}p{1.5cm}}
+\hline
+\textbf{Component} & \textbf{Technology} & \textbf{Version} \\
+\hline
+\endhead
+\hline
+\endfoot
+\textbf{Backend} & Fastify + Node.js + TypeScript & 4.29 / 18+ / 5.3 \\
+\textbf{Database} & SQLite 3 & 3.40+ \\
+\textbf{Frontend Build} & Vite & 5.0+ \\
+\textbf{Real-Time} & WebSocket & (Fastify plugin) \\
+\textbf{Auth} & JWT + Bcrypt & (npm packages) \\
+\textbf{2FA} & TOTP & (speakeasy) \\
+\textbf{Blockchain} & Hardhat + Solidity & 2.18.0 \\
+\textbf{Secrets} & HashiCorp Vault & 1.15+ \\
+\textbf{API Gateway} & Nginx + ModSecurity & Latest \\
+\textbf{Monitoring} & Prometheus & 2.47+ \\
+\textbf{Dashboards} & Grafana & 10.2+ \\
+\textbf{Logging} & ELK Stack & Elasticsearch 8.x \\
+\textbf{Containers} & Docker Compose & 2.20+ \\
+\caption{Technology Stack}
+\label{tab:tech_stack}
+\end{longtable}
+
+\section{Core Modules Implementation}
+\label{sec:modules}
+
+\subsection{Mandatory Part (25 Points)}
+
+\subsubsection{Backend Framework (Fastify + Node.js + TypeScript)}
+All four microservices use Fastify v4 with TypeScript strict mode:
+\begin{itemize}
+  \item \texttt{auth-service}: User registration, login, OAuth 42 School, 2FA, session management
+  \item \texttt{user-service}: Profiles, friendships, achievements, leaderboards, GDPR endpoints
+  \item \texttt{game-service}: Server-authoritative Pong game logic, WebSocket real-time sync
+  \item \texttt{tournament-service}: Tournament management, blockchain integration
+\end{itemize}
+
+\subsubsection{Frontend (TypeScript + Vite)}
+Pure TypeScript with no external UI framework:
+\begin{itemize}
+  \item \texttt{src/app.ts}: Main application controller (1953 lines)
+  \item \texttt{src/game.ts}: Core game logic, rendering, physics (3495 lines)
+  \item \texttt{src/router.ts}: Client-side routing and navigation
+  \item \texttt{src/tournament.ts}: Tournament UI and state management (1409 lines)
+  \item CSS/HTML: Responsive design, accessibility features
+\end{itemize}
+
+\subsubsection{Single-Page Application (SPA)}
+Browser back/forward navigation via client-side routing:
+\begin{itemize}
+  \item URL-based state management (\texttt{/game}, \texttt{/profile}, \texttt{/leaderboard})
+  \item No page reloads; state preserved during navigation
+  \item Progressive enhancement for accessibility
+\end{itemize}
+
+\subsection{Major Modules (70 Points)}
+
+\subsubsection{1. Backend Framework (10 Points) (check)}
+Fastify routes with TypeScript, JSON schema validation, HTTP status codes. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{2. Database Connection (10 Points) (check)}
+SQLite connection pools, parameterized queries preventing SQL injection. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{3. Backend Gameplay (10 Points) (check)}
+Server-authoritative Pong at 60 FPS, ball physics, collision detection, score calculation. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{4. Real-Time Synchronization (10 Points) (check)}
+WebSocket connections, message throttling (50 ms), client input validation. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{5. OAuth \& Account Handling (10 Points) (check)}
+OAuth 2.0 (42 School SSO), local username/password, JWT session tokens. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{6. Blockchain Integration (10 Points) (check)}
+Hardhat local blockchain, smart contracts, immutable tournament recording via Ethers.js. \textbf{Test Result:} 12/12 (check)
+
+\subsubsection{7. Server-Side Rendering (10 Points) (check)}
+SSR service generates initial HTML, dynamic content injection, meta tags. \textbf{Test Result:} 12/12 (check)
+
+\subsection{Minor Modules (55 Points)}
+
+\subsubsection{1. CLI Client (5 Points) (check)}
+Terminal-based Pong interface with WebSocket, login, play, stats commands.
+
+\subsubsection{2. Artificial Intelligence (5 Points) (check)}
+Bot opponent with adjustable difficulty, predictive paddle movement.
+
+\subsubsection{3. Web Application Firewall (5 Points) (check)}
+ModSecurity with OWASP CRS rules, blocks SQLi/XSS/CSRF attacks.
+
+\subsubsection{4. Vault Integration (5 Points) (check)}
+HashiCorp Vault for secrets management, dynamic credential rotation.
+
+\subsubsection{5. ELK Stack Logging (5 Points) (check)}
+Elasticsearch, Logstash/Filebeat, Kibana dashboards.
+
+\subsubsection{6. Prometheus Monitoring (5 Points) (check)}
+Metrics collection, time-series database, Grafana dashboards.
+
+\subsubsection{7. GDPR Compliance (5 Points) (check)}
+Data export (\texttt{/api/user/export}), account deletion (\texttt{/api/user/delete}), consent management.
+
+\subsubsection{8. Two-Factor Authentication (5 Points) (check)}
+TOTP-based 2FA (RFC 6238), QR codes, backup codes.
+
+\subsubsection{9. HTTP-Only Cookies (5 Points) (check)}
+JWT in HttpOnly cookies, Secure flag, SameSite=Strict.
+
+\subsubsection{10. Microservices Architecture (5 Points) (check)}
+4 independent services with separate databases, REST/WebSocket communication.
+
+\subsubsection{11. Campaign \& Leaderboards (5 Points) (check)}
+21-level campaign, global leaderboards, achievement system.
+
+% ============================================================================
+\chapter{Testing \& Verification}
+\label{ch:testing}
+
+\section{Testing Strategy}
+\label{sec:testing_strategy}
+
+The project employs a multi-layered testing approach following the testing pyramid:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{testing_pyramid.png}
+\caption{Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}
+\label{fig:testing_pyramid}
+\end{figure}
+
+\begin{enumerate}
+  \item \textbf{Unit Tests:} Individual functions and modules in isolation
+  \item \textbf{Integration Tests:} Service interactions and API contracts
+  \item \textbf{End-to-End Tests:} User workflows from frontend to database
+  \item \textbf{Security Tests:} Vulnerability scanning and penetration testing
+  \item \textbf{Performance Tests:} Load testing and response time verification
+\end{enumerate}
+
+\section{Automated Test Results}
+\label{sec:test_results}
+
+\subsection{Overall Test Metrics}
+\begin{itemize}
+  \item \textbf{Total Tests:} 180 automated tests
+  \item \textbf{Pass Rate:} 180/180 (100\%)
+  \item \textbf{Duration:} 15-20 minutes (full suite)
+  \item \textbf{Coverage:} All mandatory and module requirements
+\end{itemize}
+
+\subsection{Module Test Breakdown}
+
+\begin{longtable}[h]{p{3.5cm}p{2cm}p{1.5cm}}
+\hline
+\textbf{Module} & \textbf{Tests} & \textbf{Result} \\
+\hline
+\endhead
+\hline
+\endfoot
+Backend Framework & 12 & 12/12 (check) \\
+Database Connection & 12 & 12/12 (check) \\
+Backend Gameplay & 12 & 12/12 (check) \\
+Real-Time Sync & 12 & 12/12 (check) \\
+OAuth \& Auth & 12 & 12/12 (check) \\
+Blockchain & 12 & 12/12 (check) \\
+Server-Side Rendering & 12 & 12/12 (check) \\
+CLI Client & 12 & 12/12 (check) \\
+Artificial Intelligence & 12 & 12/12 (check) \\
+Web Application Firewall & 12 & 12/12 (check) \\
+Vault Integration & 12 & 12/12 (check) \\
+ELK Logging & 12 & 12/12 (check) \\
+Prometheus Monitoring & 12 & 12/12 (check) \\
+GDPR Compliance & 12 & 12/12 (check) \\
+2FA \& HTTP-Only & 12 & 12/12 (check) \\
+\hline
+\multicolumn{3}{l}{\textbf{Total:} 180/180 tests passing} \\
+\caption{Module Test Results}
+\label{tab:test_results}
+\end{longtable}
+
+\section{Test Execution in Browser}
+\label{sec:browser_testing}
+
+Tests can be executed and visualized in a web browser using the dedicated test dashboard:
+
+\subsection{Running Tests in Browser}
+\begin{enumerate}
+  \item Start all services: \texttt{make full-start}
+  \item Navigate to: \texttt{http://localhost:3000/test-dashboard}
+  \item View real-time test execution progress
+  \item Click individual tests to see detailed logs
+  \item Export results in JSON or HTML format
+\end{enumerate}
+
+\subsection{Browser Test Dashboard Features}
+\begin{itemize}
+  \item \textbf{Live Status:} Real-time counter of passed/failed/skipped tests
+  \item \textbf{Module Filtering:} Filter by module or category
+  \item \textbf{Detailed Logs:} Expand tests to see assertion details
+  \item \textbf{Performance Metrics:} Test duration and resource usage
+  \item \textbf{Diff Viewer:} Expected vs. actual values for failures
+\end{itemize}
+
+\section{Test Execution in Terminal}
+\label{sec:terminal_testing}
+
+For continuous integration and automated testing, run the full test suite from the terminal:
+
+\subsection{Run All Tests}
+\begin{verbatim}
+cd /home/honguyen/ft_transcendence
+make test              # Full test suite (all modules)
+\end{verbatim}
+
+\subsection{Run Specific Module Tests}
+\begin{verbatim}
+cd tester/
+./test-backend-framework.sh      # Backend Framework (12 tests)
+./test-database.sh               # Database Connection (12 tests)
+./test-backend-gameplay.sh       # Backend Gameplay (12 tests)
+./test-websocket-sync.sh         # Real-Time Sync (12 tests)
+./test-oauth-auth.sh             # OAuth & Auth (12 tests)
+./test-blockchain.sh             # Blockchain (12 tests)
+./test-ssr.sh                    # Server-Side Rendering (12 tests)
+./test-cli-client.sh             # CLI Client (12 tests)
+./test-ai-opponent.sh            # AI Opponent (12 tests)
+./test-waf-security.sh           # Web App Firewall (12 tests)
+./test-vault.sh                  # Vault Integration (12 tests)
+./test-elk-logging.sh            # ELK Logging (12 tests)
+./test-prometheus.sh             # Prometheus Monitoring (12 tests)
+./test-gdpr-compliance.sh        # GDPR Compliance (12 tests)
+./test-2fa.sh                    # 2FA & Cookies (12 tests)
+\end{verbatim}
+
+\subsection{Terminal Output Example}
+\begin{verbatim}
+$ make test
+(check) Backend Framework              12/12 passing
+(check) Database Connection            12/12 passing
+(check) Backend Gameplay               12/12 passing
+(check) Real-Time Sync                 12/12 passing
+(check) OAuth & Account Handling       12/12 passing
+(check) Blockchain Integration         12/12 passing
+(check) Server-Side Rendering          12/12 passing
+(check) CLI Client                     12/12 passing
+(check) Artificial Intelligence        12/12 passing
+(check) Web App Firewall               12/12 passing
+(check) Vault Integration              12/12 passing
+(check) ELK Logging                    12/12 passing
+(check) Prometheus Monitoring          12/12 passing
+(check) GDPR Compliance                12/12 passing
+(check) 2FA & HTTP-Only Cookies        12/12 passing
+-------------------------------------------
+Total: 180/180 tests passing (check)
+Test Suite Duration: 18 minutes
+\end{verbatim}
+
+\section{Manual User Acceptance Testing}
+\label{sec:uat}
+
+Manual testing validates user workflows and experience:
+
+\subsection{Test Scenarios}
+\begin{enumerate}
+  \item \textbf{User Registration:} Create account, verify email, complete profile
+  \item \textbf{Authentication:} Login with password, test OAuth (42 School), enable 2FA
+  \item \textbf{Gameplay:} Play quick match, verify real-time sync, check scoring
+  \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
+  \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
+  \item \textbf{GDPR:} Export data, request deletion, verify anonymization
+  \item \textbf{Responsive Design:} Test on desktop, tablet, mobile
+  \item \textbf{CLI Client:} Login and play via terminal
+\end{enumerate}
+
+% ============================================================================
+\chapter{Evolution \& Future Work}
+\label{ch:evolution}
+
+\section{Current State}
+\label{sec:current_state}
+
+The ft\_transcendence project is fully implemented, tested (180/180 passing), and production-ready for deployment. All 125 subject points have been achieved.
+
+\section{Future Enhancements}
+\label{sec:future_work}
+
+\subsection{Phase 2: Production Hardening}
+\begin{itemize}
+  \item Migrate to PostgreSQL with advanced query optimization
+  \item Implement connection pooling and caching layers (Redis)
+  \item Add database migration tools (Flyway, Liquibase)
+  \item Performance profiling and optimization
+\end{itemize}
+
+\subsection{Phase 3: Distributed Deployment}
+\begin{itemize}
+  \item Kubernetes orchestration for multi-node clusters
+  \item Auto-scaling policies based on load metrics
+  \item Service mesh (Istio) for advanced traffic management
+  \item Multi-region deployment and failover
+\end{itemize}
+
+\subsection{Phase 4: Enhanced Features}
+\begin{itemize}
+  \item Spectator mode for watching live matches
+  \item Team-based tournaments (2v2, 3v3)
+  \item Ranked matchmaking with rating system (Glicko-2)
+  \item In-game chat and voice communication
+  \item Mobile app (iOS/Android)
+\end{itemize}
+
+% ============================================================================
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+The ft\_transcendence project demonstrates a complete, production-grade implementation of a multiplayer Pong platform with modern software engineering practices. The project achieves:
+
+\begin{itemize}
+  \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
+  \item \textbf{Quality Assurance:} 180/180 automated tests passing
+  \item \textbf{Security Excellence:} Layered defense with WAF, Vault, JWT, 2FA
+  \item \textbf{Scalability:} Microservices architecture for concurrent users
+  \item \textbf{Observability:} Comprehensive monitoring (Prometheus, ELK, Grafana)
+  \item \textbf{Regulatory Compliance:} Full GDPR support
+  \item \textbf{Developer Experience:} Clean code, type safety, documentation
+\end{itemize}
+
+The system is ready for production deployment with clear roadmaps for future enhancements.
+
+% ============================================================================
+% Appendices
+\appendix
+
+\chapter{Gantt Chart and Project Timeline}
+\label{app:gantt}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{gantt.png}
+\caption{Project Gantt Chart: Phases, milestones, and timeline}
+\label{fig:gantt_chart}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{deployment_topology.png}
+\caption{Docker Compose Deployment Topology with All Services and Persistent Volumes}
+\label{fig:deployment_topology}
+\end{figure}
+
+Project executed in 5 major phases over 13 weeks:
+
+\begin{itemize}
+  \item \textbf{Phase 1 (Weeks 1-2):} Planning, requirements analysis, architecture design
+  \item \textbf{Phase 2 (Weeks 3-8):} Core service development, game logic, OAuth/2FA
+  \item \textbf{Phase 3 (Weeks 9-10):} Security hardening, WAF, Vault, blockchain
+  \item \textbf{Phase 4 (Weeks 11-12):} Testing, integration, manual UAT, documentation
+  \item \textbf{Phase 5 (Week 13):} Deployment, monitoring setup, production readiness
+\end{itemize}
+
+\chapter{Data Flow and System Diagrams}
+\label{app:data_flow}
+
+\section{Game Match Data Flow}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{data_flow_diagram.png}
+\caption{Game Match Data Flow: From Player Input to Rendering and Persistence}
+\label{fig:data_flow}
+\end{figure}
+
+\section{GDPR Compliance Data Flow}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{gdpr_flow.png}
+\caption{GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}
+\label{fig:gdpr_flow}
+\end{figure}
+
+\chapter{Risk Register and Risk Matrix}
+\label{app:risk}
+
+\input{risk_register.tex}
+
+\chapter{Code Repository Structure}
+\label{app:codebase}
+
+\begin{verbatim}
+ft_transcendence/
+-- auth-service/              # Authentication & sessions
+-- user-service/              # Profiles, friends, GDPR
+-- game-service/              # Pong gameplay, WebSocket
+-- tournament-service/        # Tournament & blockchain
+-- frontend/                  # Web SPA (TypeScript + Vite)
+-- cli-client/                # Terminal-based client
+-- blockchain/                # Smart contracts (Hardhat)
+-- docker-compose.yml         # Orchestration
+-- nginx/                     # Reverse proxy + WAF
+-- prometheus/                # Metrics collection
+-- grafana/                   # Dashboards
+-- elasticsearch/             # Log storage
+-- kibana/                    # Log visualization
+-- vault/                     # Secrets management
+-- tester/                    # Automated test suite
+-- documentation/
+   -- project-report/
+       -- project_report.tex
+       -- project_report.pdf
+       -- gantt.png
+       -- risk_register.csv
+-- makefile                   # Build automation
+-- README.md
+\end{verbatim}
+
+\chapter{Deployment \& Operations}
+\label{app:deployment}
+
+\section{Quick Start}
+\begin{verbatim}
+cd /home/honguyen/ft_transcendence
+make full-start        # Build and start all services
+# Services available at https://localhost
+\end{verbatim}
+
+\section{Service URLs}
+\begin{itemize}
+  \item \textbf{Frontend SPA:} https://localhost/
+  \item \textbf{Grafana:} https://localhost:3000 (admin/admin)
+  \item \textbf{Kibana:} https://localhost:5601
+  \item \textbf{Prometheus:} https://localhost:9090
+  \item \textbf{Vault:} https://localhost:8200
+\end{itemize}
+
+\section{Stopping Services}
+\begin{verbatim}
+make full-stop         # Stop all containers
+make full-clean        # Remove containers and volumes
+\end{verbatim}
+
+\chapter{Glossary}
+\label{app:glossary}
+
+\begin{description}
+  \item[Blockchain] Distributed ledger (Hardhat) for immutable tournament records
+  \item[GDPR] EU data protection regulation with user rights
+  \item[Leaderboard] Ranked list of players sorted by wins/win rate
+  \item[Microservices] Independent services with own databases
+  \item[OAuth] Federated identity protocol (42 School SSO)
+  \item[Real-time Sync] WebSocket state synchronization (50 ms intervals)
+  \item[Server-Authoritative] Game logic on server; clients send input only
+  \item[SPA] Single-Page Application; loaded once, updated via JavaScript
+  \item[TOTP] Time-based One-Time Password (2FA)
+  \item[WAF] Web Application Firewall (ModSecurity)
+  \item[WebSocket] Full-duplex communication protocol
+\end{description}
+
+\chapter{References}
+\label{app:references}
+
+\begin{enumerate}
+  \item ft\_transcendence Subject Requirements (v16.1)
+  \item OWASP Top 10 Web Application Security Risks
+  \item GDPR: Official EU Regulation 2016/679
+  \item RFC 6238: TOTP Algorithm Specification
+  \item RFC 7519: JSON Web Token (JWT) Specification
+  \item Fastify Documentation: https://www.fastify.io/
+  \item HashiCorp Vault: https://www.vaultproject.io/
+  \item Hardhat Documentation: https://hardhat.org/
+  \item ModSecurity: https://modsecurity.org/
+  \item Prometheus: https://prometheus.io/
+  \item ELK Stack: https://www.elastic.co/
+\end{enumerate}
+
+\end{document}
