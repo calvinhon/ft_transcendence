@@ -113,6 +113,13 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Center login and menu screens */
+.login-container,
+.main-menu-container {
+  align-items: center;
+  justify-content: center;
+}
+
 /* ---------- Modals ---------- */
 .modal {
   position: fixed;
@@ -1584,12 +1591,14 @@ body {
   box-shadow: 0 0 30px rgba(119, 230, 255, 0.3);
   text-align: center;
   width: 100%;
+  height: 100%;
   max-width: 90vw;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+  overflow-y: auto;
 }
 
 .settings-title {
