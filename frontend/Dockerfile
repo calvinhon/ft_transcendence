@@ -5,16 +5,16 @@ WORKDIR /app
 
 # Copy all configuration files
 COPY package*.json ./
-COPY ../tsconfig.json ./tsconfig.json
-COPY vite.config.js ./
+COPY tsconfig.json ./tsconfig.json
+COPY frontend/vite.config.js ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY src/ ./src/
-COPY css/ ./css/
-COPY index.html ./
+COPY frontend/src/ ./src/
+COPY frontend/css/ ./css/
+COPY frontend/index.html ./
 
 # Clean any existing build artifacts and build the application
 RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"
@@ -30,10 +30,10 @@ COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
 
 # Copy SSL certificates
-COPY ../nginx/certs /etc/nginx/certs
+COPY nginx/certs /etc/nginx/certs
 
 # Copy nginx configuration
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY frontend/nginx/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80 443
 
