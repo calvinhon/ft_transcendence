@@ -572,9 +572,7 @@ body {
     0 0 30px rgba(119, 230, 255, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   text-align: center;
-  min-width: 500px;
-  max-width: 90vw;
-  width: fit-content;
+  width: 100%;
   position: relative;
   max-height: 90vh;
   overflow-y: auto;
@@ -835,7 +833,6 @@ body {
 /* ---------- Play Configuration Screen - Cyberpunk Style ---------- */
 .play-config-content {
   width: 100%;
-  max-width: 1400px;
   margin: 0 auto;
   position: relative;
 }
