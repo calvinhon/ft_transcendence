@@ -29,9 +29,12 @@ RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /
 COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
 
+# Copy SSL certificates
+COPY ../nginx/certs /etc/nginx/certs
+
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
