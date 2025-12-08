@@ -1902,14 +1902,19 @@ body {
 #profile-screen.screen.active {
   align-items: flex-start !important;
   justify-content: center !important;
+  padding-top: 0 !important;
+}
+
+#profile-screen {
+  padding-top: 0 !important;
 }
 
 .profile-container {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  min-height: 100vh;
-  padding: var(--space-lg) var(--space) var(--space) var(--space);
+  width: 100%;
+  padding: 0 var(--space) var(--space) var(--space);
   background: var(--bg-primary);
   overflow-y: auto;
 }
@@ -3235,7 +3240,7 @@ body {
   max-width: 95vw;
   width: fit-content;
   position: relative;
-  margin: 30px auto;
+  margin: 0 auto;
 }
 
 .profile-title {
