@@ -63,6 +63,63 @@ curl http://localhost:3000/api/health
 
 ---
 
+## FRESH CLONE SETUP
+
+### For New Repository Clones (First Time Only)
+
+**Problem:** On fresh clones, old database files may not have the latest schema (e.g., missing `two_factor_enabled` column), causing 500 errors on first login attempt.
+
+**Solution - Clean Start (Recommended):**
+
+```bash
+# 1. Clone and navigate to project
+git clone <repo-url>
+cd ft_transcendence
+git checkout debug/finalizing
+
+# 2. Clean start (remove any stale databases)
+docker compose down -v --remove-orphans
+rm -rf auth-service/database/auth.db
+rm -rf game-service/database/games.db
+rm -rf user-service/database/users.db
+rm -rf tournament-service/database/tournaments.db
+
+# 3. Start fresh
+make start
+
+# 4. Wait for full initialization (2-3 minutes)
+# Watch logs for "Connected to SQLite database" messages
+docker compose logs -f auth
+
+# 5. Verify login endpoint works (should return "Invalid credentials", not 500)
+curl -X POST http://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}'
+
+# Expected response: {"success":false,"error":"Invalid credentials"}
+# NOT: {"error":"Internal server error"}
+```
+
+**Why This Works:**
+- ✅ Fresh databases are created with complete schema
+- ✅ Database migration code runs automatically on startup
+- ✅ All required columns (`two_factor_enabled`, `avatar_url`, etc.) are added
+- ✅ Services initialize cleanly without schema conflicts
+
+**Alternative - Fast Restart (If databases exist):**
+```bash
+# If databases are already initialized
+make stop
+make start
+# Wait 30 seconds for reconnection
+```
+
+**What If You Still Get 500 Errors?**
+
+See the [Common Issues section](#issue-login-returns-500-error---no-such-column-two_factor_enabled) for detailed troubleshooting.
+
+---
+
 ## DETAILED EVALUATION STRUCTURE
 
 ### Points Breakdown
@@ -2632,6 +2689,53 @@ docker exec ft_transcendence-SERVICE-1 rm /app/database/db.db
 # Restart service (recreates database)
 docker start ft_transcendence-SERVICE-1
 ```
+
+### Issue: Login Returns 500 Error - "no such column: two_factor_enabled"
+**Symptom:** 
+```
+POST http://localhost/api/auth/login
+[HTTP/1.1 500 Internal Server Error]
+Error: SQLITE_ERROR: no such column: two_factor_enabled
+```
+
+**Root Cause:** 
+Old database was created before the `two_factor_enabled` column was added to the schema. On fresh clones, the old database file may not have the correct schema.
+
+**Solution (Automatic):**
+The auth-service now automatically migrates missing columns on startup:
+```typescript
+// auth-service/src/utils/database.ts
+function ensureColumnExists(table: string, column: string, type: string)
+// Checks each column and adds it if missing
+```
+
+**Manual Fix if Needed:**
+```bash
+# Option 1: Clean restart (recommended for fresh clones)
+docker compose down -v
+docker compose up -d
+# Wait 2-3 minutes for services to initialize
+curl http://localhost/api/auth/login -X POST -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}'
+
+# Option 2: Delete just the auth database
+docker stop auth
+rm auth-service/database/auth.db
+docker start auth
+sleep 3
+# Database will be recreated with correct schema
+
+# Option 3: Manual column addition (if sqlite3 available)
+sqlite3 auth-service/database/auth.db \
+  "ALTER TABLE users ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE;"
+docker restart auth
+```
+
+**Prevention:**
+✅ Database migrations are now automatic on container startup  
+✅ Auth-service calls `ensureColumnExists()` for all required columns  
+✅ No manual database fixes needed on fresh clones  
+✅ Existing databases are upgraded automatically
 
 ---
 

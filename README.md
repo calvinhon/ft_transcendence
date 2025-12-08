@@ -90,26 +90,34 @@ A full-stack multiplayer Pong game platform built with microservices architectur
 # Clone the repository
 git clone https://github.com/calvinhon/ft_transcendence.git
 cd ft_transcendence
+git checkout debug/finalizing
+
+# 🔥 IMPORTANT: Fresh Clone Setup (prevents database schema errors)
+# Remove any stale database files first
+docker compose down -v --remove-orphans
+rm -rf auth-service/database/*.db
+rm -rf game-service/database/*.db
+rm -rf user-service/database/*.db
+rm -rf tournament-service/database/*.db
 
 # Start all services
+make start
+
+# Wait 2-3 minutes for services to initialize
+# Then verify with:
+curl http://localhost  # Should show web interface
+docker compose ps     # All containers should show "Up (healthy)"
 ```
 
-# Install dependencies for each service
-npm install
+### Verify Services Are Running
 
-# Or use the makefile for convenience
+```bash
+# Quick health check
+curl http://localhost/api/auth/health
 
-### Auth Service Database
-- **users**: User accounts, credentials, JWT tokens
-- **profiles**: Extended user information
+# Expected: {"status":"ok"}
+```
 
-### Game Service Database
-- **matches**: Game sessions and results
-- **game_states**: Real-time game state snapshots
-
-### User Service Database
-- **tournaments**: Tournament metadata
-- **tournament_participants**: Tournament registrations
 ### Available Scripts
 ```bash
 # ⚡ Fast dev mode (core only, NO 2GB images, ~15s)

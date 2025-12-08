@@ -2210,9 +2210,63 @@ Result: Flexible architecture with multiple access points
 
 ---
 
+## Troubleshooting
+
+### Q: I cloned the repo and got a 500 error on login. How do I fix it?
+
+**A:** This is likely the **database schema error**: `SQLITE_ERROR: no such column: two_factor_enabled`
+
+**Root Cause:**
+The SQLite databases need to initialize with the correct schema on first run. This happens automatically, but there can be timing issues.
+
+**Quick Fix (Recommended):**
+```bash
+# Complete clean restart - best for fresh clones
+cd calvin_ft_transcendence
+docker compose down -v          # Remove all containers and volumes
+docker compose up -d            # Rebuild everything fresh
+sleep 180                       # Wait 3 minutes for initialization
+curl http://localhost/          # Test frontend
+```
+
+**What This Does:**
+- ✅ Removes old/corrupted databases
+- ✅ Recreates all containers
+- ✅ Databases initialize with correct schema
+- ✅ All migrations run automatically
+
+**If That Doesn't Work:**
+```bash
+# Manual database recreation
+docker stop auth
+rm auth-service/database/auth.db
+docker start auth
+sleep 5
+# Auth service will recreate the database with proper schema
+```
+
+**Why This Happens:**
+- Old `auth.db` was created before `two_factor_enabled` column existed
+- Code expects this column but it's missing from old databases
+- Solution: Database migrations automatically add missing columns on startup
+
+**Prevention for Future Clones:**
+✅ Already implemented!  
+The auth-service now includes automatic schema migration:
+```typescript
+// In auth-service/src/utils/database.ts
+ensureColumnExists(table, column, type)
+// Checks PRAGMA table_info and adds missing columns
+```
+
+No manual intervention needed on clean clones anymore!
+
+---
+
 ## Need More Help?
 
 - **Detailed Implementation**: See `RECREATION_PROMPTS.md`
 - **Security Recommendations**: See `SECURITY_RECOMMENDATIONS.md`
 - **Tournament Testing**: See `TOURNAMENT_TEST_PLAN.md`
 - **Bug Reports**: Check `DEBUG_LOG.md` files in service directories
+- **Evaluation Guide**: See `EVALUATION_GUIDE.md` for complete setup instructions
