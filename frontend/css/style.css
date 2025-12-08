@@ -40,9 +40,25 @@
 
 html { 
   height: 100%;
+  width: 100%;
+  overflow: hidden;
   /* Enable zoom functionality */
   zoom: reset;
   *{ animation: none !important; transition: none !important; }
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text);
+  font-family: var(--font-secondary);
+  overflow: hidden;
+  /* Prevent white background on zoom */
+  background-color: #000000;
+  background-attachment: fixed;
 }
 
 /* ---------- Zoom Support ---------- */
@@ -3988,7 +4004,9 @@ html {
   padding: var(--space);
   position: relative;
   z-index: 5;
-  max-width: 100%; /* Match the width of game header */
+  width: 100%;
+  max-width: 100%;
+  min-height: 0; /* Allow flex to properly size this */
 }
 
 /* Game control buttons above canvas */
@@ -4044,9 +4062,12 @@ html {
     inset 0 0 100px rgba(0, 0, 0, 0.5);
   position: relative;
   width: 100%; /* Match parent container width */
-  max-width: 800px; /* Maintain maximum size */
+  max-width: 100%; /* Full width available */
   height: auto; /* Maintain aspect ratio */
   aspect-ratio: 4/3; /* Maintain pong table proportions */
+  /* Ensure it scales responsively to fill container */
+  min-width: 0;
+  min-height: 0;
 }
 
 #game-canvas::before {
