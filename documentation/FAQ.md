@@ -2039,6 +2039,177 @@ cd tester && ./run-all-tests.sh
 
 ---
 
+---
+
+## Architecture & Components
+
+### Q: What is the relationship between CLI-Client and SSR-Service?
+
+**A:** **CLI-Client** and **SSR-Service** are **independent, complementary components** that provide two different ways to interact with the game. They do NOT depend on each other and both independently consume the backend services.
+
+#### 1. CLI-Client (Terminal-Based Game Client)
+
+**Purpose**: Play Pong in the terminal  
+**Type**: Standalone CLI application (runs locally, NOT containerized)  
+**Language**: TypeScript + Node.js  
+**Port**: Connects to port 80 (via nginx)  
+
+**Features**:
+- ✅ Play Pong in the terminal
+- ✅ Real-time WebSocket gameplay
+- ✅ AI opponent (easy/medium/hard difficulty)
+- ✅ Human matchmaking queue
+- ✅ ASCII art game board
+- ✅ User authentication (login/register)
+- ✅ View game statistics
+
+**How to Use**:
+```bash
+cd cli-client
+npm install
+npm start
+# Login with credentials
+# Choose: Play vs AI or Matchmaking
+# Use W/S or ↑/↓ to control paddle
+# Watch game in terminal
+```
+
+**Key Dependencies**:
+- `ws` (WebSocket client for real-time gameplay)
+- `axios` (HTTP client for API calls)
+- `commander` (CLI framework)
+- `inquirer` (Interactive prompts)
+- `keypress` (Keyboard input handling)
+- `chalk` (Terminal colors)
+- `table` (ASCII table formatting)
+
+**Directory Structure**:
+```
+cli-client/
+├── src/
+│   ├── api/          (API communication layer)
+│   ├── commands/     (CLI command handlers)
+│   ├── game/         (Terminal game logic)
+│   ├── ui/           (Terminal UI/graphics)
+│   └── utils/        (Utility functions)
+├── package.json
+└── dist/             (Compiled JavaScript)
+```
+
+**Docker Status**: ❌ **NOT containerized** in docker-compose.yml (runs locally on developer machine)
+
+#### 2. SSR-Service (Server-Side Rendering)
+
+**Purpose**: Pre-render HTML pages for web browsers (SEO optimization)  
+**Type**: Backend microservice (runs in Docker container)  
+**Language**: TypeScript + Express.js  
+**Port**: 3005 (internal), accessible via nginx proxy on port 80  
+**Container Name**: `ssr`  
+
+**Features**:
+- ✅ Pre-renders HTML pages on the server
+- ✅ SEO optimization (OpenGraph, Twitter Cards meta tags)
+- ✅ Fast initial page loads (sub-50ms response time)
+- ✅ Client-side hydration (attach JavaScript after rendering)
+- ✅ JSON-LD structured data for rich snippets
+
+**Endpoints**:
+```
+GET /ssr              → Pre-rendered home page
+GET /ssr/game         → Game arena (pre-rendered)
+GET /ssr/profile/:id  → User profile (pre-rendered)
+GET /ssr/leaderboard  → Leaderboard (pre-rendered)
+GET /ssr/status       → Service status/configuration
+GET /ssr/meta/:route  → Dynamic meta tags generation
+```
+
+**Key Dependencies**:
+- `express` (Web framework)
+- `axios` (HTTP client for backend API calls)
+- `jsdom` (Server-side DOM manipulation for rendering)
+
+**Directory Structure**:
+```
+ssr-service/
+├── src/
+│   ├── renderers/    (HTML rendering logic)
+│   ├── server.ts     (Express server setup)
+│   └── utils/        (Utility functions)
+├── package.json
+└── dist/             (Compiled JavaScript)
+```
+
+**Docker Status**: ✅ **Containerized** in docker-compose.yml (runs as `ssr` container on port 3005)
+
+#### 3. Key Differences
+
+| Aspect | CLI-Client | SSR-Service |
+|--------|-----------|-------------|
+| **Interface** | Terminal | Web Browser |
+| **Containerized** | ❌ No | ✅ Yes (Docker) |
+| **Port** | N/A (localhost) | 3005 (internal) |
+| **Primary Use Case** | Gaming | Web SEO |
+| **Pre-rendering** | ❌ No | ✅ Yes |
+| **Meta Tags** | ❌ No | ✅ Yes (OpenGraph, Twitter) |
+| **Client Hydration** | ❌ No | ✅ Yes |
+| **Target Audience** | Developers/CLI users | Web users |
+| **Public Access** | Local only | Via Nginx proxy |
+
+#### 4. Data Flow
+
+**CLI-Client Flow**:
+```
+Terminal App → HTTP/WebSocket → Nginx (port 80) → Backend Services
+                                                    ├─ auth-service
+                                                    ├─ game-service (WebSocket)
+                                                    ├─ user-service
+                                                    └─ tournament-service
+```
+
+**SSR-Service Flow**:
+```
+Web Browser → HTTP Request → Nginx (port 80) → SSR Service (port 3005)
+                                               ├─ Render HTML
+                                               ├─ Inject meta tags
+                                               └─ Return to browser (hydration)
+```
+
+#### 5. When to Use Each
+
+**Use CLI-Client When**:
+- ✅ User wants to play Pong from the terminal
+- ✅ No web browser available
+- ✅ Testing backend APIs from CLI
+- ✅ Developers want pure terminal gaming experience
+- ✅ Building automated CLI tools
+
+**Use SSR-Service When**:
+- ✅ User opens a web browser
+- ✅ Need SEO-friendly pages (Google indexing)
+- ✅ Sharing game links on social media
+- ✅ Want fast initial page loads (pre-rendered HTML)
+- ✅ Need social media meta tags (OpenGraph, Twitter Cards)
+
+#### 6. Relationship Summary
+
+```
+CLI-CLIENT and SSR-SERVICE are INDEPENDENT, COMPLEMENTARY features:
+
+• CLI-CLIENT:  Alternative way to play Pong (terminal interface)
+• SSR-SERVICE: Alternative way to serve pages (SEO optimized)
+
+✅ They can run simultaneously
+✅ They share the same backend services
+✅ They do NOT communicate with each other
+✅ They provide multiple ways to interact with the game
+✅ They both consume axios for HTTP communication
+✅ Both are TypeScript + Node.js projects
+
+Result: Flexible architecture with multiple access points
+```
+
+---
+
 ## Need More Help?
 
 - **Detailed Implementation**: See `RECREATION_PROMPTS.md`
