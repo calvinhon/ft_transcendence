@@ -61,11 +61,12 @@ body {
   background-attachment: fixed;
 }
 
-/* ---------- Zoom Support ---------- */
+/* ---------- Responsive Layout ---------- */
 #app {
-  /* Ensure the main app container supports zoom */
-  transform-origin: top left;
-  min-height: 100vh;
+  /* Fill entire viewport */
+  width: 100%;
+  height: 100%;
+  display: flex;
   position: relative;
 }
 
@@ -75,12 +76,19 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: auto;
-  min-height: 100vh;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   transform-origin: top left;
-  background: var(--bg-primary); /* Unified black background */
-  visibility: hidden; /* Hide all screens by default */
-  overflow-y: auto;
+  background: var(--bg-primary);
+  visibility: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Show active screen */
+.screen.active {
+  visibility: visible;
 }
 
 /* Make sure text remains crisp during zoom */
@@ -90,20 +98,19 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Prevent zoom from breaking layout - ALL containers get unified styling */
+/* Responsive containers - stretch to fill screen */
 .main-menu-container,
 .login-container,
 .game-playing-container,
 .settings-container,
 .profile-container {
-  transform-origin: center center;
   width: 100%;
-  min-height: 100vh;
-  background: var(--bg-primary); /* Unified black background */
+  height: 100%;
+  background: var(--bg-primary);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space);
+  flex-direction: column;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ---------- Modals ---------- */
@@ -1556,11 +1563,15 @@ body {
 /* ---------- Settings Screen - Cyberpunk Style ---------- */
 .settings-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
   padding: var(--space);
   background: var(--bg-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .settings-panel {
@@ -1569,15 +1580,16 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 2px solid var(--accent);
   border-radius: var(--radius);
-  padding: var(--space-xl);
-  box-shadow: 
-    0 0 30px rgba(119, 230, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  padding: var(--space-lg);
+  box-shadow: 0 0 30px rgba(119, 230, 255, 0.3);
   text-align: center;
-  min-width: 800px;
-  max-width: 95vw;
-  width: fit-content;
+  width: 100%;
+  max-width: 90vw;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .settings-title {
@@ -1603,6 +1615,8 @@ body {
   flex-direction: column;
   gap: var(--space-xl);
   text-align: left;
+  width: 100%;
+  flex: 1;
 }
 
 .settings-group {
@@ -3774,11 +3788,12 @@ body {
 /* ---------- Game Playing Screen - Cyberpunk Style ---------- */
 .game-playing-container {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-dark);
   position: relative;
+  overflow: hidden;
 }
 
 .game-playing-container::before {
