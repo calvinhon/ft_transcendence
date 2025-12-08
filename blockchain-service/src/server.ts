@@ -47,10 +47,18 @@ const contract = new ethers.Contract(CONTRACT, abi, signer);
 
 fastify.post('/record', async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const body = request.body as { tournamentId: number; userId: number; rank: number };
-    const tx = await contract.recordRank(body.tournamentId, body.userId, body.rank);
+    const body = request.body as { tournamentId?: number | string; userId?: number | string; rank?: number | string };
+    if (body.tournamentId == null || body.userId == null || body.rank == null) {
+      return reply.status(400).send({ ok: false, error: 'tournamentId, userId, rank are required' });
+    }
+
+    const tx = await contract.recordRank(
+      BigInt(body.tournamentId as any),
+      BigInt(body.userId as any),
+      BigInt(body.rank as any)
+    );
     const receipt = await tx.wait();
-    return reply.send({ ok: true, txHash: receipt?.transactionHash });
+    return reply.send({ ok: true, txHash: receipt.hash });
   } catch (e: any) {
     fastify.log.error({ err: e }, '[blockchain-service] /record error');
     return reply.status(500).send({ ok: false, error: e.message });

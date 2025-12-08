@@ -69,6 +69,7 @@ services:
     container_name: blockchain
     ports:
       - "8545:8545"
+    command: ["sh", "-c", "npx hardhat node --hostname 0.0.0.0 --port 8545"]
     volumes:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
@@ -93,7 +94,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - RPC_SERVER=http://blockchain:8545
+      - ETHERNAL_EMAIL=hmmc42@gmail.com
+      - ETHERNAL_PASSWORD=42isAwesome!
+      - ETHERNAL_WORKSPACE=pong-blockchain
+    entrypoint: ["sh", "-c"]
+    command: "ethernal listen --rpc http://blockchain:8545 --workspace pong-blockchain"
     volumes:
       - ethernal-data:/app/data
     depends_on:
