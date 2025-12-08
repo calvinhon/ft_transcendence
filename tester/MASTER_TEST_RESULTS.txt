@@ -2,25 +2,25 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Mon Dec  8 15:32:10 +04 2025
+Date: Mon Dec  8 16:07:54 +04 2025
 Project: FT_Transcendence
 
 
 ✓ PASSED: Backend Framework (Fastify)
 
-✓ PASSED: Database (SQLite)
+✗ FAILED: Database (SQLite)
 
 ✓ PASSED: Blockchain (Solidity/Hardhat)
 
-✓ PASSED: AI Opponent
+✗ FAILED: AI Opponent
 
-✓ PASSED: Stats Dashboards
+✗ FAILED: Stats Dashboards
 
 ✗ FAILED: Microservices Architecture
 
-✓ PASSED: Server-Side Pong
+✗ FAILED: Server-Side Pong
 
-✓ PASSED: OAuth/SSO
+✗ FAILED: OAuth/SSO
 
 ✗ FAILED: WAF & Vault
 
@@ -28,7 +28,7 @@ Project: FT_Transcendence
 
 ✓ PASSED: Monitoring (Prometheus/Grafana)
 
-✓ PASSED: GDPR Compliance
+✗ FAILED: GDPR Compliance
 
 ✓ PASSED: CLI Pong Client
 
@@ -39,9 +39,9 @@ Project: FT_Transcendence
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  13
-Failed:  2
+Passed:  7
+Failed:  8
 Total:   15
 
 Status: SOME TESTS FAILED ✗
-Generated: Mon Dec  8 15:36:26 +04 2025
+Generated: Mon Dec  8 16:09:13 +04 2025

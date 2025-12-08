@@ -1,5 +1,5 @@
 === Microservices Test Results ===
-Date: Mon Dec  8 15:32:20 +04 2025
+Date: Mon Dec  8 16:09:19 +04 2025
 
 [PASS] Test 1: Service Discovery
 [PASS] Test 2: Inter-Service Communication
@@ -8,13 +8,13 @@ Date: Mon Dec  8 15:32:20 +04 2025
 [PASS] Test 5: Service Isolation
 [PASS] Test 6: Configuration Management
 [PASS] Test 7: Logging and Monitoring
-[PASS] Test 8: Fault Tolerance
-[PASS] Test 9: Data Consistency
+[FAIL] Test 8: Fault Tolerance
+[FAIL] Test 9: Data Consistency
 [PASS] Test 10: Scalability
-[PASS] Test 11: Security Between Services
-[PASS] Test 12: Service Deployment
+[FAIL] Test 11: Security Between Services
+[FAIL] Test 12: Service Deployment
 
 === Summary ===
-Passed: 11
-Failed: 1
+Passed: 7
+Failed: 5
 Total: 12

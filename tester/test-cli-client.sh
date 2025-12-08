@@ -9,8 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 # Service URLs
-AUTH_URL="${AUTH_URL:-http://auth:3000}"
-GAME_URL="${GAME_URL:-http://game:3000}"
+AUTH_URL="${AUTH_URL:-http://localhost:3001}"
+GAME_URL="${GAME_URL:-http://localhost:3002}"
 CLI_DIR="$PROJECT_ROOT/cli-client"
 
 # Colors

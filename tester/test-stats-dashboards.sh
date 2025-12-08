@@ -43,7 +43,7 @@ test_dashboard_endpoint() {
     echo -e "${YELLOW}Running Test 1: Dashboard Endpoint${NC}"
     
     # Try localhost first (host), works with wrapper script replacement in Docker
-    local response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://game:3000/stats 2>/dev/null)
+    local response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 http://localhost:3002/stats 2>/dev/null)
     
     if [ "$response" = "200" ] || [ "$response" = "401" ] || [ "$response" = "404" ]; then
         log_result 1 "Dashboard Endpoint" "PASS"
@@ -58,7 +58,7 @@ test_dashboard_endpoint() {
 test_leaderboard_api() {
     echo -e "${YELLOW}Running Test 2: Leaderboard API${NC}"
     
-    local response=$(curl -s http://game:3000/leaderboard 2>/dev/null)
+    local response=$(curl -s http://localhost:3002/leaderboard 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 2 "Leaderboard API" "PASS"
@@ -73,7 +73,7 @@ test_leaderboard_api() {
 test_user_profile_stats() {
     echo -e "${YELLOW}Running Test 3: User Profile Stats${NC}"
     
-    local response=$(curl -s http://user:3000/profile 2>/dev/null)
+    local response=$(curl -s http://localhost:3004/profile 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 3 "User Profile Stats" "PASS"
@@ -88,7 +88,7 @@ test_user_profile_stats() {
 test_game_statistics() {
     echo -e "${YELLOW}Running Test 4: Game Statistics${NC}"
     
-    local response=$(curl -s http://game:3000/games/stats 2>/dev/null)
+    local response=$(curl -s http://localhost:3002/games/stats 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 4 "Game Statistics" "PASS"
@@ -103,7 +103,7 @@ test_game_statistics() {
 test_winloss_ratio() {
     echo -e "${YELLOW}Running Test 5: Win/Loss Ratio${NC}"
     
-    local response=$(curl -s http://game:3000/games/stats 2>/dev/null)
+    local response=$(curl -s http://localhost:3002/games/stats 2>/dev/null)
     
     # Check if valid JSON response exists (win/loss data is computed from games)
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -119,7 +119,7 @@ test_winloss_ratio() {
 test_ranking_system() {
     echo -e "${YELLOW}Running Test 6: Ranking System${NC}"
     
-    local response=$(curl -s http://tournament:3000/rankings 2>/dev/null)
+    local response=$(curl -s http://localhost:3003/rankings 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Ranking System" "PASS"
@@ -134,7 +134,7 @@ test_ranking_system() {
 test_historical_data() {
     echo -e "${YELLOW}Running Test 7: Historical Data${NC}"
     
-    local response=$(curl -s "http://game:3000/games?limit=10" 2>/dev/null)
+    local response=$(curl -s "http://localhost:3002/games?limit=10" 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Historical Data" "PASS"
@@ -149,7 +149,7 @@ test_historical_data() {
 test_performance_metrics() {
     echo -e "${YELLOW}Running Test 8: Performance Metrics${NC}"
     
-    local response=$(curl -s http://game:3000/stats/performance 2>/dev/null)
+    local response=$(curl -s http://localhost:3002/stats/performance 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 8 "Performance Metrics" "PASS"
@@ -195,7 +195,7 @@ test_realtime_updates() {
 test_data_export() {
     echo -e "${YELLOW}Running Test 11: Data Export${NC}"
     
-    local response=$(curl -s -X GET "http://user:3000/export?format=json" 2>/dev/null)
+    local response=$(curl -s -X GET "http://localhost:3004/export?format=json" 2>/dev/null)
     
     if [ -n "$response" ]; then
         log_result 11 "Data Export" "PASS"
@@ -211,7 +211,7 @@ test_caching_strategy() {
     echo -e "${YELLOW}Running Test 12: Caching Strategy${NC}"
     
     # Check if stats endpoint responds (caching is implemented via HTTP headers by Fastify)
-    local response=$(curl -s --max-time 2 http://game:3000/stats 2>/dev/null)
+    local response=$(curl -s --max-time 2 http://localhost:3002/stats 2>/dev/null)
     
     if [ -n "$response" ] && echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Caching Strategy" "PASS"

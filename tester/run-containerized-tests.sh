@@ -50,7 +50,7 @@ echo -e "${YELLOW}Installing test dependencies in containers...${NC}"
 
 # Install curl, python3, and other tools in containers
 for service in auth game tournament user; do
-    container="ft_transcendence-${service}-1"
+    container="${service}"
     echo -e "${BLUE}Setting up ${service}...${NC}"
     
     docker exec -u root "$container" sh -c "

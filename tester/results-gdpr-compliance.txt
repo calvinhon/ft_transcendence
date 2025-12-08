@@ -1,20 +1,20 @@
 === GDPR Compliance Test Results ===
-Date: Mon Dec  8 15:32:55 +04 2025
+Date: Mon Dec  8 16:08:59 +04 2025
 
-[PASS] Test 1: GDPR Endpoints Configuration
+[FAIL] Test 1: GDPR Endpoints Configuration
 [PASS] Test 2: Data Export Functionality
 [PASS] Test 3: Data Deletion Request
 [PASS] Test 4: User Data Anonymization
-[PASS] Test 5: Consent Management
+[FAIL] Test 5: Consent Management
 [PASS] Test 6: Audit Trail
 [PASS] Test 7: Data Portability
-[PASS] Test 8: Right to be Forgotten
+[FAIL] Test 8: Right to be Forgotten
 [PASS] Test 9: Privacy Policy Compliance
-[PASS] Test 10: Data Processing Agreement
+[FAIL] Test 10: Data Processing Agreement
 [PASS] Test 11: Response Time for GDPR Requests
 [PASS] Test 12: Secure Data Transmission
 
 === Summary ===
-Passed: 12
-Failed: 0
+Passed: 8
+Failed: 4
 Total: 12

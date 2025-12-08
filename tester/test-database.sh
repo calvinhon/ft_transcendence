@@ -94,7 +94,7 @@ test_user_creation() {
     
     # Attempt to register a user with properly formatted JSON
     local timestamp=$(date +%s)
-    local response=$(curl -s -X POST http://auth:3000/auth/register \
+    local response=$(curl -s -X POST http://localhost:3001/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"dbtest_${timestamp}\",\"email\":\"dbtest_${timestamp}@example.com\",\"password\":\"SecurePass123!\"}" 2>/dev/null)
     
@@ -140,7 +140,7 @@ test_query_performance() {
     
     # Test query performance via API
     local start_time=$(date +%s%N)
-    local response=$(curl -s --max-time 2 http://auth:3000/health 2>/dev/null)
+    local response=$(curl -s --max-time 2 http://localhost:3001/health 2>/dev/null)
     local end_time=$(date +%s%N)
     
     # Check response came back quickly (< 2 seconds)
@@ -159,12 +159,12 @@ test_database_constraints() {
     
     # Test constraints by trying to create duplicate user
     local timestamp=$(date +%s)
-    local response1=$(curl -s -X POST http://auth:3000/auth/register \
+    local response1=$(curl -s -X POST http://localhost:3001/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     
     # Try same username again - should fail due to constraint
-    local response2=$(curl -s -X POST http://auth:3000/auth/register \
+    local response2=$(curl -s -X POST http://localhost:3001/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test2_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     

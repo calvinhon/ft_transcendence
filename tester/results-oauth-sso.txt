@@ -1,20 +1,20 @@
 === OAuth/SSO Test Results ===
-Date: Mon Dec  8 15:32:42 +04 2025
+Date: Mon Dec  8 16:08:47 +04 2025
 
 [PASS] Test 1: OAuth Initialization
-[PASS] Test 2: CSRF Protection
-[PASS] Test 3: Code Exchange
-[PASS] Test 4: Token Storage
-[PASS] Test 5: User Profile Sync
-[PASS] Test 6: Google OAuth
-[PASS] Test 7: GitHub OAuth
-[PASS] Test 8: Token Validation
+[FAIL] Test 2: CSRF Protection
+[FAIL] Test 3: Code Exchange
+[FAIL] Test 4: Token Storage
+[FAIL] Test 5: User Profile Sync
+[FAIL] Test 6: Google OAuth
+[FAIL] Test 7: GitHub OAuth
+[FAIL] Test 8: Token Validation
 [PASS] Test 9: Logout Functionality
-[PASS] Test 10: Session Management
+[FAIL] Test 10: Session Management
 [PASS] Test 11: Security Headers
-[PASS] Test 12: Error Handling
+[FAIL] Test 12: Error Handling
 
 === Summary ===
-Passed: 12
-Failed: 0
+Passed: 3
+Failed: 9
 Total: 12
