@@ -1899,6 +1899,11 @@ body {
 }
 
 /* ---------- Profile Screen - Unified Layout ---------- */
+#profile-screen.screen.active {
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
 .profile-container {
   display: flex;
   align-items: flex-start;
@@ -2020,7 +2025,9 @@ body {
   font-weight: 600;
   font-size: clamp(0.8rem, 1vw, 0.9rem);
   margin-bottom: var(--space-lg);
-  min-width: clamp(100px, 12vw, 140px);
+  width: fit-content;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .back-btn-simple:hover {
