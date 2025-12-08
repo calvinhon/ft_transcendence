@@ -592,9 +592,10 @@
           <div class="profile-content">
             <!-- Compact Profile Header -->
             <div class="profile-header-compact">
-              <div class="user-avatar">👤</div>
+              <div class="user-avatar" id="profile-avatar">👤</div>
               <div class="user-basic-info">
                 <h3 id="profile-username">Loading...</h3>
+                <div id="profile-display-name" style="font-size: 14px; color: #999; margin: 2px 0;">Loading...</div>
                 <div class="user-meta">
                   <span id="profile-user-id" class="user-detail">ID: Loading...</span>
                   <span class="separator">•</span>
@@ -610,6 +611,18 @@
                   </div>
                   <span class="exp-text" id="profile-exp-text">300 / 1000 XP</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- User Profile Details -->
+            <div class="profile-details">
+              <div class="detail-item">
+                <span class="detail-label">Bio:</span>
+                <span id="profile-bio" class="detail-value">No bio provided</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Country:</span>
+                <span id="profile-country" class="detail-value">Not specified</span>
               </div>
             </div>
 
@@ -631,8 +644,18 @@
                     <span class="stat-value" id="profile-losses">0</span>
                   </div>
                   <div class="stat-cell">
+                    <span class="stat-label">Draws</span>
+                    <span class="stat-value" id="profile-draws">0</span>
+                  </div>
+                </div>
+                <div class="stats-row">
+                  <div class="stat-cell">
                     <span class="stat-label">Win Rate</span>
                     <span class="stat-value" id="profile-win-rate">0%</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Avg Duration</span>
+                    <span class="stat-value" id="profile-avg-duration">0s</span>
                   </div>
                 </div>
               </div>

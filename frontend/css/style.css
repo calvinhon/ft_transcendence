@@ -3339,6 +3339,41 @@ body {
   color: var(--text-muted);
 }
 
+/* Profile Details Section */
+.profile-details {
+  margin-bottom: var(--space-lg);
+  padding: var(--space);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(119, 230, 255, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.detail-item {
+  display: flex;
+  gap: var(--space);
+  margin-bottom: var(--space-sm);
+  font-size: 0.95rem;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 80px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.8rem;
+}
+
+.detail-value {
+  color: var(--text);
+  flex: 1;
+  word-break: break-word;
+}
+
 /* Profile Stats Table */
 .profile-stats-table {
   display: flex;

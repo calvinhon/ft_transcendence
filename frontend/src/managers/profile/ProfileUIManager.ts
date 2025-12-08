@@ -91,6 +91,20 @@ export class ProfileUIManager {
     const campaignLevelEl = document.getElementById('profile-campaign-level');
     const profileLevelEl = document.getElementById('profile-level');
 
+    // Log element availability for debugging
+    const elementsStatus = {
+      'profile-username': !!usernameEl,
+      'profile-user-id': !!userIdEl,
+      'profile-member-since': !!memberSinceEl,
+      'profile-display-name': !!displayNameEl,
+      'profile-bio': !!bioEl,
+      'profile-country': !!countryEl,
+      'profile-avatar': !!avatarEl,
+      'profile-campaign-level': !!campaignLevelEl,
+      'profile-level': !!profileLevelEl
+    };
+    logger.debug('ProfileUIManager', 'Element availability check:', elementsStatus);
+
     if (usernameEl) usernameEl.textContent = user?.username || 'Unknown';
     if (userIdEl) userIdEl.textContent = `User ID: ${user?.userId || user?.id || 'Unknown'}`;
     if (memberSinceEl) memberSinceEl.textContent = `Member since: ${new Date(userInfo.created_at).toLocaleDateString()}`;
@@ -113,13 +127,15 @@ export class ProfileUIManager {
     if (avatarEl) {
       avatarEl.textContent = (userInfo.display_name || user?.username || 'U').charAt(0).toUpperCase();
     }
+
+    logger.info('ProfileUIManager', 'User profile display complete');
   }
 
   /**
    * Display game statistics
    */
   displayGameStats(stats: GameStats): void {
-    logger.info('ProfileUIManager', 'Displaying game statistics');
+    logger.info('ProfileUIManager', 'Displaying game statistics:', stats);
 
     const winsEl = document.getElementById('profile-wins');
     const lossesEl = document.getElementById('profile-losses');
@@ -127,6 +143,17 @@ export class ProfileUIManager {
     const totalGamesEl = document.getElementById('profile-total-games');
     const winRateEl = document.getElementById('profile-win-rate');
     const avgDurationEl = document.getElementById('profile-avg-duration');
+
+    // Log element availability for debugging
+    const elementsStatus = {
+      'profile-wins': !!winsEl,
+      'profile-losses': !!lossesEl,
+      'profile-draws': !!drawsEl,
+      'profile-total-games': !!totalGamesEl,
+      'profile-win-rate': !!winRateEl,
+      'profile-avg-duration': !!avgDurationEl
+    };
+    logger.debug('ProfileUIManager', 'Game stats elements availability:', elementsStatus);
 
     // Display only real data from database
     if (winsEl) winsEl.textContent = stats.wins.toString();
@@ -149,6 +176,8 @@ export class ProfileUIManager {
     if (rankEl) rankEl.textContent = '--';
     if (expBarEl) expBarEl.style.width = '0%';
     if (expTextEl) expTextEl.textContent = '--';
+
+    logger.info('ProfileUIManager', 'Game statistics display complete');
   }
 
   /**
