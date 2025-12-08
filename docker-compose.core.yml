@@ -16,12 +16,6 @@ services:
     mem_limit: 256m
     networks:
       - transcendence-network
-    healthcheck:
-      test: ["CMD", "sh", "-c", "wget --spider -q http://127.0.0.1:8200/v1/sys/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   hardhat:
     build:
@@ -54,7 +48,7 @@ services:
       - VAULT_TOKEN=dev-token
     depends_on:
       vault:
-        condition: service_healthy
+        condition: service_started
     mem_limit: 512m
     networks:
       - transcendence-network
