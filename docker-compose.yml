@@ -17,10 +17,10 @@ services:
       - transcendence-network
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.0
@@ -129,6 +129,7 @@ services:
 
   nginx:
     build: ./frontend
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -153,6 +154,7 @@ services:
 
   auth-service:
     build: ./auth-service
+    container_name: auth
     ports:
       - "3001:3000"
     volumes:
@@ -174,6 +176,7 @@ services:
 
   game-service:
     build: ./game-service
+    container_name: game
     ports:
       - "3002:3000"
     volumes:
@@ -187,6 +190,7 @@ services:
 
   tournament-service:
     build: ./tournament-service
+    container_name: tournament
     ports:
       - "3003:3000"
     volumes:
@@ -200,6 +204,7 @@ services:
 
   user-service:
     build: ./user-service
+    container_name: user
     ports:
       - "3004:3000"
     volumes:
@@ -213,6 +218,7 @@ services:
 
   ssr-service:
     build: ./ssr-service
+    container_name: ssr
     ports:
       - "3005:3005"
     environment:
