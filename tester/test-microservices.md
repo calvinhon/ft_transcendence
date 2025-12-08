@@ -13,32 +13,32 @@
 Verify each service starts independently without others.
 
 ### Test Steps
-1. Start only auth-service
+1. Start only auth
 2. Verify it runs independently
-3. Start only game-service
+3. Start only game
 4. Repeat for all services
 5. Start all services together
 
 ### Test Commands
 ```bash
-# Start only auth-service
-docker-compose up -d auth-service
+# Start only auth
+docker-compose up -d auth
 sleep 5
-docker-compose ps | grep auth-service
+docker-compose ps | grep auth
 
 # Check it's running
 curl http://localhost:3001/health
 
 # Cleanup
-docker-compose stop auth-service
+docker-compose stop auth
 
-# Start only game-service
-docker-compose up -d game-service
+# Start only game
+docker-compose up -d game
 sleep 5
 curl http://localhost:3002/health
 
 # Cleanup
-docker-compose stop game-service
+docker-compose stop game
 
 # Start all services
 docker-compose up -d
@@ -48,10 +48,10 @@ docker-compose ps
 
 ### Expected Results
 ```
-✅ auth-service starts independently
-✅ game-service starts independently
-✅ tournament-service starts independently
-✅ user-service starts independently
+✅ auth starts independently
+✅ game starts independently
+✅ tournament starts independently
+✅ user starts independently
 ✅ All services start together
 ```
 
@@ -69,22 +69,22 @@ docker-compose ps
 Verify each service has isolated database.
 
 ### Test Steps
-1. Insert data in auth-service database
-2. Verify it's not in game-service database
+1. Insert data in auth database
+2. Verify it's not in game database
 3. Check all 4 databases are separate
 4. Verify schema isolation
 
 ### Test Commands
 ```bash
 # Check database files
-ls -la auth-service/database/
-ls -la game-service/database/
-ls -la tournament-service/database/
-ls -la user-service/database/
+ls -la auth/database/
+ls -la game/database/
+ls -la tournament/database/
+ls -la user/database/
 
 # Verify each has different schema
-sqlite3 auth-service/database/auth.db ".tables"
-sqlite3 game-service/database/game.db ".tables"
+sqlite3 auth/database/auth.db ".tables"
+sqlite3 game/database/game.db ".tables"
 
 # Create test data in one service
 curl -X POST http://localhost:3001/auth/register \
@@ -92,7 +92,7 @@ curl -X POST http://localhost:3001/auth/register \
   -d '{"username":"testuser","email":"test@example.com","password":"pass123"}'
 
 # Verify data not in game database
-sqlite3 game-service/database/game.db "SELECT * FROM users WHERE username='testuser';" || echo "Not found (expected)"
+sqlite3 game/database/game.db "SELECT * FROM users WHERE username='testuser';" || echo "Not found (expected)"
 ```
 
 ### Pass Criteria
@@ -117,28 +117,28 @@ Verify services can communicate via HTTP.
 ### Test Commands
 ```bash
 # Verify services can reach each other internally
-docker exec game-service curl -s http://auth-service:3000/health
-docker exec user-service curl -s http://game-service:3000/health
-docker exec tournament-service curl -s http://user-service:3000/health
+docker exec game curl -s http://auth:3000/health
+docker exec user curl -s http://game:3000/health
+docker exec tournament curl -s http://user:3000/health
 
 # Check logs for inter-service calls
-docker logs game-service | grep "http://" || echo "No cross-calls yet"
+docker logs game | grep "http://" || echo "No cross-calls yet"
 
 # Make request that triggers chain
 curl -X GET "http://localhost:3004/profile" \
   -H "Authorization: Bearer $TOKEN"
 
 # Check logs
-docker logs user-service | tail -5
-docker logs game-service | tail -5
+docker logs user | tail -5
+docker logs game | tail -5
 ```
 
 ### Expected Communication Flow
 ```
-Frontend → Nginx (80) → auth-service (3001)
-Frontend → Nginx (80) → game-service (3002)
-game-service → tournament-service (3000)
-user-service → game-service (3000)
+Frontend → Nginx (80) → auth (3001)
+Frontend → Nginx (80) → game (3002)
+game → tournament (3000)
+user → game (3000)
 ```
 
 ### Pass Criteria
@@ -156,9 +156,9 @@ Verify Nginx correctly routes requests to services.
 
 ### Test Steps
 1. Send request to /api/auth/*
-2. Verify routed to auth-service
+2. Verify routed to auth
 3. Send request to /api/games/*
-4. Verify routed to game-service
+4. Verify routed to game
 5. Test all service routes
 
 ### Test Commands
@@ -181,10 +181,10 @@ docker logs nginx | grep "GET\|POST" | tail -10
 
 ### Expected Routing Rules
 ```
-/auth/*          → auth-service:3000
-/games/*         → game-service:3000
-/tournaments/*   → tournament-service:3000
-/users/*         → user-service:3000
+/auth/*          → auth:3000
+/games/*         → game:3000
+/tournaments/*   → tournament:3000
+/users/*         → user:3000
 /api/*           → appropriate service
 ```
 
@@ -219,14 +219,14 @@ curl -X GET http://localhost:3004/health | jq '.status'
 docker-compose ps --format "table {{.Names}}\t{{.Status}}"
 
 # Stop a service and check health
-docker-compose stop game-service
+docker-compose stop game
 sleep 3
 
 # Try to access game service
 curl -X GET http://localhost:3002/health || echo "Service down (expected)"
 
 # Restart service
-docker-compose start game-service
+docker-compose start game
 sleep 3
 
 # Verify recovered
@@ -254,7 +254,7 @@ Restarted service: status = "healthy" within 10 seconds
 Verify services can be scaled to multiple instances.
 
 ### Test Steps
-1. Scale game-service to 2 instances
+1. Scale game to 2 instances
 2. Verify both respond to requests
 3. Check load balancing works
 4. Stop one instance
@@ -262,14 +262,14 @@ Verify services can be scaled to multiple instances.
 
 ### Test Commands
 ```bash
-# Scale game-service to 2 instances
-docker-compose up -d --scale game-service=2
+# Scale game to 2 instances
+docker-compose up -d --scale game=2
 
 # Wait for startup
 sleep 5
 
 # Check running instances
-docker-compose ps | grep game-service
+docker-compose ps | grep game
 
 # Make requests and observe which instance handles it
 for i in {1..5}; do
@@ -279,14 +279,14 @@ done
 # Should see responses from different container IDs
 
 # Stop one instance
-CONTAINER=$(docker-compose ps -q game-service | head -1)
+CONTAINER=$(docker-compose ps -q game | head -1)
 docker stop $CONTAINER
 
 # Make more requests - should work on remaining instance
 curl -X GET http://localhost:3002/health | jq '.status'
 
 # Cleanup: Reset to 1 instance
-docker-compose up -d --scale game-service=1
+docker-compose up -d --scale game=1
 ```
 
 ### Pass Criteria
@@ -314,13 +314,13 @@ Verify services use environment variables for config.
 grep -A 20 "environment:" docker-compose.yml
 
 # Get service environment
-docker exec auth-service env | grep -i "jwt\|database\|port"
+docker exec auth env | grep -i "jwt\|database\|port"
 
 # Verify secrets are not in logs
-docker logs auth-service | grep -i "password\|secret\|token" || echo "No secrets in logs (good)"
+docker logs auth | grep -i "password\|secret\|token" || echo "No secrets in logs (good)"
 
 # Check for hardcoded values in code
-grep -r "password" auth-service/src/ --exclude="*.json" || echo "No hardcoded passwords (good)"
+grep -r "password" auth/src/ --exclude="*.json" || echo "No hardcoded passwords (good)"
 ```
 
 ### Expected Results
@@ -392,8 +392,8 @@ docker-compose logs | grep -i "econnrefused\|unable to connect" || echo "No conn
 Verify data remains consistent when accessed via different services.
 
 ### Test Steps
-1. Create user via auth-service
-2. Query user via user-service
+1. Create user via auth
+2. Query user via user
 3. Update user via one service
 4. Verify update seen by other service
 5. Test transactional consistency
@@ -406,7 +406,7 @@ curl -X POST http://localhost:3001/auth/register \
   -d '{"username":"consistency","email":"cons@test.com","password":"pass123"}' \
   | jq '.user.id'
 
-# Query via user-service
+# Query via user
 USER_ID=1
 curl -X GET "http://localhost:3004/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.username'
@@ -448,8 +448,8 @@ Verify logs are collected and services are monitored.
 ### Test Commands
 ```bash
 # View logs for each service
-docker-compose logs auth-service | tail -20
-docker-compose logs game-service | tail -20
+docker-compose logs auth | tail -20
+docker-compose logs game | tail -20
 
 # Check for errors
 docker-compose logs | grep -i "error\|exception" | head -20
@@ -458,7 +458,7 @@ docker-compose logs | grep -i "error\|exception" | head -20
 curl -s http://localhost:3001/metrics | head -20
 
 # Long-running service test with log monitoring
-docker-compose logs -f auth-service &
+docker-compose logs -f auth &
 sleep 30
 kill %1
 ```
@@ -466,7 +466,7 @@ kill %1
 ### Expected Log Format
 ```
 [timestamp] [service] [level] [message]
-Example: 2025-12-05T10:30:00Z auth-service INFO Server listening on port 3000
+Example: 2025-12-05T10:30:00Z auth INFO Server listening on port 3000
 ```
 
 ### Pass Criteria
@@ -497,13 +497,13 @@ docker-compose up -d
 # Make request and immediately shutdown
 (curl -X GET http://localhost:3002/health &) 
 sleep 1
-docker-compose stop game-service
+docker-compose stop game
 
 # Check logs for graceful shutdown message
-docker-compose logs game-service | tail -5
+docker-compose logs game | tail -5
 
 # Verify database is clean
-docker-compose start game-service
+docker-compose start game
 sleep 3
 curl -X GET http://localhost:3002/health | jq '.status'
 ```

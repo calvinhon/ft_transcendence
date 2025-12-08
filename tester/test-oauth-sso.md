@@ -224,7 +224,7 @@ Verify users are automatically created on first OAuth login.
 ### Test Commands
 ```bash
 # Check user before OAuth login
-sqlite3 auth-service/database/auth.db "SELECT COUNT(*) FROM users WHERE email='newauser@gmail.com';"
+sqlite3 auth/database/auth.db "SELECT COUNT(*) FROM users WHERE email='newauser@gmail.com';"
 # Expected: 0
 
 # Simulate OAuth login
@@ -234,7 +234,7 @@ sqlite3 auth-service/database/auth.db "SELECT COUNT(*) FROM users WHERE email='n
 sleep 2
 
 # Check user after OAuth login
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT username, email, avatar_url FROM users WHERE email='newuser@gmail.com';"
 
 # Expected:
@@ -244,7 +244,7 @@ sqlite3 auth-service/database/auth.db \
 # [User logs in via Google again]
 
 # Verify only one user record
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT COUNT(*) FROM users WHERE email='newuser@gmail.com';"
 # Expected: 1
 ```
@@ -279,7 +279,7 @@ curl -s -X GET "http://localhost:3001/user/profile" \
 # Expected: https://lh3.googleusercontent.com/...
 
 # Or check database
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT avatar_url FROM users WHERE id=1;"
 
 # Expected: URL to image
@@ -421,7 +421,7 @@ curl -X GET "http://localhost:3001/oauth/callback?code=invalid&state=$STATE&prov
 # Expected: 400 Bad Request or redirect with error
 
 # Check error handling in code:
-grep -n "error\|catch\|Error" auth-service/src/routes/handlers/oauth.ts | head -20
+grep -n "error\|catch\|Error" auth/src/routes/handlers/oauth.ts | head -20
 ```
 
 ### Pass Criteria
@@ -492,7 +492,7 @@ curl -I http://localhost:3001/oauth/init?provider=google | grep -i "security\|cs
 grep -r "https\|secure" oauth.ts | grep -v "//" | head -10
 
 # Verify tokens not in logs
-docker logs auth-service | grep -i "access_token\|refresh_token" || echo "No tokens in logs (good)"
+docker logs auth | grep -i "access_token\|refresh_token" || echo "No tokens in logs (good)"
 ```
 
 ### Pass Criteria
@@ -580,7 +580,7 @@ npm run dev
 // Click "Login with Google" or "Login with GitHub"
 
 # Check database for created users
-sqlite3 auth-service/database/auth.db "SELECT * FROM users LIMIT 5;"
+sqlite3 auth/database/auth.db "SELECT * FROM users LIMIT 5;"
 ```
 
 ---

@@ -21,19 +21,19 @@ Verify database files are created for each service.
 ### Test Commands
 ```bash
 # Check database files
-ls -lah auth-service/database/auth.db
-ls -lah game-service/database/game.db
-ls -lah tournament-service/database/tournament.db
-ls -lah user-service/database/user.db
+ls -lah auth/database/auth.db
+ls -lah game/database/game.db
+ls -lah tournament/database/tournament.db
+ls -lah user/database/user.db
 
 # Verify SQLite format
-file auth-service/database/auth.db
-file game-service/database/game.db
-file tournament-service/database/tournament.db
-file user-service/database/user.db
+file auth/database/auth.db
+file game/database/game.db
+file tournament/database/tournament.db
+file user/database/user.db
 
 # Check database info
-sqlite3 auth-service/database/auth.db ".tables"
+sqlite3 auth/database/auth.db ".tables"
 ```
 
 ### Expected Results
@@ -66,7 +66,7 @@ Verify database schemas are created correctly.
 ### Test Commands
 ```bash
 # Check users table schema
-sqlite3 auth-service/database/auth.db ".schema users"
+sqlite3 auth/database/auth.db ".schema users"
 
 # Expected output:
 # CREATE TABLE users (
@@ -80,13 +80,13 @@ sqlite3 auth-service/database/auth.db ".schema users"
 # );
 
 # List all tables
-sqlite3 auth-service/database/auth.db ".tables"
+sqlite3 auth/database/auth.db ".tables"
 
 # Check games table
-sqlite3 game-service/database/game.db ".schema games"
+sqlite3 game/database/game.db ".schema games"
 
 # Check tournaments table
-sqlite3 tournament-service/database/tournament.db ".schema tournaments"
+sqlite3 tournament/database/tournament.db ".schema tournaments"
 ```
 
 ### Expected Tables
@@ -126,11 +126,11 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Query database
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT id, username, email, created_at FROM users WHERE username='dbtest';"
 
 # Verify password is hashed (not plaintext)
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT password_hash FROM users WHERE username='dbtest';"
 ```
 
@@ -163,19 +163,19 @@ Verify users can be queried from database.
 ### Test Commands
 ```bash
 # Query by ID
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT * FROM users WHERE id=1;"
 
 # Query by username
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT * FROM users WHERE username='dbtest';"
 
 # Query by email
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT * FROM users WHERE email='dbtest@example.com';"
 
 # Count users
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT COUNT(*) FROM users;"
 ```
 
@@ -263,15 +263,15 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Verify in database
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT username FROM users WHERE username='persisttest';"
 
 # Restart service
-docker-compose restart auth-service
+docker-compose restart auth
 sleep 5
 
 # Verify user still exists
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT username FROM users WHERE username='persisttest';"
 
 # Try login still works
@@ -314,7 +314,7 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Query transaction logs (if available)
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "PRAGMA integrity_check;"
 
 # Expected: ok
@@ -360,7 +360,7 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Verify only 1 record
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT COUNT(*) FROM users WHERE username='uniquetest';"
 
 # Expected: 1
@@ -406,7 +406,7 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Check timestamps
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT username, created_at, last_login FROM users WHERE username='timetest';"
 
 # Login
@@ -418,7 +418,7 @@ curl -X POST http://localhost:3001/auth/login \
   }'
 
 # Check last_login updated
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "SELECT username, created_at, last_login FROM users WHERE username='timetest';"
 ```
 
@@ -449,17 +449,17 @@ Verify relationships between tables work correctly.
 ### Test Commands
 ```bash
 # Get user ID
-USER_ID=$(sqlite3 game-service/database/game.db \
+USER_ID=$(sqlite3 game/database/game.db \
   "SELECT id FROM users WHERE username='dbtest' LIMIT 1;")
 
 # Check game records for user
-sqlite3 game-service/database/game.db \
+sqlite3 game/database/game.db \
   "SELECT g.id, g.score, u.username FROM games g 
    JOIN users u ON g.player_id = u.id 
    WHERE u.id=$USER_ID;"
 
 # Count relationships
-sqlite3 game-service/database/game.db \
+sqlite3 game/database/game.db \
   "SELECT COUNT(*) FROM games WHERE player_id=$USER_ID;"
 ```
 
@@ -485,7 +485,7 @@ Verify database can be backed up.
 ### Test Commands
 ```bash
 # Create backup
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   ".backup auth-backup.db"
 
 # Verify backup
@@ -493,7 +493,7 @@ file auth-backup.db
 sqlite3 auth-backup.db ".tables"
 
 # Compare data
-sqlite3 auth-service/database/auth.db "SELECT COUNT(*) FROM users;" > original.txt
+sqlite3 auth/database/auth.db "SELECT COUNT(*) FROM users;" > original.txt
 sqlite3 auth-backup.db "SELECT COUNT(*) FROM users;" > backup.txt
 diff original.txt backup.txt
 
@@ -523,18 +523,18 @@ Verify database queries have acceptable performance.
 ### Test Commands
 ```bash
 # Check existing indexes
-sqlite3 auth-service/database/auth.db ".indexes users"
+sqlite3 auth/database/auth.db ".indexes users"
 
 # Profile a query
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "EXPLAIN QUERY PLAN SELECT * FROM users WHERE username='dbtest';"
 
 # Create index if missing
-sqlite3 auth-service/database/auth.db \
+sqlite3 auth/database/auth.db \
   "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);"
 
 # Verify index created
-sqlite3 auth-service/database/auth.db ".indexes users"
+sqlite3 auth/database/auth.db ".indexes users"
 ```
 
 ### Pass Criteria
@@ -555,8 +555,8 @@ sqlite3 auth-service/database/auth.db ".indexes users"
 ### Quick Test Command
 ```bash
 # Verify all databases
-for db in auth-service/database/*.db game-service/database/*.db \
-          tournament-service/database/*.db user-service/database/*.db; do
+for db in auth/database/*.db game/database/*.db \
+          tournament/database/*.db user/database/*.db; do
   echo "Testing $db..."
   sqlite3 "$db" ".tables"
   sqlite3 "$db" "PRAGMA integrity_check;"

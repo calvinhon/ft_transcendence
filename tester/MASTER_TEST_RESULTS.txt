@@ -2,7 +2,7 @@
 ║          MASTER TEST SUITE RESULTS                         ║
 ╚════════════════════════════════════════════════════════════╝
 
-Date: Sun Dec  7 23:58:36 +04 2025
+Date: Mon Dec  8 15:32:10 +04 2025
 Project: FT_Transcendence
 
 
@@ -16,13 +16,13 @@ Project: FT_Transcendence
 
 ✓ PASSED: Stats Dashboards
 
-✓ PASSED: Microservices Architecture
+✗ FAILED: Microservices Architecture
 
 ✓ PASSED: Server-Side Pong
 
 ✓ PASSED: OAuth/SSO
 
-✓ PASSED: WAF & Vault
+✗ FAILED: WAF & Vault
 
 ✓ PASSED: ELK Logging
 
@@ -39,9 +39,9 @@ Project: FT_Transcendence
 ════════════════════════════════════════════════════════════
 SUMMARY
 ════════════════════════════════════════════════════════════
-Passed:  15
-Failed:  0
+Passed:  13
+Failed:  2
 Total:   15
 
-Status: ALL TESTS PASSED ✓
-Generated: Sun Dec  7 23:58:50 +04 2025
+Status: SOME TESTS FAILED ✗
+Generated: Mon Dec  8 15:36:26 +04 2025

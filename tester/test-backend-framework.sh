@@ -46,7 +46,7 @@ test_service_startup() {
     echo -e "${YELLOW}Running Test 1: Service Startup${NC}"
     
     # Check if all services are responding (works both in Docker and host)
-    local services=("auth-service" "game-service" "tournament-service" "user-service")
+    local services=("auth" "game" "tournament" "user")
     local ports=("3001" "3002" "3003" "3004")
     local all_running=true
     
@@ -73,7 +73,7 @@ test_service_startup() {
 test_health_checks() {
     echo -e "${YELLOW}Running Test 2: Health Check Endpoints${NC}"
     
-    local services=("auth-service:3001" "game-service:3002" "tournament-service:3003" "user-service:3004")
+    local services=("auth:3001" "game:3002" "tournament:3003" "user:3004")
     local all_healthy=true
     
     for service in "${services[@]}"; do

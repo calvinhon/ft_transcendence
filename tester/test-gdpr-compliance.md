@@ -161,7 +161,7 @@ curl -X GET "http://localhost:3004/profile" \
 # Expected: 404 Not Found or 401 Unauthorized
 
 # Verify user removed from database
-sqlite3 user-service/database/user.db \
+sqlite3 user/database/user.db \
   "SELECT COUNT(*) FROM users WHERE id=$USER_ID;"
 
 # Expected: 0
@@ -401,7 +401,7 @@ curl -X GET "http://localhost:3004/profile" \
 # Or verify old credentials no longer work
 
 # Check games still linked (anonymized)
-sqlite3 user-service/database/user.db \
+sqlite3 user/database/user.db \
   "SELECT username, email FROM users WHERE id=1;"
 
 # Expected: Anonymized values
@@ -431,12 +431,12 @@ Verify GDPR actions are logged for audit.
 ### Test Commands
 ```bash
 # Check if audit log table exists
-sqlite3 user-service/database/user.db ".tables" | grep -i "gdpr\|audit"
+sqlite3 user/database/user.db ".tables" | grep -i "gdpr\|audit"
 
 # Expected: gdpr_actions table (or similar)
 
 # Check audit table schema
-sqlite3 user-service/database/user.db ".schema gdpr_actions"
+sqlite3 user/database/user.db ".schema gdpr_actions"
 
 # Expected columns:
 # - id (PRIMARY KEY)
@@ -450,14 +450,14 @@ curl -X GET "http://localhost:3004/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" > /dev/null
 
 # Check audit log
-sqlite3 user-service/database/user.db \
+sqlite3 user/database/user.db \
   "SELECT user_id, action, timestamp, status FROM gdpr_actions ORDER BY timestamp DESC LIMIT 5;"
 
 # Expected recent entries:
 # 1|export|2025-12-05T10:35:00Z|success
 
 # Verify all actions logged
-sqlite3 user-service/database/user.db \
+sqlite3 user/database/user.db \
   "SELECT DISTINCT action FROM gdpr_actions;"
 
 # Expected: export, delete, anonymize, status_check
@@ -499,7 +499,7 @@ curl -X GET "http://localhost:3004/gdpr/status/1" \
 # }
 
 # Check if consent documented in code
-grep -r "consent\|legal.*basis" user-service/src/ | head -10
+grep -r "consent\|legal.*basis" user/src/ | head -10
 
 # Check privacy policy (if exists)
 cat documentation/GDPR_IMPLEMENTATION.md | grep -i "consent\|legal" | head -10
@@ -534,7 +534,7 @@ time curl -X GET "http://localhost:3004/gdpr/export/1" \
 # Expected: real < 1s (should be immediate)
 
 # Check if delayed processing implemented
-grep -r "30.*day\|schedule\|queue" user-service/src/routes/handlers/gdpr.ts || \
+grep -r "30.*day\|schedule\|queue" user/src/routes/handlers/gdpr.ts || \
   echo "Immediate processing (compliant)"
 
 # Performance test: Multiple requests
@@ -576,7 +576,7 @@ curl -X GET "http://localhost:3004/profile/sharing-preferences" \
 grep -r "third.*party\|sharing\|recipient" documentation/GDPR_IMPLEMENTATION.md | head -10
 
 # Check if sharing data is minimized
-grep -r "share\|third" user-service/src/ | grep -v "test\|log" | head -10
+grep -r "share\|third" user/src/ | grep -v "test\|log" | head -10
 
 # Verify no sharing without consent
 curl -X GET "http://localhost:3004/gdpr/status/1" \
@@ -643,7 +643,7 @@ curl -X POST "http://localhost:3004/gdpr/anonymize/[USER_ID]" \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 
 # 7. Verify audit trail
-sqlite3 user-service/database/user.db \
+sqlite3 user/database/user.db \
   "SELECT action, status FROM gdpr_actions WHERE user_id=[USER_ID] ORDER BY timestamp DESC;"
 
 # Expected: Multiple actions recorded (export, anonymize, etc.)
@@ -676,7 +676,7 @@ curl http://localhost:3004/gdpr/status/1 -H "Authorization: Bearer $TOKEN" | jq
 curl http://localhost:3004/gdpr/export/1 -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Check audit trail
-sqlite3 user-service/database/user.db "SELECT * FROM gdpr_actions LIMIT 5;"
+sqlite3 user/database/user.db "SELECT * FROM gdpr_actions LIMIT 5;"
 ```
 
 ### GDPR Rights Checklist

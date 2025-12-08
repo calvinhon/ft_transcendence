@@ -23,11 +23,11 @@ echo ""
 # Check if containers are running
 echo -e "${YELLOW}Checking container status...${NC}"
 CONTAINERS=(
-    "ft_transcendence-auth-service-1"
-    "ft_transcendence-game-service-1"
-    "ft_transcendence-tournament-service-1"
-    "ft_transcendence-user-service-1"
-    "ft_transcendence-ssr-service-1"
+    "ft_transcendence-auth-1"
+    "ft_transcendence-game-1"
+    "ft_transcendence-tournament-1"
+    "ft_transcendence-user-1"
+    "ft_transcendence-ssr-1"
 )
 
 ALL_RUNNING=true
@@ -49,7 +49,7 @@ echo ""
 echo -e "${YELLOW}Installing test dependencies in containers...${NC}"
 
 # Install curl, python3, and other tools in containers
-for service in auth-service game-service tournament-service user-service; do
+for service in auth game tournament user; do
     container="ft_transcendence-${service}-1"
     echo -e "${BLUE}Setting up ${service}...${NC}"
     
@@ -79,7 +79,7 @@ run_containerized_test() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
     # Copy test script to container and run it
-    local container="ft_transcendence-auth-service-1"
+    local container="ft_transcendence-auth-1"
     local test_file="${SCRIPT_DIR}/${test_script}"
     
     if [ ! -f "$test_file" ]; then

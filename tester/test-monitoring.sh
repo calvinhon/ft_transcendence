@@ -116,7 +116,7 @@ test_service_monitoring() {
     echo -e "${YELLOW}Running Test 6: Service Monitoring${NC}"
     
     # Check if Prometheus config monitors services
-    if grep -q "auth-service\|game-service\|tournament-service\|user-service" "$PROJECT_ROOT/prometheus/prometheus.yml"; then
+    if grep -q "auth\|game\|tournament\|user" "$PROJECT_ROOT/prometheus/prometheus.yml"; then
         log_result 6 "Service Monitoring" "PASS"
         return 0
     fi

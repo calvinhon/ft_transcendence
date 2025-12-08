@@ -26,10 +26,10 @@ docker-compose up -d
 
 ### Expected Results
 ```bash
-✅ auth-service listening on port 3001
-✅ game-service listening on port 3002
-✅ tournament-service listening on port 3003
-✅ user-service listening on port 3004
+✅ auth listening on port 3001
+✅ game listening on port 3002
+✅ tournament listening on port 3003
+✅ user listening on port 3004
 ```
 
 ### Test Commands
@@ -38,10 +38,10 @@ docker-compose up -d
 docker-compose ps
 
 # Check service logs
-docker logs auth-service | grep "listening"
-docker logs game-service | grep "listening"
-docker logs tournament-service | grep "listening"
-docker logs user-service | grep "listening"
+docker logs auth | grep "listening"
+docker logs game | grep "listening"
+docker logs tournament | grep "listening"
+docker logs user | grep "listening"
 ```
 
 ### Pass Criteria
@@ -81,7 +81,7 @@ curl -X GET http://localhost:3004/health -H "Content-Type: application/json"
 ```json
 {
   "status": "healthy",
-  "service": "auth-service|game-service|tournament-service|user-service",
+  "service": "auth|game|tournament|user",
   "timestamp": "2025-12-05T...",
   "modules": [...]
 }
@@ -326,11 +326,11 @@ Verify middleware execution order and functionality.
 ### Test Commands
 ```bash
 # Check service logs for middleware execution
-docker logs auth-service | grep -i "middleware\|cors\|jwt" | head -20
+docker logs auth | grep -i "middleware\|cors\|jwt" | head -20
 
 # Make request and check logs
 curl -X GET http://localhost:3001/health
-docker logs auth-service | tail -5
+docker logs auth | tail -5
 ```
 
 ### Expected Results
@@ -364,10 +364,10 @@ Verify services shut down gracefully.
 curl -X GET http://localhost:3001/health &
 
 # Gracefully stop the service
-docker-compose stop auth-service
+docker-compose stop auth
 
 # Check logs
-docker logs auth-service | tail -10
+docker logs auth | tail -10
 ```
 
 ### Expected Results
@@ -401,11 +401,11 @@ Verify services can communicate with each other.
 curl -X GET http://localhost:3004/stats \
   -H "Authorization: Bearer $TOKEN"
 
-# Check game-service received request
-docker logs game-service | grep -i "request\|stats"
+# Check game received request
+docker logs game | grep -i "request\|stats"
 
 # Check for service-to-service calls
-docker exec auth-service curl -s http://game-service:3000/health
+docker exec auth curl -s http://game:3000/health
 ```
 
 ### Expected Results
@@ -441,7 +441,7 @@ curl -X POST http://localhost:3001/auth/login \
   -d '{"username":"testuser","password":"password"}'
 
 # Check logs
-docker logs auth-service | grep -i "login\|post" | tail -5
+docker logs auth | grep -i "login\|post" | tail -5
 ```
 
 ### Expected Log Format
@@ -471,8 +471,8 @@ Verify TypeScript compilation and type checking.
 
 ### Test Commands
 ```bash
-# Rebuild auth-service
-cd auth-service && npm run build
+# Rebuild auth
+cd auth && npm run build
 
 # Check output
 ls -la dist/

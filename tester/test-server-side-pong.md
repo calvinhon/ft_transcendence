@@ -21,7 +21,7 @@ Verify Pong game engine initializes correctly.
 ### Test Commands
 ```bash
 # Unit test
-npm test -- --testNamePattern="PongEngine.*init" game-service/
+npm test -- --testNamePattern="PongEngine.*init" game/
 
 # Manual check in code:
 // const engine = new PongEngine();

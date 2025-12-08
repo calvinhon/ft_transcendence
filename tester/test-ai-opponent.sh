@@ -43,7 +43,7 @@ test_ai_initialization() {
     echo -e "${YELLOW}Running Test 1: AI Module Initialization${NC}"
     
     # Check if AI code exists in game service
-    if find "$PROJECT_ROOT/game-service/src" -name "*ai*" -o -name "*opponent*" 2>/dev/null | grep -q .; then
+    if find "$PROJECT_ROOT/game/src" -name "*ai*" -o -name "*opponent*" 2>/dev/null | grep -q .; then
         log_result 1 "AI Module Initialization" "PASS"
         return 0
     fi
@@ -57,7 +57,7 @@ test_difficulty_levels() {
     echo -e "${YELLOW}Running Test 2: Difficulty Levels${NC}"
     
     # Check for difficulty level constants
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "easy\|medium\|hard\|difficulty" 2>/dev/null | grep -q .; then
         log_result 2 "Difficulty Levels" "PASS"
@@ -73,8 +73,8 @@ test_ai_decision_making() {
     echo -e "${YELLOW}Running Test 3: AI Decision Making${NC}"
     
     # Check if AI logic exists in game service
-    if [ -d "$PROJECT_ROOT/game-service/src" ]; then
-        if find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" -exec grep -l "paddle\|ball\|position\|velocity" {} \; 2>/dev/null | head -1 | grep -q .; then
+    if [ -d "$PROJECT_ROOT/game/src" ]; then
+        if find "$PROJECT_ROOT/game/src" -type f -name "*.ts" -exec grep -l "paddle\|ball\|position\|velocity" {} \; 2>/dev/null | head -1 | grep -q .; then
             log_result 3 "AI Decision Making" "PASS"
             return 0
         fi
@@ -88,7 +88,7 @@ test_ai_decision_making() {
 test_physics_integration() {
     echo -e "${YELLOW}Running Test 4: Physics Integration${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "physics\|velocity\|position\|trajectory" 2>/dev/null | grep -q .; then
         log_result 4 "Physics Integration" "PASS"
@@ -103,7 +103,7 @@ test_physics_integration() {
 test_ball_prediction() {
     echo -e "${YELLOW}Running Test 5: Ball Prediction${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "ball.*y\|targetY\|calculateAI" 2>/dev/null | grep -q .; then
         log_result 5 "Ball Prediction" "PASS"
@@ -118,7 +118,7 @@ test_ball_prediction() {
 test_paddle_control() {
     echo -e "${YELLOW}Running Test 6: Paddle Control${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "paddle\|move\|up\|down" 2>/dev/null | grep -q .; then
         log_result 6 "Paddle Control" "PASS"
@@ -134,7 +134,7 @@ test_response_time() {
     echo -e "${YELLOW}Running Test 7: Response Time${NC}"
     
     # Check if AI has timing/performance optimization
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "timeout\|delay\|interval\|performance" 2>/dev/null | grep -q .; then
         log_result 7 "Response Time" "PASS"
@@ -149,7 +149,7 @@ test_response_time() {
 test_error_handling() {
     echo -e "${YELLOW}Running Test 8: Error Handling${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "try\|catch\|error\|exception" 2>/dev/null | grep -q .; then
         log_result 8 "Error Handling" "PASS"
@@ -182,7 +182,7 @@ test_ai_vs_player() {
 test_learning_adaptation() {
     echo -e "${YELLOW}Running Test 10: Learning/Adaptation${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     # Check if AI has adaptive behavior (difficulty adjustment, speed variation, etc)
     if echo "$ai_files" | xargs grep -l "difficulty\|speed.*=\|aiSpeed\|calculateAI" 2>/dev/null | grep -q .; then
@@ -217,7 +217,7 @@ test_performance_testing() {
 test_ai_documentation() {
     echo -e "${YELLOW}Running Test 12: AI Documentation${NC}"
     
-    local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
+    local ai_files=$(find "$PROJECT_ROOT/game/src" -type f -name "*.ts" 2>/dev/null)
     
     if echo "$ai_files" | xargs grep -l "/**\|///" 2>/dev/null | grep -q .; then
         log_result 12 "AI Documentation" "PASS"

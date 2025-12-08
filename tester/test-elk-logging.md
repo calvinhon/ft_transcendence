@@ -154,7 +154,7 @@ done
 sleep 15
 
 # Query Elasticsearch for collected logs
-curl -s "http://localhost:9200/filebeat-*/_search?q=auth-service" | jq '.hits.total'
+curl -s "http://localhost:9200/filebeat-*/_search?q=auth" | jq '.hits.total'
 
 # Expected: Should show some hits
 
@@ -239,7 +239,7 @@ curl -s "http://localhost:9200/filebeat-*/_search" \
   -d '{
     "query": {
       "match": {
-        "docker.container.name": "auth-service"
+        "docker.container.name": "auth"
       }
     }
   }' | jq '.hits.total'
@@ -435,7 +435,7 @@ curl -s "http://localhost:9200/filebeat-*/_search?size=1" | jq '.hits.hits[0]._s
 #   "message": "...",
 #   "docker": {
 #     "container": {
-#       "name": "auth-service",
+#       "name": "auth",
 #       "id": "abc123def456...",
 #       "image": {
 #         "name": "app:latest"
@@ -456,7 +456,7 @@ curl -s "http://localhost:9200/filebeat-*/_search" \
   -d '{
     "query": {
       "term": {
-        "docker.container.name": "game-service"
+        "docker.container.name": "game"
       }
     }
   }' | jq '.hits.hits[0]._source | {service: .docker.container.name, message}'
@@ -486,15 +486,15 @@ Verify logs from all services are collected.
 ### Test Commands
 ```bash
 # Generate logs from each service
-curl -s http://localhost:3001/health > /dev/null  # auth-service
-curl -s http://localhost:3002/health > /dev/null  # game-service
-curl -s http://localhost:3003/health > /dev/null  # tournament-service
-curl -s http://localhost:3004/health > /dev/null  # user-service
+curl -s http://localhost:3001/health > /dev/null  # auth
+curl -s http://localhost:3002/health > /dev/null  # game
+curl -s http://localhost:3003/health > /dev/null  # tournament
+curl -s http://localhost:3004/health > /dev/null  # user
 
 sleep 10
 
 # Count logs per service
-for service in auth-service game-service tournament-service user-service; do
+for service in auth game tournament user; do
   COUNT=$(curl -s "http://localhost:9200/filebeat-*/_search" \
     -H "Content-Type: application/json" \
     -d "{

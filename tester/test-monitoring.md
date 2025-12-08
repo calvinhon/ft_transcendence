@@ -67,9 +67,9 @@ cat prometheus/prometheus.yml | head -50
 #   scrape_interval: 15s
 #   evaluation_interval: 15s
 # scrape_configs:
-#   - job_name: 'auth-service'
+#   - job_name: 'auth'
 #     static_configs:
-#       - targets: ['auth-service:3000']
+#       - targets: ['auth:3000']
 
 # Reload configuration without restart
 curl -X POST http://localhost:9090/-/reload
@@ -94,14 +94,14 @@ curl -s http://localhost:9090/api/v1/alerts | jq '.status'
 Verify Prometheus collects metrics from each service.
 
 ### Test Steps
-1. Check auth-service metrics
-2. Check game-service metrics
+1. Check auth metrics
+2. Check game metrics
 3. Check other services
 4. Verify metric names
 
 ### Test Commands
 ```bash
-# Get metrics directly from auth-service
+# Get metrics directly from auth
 curl -s http://localhost:3001/metrics | head -30
 
 # Expected format (Prometheus text format):
@@ -110,7 +110,7 @@ curl -s http://localhost:3001/metrics | head -30
 # process_cpu_usage_seconds_total 12.34
 
 # Check Prometheus has scraped the service
-curl -s "http://localhost:9090/api/v1/query?query=up{job='auth-service'}" | jq '.data'
+curl -s "http://localhost:9090/api/v1/query?query=up{job='auth'}" | jq '.data'
 
 # Expected: value [timestamp, "1"] (1 = up)
 
@@ -226,14 +226,14 @@ Verify metrics are visualized in graphs.
 # Browser-based test:
 # 1. Open http://localhost:9090 in browser
 # 2. Go to "Graph" tab
-# 3. In query box, enter: up{job="auth-service"}
+# 3. In query box, enter: up{job="auth"}
 # 4. Click "Execute"
 # 5. Verify graph shows service up/down status
 # 6. Change time range (1h, 6h, 24h)
 
 # API test for querying metrics
 curl -s "http://localhost:9090/api/v1/query_range" \
-  --data-urlencode 'query=up{job="auth-service"}' \
+  --data-urlencode 'query=up{job="auth"}' \
   --data-urlencode 'start=2025-12-05T09:00:00Z' \
   --data-urlencode 'end=2025-12-05T11:00:00Z' \
   --data-urlencode 'step=60s' \
@@ -403,7 +403,7 @@ curl -s http://localhost:9090/api/v1/query?query='http_request_duration_seconds_
 # 2. Click "+" to create new dashboard
 # 3. Add panel
 # 4. Select Prometheus datasource
-# 5. Query: up{job="auth-service"}
+# 5. Query: up{job="auth"}
 # 6. Verify graph shows service up/down
 ```
 
