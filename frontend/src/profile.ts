@@ -200,8 +200,11 @@ export class ProfileManager {
       });
 
       if (response.ok) {
-        const apiStats: any = await response.json();
-        console.log('[ProfileManager] Raw API stats:', apiStats);
+        const apiResponse: any = await response.json();
+        console.log('[ProfileManager] Raw API stats:', apiResponse);
+        
+        // Unwrap the response if it has success/data structure
+        const apiStats = apiResponse.data || apiResponse;
         
         // Map API response to GameStats interface
         const stats: GameStats = {

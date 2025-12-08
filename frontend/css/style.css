@@ -328,6 +328,13 @@ body {
 }
 .screen.active{ visibility: visible; display: flex; align-items: center; justify-content: center; }
 
+/* Profile screen - align to top instead of center */
+#profile-screen.active {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: var(--space-lg);
+}
+
 /* ---------- Login Screen ---------- */
 
 .login-panel {
@@ -3236,11 +3243,14 @@ body {
     0 0 30px rgba(119, 230, 255, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   text-align: center;
-  min-width: 900px;
-  max-width: 95vw;
-  width: fit-content;
+  width: 90vw;
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   margin: 0 auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .profile-title {
@@ -3403,7 +3413,7 @@ body {
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: var(--space);
 }
 
@@ -3414,19 +3424,21 @@ body {
   gap: var(--space-xs);
   padding: var(--space-sm);
   text-align: center;
+  min-width: 0;
 }
 
 .stat-cell .stat-label {
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-family: var(--font-primary);
+  line-height: 1.2;
 }
 
 .stat-cell .stat-value {
-  color: var(--text);
-  font-size: 1.2rem;
+  color: var(--accent);
+  font-size: 1.4rem;
   font-weight: 700;
   font-family: var(--font-primary);
 }
@@ -3441,11 +3453,6 @@ body {
 .stat-cell:has(#profile-streak),
 .stat-cell:has(#profile-best-streak),
 .stat-cell:has(#profile-rank) {
-  display: none;
-}
-
-/* Hide entire Performance Metrics section since Campaign Level is already shown at top */
-.stats-section:has(#profile-campaign-level) {
   display: none;
 }
 

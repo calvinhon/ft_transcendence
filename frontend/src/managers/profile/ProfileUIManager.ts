@@ -136,6 +136,7 @@ export class ProfileUIManager {
    */
   displayGameStats(stats: GameStats): void {
     logger.info('ProfileUIManager', 'Displaying game statistics:', stats);
+    logger.debug('ProfileUIManager', 'Stats breakdown - Wins:', stats.wins, 'Losses:', stats.losses, 'Draws:', stats.draws, 'Total:', stats.total_games);
 
     const winsEl = document.getElementById('profile-wins');
     const lossesEl = document.getElementById('profile-losses');
@@ -236,13 +237,46 @@ export class ProfileUIManager {
   }
 
   /**
-   * Display tournament count
+   * Display tournament count and statistics
    */
   displayTournamentCount(count: number): void {
     const tournamentsEl = document.getElementById('profile-tournaments');
     if (tournamentsEl) {
       tournamentsEl.textContent = count.toString();
     }
+  }
+
+  /**
+   * Display tournament statistics (wins and top 3 finishes)
+   */
+  displayTournamentStats(rankings: TournamentRanking[]): void {
+    logger.info('ProfileUIManager', `Calculating tournament statistics from ${rankings.length} rankings`);
+
+    // Calculate tournament wins (1st place finishes)
+    const wins = rankings.filter(r => r.rank === 1 || r.isWinner).length;
+    const winsEl = document.getElementById('profile-tournament-wins');
+    if (winsEl) {
+      winsEl.textContent = wins.toString();
+    }
+
+    // Calculate top 3 finishes
+    const top3 = rankings.filter(r => 
+      (typeof r.rank === 'number' && r.rank >= 1 && r.rank <= 3) || 
+      r.isWinner
+    ).length;
+    const top3El = document.getElementById('profile-top3');
+    if (top3El) {
+      top3El.textContent = top3.toString();
+    }
+
+    // Calculate prize money (rough estimate based on wins)
+    const earnings = wins * 100; // Base prize per tournament win
+    const earningsEl = document.getElementById('profile-earnings');
+    if (earningsEl) {
+      earningsEl.textContent = `$${earnings}`;
+    }
+
+    logger.info('ProfileUIManager', `Tournament stats: wins=${wins}, top3=${top3}, earnings=$${earnings}`);
   }
 
   /**

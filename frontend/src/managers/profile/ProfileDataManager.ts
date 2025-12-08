@@ -90,7 +90,11 @@ export class ProfileDataManager {
       });
 
       if (response.ok) {
-        const apiStats: any = await response.json();
+        const apiResponse: any = await response.json();
+        logger.debug('ProfileDataManager', 'Raw API stats response:', apiResponse);
+
+        // Unwrap the response if it has success/data structure
+        const apiStats = apiResponse.data || apiResponse;
 
         // Map API response to GameStats interface
         const stats: GameStats = {
@@ -102,7 +106,7 @@ export class ProfileDataManager {
           averageGameDuration: apiStats.averageGameDuration || 0
         };
 
-        logger.info('ProfileDataManager', 'Game stats loaded successfully');
+        logger.info('ProfileDataManager', 'Game stats loaded successfully:', stats);
         return stats;
       } else {
         logger.warn('ProfileDataManager', `Game stats API returned error: ${response.status}`);

@@ -67,6 +67,9 @@ export class ProfileManager {
       const tournamentRankings = await this.dataManager.loadTournamentRankings((user.userId || user.id));
       this.uiManager.displayTournamentRankings(tournamentRankings);
 
+      // Display tournament statistics (wins and top 3)
+      this.uiManager.displayTournamentStats(tournamentRankings);
+
       logger.info('ProfileManager', 'Profile loading complete');
     } catch (error) {
       logger.error('ProfileManager', 'Failed to load profile:', error);
