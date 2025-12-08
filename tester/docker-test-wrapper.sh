@@ -11,10 +11,10 @@ cd /tmp/tests-docker
 # NOTE: Services listen on port 3000 internally, but are exposed as 3001-3004 externally
 echo "🔧 Updating service URLs for Docker network..."
 find /tmp/tests-docker -name "*.sh" -type f -exec sed -i \
-    -e 's|http://localhost:3001|http://ft_transcendence-auth-1:3000|g' \
-    -e 's|http://localhost:3002|http://ft_transcendence-game-1:3000|g' \
-    -e 's|http://localhost:3003|http://ft_transcendence-tournament-1:3000|g' \
-    -e 's|http://localhost:3004|http://ft_transcendence-user-1:3000|g' \
+    -e 's|http://auth:3000|http://auth:3000|g' \
+    -e 's|http://game:3000|http://game:3000|g' \
+    -e 's|http://tournament:3000|http://tournament:3000|g' \
+    -e 's|http://user:3000|http://user:3000|g' \
     -e 's|PROJECT_ROOT="\$(dirname "\$SCRIPT_DIR")"|PROJECT_ROOT="/project"|g' \
     {} +
 

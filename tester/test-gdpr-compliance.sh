@@ -59,7 +59,7 @@ test_gdpr_endpoints() {
 test_data_export() {
     echo -e "${YELLOW}Running Test 2: Data Export Functionality${NC}"
     
-    local response=$(curl -s -X GET "http://localhost:3004/gdpr/export" 2>/dev/null)
+    local response=$(curl -s -X GET "http://user:3000/gdpr/export" 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 2 "Data Export Functionality" "PASS"
@@ -74,7 +74,7 @@ test_data_export() {
 test_data_deletion() {
     echo -e "${YELLOW}Running Test 3: Data Deletion Request${NC}"
     
-    local response=$(curl -s -X POST "http://localhost:3004/gdpr/delete" \
+    local response=$(curl -s -X POST "http://user:3000/gdpr/delete" \
         -H "Content-Type: application/json" \
         -d '{}' 2>/dev/null)
     
@@ -91,7 +91,7 @@ test_data_deletion() {
 test_user_anonymization() {
     echo -e "${YELLOW}Running Test 4: User Data Anonymization${NC}"
     
-    local response=$(curl -s -X POST "http://localhost:3004/gdpr/anonymize" \
+    local response=$(curl -s -X POST "http://user:3000/gdpr/anonymize" \
         -H "Content-Type: application/json" \
         -d '{}' 2>/dev/null)
     
@@ -136,7 +136,7 @@ test_audit_trail() {
 test_data_portability() {
     echo -e "${YELLOW}Running Test 7: Data Portability${NC}"
     
-    local response=$(curl -s -X GET "http://localhost:3004/gdpr/export?format=json" 2>/dev/null)
+    local response=$(curl -s -X GET "http://user:3000/gdpr/export?format=json" 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Data Portability" "PASS"
@@ -195,7 +195,7 @@ test_gdpr_response_time() {
     echo -e "${YELLOW}Running Test 11: Response Time for GDPR Requests${NC}"
     
     local start=$(date +%s%N)
-    curl -s -X GET "http://localhost:3004/gdpr/export" > /dev/null 2>&1
+    curl -s -X GET "http://user:3000/gdpr/export" > /dev/null 2>&1
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     
@@ -214,7 +214,7 @@ test_secure_data_transmission() {
     echo -e "${YELLOW}Running Test 12: Secure Data Transmission${NC}"
     
     # Check if user service is accessible
-    local response=$(curl -s http://localhost:3004/health 2>/dev/null)
+    local response=$(curl -s http://user:3000/health 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Secure Data Transmission" "PASS"

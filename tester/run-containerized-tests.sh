@@ -23,11 +23,11 @@ echo ""
 # Check if containers are running
 echo -e "${YELLOW}Checking container status...${NC}"
 CONTAINERS=(
-    "ft_transcendence-auth-1"
-    "ft_transcendence-game-1"
-    "ft_transcendence-tournament-1"
-    "ft_transcendence-user-1"
-    "ft_transcendence-ssr-1"
+    "auth"
+    "game"
+    "tournament"
+    "user"
+    "ssr"
 )
 
 ALL_RUNNING=true
@@ -79,7 +79,7 @@ run_containerized_test() {
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
     # Copy test script to container and run it
-    local container="ft_transcendence-auth-1"
+    local container="auth"
     local test_file="${SCRIPT_DIR}/${test_script}"
     
     if [ ! -f "$test_file" ]; then

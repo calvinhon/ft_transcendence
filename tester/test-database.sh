@@ -44,7 +44,7 @@ test_database_files() {
     echo -e "${YELLOW}Running Test 1: Database Files Creation${NC}"
     
     # Use correct PROJECT_ROOT - it should be /project in Docker or actual path on host
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     
     local db_files=(
         "$base_path/auth/database/auth.db"
@@ -74,7 +74,7 @@ test_database_files() {
 test_schema_creation() {
     echo -e "${YELLOW}Running Test 2: Schema Creation${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     local auth_db="$base_path/auth/database/auth.db"
     
     # Check if database file exists (schema created)
@@ -94,7 +94,7 @@ test_user_creation() {
     
     # Attempt to register a user with properly formatted JSON
     local timestamp=$(date +%s)
-    local response=$(curl -s -X POST http://localhost:3001/auth/register \
+    local response=$(curl -s -X POST http://auth:3000/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"dbtest_${timestamp}\",\"email\":\"dbtest_${timestamp}@example.com\",\"password\":\"SecurePass123!\"}" 2>/dev/null)
     
@@ -112,7 +112,7 @@ test_user_creation() {
 test_data_integrity() {
     echo -e "${YELLOW}Running Test 4: Data Integrity${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     
     # Check all database files exist and are valid (non-empty)
     local dbs=("$base_path/auth/database/auth.db" "$base_path/game/database/games.db")
@@ -140,7 +140,7 @@ test_query_performance() {
     
     # Test query performance via API
     local start_time=$(date +%s%N)
-    local response=$(curl -s --max-time 2 http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -s --max-time 2 http://auth:3000/health 2>/dev/null)
     local end_time=$(date +%s%N)
     
     # Check response came back quickly (< 2 seconds)
@@ -159,12 +159,12 @@ test_database_constraints() {
     
     # Test constraints by trying to create duplicate user
     local timestamp=$(date +%s)
-    local response1=$(curl -s -X POST http://localhost:3001/auth/register \
+    local response1=$(curl -s -X POST http://auth:3000/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     
     # Try same username again - should fail due to constraint
-    local response2=$(curl -s -X POST http://localhost:3001/auth/register \
+    local response2=$(curl -s -X POST http://auth:3000/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test2_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     
@@ -182,7 +182,7 @@ test_database_constraints() {
 test_transaction_support() {
     echo -e "${YELLOW}Running Test 7: Transaction Support${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     local auth_db="$base_path/auth/database/auth.db"
     
     # SQLite always supports transactions if DB exists
@@ -199,7 +199,7 @@ test_transaction_support() {
 test_index_creation() {
     echo -e "${YELLOW}Running Test 8: Index Creation${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     local auth_db="$base_path/auth/database/auth.db"
     
     # SQLite creates indexes automatically for PRIMARY KEY and UNIQUE constraints
@@ -237,7 +237,7 @@ test_database_backup() {
 test_multi_database_access() {
     echo -e "${YELLOW}Running Test 10: Multi-Database Access${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     local db_files=(
         "$base_path/auth/database/auth.db"
         "$base_path/game/database/games.db"
@@ -267,7 +267,7 @@ test_multi_database_access() {
 test_database_encryption() {
     echo -e "${YELLOW}Running Test 11: Database Encryption${NC}"
     
-    local base_path="${PROJECT_ROOT:-/home/honguyen/ft_transcendence}"
+    local base_path="${PROJECT_ROOT:-.}"
     local auth_db="$base_path/auth/database/auth.db"
     
     # Check if passwords are hashed (not encrypted at DB level, but at application level)

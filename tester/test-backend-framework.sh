@@ -100,7 +100,7 @@ test_health_checks() {
 test_cors_configuration() {
     echo -e "${YELLOW}Running Test 3: CORS Configuration${NC}"
     
-    local response=$(curl -s -X OPTIONS http://localhost:3001/health \
+    local response=$(curl -s -X OPTIONS http://auth:3000/health \
         -H "Origin: http://localhost:5173" \
         -H "Access-Control-Request-Method: GET" \
         -i 2>/dev/null | grep -i "Access-Control-Allow-Origin")
@@ -118,7 +118,7 @@ test_cors_configuration() {
 test_http_headers() {
     echo -e "${YELLOW}Running Test 4: HTTP Headers Security${NC}"
 
-    local response=$(curl -s -i http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -s -i http://auth:3000/health 2>/dev/null)
     local has_security_headers=true
 
     # Check for common security headers (at least one should be present)
@@ -143,7 +143,7 @@ test_http_headers() {
 test_request_parsing() {
     echo -e "${YELLOW}Running Test 5: Request Parsing${NC}"
     
-    local response=$(curl -s -X POST http://localhost:3001/auth/test \
+    local response=$(curl -s -X POST http://auth:3000/auth/test \
         -H "Content-Type: application/json" \
         -d '{"test": "data"}' 2>/dev/null)
     
@@ -160,7 +160,7 @@ test_request_parsing() {
 test_response_formatting() {
     echo -e "${YELLOW}Running Test 6: Response Formatting${NC}"
     
-    local response=$(curl -s http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -s http://auth:3000/health 2>/dev/null)
     
     # Check if response is valid JSON using python3
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -176,12 +176,12 @@ test_response_formatting() {
 test_middleware_chain() {
     echo -e "${YELLOW}Running Test 7: Middleware Chain${NC}"
     
-    local response=$(curl -s -X POST http://localhost:3001/auth/register \
+    local response=$(curl -s -X POST http://auth:3000/auth/register \
         -H "Content-Type: application/json" \
         -d '{"username": "test", "email": "test@test.com", "password": "Test123!"}' 2>/dev/null)
     
     # Response should contain either success or validation error (not 500)
-    local status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3001/auth/register \
+    local status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://auth:3000/auth/register \
         -H "Content-Type: application/json" \
         -d '{"username": "test", "email": "test@test.com", "password": "Test123!"}' 2>/dev/null)
     
@@ -199,7 +199,7 @@ test_error_handling() {
     echo -e "${YELLOW}Running Test 8: Error Handling${NC}"
     
     # Request to non-existent endpoint
-    local status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/nonexistent 2>/dev/null)
+    local status=$(curl -s -o /dev/null -w "%{http_code}" http://auth:3000/nonexistent 2>/dev/null)
     
     if [ "$status" = "404" ]; then
         log_result 8 "Error Handling" "PASS"
@@ -214,7 +214,7 @@ test_error_handling() {
 test_content_negotiation() {
     echo -e "${YELLOW}Running Test 9: Content Negotiation${NC}"
     
-    local response=$(curl -s -H "Accept: application/json" http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -s -H "Accept: application/json" http://auth:3000/health 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 9 "Content Negotiation" "PASS"
@@ -229,10 +229,10 @@ test_content_negotiation() {
 test_route_registration() {
     echo -e "${YELLOW}Running Test 10: Route Registration${NC}"
     
-    local auth_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null)
-    local game_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/health 2>/dev/null)
-    local tournament_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3003/health 2>/dev/null)
-    local user_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3004/health 2>/dev/null)
+    local auth_ok=$(curl -s -o /dev/null -w "%{http_code}" http://auth:3000/health 2>/dev/null)
+    local game_ok=$(curl -s -o /dev/null -w "%{http_code}" http://game:3000/health 2>/dev/null)
+    local tournament_ok=$(curl -s -o /dev/null -w "%{http_code}" http://tournament:3000/health 2>/dev/null)
+    local user_ok=$(curl -s -o /dev/null -w "%{http_code}" http://user:3000/health 2>/dev/null)
     
     if [ "$auth_ok" = "200" ] && [ "$game_ok" = "200" ] && [ "$tournament_ok" = "200" ] && [ "$user_ok" = "200" ]; then
         log_result 10 "Route Registration" "PASS"
@@ -247,7 +247,7 @@ test_route_registration() {
 test_performance_response_time() {
     echo -e "${YELLOW}Running Test 11: Performance - Response Time${NC}"
     
-    local time=$(curl -s -o /dev/null -w "%{time_total}" http://localhost:3001/health 2>/dev/null)
+    local time=$(curl -s -o /dev/null -w "%{time_total}" http://auth:3000/health 2>/dev/null)
     
     # Response should be under 1 second
     if (( $(echo "$time < 1" | bc -l 2>/dev/null || echo 0) )); then

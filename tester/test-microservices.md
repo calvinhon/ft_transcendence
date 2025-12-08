@@ -27,7 +27,7 @@ sleep 5
 docker-compose ps | grep auth
 
 # Check it's running
-curl http://localhost:3001/health
+curl http://auth:3000/health
 
 # Cleanup
 docker-compose stop auth
@@ -35,7 +35,7 @@ docker-compose stop auth
 # Start only game
 docker-compose up -d game
 sleep 5
-curl http://localhost:3002/health
+curl http://game:3000/health
 
 # Cleanup
 docker-compose stop game
@@ -87,7 +87,7 @@ sqlite3 auth/database/auth.db ".tables"
 sqlite3 game/database/game.db ".tables"
 
 # Create test data in one service
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@example.com","password":"pass123"}'
 
@@ -125,7 +125,7 @@ docker exec tournament curl -s http://user:3000/health
 docker logs game | grep "http://" || echo "No cross-calls yet"
 
 # Make request that triggers chain
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN"
 
 # Check logs
@@ -210,10 +210,10 @@ Verify health checks monitor service status.
 ### Test Commands
 ```bash
 # Individual health checks
-curl -X GET http://localhost:3001/health | jq '.status'
-curl -X GET http://localhost:3002/health | jq '.status'
-curl -X GET http://localhost:3003/health | jq '.status'
-curl -X GET http://localhost:3004/health | jq '.status'
+curl -X GET http://auth:3000/health | jq '.status'
+curl -X GET http://game:3000/health | jq '.status'
+curl -X GET http://tournament:3000/health | jq '.status'
+curl -X GET http://user:3000/health | jq '.status'
 
 # Check Docker health status
 docker-compose ps --format "table {{.Names}}\t{{.Status}}"
@@ -223,14 +223,14 @@ docker-compose stop game
 sleep 3
 
 # Try to access game service
-curl -X GET http://localhost:3002/health || echo "Service down (expected)"
+curl -X GET http://game:3000/health || echo "Service down (expected)"
 
 # Restart service
 docker-compose start game
 sleep 3
 
 # Verify recovered
-curl -X GET http://localhost:3002/health | jq '.status'
+curl -X GET http://game:3000/health | jq '.status'
 ```
 
 ### Expected Results
@@ -273,7 +273,7 @@ docker-compose ps | grep game
 
 # Make requests and observe which instance handles it
 for i in {1..5}; do
-  curl -X GET http://localhost:3002/health | jq '.container_id'
+  curl -X GET http://game:3000/health | jq '.container_id'
 done
 
 # Should see responses from different container IDs
@@ -283,7 +283,7 @@ CONTAINER=$(docker-compose ps -q game | head -1)
 docker stop $CONTAINER
 
 # Make more requests - should work on remaining instance
-curl -X GET http://localhost:3002/health | jq '.status'
+curl -X GET http://game:3000/health | jq '.status'
 
 # Cleanup: Reset to 1 instance
 docker-compose up -d --scale game=1
@@ -401,26 +401,26 @@ Verify data remains consistent when accessed via different services.
 ### Test Commands
 ```bash
 # Create user via auth
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"consistency","email":"cons@test.com","password":"pass123"}' \
   | jq '.user.id'
 
 # Query via user
 USER_ID=1
-curl -X GET "http://localhost:3004/users/$USER_ID" \
+curl -X GET "http://user:3000/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.username'
 
 # Should be "consistency"
 
 # Update profile via one service
-curl -X PUT "http://localhost:3004/users/$USER_ID" \
+curl -X PUT "http://user:3000/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"bio":"Updated bio"}'
 
 # Verify update via other service
-curl -X GET "http://localhost:3001/users/$USER_ID" \
+curl -X GET "http://auth:3000/users/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.bio'
 
 # Should be "Updated bio"
@@ -455,7 +455,7 @@ docker-compose logs game | tail -20
 docker-compose logs | grep -i "error\|exception" | head -20
 
 # Check metrics endpoint (if available)
-curl -s http://localhost:3001/metrics | head -20
+curl -s http://auth:3000/metrics | head -20
 
 # Long-running service test with log monitoring
 docker-compose logs -f auth &
@@ -495,7 +495,7 @@ Verify services shut down gracefully without data loss.
 docker-compose up -d
 
 # Make request and immediately shutdown
-(curl -X GET http://localhost:3002/health &) 
+(curl -X GET http://game:3000/health &) 
 sleep 1
 docker-compose stop game
 
@@ -505,7 +505,7 @@ docker-compose logs game | tail -5
 # Verify database is clean
 docker-compose start game
 sleep 3
-curl -X GET http://localhost:3002/health | jq '.status'
+curl -X GET http://game:3000/health | jq '.status'
 ```
 
 ### Pass Criteria

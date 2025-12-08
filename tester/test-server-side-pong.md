@@ -330,7 +330,7 @@ Verify real-time game state sent via WebSocket.
 ### Test Commands
 ```bash
 # Browser console test:
-const ws = new WebSocket('ws://localhost:3002/ws/game/1');
+const ws = new WebSocket('ws://game:3000/ws/game/1');
 
 ws.onopen = () => {
   console.log('Connected');
@@ -347,7 +347,7 @@ ws.onerror = (error) => {
 };
 
 // Or test via curl/websocket tools:
-wscat -c ws://localhost:3002/ws/game/1
+wscat -c ws://game:3000/ws/game/1
 ```
 
 ### Expected WebSocket Updates

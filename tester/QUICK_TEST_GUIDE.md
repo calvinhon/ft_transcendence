@@ -8,7 +8,7 @@
 ## 🚀 Run All Tests (Recommended)
 
 ```bash
-cd /home/honguyen/ft_transcendence/tester
+cd ./tester
 ./run-tests-in-docker.sh
 ```
 
@@ -23,7 +23,7 @@ cd /home/honguyen/ft_transcendence/tester
 ### 1. Start Services
 
 ```bash
-cd /home/honguyen/ft_transcendence
+cd .
 make start
 ```
 
@@ -85,7 +85,7 @@ Total                                  180/180
 ### From Host (requires bash, curl, python3, sqlite3)
 
 ```bash
-cd /home/honguyen/ft_transcendence/tester
+cd ./tester
 
 # Backend
 ./test-backend-framework.sh
@@ -125,9 +125,9 @@ cd /home/honguyen/ft_transcendence/tester
 
 ```bash
 docker run --rm \
-    --network ft_transcendence_transcendence-network \
+    --network transcendence-network \
     -v "$(pwd)/tester:/tests:ro" \
-    ft_transcendence-tester \
+    transcendence-tester \
     /bin/bash -c "cd /tests && ./test-backend-framework.sh"
 ```
 
@@ -359,7 +359,7 @@ docker ps
 make restart
 
 # View logs
-docker logs ft_transcendence-auth-service-1
+docker logs auth
 ```
 
 ### Test Failures
@@ -370,7 +370,7 @@ cd tester
 bash -x test-module-name.sh
 
 # Check specific service
-curl -s http://localhost:3001/health | python3 -m json.tool
+curl -s http://auth:3000/health | python3 -m json.tool
 ```
 
 ### Network Issues
@@ -380,11 +380,11 @@ curl -s http://localhost:3001/health | python3 -m json.tool
 docker network ls | grep transcendence
 
 # Inspect network
-docker network inspect ft_transcendence_transcendence-network
+docker network inspect transcendence-network
 
 # Test connectivity
-docker run --rm --network ft_transcendence_transcendence-network \
-    alpine ping -c 3 ft_transcendence-auth-service-1
+docker run --rm --network transcendence-network \
+    alpine ping -c 3 auth
 ```
 
 ### Container Build Issues
@@ -392,8 +392,8 @@ docker run --rm --network ft_transcendence_transcendence-network \
 ```bash
 # Rebuild test container
 cd tester
-docker rmi ft_transcendence-tester
-docker build -t ft_transcendence-tester -f Dockerfile.tester .
+docker rmi transcendence-tester
+docker build -t transcendence-tester -f Dockerfile.tester .
 ```
 
 ---

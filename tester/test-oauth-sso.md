@@ -22,14 +22,14 @@ Verify OAuth flow can be initiated for each provider.
 ### Test Commands
 ```bash
 # Google OAuth init
-curl -X GET "http://localhost:3001/oauth/init?provider=google" -v
+curl -X GET "http://auth:3000/oauth/init?provider=google" -v
 
 # Expected redirect:
 # HTTP/1.1 302 Found
 # Location: https://accounts.google.com/o/oauth2/v2/auth?...
 
 # GitHub OAuth init
-curl -X GET "http://localhost:3001/oauth/init?provider=github" -v
+curl -X GET "http://auth:3000/oauth/init?provider=github" -v
 
 # Expected redirect:
 # HTTP/1.1 302 Found
@@ -40,13 +40,13 @@ curl -X GET "http://localhost:3001/oauth/init?provider=github" -v
 ```
 Google:
 - client_id: configured in environment
-- redirect_uri: http://localhost:3001/oauth/callback
+- redirect_uri: http://auth:3000/oauth/callback
 - scope: profile email
 - state: random CSRF token
 
 GitHub:
 - client_id: configured in environment
-- redirect_uri: http://localhost:3001/oauth/callback
+- redirect_uri: http://auth:3000/oauth/callback
 - scope: user email
 - state: random CSRF token
 ```
@@ -75,20 +75,20 @@ Verify state parameter prevents CSRF attacks.
 ### Test Commands
 ```bash
 # Initiate OAuth (get state from response)
-STATE=$(curl -s -X GET "http://localhost:3001/oauth/init?provider=google" \
+STATE=$(curl -s -X GET "http://auth:3000/oauth/init?provider=google" \
   -L -c cookies.txt | grep -o 'state=[^&]*' | cut -d= -f2)
 
 echo "State: $STATE"
 
 # Try callback with wrong state (should fail)
-curl -X GET "http://localhost:3001/oauth/callback?code=test&state=wrong_state&provider=google" \
+curl -X GET "http://auth:3000/oauth/callback?code=test&state=wrong_state&provider=google" \
   -H "Cookie: $(cat cookies.txt)" \
   | jq '.error' | grep -i "mismatch\|invalid"
 
 # Expected: error about state mismatch
 
 # Try callback with correct state (will fail on auth, but state validation passes)
-curl -X GET "http://localhost:3001/oauth/callback?code=test&state=$STATE&provider=google" \
+curl -X GET "http://auth:3000/oauth/callback?code=test&state=$STATE&provider=google" \
   -H "Cookie: $(cat cookies.txt)" \
   | jq '.error' | grep -v "state\|csrf" || echo "State validation passed"
 ```
@@ -121,7 +121,7 @@ npm test -- --testNamePattern="google.*oauth"
 # Manual flow simulation:
 // 1. User logs in at Google
 // 2. Gets redirected with code:
-// http://localhost:3001/oauth/callback?code=4/0AY0e-g7...&state=xyz
+// http://auth:3000/oauth/callback?code=4/0AY0e-g7...&state=xyz
 
 // 3. Server calls exchangeGoogleCode():
 // POST https://oauth2.googleapis.com/token with code
@@ -174,7 +174,7 @@ npm test -- --testNamePattern="github.*oauth"
 // Manual flow simulation:
 // 1. User logs in at GitHub
 // 2. Gets redirected with code:
-// http://localhost:3001/oauth/callback?code=abc123...&state=xyz
+// http://auth:3000/oauth/callback?code=abc123...&state=xyz
 
 // 3. Server calls exchangeGithubCode():
 // POST https://github.com/login/oauth/access_token with code
@@ -273,7 +273,7 @@ Verify user avatar from OAuth provider is stored.
 ### Test Commands
 ```bash
 # Check avatar after login
-curl -s -X GET "http://localhost:3001/user/profile" \
+curl -s -X GET "http://auth:3000/user/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.avatar_url'
 
 # Expected: https://lh3.googleusercontent.com/...
@@ -285,7 +285,7 @@ sqlite3 auth/database/auth.db \
 # Expected: URL to image
 
 # Verify image accessible
-curl -I $(curl -s "http://localhost:3001/user/profile" \
+curl -I $(curl -s "http://auth:3000/user/profile" \
   -H "Authorization: Bearer $TOKEN" | jq -r '.user.avatar_url')
 
 # Expected: HTTP/1.1 200 OK
@@ -315,7 +315,7 @@ Verify JWT tokens are generated and validated correctly.
 ### Test Commands
 ```bash
 # Get token after OAuth
-TOKEN=$(curl -s -X GET "http://localhost:3001/oauth/callback?code=test&state=$STATE" \
+TOKEN=$(curl -s -X GET "http://auth:3000/oauth/callback?code=test&state=$STATE" \
   -H "Cookie: jwt=$TOKEN" | jq -r '.token')
 
 # Decode JWT (without verification)
@@ -331,13 +331,13 @@ echo "$TOKEN" | cut -d'.' -f2 | base64 -d | jq .
 # }
 
 # Verify token works in API
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.username'
 
 # Expected: google_1234567890
 
 # Try with invalid token
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer invalid_token" 
 # Expected: 401 Unauthorized
 ```
@@ -411,12 +411,12 @@ Verify OAuth errors are handled gracefully.
 npm test -- --testNamePattern="oauth.*error"
 
 # User denies permission (simulated):
-curl -X GET "http://localhost:3001/oauth/callback?error=access_denied&state=$STATE"
+curl -X GET "http://auth:3000/oauth/callback?error=access_denied&state=$STATE"
 
 # Expected: redirect to login with error message
 
 # Invalid code:
-curl -X GET "http://localhost:3001/oauth/callback?code=invalid&state=$STATE&provider=google"
+curl -X GET "http://auth:3000/oauth/callback?code=invalid&state=$STATE&provider=google"
 
 # Expected: 400 Bad Request or redirect with error
 
@@ -481,7 +481,7 @@ Verify OAuth security best practices.
 ### Test Commands
 ```bash
 # Check security headers
-curl -I http://localhost:3001/oauth/init?provider=google | grep -i "security\|csrf\|x-"
+curl -I http://auth:3000/oauth/init?provider=google | grep -i "security\|csrf\|x-"
 
 # Expected headers:
 # X-Content-Type-Options: nosniff
@@ -573,7 +573,7 @@ npm run dev
 ### Quick Test Commands
 ```bash
 # Test OAuth init
-curl http://localhost:3001/oauth/init?provider=google -v
+curl http://auth:3000/oauth/init?provider=google -v
 
 # Test with real OAuth flow (manual browser)
 npm run dev

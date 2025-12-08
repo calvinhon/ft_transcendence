@@ -4,7 +4,7 @@
 
 ### Option 1: Docker-Based Testing (Recommended)
 ```bash
-cd /home/honguyen/ft_transcendence/tester
+cd ./tester
 ./run-tests-docker.sh
 ```
 
@@ -16,7 +16,7 @@ cd /home/honguyen/ft_transcendence/tester
 
 ### Option 2: Host-Based Testing
 ```bash
-cd /home/honguyen/ft_transcendence/tester
+cd ./tester
 ./run-all-tests.sh
 ```
 
@@ -59,7 +59,7 @@ cd /home/honguyen/ft_transcendence/tester
 ### Docker Test Container
 - **Base:** Alpine Linux
 - **Tools:** bash, curl, jq, grep, sed, docker-cli
-- **Network:** ft_transcendence_transcendence-network
+- **Network:** transcendence-network
 - **Build:** Automatic on first run
 
 ### Files
@@ -135,17 +135,17 @@ tester/
 
 Before running tests, ensure services are up:
 ```bash
-cd /home/honguyen/ft_transcendence
+cd .
 docker compose up -d
 docker compose ps  # Check all services are healthy
 ```
 
 Expected services:
 - nginx (80, 443)
-- auth-service (3001)
-- game-service (3002)
-- tournament-service (3003)
-- user-service (3004)
+- auth (3001)
+- game (3002)
+- tournament (3003)
+- user (3004)
 - elasticsearch (9200)
 - kibana (5601)
 - prometheus (9090)
@@ -178,28 +178,28 @@ Expected services:
 
 ### Quick Health Check
 ```bash
-curl http://localhost:3001/health
-curl http://localhost:3002/health
-curl http://localhost:3003/health
-curl http://localhost:3004/health
+curl http://auth:3000/health
+curl http://game:3000/health
+curl http://tournament:3000/health
+curl http://user:3000/health
 ```
 
 ### Run Single Module
 ```bash
-cd /home/honguyen/ft_transcendence/tester
+cd ./tester
 ./test-backend-framework.sh
 ```
 
 ### View Test Results
 ```bash
-cat /home/honguyen/ft_transcendence/tester/FINAL_RESULTS.md
-cat /home/honguyen/ft_transcendence/tester/TEST_ANALYSIS.md
+cat ./tester/FINAL_RESULTS.md
+cat ./tester/TEST_ANALYSIS.md
 ```
 
 ### Docker Test Logs
 ```bash
 # Latest run
-cat /home/honguyen/ft_transcendence/tester/docker-test-final2.log
+cat ./tester/docker-test-final2.log
 
 # Check specific module results
 grep "Backend Framework" -A 20 docker-test-final2.log
@@ -211,8 +211,8 @@ grep "Backend Framework" -A 20 docker-test-final2.log
 
 ### Test Fails Locally But Should Pass
 1. Check services are running: `docker compose ps`
-2. Check service logs: `docker compose logs auth-service`
-3. Verify network connectivity: `curl http://localhost:3001/health`
+2. Check service logs: `docker compose logs auth`
+3. Verify network connectivity: `curl http://auth:3000/health`
 4. Check environment variables: `docker compose config`
 
 ### Test Passes Locally But Fails in Docker
@@ -222,7 +222,7 @@ grep "Backend Framework" -A 20 docker-test-final2.log
 4. Review docker-test-wrapper.sh for URL replacements
 
 ### All Tests Fail
-1. Rebuild test container: `docker rmi ft_transcendence-tester`
+1. Rebuild test container: `docker rmi transcendence-tester`
 2. Restart all services: `docker compose restart`
 3. Check Docker daemon: `docker ps`
 4. Verify disk space: `df -h`

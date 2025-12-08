@@ -257,7 +257,7 @@ cd tester
    ```
 2. Check health status:
    ```bash
-   curl http://localhost:9200/_cluster/health
+   curl http://elasticsearch:9200/_cluster/health
    ```
 3. Re-run tests after services are ready:
    ```bash
@@ -305,10 +305,10 @@ cd tester
    ```
 3. Verify services are responding:
    ```bash
-   curl http://localhost:3001/health  # Auth Service
-   curl http://localhost:3002/health  # Game Service
-   curl http://localhost:3003/health  # Tournament Service
-   curl http://localhost:3004/health  # User Service
+   curl http://auth:3000/health  # Auth Service
+   curl http://game:3000/health  # Game Service
+   curl http://tournament:3000/health  # Tournament Service
+   curl http://user:3000/health  # User Service
    ```
 
 ---
@@ -433,11 +433,11 @@ cd tester
 
 ### Container Test Targets
 
-- `auth-service`: Authentication tests
-- `game-service`: Game logic tests
-- `tournament-service`: Tournament tests
-- `user-service`: User management tests
-- `ssr-service`: SSR tests
+- `auth`: Authentication tests
+- `game`: Game logic tests
+- `tournament`: Tournament tests
+- `user`: User management tests
+- `ssr`: SSR tests
 
 ---
 

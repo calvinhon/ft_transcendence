@@ -83,7 +83,7 @@ Expected: 100%
 ### Test Command
 ```bash
 # Backend API test:
-curl -X GET "http://localhost:3004/stats/user/1" \
+curl -X GET "http://user:3000/stats/user/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats | {wins, losses, winRate}'
 
 # Expected output:
@@ -116,7 +116,7 @@ Verify stats update correctly after game completion.
 ### Test Commands
 ```bash
 # Get initial stats
-INITIAL=$(curl -s "http://localhost:3004/stats/user/1" \
+INITIAL=$(curl -s "http://user:3000/stats/user/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats')
 echo "Initial: $INITIAL"
 
@@ -126,7 +126,7 @@ echo "Initial: $INITIAL"
 sleep 2 # Wait for update propagation
 
 # Get updated stats
-UPDATED=$(curl -s "http://localhost:3004/stats/user/1" \
+UPDATED=$(curl -s "http://user:3000/stats/user/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats')
 echo "Updated: $UPDATED"
 
@@ -183,7 +183,7 @@ Expected Average: 0
 ### Test Command
 ```bash
 # Get detailed stats
-curl -X GET "http://localhost:3004/stats/user/1/games" \
+curl -X GET "http://user:3000/stats/user/1/games" \
   -H "Authorization: Bearer $TOKEN" | jq '.games'
 
 # Manual calculation in bash
@@ -215,7 +215,7 @@ Verify personal best (high score) is tracked.
 ### Test Commands
 ```bash
 # Get profile before games
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.highScore'
 
 # After playing games and checking again
@@ -254,7 +254,7 @@ npm run dev
 // 5. Check pagination works
 
 # API test:
-curl -X GET "http://localhost:3004/leaderboard?limit=10" \
+curl -X GET "http://user:3000/leaderboard?limit=10" \
   -H "Authorization: Bearer $TOKEN" | jq '.leaderboard'
 ```
 
@@ -304,11 +304,11 @@ Verify stats comparison between players works.
 ### Test Commands
 ```bash
 # Get player 1 stats
-PLAYER1=$(curl -s "http://localhost:3004/stats/user/1" \
+PLAYER1=$(curl -s "http://user:3000/stats/user/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats')
 
 # Get player 2 stats
-PLAYER2=$(curl -s "http://localhost:3004/stats/user/2" \
+PLAYER2=$(curl -s "http://user:3000/stats/user/2" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats')
 
 echo "Player 1: $PLAYER1"
@@ -344,11 +344,11 @@ Verify large datasets paginate correctly.
 ### Test Commands
 ```bash
 # Get page 1
-curl -X GET "http://localhost:3004/leaderboard?page=1&limit=10" \
+curl -X GET "http://user:3000/leaderboard?page=1&limit=10" \
   -H "Authorization: Bearer $TOKEN" | jq '.pagination'
 
 # Get page 2
-curl -X GET "http://localhost:3004/leaderboard?page=2&limit=10" \
+curl -X GET "http://user:3000/leaderboard?page=2&limit=10" \
   -H "Authorization: Bearer $TOKEN" | jq '.pagination'
 
 # Expected pagination info:
@@ -383,15 +383,15 @@ Verify stats are consistent across all views.
 ### Test Commands
 ```bash
 # Profile endpoint
-PROFILE=$(curl -s "http://localhost:3004/profile" \
+PROFILE=$(curl -s "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.stats')
 
 # Leaderboard endpoint
-LEADERBOARD=$(curl -s "http://localhost:3004/leaderboard" \
+LEADERBOARD=$(curl -s "http://user:3000/leaderboard" \
   -H "Authorization: Bearer $TOKEN" | jq '.leaderboard[0].stats')
 
 # Game history endpoint
-HISTORY=$(curl -s "http://localhost:3004/games" \
+HISTORY=$(curl -s "http://user:3000/games" \
   -H "Authorization: Bearer $TOKEN" | jq '.calculatedStats')
 
 # Compare
@@ -453,7 +453,7 @@ Verify dashboards perform well with many games/players.
 ### Test Commands
 ```bash
 # Load leaderboard with many players
-time curl -s "http://localhost:3004/leaderboard?limit=100" \
+time curl -s "http://user:3000/leaderboard?limit=100" \
   -H "Authorization: Bearer $TOKEN" | wc -c
 
 # Expected:
@@ -524,9 +524,9 @@ npm run dev
 ### Quick Test Commands
 ```bash
 # API tests
-curl -X GET http://localhost:3004/profile -H "Authorization: Bearer $TOKEN" | jq
-curl -X GET http://localhost:3004/leaderboard -H "Authorization: Bearer $TOKEN" | jq
-curl -X GET http://localhost:3004/stats/user/1 -H "Authorization: Bearer $TOKEN" | jq
+curl -X GET http://user:3000/profile -H "Authorization: Bearer $TOKEN" | jq
+curl -X GET http://user:3000/leaderboard -H "Authorization: Bearer $TOKEN" | jq
+curl -X GET http://user:3000/stats/user/1 -H "Authorization: Bearer $TOKEN" | jq
 
 # Browser tests
 npm run dev

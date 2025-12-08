@@ -165,7 +165,7 @@ test_ai_vs_player() {
     echo -e "${YELLOW}Running Test 9: AI vs Player Game${NC}"
     
     # Start a game with AI opponent via API
-    local response=$(curl -s -X POST http://localhost:3002/games \
+    local response=$(curl -s -X POST http://game:3000/games \
         -H "Content-Type: application/json" \
         -d '{"mode": "ai", "difficulty": "medium"}' 2>/dev/null)
     
@@ -200,7 +200,7 @@ test_performance_testing() {
     
     # Check AI response time
     local start=$(date +%s%N)
-    curl -s -X GET http://localhost:3002/health > /dev/null
+    curl -s -X GET http://game:3000/health > /dev/null
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

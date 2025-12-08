@@ -42,7 +42,7 @@ log_result() {
 test_game_initialization() {
     echo -e "${YELLOW}Running Test 1: Game Initialization${NC}"
     
-    local response=$(curl -s -X POST http://localhost:3002/games \
+    local response=$(curl -s -X POST http://game:3000/games \
         -H "Content-Type: application/json" \
         -d '{"mode": "local"}' 2>/dev/null)
     
@@ -197,7 +197,7 @@ test_performance_optimization() {
     echo -e "${YELLOW}Running Test 11: Performance Optimization${NC}"
     
     local start=$(date +%s%N)
-    curl -s http://localhost:3002/health > /dev/null
+    curl -s http://game:3000/health > /dev/null
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

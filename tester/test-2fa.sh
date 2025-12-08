@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 # Service URLs
-AUTH_URL="${AUTH_URL:-http://localhost:3001}"
+AUTH_URL="${AUTH_URL:-http://auth:3000}"
 
 # Colors
 GREEN='\033[0;32m'

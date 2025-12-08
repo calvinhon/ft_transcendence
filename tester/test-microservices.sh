@@ -67,7 +67,7 @@ test_inter_service_communication() {
     echo -e "${YELLOW}Running Test 2: Inter-Service Communication${NC}"
     
     # Check if services can communicate with each other
-    local response=$(curl -s http://localhost:3002/health 2>/dev/null)
+    local response=$(curl -s http://game:3000/health 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 2 "Inter-Service Communication" "PASS"
@@ -145,7 +145,7 @@ test_logging_monitoring() {
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        local response=$(timeout 3 curl -s http://localhost:9200 2>/dev/null)
+        local response=$(timeout 3 curl -s http://elasticsearch:9200 2>/dev/null)
         
         if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
             log_result 7 "Logging and Monitoring" "PASS"

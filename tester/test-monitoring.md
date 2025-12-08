@@ -102,7 +102,7 @@ Verify Prometheus collects metrics from each service.
 ### Test Commands
 ```bash
 # Get metrics directly from auth
-curl -s http://localhost:3001/metrics | head -30
+curl -s http://auth:3000/metrics | head -30
 
 # Expected format (Prometheus text format):
 # # HELP process_cpu_usage_seconds_total Total user and system CPU time spent in seconds

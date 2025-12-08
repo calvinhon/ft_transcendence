@@ -95,7 +95,7 @@ test_xss_protection() {
 test_csrf_token_validation() {
     echo -e "${YELLOW}Running Test 5: CSRF Token Validation${NC}"
     
-    local response=$(curl -s -X OPTIONS http://localhost:3001/health -i 2>/dev/null)
+    local response=$(curl -s -X OPTIONS http://auth:3000/health -i 2>/dev/null)
     
     if echo "$response" | grep -qi "allow\|csrf"; then
         log_result 5 "CSRF Token Validation" "PASS"
@@ -111,7 +111,7 @@ test_secrets_management() {
     echo -e "${YELLOW}Running Test 6: Secrets Management${NC}"
     
     # Check if Vault is running
-    local response=$(curl -s http://localhost:8200/v1/sys/seal-status 2>/dev/null)
+    local response=$(curl -s http://vault-server:8200/v1/sys/seal-status 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Secrets Management" "PASS"

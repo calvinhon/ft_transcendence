@@ -55,7 +55,7 @@ test_elasticsearch_health() {
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        local response=$(docker exec elasticsearch curl -s http://localhost:9200/_cluster/health 2>/dev/null)
+        local response=$(docker exec elasticsearch curl -s http://elasticsearch:9200/_cluster/health 2>/dev/null)
         
         if echo "$response" | grep -q '"status"'; then
             log_result 1 "Elasticsearch Health Check" "PASS"
@@ -79,7 +79,7 @@ test_index_creation() {
     echo -e "${YELLOW}Running Test 2: Index Creation${NC}"
     
     # Use docker exec to check indices
-    local response=$(docker exec elasticsearch curl -s http://localhost:9200/_cat/indices 2>/dev/null)
+    local response=$(docker exec elasticsearch curl -s http://elasticsearch:9200/_cat/indices 2>/dev/null)
     
     if [ -n "$response" ]; then
         log_result 2 "Index Creation" "PASS"
@@ -129,7 +129,7 @@ test_kibana_access() {
     local retry_count=0
     
     while [ $retry_count -lt $max_retries ]; do
-        local response=$(docker exec kibana curl -s http://localhost:5601/api/status 2>/dev/null)
+        local response=$(docker exec kibana curl -s http://kibana:5601/api/status 2>/dev/null)
         
         # Check if Kibana is ready
         if echo "$response" | grep -q '"state":"green"\|"state":"yellow"\|"version"'; then
@@ -161,7 +161,7 @@ test_document_indexing() {
     echo -e "${YELLOW}Running Test 5: Document Indexing${NC}"
     
     # Send a test document via docker exec
-    local response=$(docker exec elasticsearch curl -s -X POST "http://localhost:9200/test-index/_doc" \
+    local response=$(docker exec elasticsearch curl -s -X POST "http://elasticsearch:9200/test-index/_doc" \
         -H "Content-Type: application/json" \
         -d '{"timestamp": "'$(date -u +'%Y-%m-%dT%H:%M:%SZ')'", "message": "test"}' 2>/dev/null)
     
@@ -180,7 +180,7 @@ test_full_text_search() {
     echo -e "${YELLOW}Running Test 6: Full-Text Search${NC}"
     
     # Search via docker exec
-    local response=$(docker exec elasticsearch curl -s -X GET "http://localhost:9200/_search" 2>/dev/null)
+    local response=$(docker exec elasticsearch curl -s -X GET "http://elasticsearch:9200/_search" 2>/dev/null)
     
     if echo "$response" | grep -q '"hits"'; then
         log_result 6 "Full-Text Search" "PASS"
@@ -197,7 +197,7 @@ test_aggregations() {
     echo -e "${YELLOW}Running Test 7: Aggregations${NC}"
     
     # Test aggregation via docker exec
-    local response=$(docker exec elasticsearch curl -s -X GET "http://localhost:9200/_search" \
+    local response=$(docker exec elasticsearch curl -s -X GET "http://elasticsearch:9200/_search" \
         -H "Content-Type: application/json" \
         -d '{"size": 0}' 2>/dev/null)
     
@@ -231,7 +231,7 @@ test_kibana_dashboards() {
     fi
     
     # Quick API check
-    local response=$(docker exec kibana curl -s http://localhost:5601/api/status 2>/dev/null)
+    local response=$(docker exec kibana curl -s http://kibana:5601/api/status 2>/dev/null)
     if echo "$response" | grep -q '"state":"green"\|"state":"yellow"\|"version"'; then
         log_result 8 "Kibana Dashboards" "PASS"
         return 0
@@ -267,7 +267,7 @@ test_index_management() {
     echo -e "${YELLOW}Running Test 10: Index Management${NC}"
     
     # Check if we can manage indices via docker exec
-    local response=$(docker exec elasticsearch curl -s -X GET "http://localhost:9200/_cluster/settings" 2>/dev/null)
+    local response=$(docker exec elasticsearch curl -s -X GET "http://elasticsearch:9200/_cluster/settings" 2>/dev/null)
     
     if echo "$response" | grep -q '"persistent"\|"transient"'; then
         log_result 10 "Index Management" "PASS"
@@ -285,7 +285,7 @@ test_query_performance() {
     
     # Test query performance via docker exec
     local start=$(date +%s%N)
-    docker exec elasticsearch curl -s -X GET "http://localhost:9200/_search?size=1" > /dev/null 2>&1
+    docker exec elasticsearch curl -s -X GET "http://elasticsearch:9200/_search?size=1" > /dev/null 2>&1
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

@@ -21,31 +21,31 @@ Verify GDPR endpoints are registered and accessible.
 ### Test Commands
 ```bash
 # Test GDPR status endpoint
-curl -X GET "http://localhost:3004/gdpr/status/1" \
+curl -X GET "http://user:3000/gdpr/status/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected: 200 OK with user rights info
 
 # Test GDPR export endpoint
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" | jq . | head -20
 
 # Expected: 200 OK with user data
 
 # Test GDPR anonymize endpoint
-curl -X POST "http://localhost:3004/gdpr/anonymize/1" \
+curl -X POST "http://user:3000/gdpr/anonymize/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected: 200 OK or 204 No Content
 
 # Test GDPR delete endpoint
-curl -X DELETE "http://localhost:3004/gdpr/delete/1" \
+curl -X DELETE "http://user:3000/gdpr/delete/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected: 200 OK or 204 No Content
 
 # Verify auth required (no token)
-curl -X GET "http://localhost:3004/gdpr/status/1"
+curl -X GET "http://user:3000/gdpr/status/1"
 # Expected: 401 Unauthorized
 ```
 
@@ -74,7 +74,7 @@ Verify users can export their data.
 ### Test Commands
 ```bash
 # Request user data export
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected response structure:
@@ -108,7 +108,7 @@ curl -X GET "http://localhost:3004/gdpr/export/1" \
 # }
 
 # Verify can save as JSON
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" > user_data_export.json
 
 # Check file created
@@ -143,19 +143,19 @@ Verify users can delete their accounts and data.
 ```bash
 # Get user info before deletion
 USER_ID=2
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.username'
 
 # Expected: player_name
 
 # Delete user account
-curl -X DELETE "http://localhost:3004/gdpr/delete/$USER_ID" \
+curl -X DELETE "http://user:3000/gdpr/delete/$USER_ID" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected: 200 OK or 204 No Content
 
 # Try to access deleted user
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected: 404 Not Found or 401 Unauthorized
@@ -167,7 +167,7 @@ sqlite3 user/database/user.db \
 # Expected: 0
 
 # Try to login with deleted account
-curl -X POST "http://localhost:3001/auth/login" \
+curl -X POST "http://auth:3000/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"player_name","password":"password"}'
 
@@ -197,7 +197,7 @@ Verify users can update their data.
 ### Test Commands
 ```bash
 # Get current profile
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Expected:
@@ -209,7 +209,7 @@ curl -X GET "http://localhost:3004/profile" \
 # }
 
 # Update profile
-curl -X PUT "http://localhost:3004/profile" \
+curl -X PUT "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -218,7 +218,7 @@ curl -X PUT "http://localhost:3004/profile" \
   }' | jq .
 
 # Verify changes
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Expected:
@@ -230,7 +230,7 @@ curl -X GET "http://localhost:3004/profile" \
 # }
 
 # Verify in export
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.email'
 
 # Expected: "new@example.com"
@@ -258,7 +258,7 @@ Verify data can be exported in standard format.
 ### Test Commands
 ```bash
 # Export data
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" > export.json
 
 # Verify valid JSON
@@ -310,7 +310,7 @@ Verify users can check their GDPR status.
 ### Test Commands
 ```bash
 # Get GDPR status
-curl -X GET "http://localhost:3004/gdpr/status/1" \
+curl -X GET "http://user:3000/gdpr/status/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Expected response:
@@ -347,7 +347,7 @@ curl -X GET "http://localhost:3004/gdpr/status/1" \
 # }
 
 # Verify all rights present
-curl -s -X GET "http://localhost:3004/gdpr/status/1" \
+curl -s -X GET "http://user:3000/gdpr/status/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.rights | keys'
 
 # Expected: ["access", "erasure", "portability", "rectification"]
@@ -376,17 +376,17 @@ Verify user data can be anonymized instead of deleted.
 ### Test Commands
 ```bash
 # Get user data before
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Expected: Full user info with email, name, etc.
 
 # Anonymize account
-curl -X POST "http://localhost:3004/gdpr/anonymize/1" \
+curl -X POST "http://user:3000/gdpr/anonymize/1" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # Check user still exists but anonymized
-curl -X GET "http://localhost:3004/profile" \
+curl -X GET "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Expected:
@@ -446,7 +446,7 @@ sqlite3 user/database/user.db ".schema gdpr_actions"
 # - status (success, failed)
 
 # Perform GDPR operation
-curl -X GET "http://localhost:3004/gdpr/export/1" \
+curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" > /dev/null
 
 # Check audit log
@@ -487,7 +487,7 @@ Verify data processing bases are documented.
 ### Test Commands
 ```bash
 # Check GDPR status for consent info
-curl -X GET "http://localhost:3004/gdpr/status/1" \
+curl -X GET "http://user:3000/gdpr/status/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.data_processing'
 
 # Expected:
@@ -528,7 +528,7 @@ Verify GDPR requests are processed within legal timeframe.
 ### Test Commands
 ```bash
 # Time the export request
-time curl -X GET "http://localhost:3004/gdpr/export/1" \
+time curl -X GET "http://user:3000/gdpr/export/1" \
   -H "Authorization: Bearer $TOKEN" > /dev/null
 
 # Expected: real < 1s (should be immediate)
@@ -539,7 +539,7 @@ grep -r "30.*day\|schedule\|queue" user/src/routes/handlers/gdpr.ts || \
 
 # Performance test: Multiple requests
 for i in {1..10}; do
-  time curl -s -X GET "http://localhost:3004/gdpr/export/1" \
+  time curl -s -X GET "http://user:3000/gdpr/export/1" \
     -H "Authorization: Bearer $TOKEN" > /dev/null
 done
 
@@ -569,7 +569,7 @@ Verify control over third-party data sharing.
 ### Test Commands
 ```bash
 # Check if user preferences for sharing
-curl -X GET "http://localhost:3004/profile/sharing-preferences" \
+curl -X GET "http://user:3000/profile/sharing-preferences" \
   -H "Authorization: Bearer $TOKEN" | jq . 2>/dev/null || echo "Endpoint not implemented"
 
 # Check documentation for sharing policy
@@ -579,7 +579,7 @@ grep -r "third.*party\|sharing\|recipient" documentation/GDPR_IMPLEMENTATION.md 
 grep -r "share\|third" user/src/ | grep -v "test\|log" | head -10
 
 # Verify no sharing without consent
-curl -X GET "http://localhost:3004/gdpr/status/1" \
+curl -X GET "http://user:3000/gdpr/status/1" \
   -H "Authorization: Bearer $TOKEN" | jq '.data_processing.recipients'
 ```
 
@@ -608,7 +608,7 @@ Complete end-to-end GDPR compliance check.
 ### Test Commands
 ```bash
 # 1. Register new user for GDPR testing
-curl -X POST "http://localhost:3001/auth/register" \
+curl -X POST "http://auth:3000/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "gdpr_test",
@@ -617,29 +617,29 @@ curl -X POST "http://localhost:3001/auth/register" \
   }'
 
 # 2. Login and get token
-TOKEN=$(curl -s -X POST "http://localhost:3001/auth/login" \
+TOKEN=$(curl -s -X POST "http://auth:3000/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"gdpr_test","password":"GdprTest123!"}' \
   | jq -r '.token')
 
 # 3. Export data (Right to Access)
-curl -X GET "http://localhost:3004/gdpr/export/[USER_ID]" \
+curl -X GET "http://user:3000/gdpr/export/[USER_ID]" \
   -H "Authorization: Bearer $TOKEN" | jq '.user.email'
 # Expected: gdpr@example.com
 
 # 4. Check GDPR status
-curl -X GET "http://localhost:3004/gdpr/status/[USER_ID]" \
+curl -X GET "http://user:3000/gdpr/status/[USER_ID]" \
   -H "Authorization: Bearer $TOKEN" | jq '.rights | keys'
 # Expected: All 4 rights
 
 # 5. Update profile (Right to Rectification)
-curl -X PUT "http://localhost:3004/profile" \
+curl -X PUT "http://user:3000/profile" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"bio":"Updated bio"}' | jq '.user.bio'
 
 # 6. Anonymize account
-curl -X POST "http://localhost:3004/gdpr/anonymize/[USER_ID]" \
+curl -X POST "http://user:3000/gdpr/anonymize/[USER_ID]" \
   -H "Authorization: Bearer $TOKEN" | jq '.'
 
 # 7. Verify audit trail
@@ -670,10 +670,10 @@ sqlite3 user/database/user.db \
 ### Quick Test Commands
 ```bash
 # Get GDPR status
-curl http://localhost:3004/gdpr/status/1 -H "Authorization: Bearer $TOKEN" | jq
+curl http://user:3000/gdpr/status/1 -H "Authorization: Bearer $TOKEN" | jq
 
 # Export user data
-curl http://localhost:3004/gdpr/export/1 -H "Authorization: Bearer $TOKEN" | jq '.user'
+curl http://user:3000/gdpr/export/1 -H "Authorization: Bearer $TOKEN" | jq '.user'
 
 # Check audit trail
 sqlite3 user/database/user.db "SELECT * FROM gdpr_actions LIMIT 5;"

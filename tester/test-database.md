@@ -117,7 +117,7 @@ Verify users can be created in database.
 ### Test Commands
 ```bash
 # Register new user via API
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "dbtest",
@@ -201,7 +201,7 @@ Verify password hashing and verification works correctly.
 ### Test Commands
 ```bash
 # Register user
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "passtest",
@@ -210,7 +210,7 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Login with correct password
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "passtest",
@@ -218,7 +218,7 @@ curl -X POST http://localhost:3001/auth/login \
   }' | jq .
 
 # Login with wrong password
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "passtest",
@@ -254,7 +254,7 @@ Verify data persists across service restarts.
 ### Test Commands
 ```bash
 # Create user
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "persisttest",
@@ -275,7 +275,7 @@ sqlite3 auth/database/auth.db \
   "SELECT username FROM users WHERE username='persisttest';"
 
 # Try login still works
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "persisttest",
@@ -305,7 +305,7 @@ Verify database transactions maintain data integrity.
 ### Test Commands
 ```bash
 # Create test data
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "transtest",
@@ -342,7 +342,7 @@ Verify unique constraints are enforced.
 ### Test Commands
 ```bash
 # Register first user
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "uniquetest",
@@ -351,7 +351,7 @@ curl -X POST http://localhost:3001/auth/register \
   }'
 
 # Try to register duplicate username
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "uniquetest",
@@ -397,7 +397,7 @@ Verify timestamps are recorded correctly.
 ### Test Commands
 ```bash
 # Register user
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST http://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "timetest",
@@ -410,7 +410,7 @@ sqlite3 auth/database/auth.db \
   "SELECT username, created_at, last_login FROM users WHERE username='timetest';"
 
 # Login
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "timetest",

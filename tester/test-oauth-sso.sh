@@ -43,7 +43,7 @@ log_result() {
 test_oauth_initialization() {
     echo -e "${YELLOW}Running Test 1: OAuth Initialization${NC}"
     
-    local response=$(curl -s -X GET "http://localhost:3001/oauth/init?provider=google" -i 2>/dev/null)
+    local response=$(curl -s -X GET "http://auth:3000/oauth/init?provider=google" -i 2>/dev/null)
     
     if echo "$response" | grep -q "302\|Location"; then
         log_result 1 "OAuth Initialization" "PASS"
@@ -163,7 +163,7 @@ test_token_validation() {
 test_logout_functionality() {
     echo -e "${YELLOW}Running Test 9: Logout Functionality${NC}"
     
-    local response=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3001/auth/logout 2>/dev/null)
+    local response=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://auth:3000/auth/logout 2>/dev/null)
     
     if [ "$response" = "200" ] || [ "$response" = "401" ]; then
         log_result 9 "Logout Functionality" "PASS"
@@ -193,7 +193,7 @@ test_session_management() {
 test_security_headers() {
     echo -e "${YELLOW}Running Test 11: Security Headers${NC}"
     
-    local response=$(curl -s -i http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -s -i http://auth:3000/health 2>/dev/null)
     
     # Check for any security-related headers or HTTP success
     if echo "$response" | grep -qi "HTTP\|content-type\|x-"; then

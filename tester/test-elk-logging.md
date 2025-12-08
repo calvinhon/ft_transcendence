@@ -24,7 +24,7 @@ Verify Elasticsearch starts and is healthy.
 docker-compose ps | grep elasticsearch
 
 # Health check
-curl -s http://localhost:9200/_cluster/health | jq .
+curl -s http://elasticsearch:9200/_cluster/health | jq .
 
 # Expected response:
 # {
@@ -46,7 +46,7 @@ curl -s http://localhost:9200/_cluster/health | jq .
 # }
 
 # Check version
-curl -s http://localhost:9200 | jq '.version'
+curl -s http://elasticsearch:9200 | jq '.version'
 ```
 
 ### Pass Criteria
@@ -75,15 +75,15 @@ Verify Kibana starts and is accessible.
 docker-compose ps | grep kibana
 
 # Access Kibana UI
-curl -s http://localhost:5601/api/status | jq '.state'
+curl -s http://kibana:5601/api/status | jq '.state'
 
 # Expected: "green"
 
 # Check Elasticsearch connection status
-curl -s http://localhost:5601/api/status | jq '.status.statuses'
+curl -s http://kibana:5601/api/status | jq '.status.statuses'
 
 # Try accessing Kibana web UI (will return HTML)
-curl -s http://localhost:5601/ | grep -i "kibana" | head -3
+curl -s http://kibana:5601/ | grep -i "kibana" | head -3
 ```
 
 ### Pass Criteria
@@ -146,7 +146,7 @@ Verify logs are collected from Docker containers.
 ```bash
 # Generate logs with API calls
 for i in {1..5}; do
-  curl -s http://localhost:3001/health > /dev/null
+  curl -s http://auth:3000/health > /dev/null
   sleep 1
 done
 
@@ -154,12 +154,12 @@ done
 sleep 15
 
 # Query Elasticsearch for collected logs
-curl -s "http://localhost:9200/filebeat-*/_search?q=auth" | jq '.hits.total'
+curl -s "http://elasticsearch:9200/filebeat-*/_search?q=auth" | jq '.hits.total'
 
 # Expected: Should show some hits
 
 # Get sample log
-curl -s "http://localhost:9200/filebeat-*/_search" | jq '.hits.hits[0]._source' | head -20
+curl -s "http://elasticsearch:9200/filebeat-*/_search" | jq '.hits.hits[0]._source' | head -20
 
 # Expected fields:
 # - @timestamp
@@ -192,16 +192,16 @@ Verify logs are indexed with correct pattern.
 ### Test Commands
 ```bash
 # List all indices
-curl -s http://localhost:9200/_cat/indices | grep filebeat
+curl -s http://elasticsearch:9200/_cat/indices | grep filebeat
 
 # Expected output similar to:
 # yellow open filebeat-7.17.0-2025.12.05-000001 ...
 
 # Get index mapping
-curl -s http://localhost:9200/filebeat-*/_mapping | jq 'keys' | head -5
+curl -s http://elasticsearch:9200/filebeat-*/_mapping | jq 'keys' | head -5
 
 # Check index settings
-curl -s http://localhost:9200/filebeat-*/_settings | jq '.[].settings.index'
+curl -s http://elasticsearch:9200/filebeat-*/_settings | jq '.[].settings.index'
 
 # Expected:
 # - number_of_shards: 1
@@ -231,10 +231,10 @@ Verify logs can be searched and queried.
 ### Test Commands
 ```bash
 # Search all logs
-curl -s "http://localhost:9200/filebeat-*/_search?size=100" | jq '.hits.hits | length'
+curl -s "http://elasticsearch:9200/filebeat-*/_search?size=100" | jq '.hits.hits | length'
 
 # Search for auth service logs
-curl -s "http://localhost:9200/filebeat-*/_search" \
+curl -s "http://elasticsearch:9200/filebeat-*/_search" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -245,7 +245,7 @@ curl -s "http://localhost:9200/filebeat-*/_search" \
   }' | jq '.hits.total'
 
 # Search with time range (last hour)
-curl -s "http://localhost:9200/filebeat-*/_search" \
+curl -s "http://elasticsearch:9200/filebeat-*/_search" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -258,7 +258,7 @@ curl -s "http://localhost:9200/filebeat-*/_search" \
   }' | jq '.hits.total'
 
 # Search for errors
-curl -s "http://localhost:9200/filebeat-*/_search" \
+curl -s "http://elasticsearch:9200/filebeat-*/_search" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -292,7 +292,7 @@ Verify Kibana dashboard displays logs.
 ### Test Commands
 ```bash
 # Browser-based test (manual):
-# 1. Open http://localhost:5601 in browser
+# 1. Open http://kibana:5601 in browser
 # 2. Click "Discover" in left sidebar
 # 3. Select filebeat-* index pattern
 # 4. Verify logs displayed in table
@@ -303,7 +303,7 @@ Verify Kibana dashboard displays logs.
 # 6. Verify timestamp column shows correct times
 
 # API test for index pattern
-curl -s http://localhost:5601/api/saved_objects/index-pattern | jq '.saved_objects | length'
+curl -s http://kibana:5601/api/saved_objects/index-pattern | jq '.saved_objects | length'
 
 # Expected: At least 1 index pattern
 ```
@@ -334,22 +334,22 @@ Verify logs appear in real-time in Kibana.
 # Browser test:
 # 1. Open Kibana Discover page
 # 2. Set "Refresh every 5 seconds"
-# 3. In another terminal: curl http://localhost:3001/health
+# 3. In another terminal: curl http://auth:3000/health
 # 4. Watch for new log to appear in Discover
 # 5. Should appear within 10 seconds
 
 # Or API based test:
 # Get latest log timestamp
-LATEST=$(curl -s "http://localhost:9200/filebeat-*/_search?size=1&sort=@timestamp:desc" \
+LATEST=$(curl -s "http://elasticsearch:9200/filebeat-*/_search?size=1&sort=@timestamp:desc" \
   | jq -r '.hits.hits[0]._source."@timestamp"')
 
 # Generate new log
-curl -s http://localhost:3001/health > /dev/null
+curl -s http://auth:3000/health > /dev/null
 
 sleep 5
 
 # Check for new logs
-curl -s "http://localhost:9200/filebeat-*/_search" \
+curl -s "http://elasticsearch:9200/filebeat-*/_search" \
   -H "Content-Type: application/json" \
   -d "{
     \"query\": {
@@ -387,21 +387,21 @@ Verify old logs are cleaned up according to policy.
 ### Test Commands
 ```bash
 # List all filebeat indices with size
-curl -s http://localhost:9200/_cat/indices?v | grep filebeat
+curl -s http://elasticsearch:9200/_cat/indices?v | grep filebeat
 
 # Expected output shows:
 # index_name                          docs.count  store.size
 # filebeat-7.17.0-2025.12.05-000001   1000        5mb
 
 # Check index lifecycle management policy (if configured)
-curl -s http://localhost:9200/_ilm/policy | jq '.policies'
+curl -s http://elasticsearch:9200/_ilm/policy | jq '.policies'
 
 # Check index settings for retention
-curl -s http://localhost:9200/filebeat-*/_settings | jq '.[].settings.index'
+curl -s http://elasticsearch:9200/filebeat-*/_settings | jq '.[].settings.index'
 
 # Manual cleanup of test indices (optional)
 # Delete indices older than 30 days
-curl -s -X DELETE "http://localhost:9200/filebeat-*-000001" 2>/dev/null || echo "Index retention working"
+curl -s -X DELETE "http://elasticsearch:9200/filebeat-*-000001" 2>/dev/null || echo "Index retention working"
 ```
 
 ### Pass Criteria
@@ -427,7 +427,7 @@ Verify Docker metadata is added to logs.
 ### Test Commands
 ```bash
 # Get a log entry
-curl -s "http://localhost:9200/filebeat-*/_search?size=1" | jq '.hits.hits[0]._source'
+curl -s "http://elasticsearch:9200/filebeat-*/_search?size=1" | jq '.hits.hits[0]._source'
 
 # Expected fields:
 # {
@@ -451,7 +451,7 @@ curl -s "http://localhost:9200/filebeat-*/_search?size=1" | jq '.hits.hits[0]._s
 # }
 
 # Search for specific container logs
-curl -s "http://localhost:9200/filebeat-*/_search" \
+curl -s "http://elasticsearch:9200/filebeat-*/_search" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -486,16 +486,16 @@ Verify logs from all services are collected.
 ### Test Commands
 ```bash
 # Generate logs from each service
-curl -s http://localhost:3001/health > /dev/null  # auth
-curl -s http://localhost:3002/health > /dev/null  # game
-curl -s http://localhost:3003/health > /dev/null  # tournament
-curl -s http://localhost:3004/health > /dev/null  # user
+curl -s http://auth:3000/health > /dev/null  # auth
+curl -s http://game:3000/health > /dev/null  # game
+curl -s http://tournament:3000/health > /dev/null  # tournament
+curl -s http://user:3000/health > /dev/null  # user
 
 sleep 10
 
 # Count logs per service
 for service in auth game tournament user; do
-  COUNT=$(curl -s "http://localhost:9200/filebeat-*/_search" \
+  COUNT=$(curl -s "http://elasticsearch:9200/filebeat-*/_search" \
     -H "Content-Type: application/json" \
     -d "{
       \"query\": {
@@ -534,10 +534,10 @@ Verify ELK stack performs well under load.
 ```bash
 # Generate high volume of logs
 for i in {1..100}; do
-  curl -s http://localhost:3001/health > /dev/null &
-  curl -s http://localhost:3002/health > /dev/null &
-  curl -s http://localhost:3003/health > /dev/null &
-  curl -s http://localhost:3004/health > /dev/null &
+  curl -s http://auth:3000/health > /dev/null &
+  curl -s http://game:3000/health > /dev/null &
+  curl -s http://tournament:3000/health > /dev/null &
+  curl -s http://user:3000/health > /dev/null &
 done
 
 wait
@@ -545,17 +545,17 @@ wait
 sleep 15
 
 # Check Elasticsearch performance
-time curl -s "http://localhost:9200/filebeat-*/_search?size=1000" > /dev/null
+time curl -s "http://elasticsearch:9200/filebeat-*/_search?size=1000" > /dev/null
 
 # Expected: < 1 second response time
 
 # Check index stats
-curl -s http://localhost:9200/filebeat-*/_stats | jq '.indices | keys | length'
+curl -s http://elasticsearch:9200/filebeat-*/_stats | jq '.indices | keys | length'
 
 # Expected: Several indices depending on rolling schedule
 
 # Check document count
-curl -s http://localhost:9200/filebeat-*/_count | jq '.count'
+curl -s http://elasticsearch:9200/filebeat-*/_count | jq '.count'
 
 # Expected: Should have increased from baseline
 
@@ -582,18 +582,18 @@ docker stats elasticsearch kibana filebeat --no-stream | head -5
 ### Quick Test Commands
 ```bash
 # Check health
-curl http://localhost:9200/_cluster/health | jq '.status'
-curl http://localhost:5601/api/status | jq '.state'
+curl http://elasticsearch:9200/_cluster/health | jq '.status'
+curl http://kibana:5601/api/status | jq '.state'
 
 # Search logs
-curl "http://localhost:9200/filebeat-*/_search" | jq '.hits.total'
+curl "http://elasticsearch:9200/filebeat-*/_search" | jq '.hits.total'
 
 # Verify Docker metadata
-curl "http://localhost:9200/filebeat-*/_search?size=1" | \
+curl "http://elasticsearch:9200/filebeat-*/_search?size=1" | \
   jq '.hits.hits[0]._source.docker.container.name'
 
 # Access Kibana UI
-open http://localhost:5601
+open http://kibana:5601
 ```
 
 ---
