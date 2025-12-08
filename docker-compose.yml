@@ -80,7 +80,7 @@ services:
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9090/-/healthy | grep -q Healthy || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -126,12 +126,6 @@ services:
     mem_limit: 256m
     networks:
       - transcendence-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8200/v1/sys/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
 
   nginx:
     build: ./frontend
