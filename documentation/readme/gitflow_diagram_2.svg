@@ -1,0 +1,180 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#f8f9fa"/>
+  
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#2c3e50">Professional GitFlow for Large Projects</text>
+  
+  <!-- Timeline -->
+  <line x1="100" y1="70" x2="1100" y2="70" stroke="#bdc3c7" stroke-width="2"/>
+  <text x="100" y="90" font-size="12" fill="#7f8c8d">Week 1</text>
+  <text x="300" y="90" font-size="12" fill="#7f8c8d">Week 2</text>
+  <text x="500" y="90" font-size="12" fill="#7f8c8d">Week 3</text>
+  <text x="700" y="90" font-size="12" fill="#7f8c8d">Week 4</text>
+  <text x="900" y="90" font-size="12" fill="#7f8c8d">Week 5</text>
+  
+  <!-- Main Branch -->
+  <line x1="100" y1="150" x2="1100" y2="150" stroke="#e74c3c" stroke-width="6"/>
+  <text x="50" y="155" font-size="14" font-weight="bold" fill="#e74c3c">main</text>
+  <circle cx="100" cy="150" r="8" fill="#e74c3c"/>
+  <circle cx="600" cy="150" r="8" fill="#e74c3c"/>
+  <circle cx="1000" cy="150" r="8" fill="#e74c3c"/>
+  <text x="100" y="135" font-size="10" fill="#e74c3c" text-anchor="middle">v1.0.0</text>
+  <text x="600" y="135" font-size="10" fill="#e74c3c" text-anchor="middle">v2.0.0</text>
+  <text x="1000" y="135" font-size="10" fill="#e74c3c" text-anchor="middle">v2.1.0</text>
+  
+  <!-- Develop Branch -->
+  <line x1="100" y1="220" x2="1100" y2="220" stroke="#3498db" stroke-width="6"/>
+  <text x="50" y="225" font-size="14" font-weight="bold" fill="#3498db">develop</text>
+  <circle cx="150" cy="220" r="6" fill="#3498db"/>
+  <circle cx="250" cy="220" r="6" fill="#3498db"/>
+  <circle cx="350" cy="220" r="6" fill="#3498db"/>
+  <circle cx="450" cy="220" r="6" fill="#3498db"/>
+  <circle cx="550" cy="220" r="6" fill="#3498db"/>
+  <circle cx="750" cy="220" r="6" fill="#3498db"/>
+  <circle cx="850" cy="220" r="6" fill="#3498db"/>
+  <circle cx="950" cy="220" r="6" fill="#3498db"/>
+  
+  <!-- Feature Branches -->
+  <!-- Feature 1 -->
+  <line x1="150" y1="220" x2="150" y2="280" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="150" y1="280" x2="300" y2="280" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="300" y1="280" x2="300" y2="220" stroke="#9b59b6" stroke-width="3"/>
+  <text x="225" y="295" font-size="12" fill="#9b59b6" text-anchor="middle">feature/auth-system</text>
+  <circle cx="150" cy="280" r="4" fill="#9b59b6"/>
+  <circle cx="225" cy="280" r="4" fill="#9b59b6"/>
+  <circle cx="300" cy="280" r="4" fill="#9b59b6"/>
+  
+  <!-- Feature 2 -->
+  <line x1="200" y1="220" x2="200" y2="320" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="200" y1="320" x2="400" y2="320" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="400" y1="320" x2="400" y2="220" stroke="#9b59b6" stroke-width="3"/>
+  <text x="300" y="335" font-size="12" fill="#9b59b6" text-anchor="middle">feature/payment-gateway</text>
+  <circle cx="200" cy="320" r="4" fill="#9b59b6"/>
+  <circle cx="300" cy="320" r="4" fill="#9b59b6"/>
+  <circle cx="400" cy="320" r="4" fill="#9b59b6"/>
+  
+  <!-- Feature 3 -->
+  <line x1="600" y1="220" x2="600" y2="360" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="600" y1="360" x2="800" y2="360" stroke="#9b59b6" stroke-width="3"/>
+  <line x1="800" y1="360" x2="800" y2="220" stroke="#9b59b6" stroke-width="3"/>
+  <text x="700" y="375" font-size="12" fill="#9b59b6" text-anchor="middle">feature/user-dashboard</text>
+  <circle cx="600" cy="360" r="4" fill="#9b59b6"/>
+  <circle cx="700" cy="360" r="4" fill="#9b59b6"/>
+  <circle cx="800" cy="360" r="4" fill="#9b59b6"/>
+  
+  <!-- Release Branch -->
+  <line x1="500" y1="220" x2="500" y2="180" stroke="#f39c12" stroke-width="4"/>
+  <line x1="500" y1="180" x2="600" y2="180" stroke="#f39c12" stroke-width="4"/>
+  <line x1="600" y1="180" x2="600" y2="150" stroke="#f39c12" stroke-width="4"/>
+  <line x1="600" y1="180" x2="600" y2="220" stroke="#f39c12" stroke-width="4"/>
+  <text x="550" y="175" font-size="12" fill="#f39c12" text-anchor="middle">release/v2.0.0</text>
+  <circle cx="500" cy="180" r="5" fill="#f39c12"/>
+  <circle cx="550" cy="180" r="5" fill="#f39c12"/>
+  <circle cx="600" cy="180" r="5" fill="#f39c12"/>
+  
+  <!-- Another Release Branch -->
+  <line x1="900" y1="220" x2="900" y2="180" stroke="#f39c12" stroke-width="4"/>
+  <line x1="900" y1="180" x2="1000" y2="180" stroke="#f39c12" stroke-width="4"/>
+  <line x1="1000" y1="180" x2="1000" y2="150" stroke="#f39c12" stroke-width="4"/>
+  <line x1="1000" y1="180" x2="1000" y2="220" stroke="#f39c12" stroke-width="4"/>
+  <text x="950" y="175" font-size="12" fill="#f39c12" text-anchor="middle">release/v2.1.0</text>
+  <circle cx="900" cy="180" r="5" fill="#f39c12"/>
+  <circle cx="950" cy="180" r="5" fill="#f39c12"/>
+  <circle cx="1000" cy="180" r="5" fill="#f39c12"/>
+  
+  <!-- Hotfix Branch -->
+  <line x1="650" y1="150" x2="650" y2="120" stroke="#e67e22" stroke-width="4"/>
+  <line x1="650" y1="120" x2="750" y2="120" stroke="#e67e22" stroke-width="4"/>
+  <line x1="750" y1="120" x2="750" y2="150" stroke="#e67e22" stroke-width="4"/>
+  <line x1="750" y1="120" x2="750" y2="220" stroke="#e67e22" stroke-width="4"/>
+  <text x="700" y="115" font-size="12" fill="#e67e22" text-anchor="middle">hotfix/v2.0.1-security</text>
+  <circle cx="650" cy="120" r="5" fill="#e67e22"/>
+  <circle cx="750" cy="120" r="5" fill="#e67e22"/>
+  <circle cx="750" cy="150" r="5" fill="#e67e22"/>
+  
+  <!-- Bugfix Branch -->
+  <line x1="750" y1="220" x2="750" y2="400" stroke="#16a085" stroke-width="3"/>
+  <line x1="750" y1="400" x2="850" y2="400" stroke="#16a085" stroke-width="3"/>
+  <line x1="850" y1="400" x2="850" y2="220" stroke="#16a085" stroke-width="3"/>
+  <text x="800" y="415" font-size="12" fill="#16a085" text-anchor="middle">bugfix/minor-ui-fix</text>
+  <circle cx="750" cy="400" r="4" fill="#16a085"/>
+  <circle cx="850" cy="400" r="4" fill="#16a085"/>
+  
+  <!-- Merge Arrows -->
+  <!-- Feature to develop merges -->
+  <path d="M 300 270 Q 310 255 300 240" stroke="#9b59b6" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 400 310 Q 410 275 400 240" stroke="#9b59b6" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 800 350 Q 810 285 800 240" stroke="#9b59b6" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Release to main merge -->
+  <path d="M 590 170 Q 595 160 600 160" stroke="#f39c12" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 990 170 Q 995 160 1000 160" stroke="#f39c12" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Hotfix to main merge -->
+  <path d="M 740 130 Q 745 140 750 140" stroke="#e67e22" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#34495e"/>
+    </marker>
+  </defs>
+  
+  <!-- Legend -->
+  <rect x="50" y="450" width="300" height="320" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2" rx="5"/>
+  <text x="200" y="470" font-size="16" font-weight="bold" fill="#2c3e50" text-anchor="middle">Branch Legend</text>
+  
+  <line x1="70" y1="490" x2="120" y2="490" stroke="#e74c3c" stroke-width="6"/>
+  <text x="130" y="495" font-size="12" fill="#2c3e50">main - Production ready</text>
+  
+  <line x1="70" y1="510" x2="120" y2="510" stroke="#3498db" stroke-width="6"/>
+  <text x="130" y="515" font-size="12" fill="#2c3e50">develop - Integration branch</text>
+  
+  <line x1="70" y1="530" x2="120" y2="530" stroke="#9b59b6" stroke-width="3"/>
+  <text x="130" y="535" font-size="12" fill="#2c3e50">feature/* - New features</text>
+  
+  <line x1="70" y1="550" x2="120" y2="550" stroke="#f39c12" stroke-width="4"/>
+  <text x="130" y="555" font-size="12" fill="#2c3e50">release/* - Release preparation</text>
+  
+  <line x1="70" y1="570" x2="120" y2="570" stroke="#e67e22" stroke-width="4"/>
+  <text x="130" y="575" font-size="12" fill="#2c3e50">hotfix/* - Critical fixes</text>
+  
+  <line x1="70" y1="590" x2="120" y2="590" stroke="#16a085" stroke-width="3"/>
+  <text x="130" y="595" font-size="12" fill="#2c3e50">bugfix/* - Bug fixes</text>
+  
+  <!-- Workflow Steps -->
+  <rect x="400" y="450" width="750" height="320" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2" rx="5"/>
+  <text x="775" y="470" font-size="16" font-weight="bold" fill="#2c3e50" text-anchor="middle">Workflow Process</text>
+  
+  <text x="420" y="490" font-size="14" font-weight="bold" fill="#2c3e50">1. Feature Development:</text>
+  <text x="430" y="510" font-size="12" fill="#2c3e50">• Create feature branch from develop</text>
+  <text x="430" y="525" font-size="12" fill="#2c3e50">• Implement feature with regular commits</text>
+  <text x="430" y="540" font-size="12" fill="#2c3e50">• Create PR for code review</text>
+  <text x="430" y="555" font-size="12" fill="#2c3e50">• Merge back to develop after approval</text>
+  
+  <text x="420" y="580" font-size="14" font-weight="bold" fill="#2c3e50">2. Release Process:</text>
+  <text x="430" y="600" font-size="12" fill="#2c3e50">• Create release branch from develop</text>
+  <text x="430" y="615" font-size="12" fill="#2c3e50">• Bug fixes and final testing</text>
+  <text x="430" y="630" font-size="12" fill="#2c3e50">• Merge to main and develop</text>
+  <text x="430" y="645" font-size="12" fill="#2c3e50">• Tag release version</text>
+  
+  <text x="420" y="670" font-size="14" font-weight="bold" fill="#2c3e50">3. Hotfix Process:</text>
+  <text x="430" y="690" font-size="12" fill="#2c3e50">• Create hotfix branch from main</text>
+  <text x="430" y="705" font-size="12" fill="#2c3e50">• Fix critical issue quickly</text>
+  <text x="430" y="720" font-size="12" fill="#2c3e50">• Merge to main and develop</text>
+  <text x="430" y="735" font-size="12" fill="#2c3e50">• Deploy immediately</text>
+  
+  <!-- Protection Rules -->
+  <text x="775" y="580" font-size="14" font-weight="bold" fill="#2c3e50">Branch Protection:</text>
+  <text x="680" y="600" font-size="12" fill="#2c3e50">• main: 2+ approvals, CI/CD checks</text>
+  <text x="680" y="615" font-size="12" fill="#2c3e50">• develop: 1+ approval, automated tests</text>
+  <text x="680" y="630" font-size="12" fill="#2c3e50">• No direct pushes to protected branches</text>
+  <text x="680" y="645" font-size="12" fill="#2c3e50">• Linear history enforcement</text>
+  
+  <text x="775" y="670" font-size="14" font-weight="bold" fill="#2c3e50">Merge Strategies:</text>
+  <text x="680" y="690" font-size="12" fill="#2c3e50">• Features → Develop: Squash merge</text>
+  <text x="680" y="705" font-size="12" fill="#2c3e50">• Release → Main: Merge commit</text>
+  <text x="680" y="720" font-size="12" fill="#2c3e50">• Hotfix → Main: Merge commit</text>
+  <text x="680" y="735" font-size="12" fill="#2c3e50">• Automated CI/CD on all branches</text>
+</svg>

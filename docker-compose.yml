@@ -4,7 +4,7 @@ services:
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - xpack.security.enabled=false
       - xpack.monitoring.collection.enabled=true
     ports:
@@ -12,7 +12,7 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-    mem_limit: 1024m
+    mem_limit: 2048m
     networks:
       - transcendence-network
     healthcheck:
