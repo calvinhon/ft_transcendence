@@ -168,7 +168,7 @@ clean:
 
 up: ensure-database-folders
 	@echo "🚀 Running docker compose up with build cache..."
-	docker compose up -d --build --force-recreate
+	docker compose up -d --build
 
 ensure-database-folders:
 	@echo "📁 Ensuring database folders exist for all services..."
