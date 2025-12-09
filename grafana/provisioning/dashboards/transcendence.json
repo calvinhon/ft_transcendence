@@ -1,53 +1,52 @@
 {
-  "dashboard": {
-    "title": "Transcendence Monitoring",
-    "tags": ["transcendence", "monitoring"],
-    "timezone": "browser",
-    "panels": [
-      {
-        "id": 1,
-        "title": "Auth Service",
-        "targets": [
-          {
-            "expr": "up{job=\"auth-service\"}",
-            "legendFormat": "Auth Service Status"
-          }
-        ],
-        "type": "stat",
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 0
+  "title": "Transcendence Monitoring",
+  "tags": ["transcendence", "monitoring"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Auth Service",
+      "targets": [
+        {
+          "expr": "up{job=\"auth-service\"}",
+          "legendFormat": "Auth Service Status"
         }
-      },
-      {
-        "id": 2,
-        "title": "Game Service",
-        "targets": [
-          {
-            "expr": "up{job=\"game-service\"}",
-            "legendFormat": "Game Service Status"
-          }
-        ],
-        "type": "stat",
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 0
+      ],
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Game Service",
+      "targets": [
+        {
+          "expr": "up{job=\"game-service\"}",
+          "legendFormat": "Game Service Status"
         }
-      },
-      {
-        "id": 3,
-        "title": "Tournament Service",
-        "targets": [
-          {
-            "expr": "up{job=\"tournament-service\"}",
-            "legendFormat": "Tournament Service Status"
-          }
-        ],
-        "type": "stat",
+      ],
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "Tournament Service",
+      "targets": [
+        {
+          "expr": "up{job=\"tournament-service\"}",
+          "legendFormat": "Tournament Service Status"
+        }
+      ],
+      "type": "stat",
         "gridPos": {
           "h": 8,
           "w": 12,
@@ -86,5 +85,4 @@
     "timepicker": {},
     "uid": "transcendence-main",
     "version": 1
-  }
 }
