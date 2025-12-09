@@ -38,7 +38,8 @@ docker compose ps
 # All services should show "Up" status
 
 # 5. Verify frontend is accessible
-curl http://localhost -L | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
+curl -k https://localhost 2>&1 | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
+# Note: Using -k flag to skip SSL verification (self-signed certificate is normal for local dev)
 ```
 
 ### Quick Health Check
@@ -47,13 +48,14 @@ curl http://localhost -L | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
 # Check all microservices are running
 make health
 
-# Or manually check each service
+# Or manually check each service (use -k flag for HTTPS if needed)
 curl -s http://localhost:3001/health | jq .  # Auth Service
 curl -s http://localhost:3002/health | jq .  # Game Service
 curl -s http://localhost:3004/health | jq .  # User Service
 curl -s http://localhost:3003/health | jq .  # Tournament Service
 
 # Expected: {"status":"healthy"} or similar for each
+# Note: Some services might respond on HTTPS, use: curl -sk https://localhost:3001/health
 ```
 
 ---
@@ -465,6 +467,37 @@ curl -s http://localhost:3003/tournaments/blockchain
 ---
 
 ## Terminal-Based Module Verification
+
+### ℹ️ Important Notes for Terminal Testing
+
+**SSL/TLS Certificate Handling:**
+- Frontend (nginx): Uses self-signed HTTPS certificate
+  - Use `-k` flag with curl to skip verification: `curl -k https://localhost`
+  - This is normal for local development
+  
+- Internal Services (port 3001-3004): Use HTTP internally
+  - No -k flag needed for internal API calls
+  - Example: `curl http://localhost:3001/health`
+
+**Common curl flags you'll need:**
+```bash
+-k     # Skip SSL certificate verification (for HTTPS frontend)
+-s     # Silent mode (no progress bar)
+-X     # Specify HTTP method (POST, PUT, GET, DELETE)
+-H     # Add header
+-d     # Send data (POST body)
+-c     # Save cookies to file
+-b     # Send cookies from file
+```
+
+**If curl commands fail with SSL error:**
+```bash
+# Frontend test - use -k flag
+curl -k https://localhost
+
+# Or use jq if you have it
+curl -sk https://localhost | jq . | head -20
+```
 
 ### Health Check & Service Verification
 
