@@ -13,11 +13,20 @@
 \usepackage{caption}
 \usepackage{fancybox}
 \usepackage[table]{xcolor}
+\usepackage{float}
 \geometry{left=25mm,right=25mm,top=25mm,bottom=25mm}
 
+% Set up graphics path for figures directory
+\graphicspath{{figures/}}
+
 \title{\textbf{ft\_transcendence}\\Multiplayer Pong Platform\\Project Report}
-\author{Development Team}
-\date{December 8, 2025}
+\author{
+  Calvin Hon (chon) \\
+  Muhammad Ali Danish (mdanish) \\
+  Mahad Abdullah (maabdull) \\
+  Nguyen The Hoach (honguyen)
+}
+\date{December 9, 2025}
 
 \begin{document}
 
@@ -273,11 +282,22 @@ Technical requirements specify \textit{how} the system shall achieve functional 
 
 The system employs a microservices architecture with the following topology:
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{architecture_diagram.png}
 \caption{High-level System Architecture with Microservices, API Gateway, and Observability Stack}
 \label{fig:architecture_diagram}
+\end{figure}
+
+\subsection{Deployment Topology}
+
+The complete deployment consists of 21 Docker containers orchestrated via Docker Compose:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{deployment_topology.png}
+\caption{Docker Compose Deployment Topology with All Services and Persistent Volumes}
+\label{fig:deployment_topology}
 \end{figure}
 
 \subsection{Service Responsibilities}
@@ -353,11 +373,29 @@ Each microservice manages its own SQLite database:
 
 The system implements layered security following the defense-in-depth principle:
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{security_layers.png}
 \caption{Defense-in-Depth Security Architecture with Seven Protective Layers}
 \label{fig:security_layers}
+\end{figure}
+
+\subsection{HTTPS and Security Certificates}
+
+All communication is secured with HTTPS and valid TLS certificates:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.65\textwidth]{1_https_evidence.png}
+\caption{HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}
+\label{fig:https_evidence}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.65\textwidth]{2_PEM_certificate_https.png}
+\caption{PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}
+\label{fig:https_certificate}
 \end{figure}
 
 \subsection{Layer 1: Network Security}
@@ -420,7 +458,7 @@ SecRule REQUEST_URI "@rx (?:unionselectinsert)" \
 
 The game operates on a server-authoritative model at 60 FPS (16.67 milliseconds per frame). This ensures fair gameplay and prevents client-side cheating:
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{game_loop_diagram.png}
 \caption{60 FPS Server-Authoritative Game Loop with Client State Synchronization}
@@ -430,11 +468,47 @@ The game operates on a server-authoritative model at 60 FPS (16.67 milliseconds 
 \section{User Authentication Flow}
 \label{sec:auth_flow}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{authentication_flow.png}
 \caption{User Registration and Authentication Flow with Optional 2FA}
 \label{fig:auth_flow}
+\end{figure}
+
+\subsection{Authentication UI Implementation}
+
+The application provides comprehensive authentication screens capturing user credentials securely:
+
+\subsubsection{Login Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{2_login_UI.png}
+\caption{Login User Interface: Email/Password Authentication with Remember Me Option}
+\label{fig:login_ui}
+\end{figure}
+
+\subsubsection{Registration Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{3_create_new_account_UI.png}
+\caption{Account Registration UI: New Account Creation with Email Verification}
+\label{fig:register_ui}
+\end{figure}
+
+\subsubsection{Two-Factor Authentication (2FA)}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{2_Oauth_2Step_verification.png}
+\caption{2FA Verification: OAuth 2-Step Verification and TOTP Setup}
+\label{fig:2fa_ui}
+\end{figure}
+
+\subsubsection{Password Recovery}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{3_Forget_Password.png}
+\caption{Password Recovery: Secure Password Reset Flow with Email Verification}
+\label{fig:password_reset_ui}
 \end{figure}
 
 \section{Technology Stack Summary}
@@ -555,7 +629,163 @@ JWT in HttpOnly cookies, Secure flag, SameSite=Strict.
 21-level campaign, global leaderboards, achievement system.
 
 % ============================================================================
-\chapter{Testing \& Verification}
+\chapter{User Interface and Gameplay Demonstration}
+\label{ch:ui_demo}
+
+This chapter showcases the actual user interface and gameplay as implemented in the ft\_transcendence application.
+
+\section{Main Menu and Game Modes}
+\label{sec:main_menu}
+
+\subsection{Main Menu Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{3_Main_Menu.png}
+\caption{Main Menu: Game Mode Selection (Arcade, Campaign, Tournament, Training)}
+\label{fig:main_menu}
+\end{figure}
+
+\subsection{Game Mode Selection}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{game_modes.png}
+\caption{Available Game Modes: Quick Play, Campaign, Tournament, Bot Training}
+\label{fig:game_modes}
+\end{figure}
+
+\section{Gameplay in Action}
+\label{sec:gameplay_action}
+
+\subsection{Arcade Mode - Multiplayer Pong}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{multiplayer_arcade.png}
+\caption{Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}
+\label{fig:arcade_gameplay}
+\end{figure}
+
+\subsection{Arcade Mode Settings}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{4_playemode_game_settings.png}
+\caption{Game Settings: Difficulty, Ball Speed, Paddle Size Customization}
+\label{fig:game_settings}
+\end{figure}
+
+\subsection{Campaign Mode - Single Player}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{Campaign_game_running.png}
+\caption{Campaign Mode: Single-Player Progression Against AI Opponent}
+\label{fig:campaign_gameplay}
+\end{figure}
+
+\subsection{Campaign Level Progression}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{coop_game_level_up.png}
+\caption{Campaign Level Up: Progression System with Difficulty Scaling}
+\label{fig:campaign_level_up}
+\end{figure}
+
+\subsection{Campaign with AI Bot}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{coop_campagin_AI_bot.png}
+\caption{Campaign AI Opponent: Machine Learning-Based Adaptive Difficulty}
+\label{fig:campaign_ai_bot}
+\end{figure}
+
+\subsection{Campaign Retry}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{coop_game_retry.png}
+\caption{Campaign Retry Interface: Level Restart and Progress Recovery}
+\label{fig:campaign_retry}
+\end{figure}
+
+\section{Tournament Features}
+\label{sec:tournament_features}
+
+\subsection{Tournament Mode Selection}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{gamemode_tournament.png}
+\caption{Tournament Mode: Bracket-Based Competition with Multiple Players}
+\label{fig:tournament_mode}
+\end{figure}
+
+\subsection{Tournament Bracket Matches}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{tournament_bracket_matches.png}
+\caption{Tournament Bracket: Visual Tournament Progression and Schedule}
+\label{fig:tournament_bracket}
+\end{figure}
+
+\subsection{Tournament Game in Progress}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{tournament_game.png}
+\caption{Tournament Match: Live Game During Tournament Competition}
+\label{fig:tournament_game}
+\end{figure}
+
+\subsection{Tournament Match Results}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{11_tournament_match_result.png}
+\caption{Tournament Match Result: Winner Determination and Bracket Advancement}
+\label{fig:tournament_result}
+\end{figure}
+
+\subsection{Tournament Games List}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{tournament_games.png}
+\caption{Tournament Games List: All Scheduled and Completed Matches}
+\label{fig:tournament_games_list}
+\end{figure}
+
+\section{User Profile and Statistics}
+\label{sec:user_profile}
+
+\subsection{User Dashboard and Profile}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{13_dashboard_profile.png}
+\caption{User Dashboard: Profile Information, Statistics Overview, Recent Activity}
+\label{fig:user_dashboard}
+\end{figure}
+
+\subsection{Game Statistics}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{14_game_statistics.png}
+\caption{Game Statistics: Win/Loss Record, Win Rate, Rating, Achievement Progress}
+\label{fig:game_stats}
+\end{figure}
+
+\subsection{Match History}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{15_history_matches.png}
+\caption{Match History: Complete Record of All Played Matches with Results and Duration}
+\label{fig:match_history}
+\end{figure}
+
+\section{Blockchain Integration}
+\label{sec:blockchain_demo}
+
+\subsection{Blockchain Tournament Record}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{12_blockchain_record.png}
+\caption{Blockchain Record: Tournament Result Verification on Immutable Ledger}
+\label{fig:blockchain_record}
+\end{figure}
+
+% ============================================================================
 \label{ch:testing}
 
 \section{Testing Strategy}
@@ -563,9 +793,9 @@ JWT in HttpOnly cookies, Secure flag, SameSite=Strict.
 
 The project employs a multi-layered testing approach following the testing pyramid:
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{testing_pyramid.png}
+\includegraphics[width=0.70\textwidth]{testing_pyramid.png}
 \caption{Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}
 \label{fig:testing_pyramid}
 \end{figure}
@@ -775,18 +1005,11 @@ The system is ready for production deployment with clear roadmaps for future enh
 \chapter{Gantt Chart and Project Timeline}
 \label{app:gantt}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{gantt.png}
 \caption{Project Gantt Chart: Phases, milestones, and timeline}
 \label{fig:gantt_chart}
-\end{figure}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.95\textwidth]{deployment_topology.png}
-\caption{Docker Compose Deployment Topology with All Services and Persistent Volumes}
-\label{fig:deployment_topology}
 \end{figure}
 
 Project executed in 5 major phases over 13 weeks:
@@ -804,7 +1027,7 @@ Project executed in 5 major phases over 13 weeks:
 
 \section{Game Match Data Flow}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{data_flow_diagram.png}
 \caption{Game Match Data Flow: From Player Input to Rendering and Persistence}
@@ -813,7 +1036,7 @@ Project executed in 5 major phases over 13 weeks:
 
 \section{GDPR Compliance Data Flow}
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{gdpr_flow.png}
 \caption{GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}
