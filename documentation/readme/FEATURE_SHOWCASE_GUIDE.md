@@ -1198,15 +1198,43 @@ Once logged in, Grafana will automatically load the **Transcendence** folder con
 2. Go to **Dashboards** → **Transcendence**
 3. Select the dashboard you want to view
 
-#### Viewing Metrics for Each Service
+#### Important: Enabling Dashboard Data
 
-Once in a dashboard, you can:
+The Transcendence dashboard requires **Prometheus** to collect metrics from services. By default, only core services are running. To see dashboard data:
+
+**Option 1: Start Prometheus Service (Recommended)**
+```bash
+# Start Prometheus to collect metrics
+docker compose up prometheus -d
+
+# Wait for Prometheus to initialize (2-3 minutes)
+sleep 180
+
+# Check if Prometheus is collecting data
+curl -s http://localhost:9090/api/v1/targets
+
+# Refresh Grafana dashboard (F5 in browser)
+# You should now see service metrics
+```
+
+**Option 2: View Service Health Without Prometheus**
+```bash
+# Check individual service health via API
+curl http://localhost:3001/health  # Auth Service
+curl http://localhost:3002/health  # Game Service
+curl http://localhost:3003/health  # Tournament Service
+curl http://localhost:3004/health  # User Service
+```
+
+#### Viewing Metrics for Each Service (When Prometheus is Running)
+
+Once Prometheus is running and the dashboard refreshes, you can:
 - **View Real-time Metrics:** Service health, CPU, memory, requests/sec
 - **Filter by Service:** Select from auth-service, game-service, user-service, tournament-service
 - **View Time Ranges:** Last hour, 6 hours, 24 hours, etc.
 - **Zoom & Pan:** Click and drag to zoom into specific time periods
 
-#### What Each Dashboard Shows
+#### What Each Dashboard Shows (When Data Available)
 
 - **System Overview:** CPU, memory, disk usage across all containers
 - **Service Health:** Status of each microservice (auth, game, user, tournament)
