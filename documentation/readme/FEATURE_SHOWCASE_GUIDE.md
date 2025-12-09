@@ -652,16 +652,14 @@ echo "User info from login: $TOKEN"
 #### Test Authentication with Token
 
 ```bash
-# Verify token works
+# Verify token works by fetching user profile
 TOKEN="your_token_here"
-curl -s -X GET http://localhost:3004/api/user/profile \
+USER_ID="1"  # Use the userId from login response
+
+curl -s -X GET http://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN"
 
-# Option 1: Pretty-print with jq (if installed)
-# curl -s -X GET http://localhost:3004/api/user/profile \
-#   -H "Authorization: Bearer $TOKEN" | jq .
-
-# Expected: Current user's profile data in JSON format
+# Expected: User profile data with user info, stats, and settings
 ```
 
 ### User Service Testing
@@ -670,35 +668,35 @@ curl -s -X GET http://localhost:3004/api/user/profile \
 
 ```bash
 TOKEN="your_token_here"
+USER_ID="1"  # Use the userId from login response
 
 # Update user profile
-curl -s -X PUT http://localhost:3004/api/user/profile \
+curl -s -X PUT http://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "displayName": "AwesomePlayer",
     "bio": "Testing from terminal",
-    "avatar": "avatar_1"
+    "country": "US",
+    "preferredLanguage": "en",
+    "themePreference": "dark"
   }'
 
-# With jq for pretty printing (optional):
-# curl -s -X PUT http://localhost:3004/api/user/profile ... | jq .
+# Expected: {"message":"Profile updated successfully"}
 ```
 
 #### Get User Statistics
 
 ```bash
 TOKEN="your_token_here"
+USER_ID="1"  # Use the userId from login response
 
-# Fetch user stats
-curl -s http://localhost:3004/api/user/stats \
+# Fetch user stats (included in profile, or update stats endpoint if available)
+curl -s http://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN"
 
-# Expected response:
-# {"userId":"...","totalMatches":0,"wins":0,"losses":0,"winRate":0,"ranking":1000}
-
-# With jq for readable output (if installed):
-# curl -s http://localhost:3004/api/user/stats ... | jq .
+# Expected response includes:
+# {"games_won": 0, "games_played": 0, "win_streak": 0, "level": 1, ...}
 ```
 
 ### Game Service Testing
@@ -1141,6 +1139,170 @@ curl http://localhost:9200
 
 # Access Grafana
 open http://localhost:3000
+# Or via command line:
+# curl http://localhost:3000
+```
+
+---
+
+## Grafana Login Instructions
+
+### Access Grafana
+
+**URL:** `http://localhost:3000`
+
+**Default Credentials:**
+- **Username:** `admin`
+- **Password:** `admin`
+
+### First Time Login
+
+1. Open browser and navigate to `http://localhost:3000`
+2. You'll see the Grafana login page
+3. Enter credentials:
+   - Username: `admin`
+   - Password: `admin`
+4. Click **"Sign in"**
+5. **Optional:** On first login, Grafana will ask to change password
+   - You can skip this or set a new password
+6. You'll be redirected to the Grafana dashboard
+
+### Reset Password (if needed)
+
+```bash
+# Access Grafana container
+docker compose exec grafana bash
+
+# Reset admin password to default
+grafana-cli admin reset-admin-password admin
+
+# Exit container
+exit
+```
+
+### Available Dashboards
+
+Once logged in, Grafana will automatically load the **Transcendence** folder containing pre-configured dashboards:
+
+#### How to View Dashboards
+
+1. **After login**, click on **"Dashboards"** in the left sidebar
+2. Click **"Browse"** or look for the **"Transcendence"** folder
+3. Available dashboards:
+   - **Transcendence Dashboard:** Main overview with system health, service metrics, and key statistics
+   - Additional dashboards may be auto-provisioned based on your configuration
+
+#### Quick Access via Sidebar
+
+1. Click the **menu icon** (☰) in top-left
+2. Go to **Dashboards** → **Transcendence**
+3. Select the dashboard you want to view
+
+#### Viewing Metrics for Each Service
+
+Once in a dashboard, you can:
+- **View Real-time Metrics:** Service health, CPU, memory, requests/sec
+- **Filter by Service:** Select from auth-service, game-service, user-service, tournament-service
+- **View Time Ranges:** Last hour, 6 hours, 24 hours, etc.
+- **Zoom & Pan:** Click and drag to zoom into specific time periods
+
+#### What Each Dashboard Shows
+
+- **System Overview:** CPU, memory, disk usage across all containers
+- **Service Health:** Status of each microservice (auth, game, user, tournament)
+- **Request Metrics:** API request counts, response times, error rates
+- **Database Stats:** Query performance, table sizes, connection counts
+- **Elasticsearch:** Index health, document counts, search latency
+- **Error Tracking:** Failed requests, exceptions, warnings
+
+### Useful Grafana Commands
+
+```bash
+# Check Grafana health
+curl -s http://localhost:3000/api/health
+
+# List configured data sources
+curl -s -u admin:admin http://localhost:3000/api/datasources
+
+# List available dashboards
+curl -s -u admin:admin http://localhost:3000/api/search
+
+# Get specific dashboard
+curl -s -u admin:admin http://localhost:3000/api/dashboards/db/dashboard-name
+```
+
+### Troubleshooting Grafana
+
+```bash
+# Check if Grafana is running
+curl http://localhost:3000
+
+# View Grafana logs
+docker compose logs -f grafana
+
+# Restart Grafana
+docker compose restart grafana
+
+# Access Grafana CLI
+docker compose exec grafana grafana-cli
+```
+
+### Step-by-Step: Viewing Transcendence Dashboards
+
+**Complete walkthrough:**
+
+1. **Open Grafana**
+   ```bash
+   # Open in browser
+   http://localhost:3000
+   ```
+
+2. **Login** (if not already logged in)
+   - Username: `admin`
+   - Password: `admin`
+   - Click **"Sign in"**
+
+3. **Navigate to Dashboards**
+   - Click **☰ (menu icon)** in the top-left corner
+   - Click **"Dashboards"** from the menu
+   - OR click the **Dashboard** icon in the left sidebar
+
+4. **Find Transcendence Folder**
+   - In the Dashboards page, you should see a **"Transcendence"** folder
+   - Click on **"Transcendence"** to expand and view available dashboards
+
+5. **Open Main Dashboard**
+   - Click on **"Transcendence Dashboard"** (or similar name)
+   - The dashboard will load with real-time metrics
+
+6. **Explore the Dashboard**
+   - **Top panels:** System health summary, service status, key metrics
+   - **Middle sections:** Individual service metrics (Auth, Game, User, Tournament services)
+   - **Bottom sections:** Database performance, errors, request rates
+   - **Time selector:** Top-right corner, change time range for viewing historical data
+
+7. **Interact with Panels**
+   - **Click on any metric** to drill down into details
+   - **Hover over graphs** to see exact values and timestamps
+   - **Drag to zoom** into time periods
+   - **Refresh button** to reload data immediately
+
+### Manually Provisioning Dashboards (if needed)
+
+If dashboards don't auto-load:
+
+```bash
+# Restart Grafana to reload provisioned dashboards
+docker compose restart grafana
+
+# Check if dashboard files exist
+ls -la /home/honguyen/ft_transcendence/grafana/provisioning/dashboards/
+
+# View dashboard configuration
+cat /home/honguyen/ft_transcendence/grafana/provisioning/dashboards/transcendence.json | head -50
+
+# Check Grafana logs for provisioning errors
+docker compose logs grafana | grep -i "dashboard\|provisioning"
 ```
 
 ---
