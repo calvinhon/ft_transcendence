@@ -21,9 +21,9 @@ RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || ec
 
 FROM alpine:3.17 AS waf
 
-ARG NGINX_VERSION=1.29.3
-ARG MODSEC_TAG=v3.0.14
-ARG OWASP_TAG=v3.3.4
+ENV NGINX_VERSION=1.29.3
+ENV MODSEC_TAG=v3.0.14
+ENV OWASP_TAG=v3.3.4
 
 WORKDIR /opt
 
@@ -40,10 +40,10 @@ RUN echo "Installing ModSecurity" && \
 RUN echo 'Cloning ModSecurity NGINX Connector and ModSec OWASP Rules, as well as Downloading and Extracting NGINX' && \
 	git clone -b master --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git && \
 	git clone -b ${OWASP_TAG} --depth 1 https://github.com/coreruleset/coreruleset.git /usr/local/owasp-modsecurity-crs && \
-	wget -O - https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz | tar -xz 
+	wget -O - https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -xz 
 
 RUN echo "Installing NGINX Modules" && \
-	cd /opt/nginx-$NGINX_VERSION && \
+	cd /opt/nginx-${NGINX_VERSION} && \
 	./configure --with-compat --add-dynamic-module=../ModSecurity-nginx && \
 	make modules
 
@@ -60,13 +60,15 @@ RUN echo "Setting up ModSecurity" && \
 # Production stage
 FROM nginx:alpine
 
+ENV NGINX_VERSION=1.29.3
+
 # Create the www-data user and group for nginx to use
 RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true
 
 # Copy all built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
-COPY --from=waf /opt/nginx-$NGINX_VERSION/objs/ngx_http_modsecurity_module.so /usr/lib/nginx/modules/
+COPY --from=waf /opt/nginx-${NGINX_VERSION}/objs/ngx_http_modsecurity_module.so /usr/lib/nginx/modules/
 COPY --from=waf /usr/local/modsecurity /usr/local/modsecurity
 COPY --from=waf /usr/local/owasp-modsecurity-crs /usr/local/modsecurity-crs
 COPY --from=waf /opt/modsec /etc/nginx/modsec
