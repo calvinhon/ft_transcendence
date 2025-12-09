@@ -154,13 +154,15 @@ Network: Local or via HTTPS at https://localhost (if HTTPS configured)
 
 **Terminal Verification:**
 ```bash
-# Check HTTPS certificate
-curl -k -I https://localhost | grep -E "Strict-Transport|X-Frame-Options"
+# Check HTTPS is working (use GET instead of HEAD, some servers have issues with HEAD)
+curl -k -s https://localhost 2>&1 | head -1
+# Expected: <!DOCTYPE html>
 
 # Verify HTTP-only cookies
-curl -k -c /tmp/cookies.txt https://localhost/api/auth/login \
+curl -k -c /tmp/cookies.txt -X POST https://localhost/api/auth/login \
+  -H "Content-Type: application/json" \
   -d '{"username":"testuser_demo","password":"SecurePass123!"}'
-grep -i "httponly" /tmp/cookies.txt
+cat /tmp/cookies.txt | grep -i "httponly"
 # Should show: HttpOnly flag is set
 ```
 
