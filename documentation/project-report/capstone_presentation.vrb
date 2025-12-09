@@ -1,0 +1,26 @@
+\frametitle{Application Architecture Details}
+\begin{block}{Layered Architecture}
+        \begin{lstlisting}
+        ┌─────────────────────────────────────────┐
+        │   Frontend (React/Vite/TypeScript)      │
+        ├─────────────────────────────────────────┤
+        │   API Gateway (Nginx, Load Balancer)    │
+        ├─────────────────────────────────────────┤
+        │ Auth     Game      User    Tournament   │
+        │ Service  Service   Service Service      │
+        ├─────────────────────────────────────────┤
+        │ Database (SQLite) │ Cache (Redis)       │
+        │ Vault (Secrets)   │ Queue (Messages)    │
+        ├─────────────────────────────────────────┤
+        │ Monitoring: ELK, Prometheus, Grafana    │
+        │ Security: ModSecurity WAF, HTTPS        │
+        └─────────────────────────────────────────┘
+        \end{lstlisting}
+    \end{block}
+
+    \begin{itemize}
+        \item 21 Docker containers orchestrated with Docker Compose
+        \item API-first design with RESTful endpoints
+        \item WebSocket for real-time game synchronization
+        \item Event-driven architecture for service communication
+    \end{itemize}
