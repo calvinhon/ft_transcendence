@@ -5,28 +5,85 @@
   "panels": [
     {
       "id": 1,
-      "title": "Auth Service",
+      "title": "Prometheus Status",
       "targets": [
         {
-          "expr": "up{job=\"auth-service\"}",
-          "legendFormat": "Auth Service Status"
+          "expr": "up{job=\"prometheus\"}",
+          "legendFormat": "Prometheus"
         }
       ],
       "type": "stat",
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 6,
         "x": 0,
         "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Down",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Up",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        }
       }
     },
     {
       "id": 2,
-      "title": "Game Service",
+      "title": "Vault Status",
       "targets": [
         {
-          "expr": "up{job=\"game-service\"}",
-          "legendFormat": "Game Service Status"
+          "expr": "up{job=\"vault\"}",
+          "legendFormat": "Vault"
+        }
+      ],
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Down",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Up",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "System Info",
+      "targets": [
+        {
+          "expr": "up{job=\"prometheus\"}",
+          "legendFormat": "Status"
         }
       ],
       "type": "stat",
@@ -35,42 +92,26 @@
         "w": 12,
         "x": 12,
         "y": 0
+      },
+      "options": {
+        "textMode": "auto"
       }
     },
     {
-      "id": 3,
-      "title": "Tournament Service",
-      "targets": [
-        {
-          "expr": "up{job=\"tournament-service\"}",
-          "legendFormat": "Tournament Service Status"
-        }
-      ],
-      "type": "stat",
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 8
-        }
+      "id": 4,
+      "title": "Microservices Health Check",
+      "type": "text",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
       },
-      {
-        "id": 4,
-        "title": "User Service",
-        "targets": [
-          {
-            "expr": "up{job=\"user-service\"}",
-            "legendFormat": "User Service Status"
-          }
-        ],
-        "type": "stat",
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 8
-        }
+      "options": {
+        "content": "## Microservices Health Status\n\n**Note:** Microservice metrics endpoints are not yet implemented. To check service health:\n\n### Quick Health Checks\n```bash\n# Auth Service (Port 3001)\ncurl http://localhost:3001/health\n\n# Game Service (Port 3002)\ncurl http://localhost:3002/health\n\n# Tournament Service (Port 3003)\ncurl http://localhost:3003/health\n\n# User Service (Port 3004)\ncurl http://localhost:3004/health\n```\n\nAll services should return a status response with `status: 'healthy'`.\n\n### Enable Full Metrics Monitoring\nTo add Prometheus metrics to microservices, install and register the `@fastify/metrics` plugin in each service's server configuration.\n",
+        "mode": "markdown"
       }
+    }
     ],
     "refresh": "30s",
     "schemaVersion": 30,
