@@ -57,8 +57,11 @@ Browser: Chrome, Firefox, Safari
 
 ### Quick Health Check
 ```bash
-# Frontend
-curl -k https://localhost 2>&1 | head -5
+# One-command health check (NEW ⭐)
+make health
+
+# Or individual service checks
+curl -k https://localhost 2>&1 | head -5  # Frontend
 
 # All services
 curl http://localhost:3001/health | jq .  # Auth
@@ -134,7 +137,7 @@ make stop
 # View logs
 make logs
 
-# Health check
+# Health check (NEW ⭐)
 make health
 
 # Restart specific service
@@ -237,8 +240,8 @@ documentation/readme/
 # Start everything
 make start && sleep 180
 
-# Quick health check
-curl -k https://localhost && echo "✅ Frontend OK"
+# Quick health check (NEW ⭐)
+make health
 
 # Test API
 curl http://localhost:3001/health | jq .
