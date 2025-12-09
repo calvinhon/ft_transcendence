@@ -154,16 +154,24 @@ Network: Local or via HTTPS at https://localhost (if HTTPS configured)
 
 **Terminal Verification:**
 ```bash
-# Check HTTPS is working (use GET instead of HEAD, some servers have issues with HEAD)
+# 1. Check HTTPS is working (use GET instead of HEAD)
 curl -k -s https://localhost 2>&1 | head -1
 # Expected: <!DOCTYPE html>
 
-# Verify HTTP-only cookies
-curl -k -c /tmp/cookies.txt -X POST https://localhost/api/auth/login \
+# 2. Register a test user
+curl -s -X POST https://localhost/register \
   -H "Content-Type: application/json" \
-  -d '{"username":"testuser_demo","password":"SecurePass123!"}'
+  -d '{"username":"testuser","email":"test@test.com","password":"TestPass123!"}'
+
+# 3. Verify HTTP-only cookies by logging in via HTTPS
+curl -k -s -c /tmp/cookies.txt -X POST https://localhost/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"TestPass123!"}'
+
+# 4. Check HttpOnly flag is set on the token cookie
 cat /tmp/cookies.txt | grep -i "httponly"
-# Should show: HttpOnly flag is set
+# Expected output shows: #HttpOnly_localhost ... token <JWT_TOKEN>
+# The #HttpOnly prefix confirms the cookie is HTTP-only (not accessible to JavaScript)
 ```
 
 ---
@@ -555,40 +563,79 @@ curl -s http://localhost:80/api/health | jq . 2>/dev/null || echo "Frontend resp
 #### Test User Registration
 
 ```bash
-# Register new user
-curl -X POST http://localhost:3001/api/auth/register \
+# Method 1: HTTPS via nginx (recommended for security)
+curl -k -s -X POST https://localhost/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
     "email": "terminal@example.com",
     "password": "SecurePass123!"
-  }' | jq .
+  }'
+
+# Method 2: Direct HTTP to auth service (for testing)
+curl -s -X POST http://localhost:3001/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "terminaluser",
+    "email": "terminal@example.com",
+    "password": "SecurePass123!"
+  }'
 
 # Expected response:
 # {
 #   "success": true,
-#   "message": "User registered successfully",
-#   "token": "eyJhbGciOiJIUzI1NiIs..."
+#   "data": {
+#     "user": {
+#       "userId": 1,
+#       "username": "terminaluser"
+#     }
+#   },
+#   "message": "User registered successfully"
 # }
 ```
 
 #### Test User Login
 
 ```bash
-# Login with credentials
-curl -X POST http://localhost:3001/api/auth/login \
+# Method 1: HTTPS via nginx (recommended - sets HttpOnly cookie via secure channel)
+curl -k -s -c /tmp/cookies.txt -X POST https://localhost/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
     "password": "SecurePass123!"
-  }' | jq .
+  }'
 
-# Save token for next requests
-TOKEN=$(curl -s -X POST http://localhost:3001/api/auth/login \
+# Method 2: Direct HTTP to auth service (for testing without HTTPS)
+curl -s -c /tmp/cookies.txt -X POST http://localhost:3001/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"terminaluser","password":"SecurePass123!"}' | jq -r '.token')
+  -d '{
+    "username": "terminaluser",
+    "password": "SecurePass123!"
+  }'
 
-echo "Token: $TOKEN"
+# Expected response:
+# {
+#   "success": true,
+#   "data": {
+#     "user": {
+#       "userId": 1,
+#       "username": "terminaluser",
+#       "email": "terminal@example.com"
+#     }
+#   },
+#   "message": "Login successful"
+# }
+
+# Verify HttpOnly cookie was set (recommended: use HTTPS method above)
+cat /tmp/cookies.txt | grep -i "httponly"
+# Should output something like: #HttpOnly_localhost     FALSE   /       FALSE   <timestamp>      token   <JWT_TOKEN>
+
+# Save token from login response for next requests (alternative to cookies)
+TOKEN=$(curl -k -s -X POST https://localhost/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"terminaluser","password":"SecurePass123!"}' | grep -o '"data":{"user":{"userId":[^}]*}' | grep -o '"userId":[0-9]*')
+
+echo "User info from login: $TOKEN"
 ```
 
 #### Test Authentication with Token
