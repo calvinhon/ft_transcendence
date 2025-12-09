@@ -5,11 +5,6 @@ global:
   external_labels:
     monitor: 'transcendence-monitor'
 
-# Data retention configuration
-storage:
-  retention:
-    time: 30d  # Keep data for 30 days
-
 alerting:
   alertmanagers:
     - static_configs:

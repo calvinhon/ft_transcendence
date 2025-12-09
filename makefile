@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: start full-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help
+.PHONY: start full-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -20,12 +20,15 @@ help:
 	@echo "  make rebuild            - Force rebuild from scratch (slowest)"
 	@echo "  make stop               - Stop all services"
 	@echo "  make logs               - View service logs"
+	@echo "  make health             - Check health of all services ⭐ NEW"
 	@echo ""
 	@echo "🔧 Maintenance:"
 	@echo "  make clean              - Remove containers, images, volumes"
 	@echo "  make clean-dev          - Clean node_modules and build artifacts"
 	@echo "  make optimize-monitoring - Apply monitoring stack optimizations"
 	@echo "  make cleanup-logs       - Delete old Elasticsearch indices"
+	@echo "  make ps                 - Show container status"
+	@echo "  make test               - Show test documentation"
 	@echo ""
 	@echo "💡 Tip: Use 'make dev' for daily coding (7 services, SQLite DB)"
 	@echo "💡 Use 'make full' when you need monitoring/logging (12 services)"
@@ -249,3 +252,32 @@ cleanup-logs:
 ps:
 	@echo "📊 Container status:"
 	@docker compose ps
+
+health:
+	@echo "🏥 Checking service health..."
+	@echo ""
+	@echo "🔍 Frontend (HTTPS):"
+	@curl -sk https://localhost 2>&1 | grep -q "DOCTYPE" && echo "  ✅ Frontend responding" || echo "  ❌ Frontend not responding"
+	@echo ""
+	@echo "🔍 Microservices (HTTP):"
+	@echo "  Auth Service (3001):"
+	@curl -s http://localhost:3001/health 2>/dev/null | jq . 2>/dev/null && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@echo "  Game Service (3002):"
+	@curl -s http://localhost:3002/health 2>/dev/null | jq . 2>/dev/null && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@echo "  User Service (3004):"
+	@curl -s http://localhost:3004/health 2>/dev/null | jq . 2>/dev/null && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@echo "  Tournament Service (3003):"
+	@curl -s http://localhost:3003/health 2>/dev/null | jq . 2>/dev/null && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@echo ""
+	@echo "📦 Database Check:"
+	@echo "  Auth DB: $(shell [ -f auth-service/database/auth.db ] && echo '✅ Exists' || echo '❌ Missing')"
+	@echo "  Game DB: $(shell [ -f game-service/database/games.db ] && echo '✅ Exists' || echo '❌ Missing')"
+	@echo "  User DB: $(shell [ -f user-service/database/users.db ] && echo '✅ Exists' || echo '❌ Missing')"
+	@echo "  Tournament DB: $(shell [ -f tournament-service/database/tournaments.db ] && echo '✅ Exists' || echo '❌ Missing')"
+	@echo ""
+	@echo "📊 Running containers:"
+	@docker compose ps --format "table {{.Names}}\t{{.Status}}" 2>/dev/null | head -15 || echo "  No containers running"
+
+test:
+	@echo "🧪 Running tests..."
+	@echo "Test infrastructure available - see documentation/readme/EVALUATION_GUIDE.md for details"

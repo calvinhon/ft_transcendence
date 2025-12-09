@@ -1,4 +1,11 @@
 # Elasticsearch Configuration
+# Network binding and discovery settings
+
+# Network settings - bind to all interfaces for Docker
+network.host: "0.0.0.0"
+http.host: "0.0.0.0"
+transport.host: "0.0.0.0"
+
 # Performance and query optimization settings
 
 # Search optimization
