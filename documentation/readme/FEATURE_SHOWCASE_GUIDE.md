@@ -48,14 +48,16 @@ curl -k https://localhost 2>&1 | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
 # Check all microservices are running
 make health
 
-# Or manually check each service (use -k flag for HTTPS if needed)
-curl -s http://localhost:3001/health | jq .  # Auth Service
-curl -s http://localhost:3002/health | jq .  # Game Service
-curl -s http://localhost:3004/health | jq .  # User Service
-curl -s http://localhost:3003/health | jq .  # Tournament Service
+# Or manually check each service (curl without jq)
+curl -s http://localhost:3001/health  # Auth Service
+curl -s http://localhost:3002/health  # Game Service
+curl -s http://localhost:3004/health  # User Service
+curl -s http://localhost:3003/health  # Tournament Service
 
 # Expected: {"status":"healthy"} or similar for each
-# Note: Some services might respond on HTTPS, use: curl -sk https://localhost:3001/health
+
+# With jq for pretty output (if installed):
+# curl -s http://localhost:3001/health | jq .
 ```
 
 ---
@@ -387,15 +389,18 @@ cat /tmp/cookies.txt | grep -i "httponly"
 - ✅ Tournament data immutable
 - ✅ Timestamp recorded
 
-**Terminal Verification:**
+#### Check Blockchain Verification
+
 ```bash
 # Check blockchain transactions
 curl -s -X POST http://localhost:8545 \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | jq .
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
-# List tournaments on blockchain
-curl -s http://localhost:3003/tournaments/blockchain
+# Expected: {"jsonrpc":"2.0","result":"0x...","id":1}
+
+# With jq for formatting (if installed):
+# ... | jq '.result'
 ```
 
 ---
@@ -505,8 +510,11 @@ curl -s http://localhost:3003/tournaments/blockchain
 # Frontend test - use -k flag
 curl -k https://localhost
 
-# Or use jq if you have it
-curl -sk https://localhost | jq . | head -20
+# Check if jq is available (optional for pretty-printing)
+which jq || echo "jq not installed - curl output will be raw JSON"
+
+# Curl works fine without jq:
+curl -k -s https://localhost | head -1
 ```
 
 ### Health Check & Service Verification
@@ -539,23 +547,26 @@ docker compose ps
 ```bash
 # Auth Service Health
 echo "=== Auth Service ==="
-curl -s http://localhost:3001/health | jq .
+curl -s http://localhost:3001/health
 
 # Game Service Health
 echo "=== Game Service ==="
-curl -s http://localhost:3002/health | jq .
+curl -s http://localhost:3002/health
 
 # User Service Health
 echo "=== User Service ==="
-curl -s http://localhost:3004/health | jq .
+curl -s http://localhost:3004/health
 
 # Tournament Service Health
 echo "=== Tournament Service ==="
-curl -s http://localhost:3003/health | jq .
+curl -s http://localhost:3003/health
 
 # Frontend Health
 echo "=== Frontend ==="
-curl -s http://localhost:80/api/health | jq . 2>/dev/null || echo "Frontend responding"
+curl -s http://localhost:80 | head -1
+
+# With jq for pretty printing (if installed):
+# curl -s http://localhost:3001/health | jq .
 ```
 
 ### Authentication Testing
@@ -643,10 +654,14 @@ echo "User info from login: $TOKEN"
 ```bash
 # Verify token works
 TOKEN="your_token_here"
-curl -X GET http://localhost:3004/api/user/profile \
-  -H "Authorization: Bearer $TOKEN" | jq .
+curl -s -X GET http://localhost:3004/api/user/profile \
+  -H "Authorization: Bearer $TOKEN"
 
-# Expected: Current user's profile data
+# Option 1: Pretty-print with jq (if installed)
+# curl -s -X GET http://localhost:3004/api/user/profile \
+#   -H "Authorization: Bearer $TOKEN" | jq .
+
+# Expected: Current user's profile data in JSON format
 ```
 
 ### User Service Testing
@@ -657,14 +672,17 @@ curl -X GET http://localhost:3004/api/user/profile \
 TOKEN="your_token_here"
 
 # Update user profile
-curl -X PUT http://localhost:3004/api/user/profile \
+curl -s -X PUT http://localhost:3004/api/user/profile \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "displayName": "AwesomePlayer",
     "bio": "Testing from terminal",
     "avatar": "avatar_1"
-  }' | jq .
+  }'
+
+# With jq for pretty printing (optional):
+# curl -s -X PUT http://localhost:3004/api/user/profile ... | jq .
 ```
 
 #### Get User Statistics
@@ -674,17 +692,13 @@ TOKEN="your_token_here"
 
 # Fetch user stats
 curl -s http://localhost:3004/api/user/stats \
-  -H "Authorization: Bearer $TOKEN" | jq .
+  -H "Authorization: Bearer $TOKEN"
 
 # Expected response:
-# {
-#   "userId": "...",
-#   "totalMatches": 0,
-#   "wins": 0,
-#   "losses": 0,
-#   "winRate": 0,
-#   "ranking": 1000
-# }
+# {"userId":"...","totalMatches":0,"wins":0,"losses":0,"winRate":0,"ranking":1000}
+
+# With jq for readable output (if installed):
+# curl -s http://localhost:3004/api/user/stats ... | jq .
 ```
 
 ### Game Service Testing
@@ -695,16 +709,17 @@ curl -s http://localhost:3004/api/user/stats \
 TOKEN="your_token_here"
 
 # Create game
-curl -X POST http://localhost:3002/api/games/create \
+curl -s -X POST http://localhost:3002/api/games/create \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "gameMode": "arcade",
     "opponentType": "ai",
     "difficulty": "normal"
-  }' | jq .
+  }'
 
 # Response will include gameId for next requests
+# With jq (if installed): ... | jq '.data.gameId'
 ```
 
 #### Join Existing Game
@@ -714,12 +729,14 @@ TOKEN="your_token_here"
 
 # List available games
 curl -s http://localhost:3002/api/games/available \
-  -H "Authorization: Bearer $TOKEN" | jq .
+  -H "Authorization: Bearer $TOKEN"
 
-# Join a game
+# Join a game (extract gameId from previous response)
 GAME_ID="game_id_from_list"
-curl -X POST http://localhost:3002/api/games/$GAME_ID/join \
-  -H "Authorization: Bearer $TOKEN" | jq .
+curl -s -X POST http://localhost:3002/api/games/$GAME_ID/join \
+  -H "Authorization: Bearer $TOKEN"
+
+# With jq for parsing: ... | jq '.data.gameId'
 ```
 
 #### Record Game Result
@@ -729,14 +746,16 @@ TOKEN="your_token_here"
 GAME_ID="game_id"
 
 # Record match end with score
-curl -X POST http://localhost:3002/api/games/$GAME_ID/finish \
+curl -s -X POST http://localhost:3002/api/games/$GAME_ID/finish \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "playerScore": 3,
     "opponentScore": 1,
     "duration": 120
-  }' | jq .
+  }'
+
+# With jq for formatting: ... | jq .
 ```
 
 ### Tournament Service Testing
