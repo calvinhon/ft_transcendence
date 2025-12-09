@@ -58,7 +58,7 @@ RUN echo "Setting up ModSecurity" && \
 
 
 # Production stage
-FROM nginx:alpine
+FROM nginx:1.29.3-alpine
 
 ENV NGINX_VERSION=1.29.3
 
