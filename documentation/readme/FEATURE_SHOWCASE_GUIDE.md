@@ -867,28 +867,84 @@ curl -s "http://localhost:9200/_cat/indices" | awk '{print $3}' | sort | uniq -c
 
 ### Prometheus & Monitoring
 
-#### Check Metrics Collection
+#### Dashboard Overview
+
+The Grafana dashboard displays system metrics collected by Prometheus:
+
+- **Prometheus Status**: Real-time health of the metrics collection system
+- **Vault Status**: Health of the Hashicorp Vault service
+- **Microservices Health Check**: Guide for manually checking microservice health
+
+#### Why Microservices Show Zero/Down
+
+**Current Status:** The 4 microservices (Auth, Game, Tournament, User) do not yet have Prometheus metric exporters implemented. This is why they appear as "Down" or show "0" in Prometheus queries.
+
+**What's happening:**
+- Prometheus is configured to scrape `/metrics` endpoint from each service
+- Services return 404 because they don't expose this endpoint
+- Prometheus correctly marks them as `up=0` (unreachable)
+
+**Quick Service Health Checks (Instead of Prometheus Metrics):**
 
 ```bash
-# Verify Prometheus is scraping
-curl -s http://localhost:9090/api/v1/query?query=up | jq '.data.result[] | {job: .metric.job, value: .value[1]}'
-
-# Get node count
-curl -s http://localhost:9090/api/v1/query?query=node_count | jq .
-
-# Memory usage by service
-curl -s 'http://localhost:9090/api/v1/query?query=container_memory_usage_bytes' | jq '.data.result[] | {container: .metric.name, memory: .value[1]}'
+# Check each service's health directly
+curl http://localhost:3001/health  # Auth Service
+curl http://localhost:3002/health  # Game Service
+curl http://localhost:3003/health  # Tournament Service
+curl http://localhost:3004/health  # User Service
 ```
 
-#### Access Grafana Dashboards
+All services should return:
+```json
+{
+  "status": "healthy",
+  "service": "service-name",
+  "timestamp": "2025-12-09T...",
+  "modules": [...]
+}
+```
+
+#### Check Prometheus Targets
 
 ```bash
-# Get Grafana health
-curl -s http://localhost:3000/api/health | jq .
+# List all scrape targets and their health
+curl -s http://localhost:9090/api/v1/targets
 
-# List available dashboards
-curl -s http://localhost:3000/api/search?query=* | jq '.[] | {title, id}' | head -10
+# Query for services that are UP (only Prometheus and Vault)
+curl -s 'http://localhost:9090/api/v1/query?query=up'
 ```
+
+#### View Available Metrics
+
+```bash
+# See all metric names Prometheus has collected
+curl -s http://localhost:9090/api/v1/label/__name__/values
+
+# Query specific metrics (Go runtime, memory, etc.)
+curl -s 'http://localhost:9090/api/v1/query?query=go_runtime_go_goroutines'
+```
+
+#### Future: Add Metrics to Microservices
+
+To enable full Prometheus monitoring of microservices, add the `@fastify/metrics` plugin:
+
+```typescript
+// In each service's server.ts
+import metricsPlugin from '@fastify/metrics';
+
+await fastify.register(metricsPlugin, {
+  defaultMetrics: { enabled: true }
+});
+
+// Services will then expose /metrics with request count, latency, memory, etc.
+```
+
+Once implemented, the dashboard will automatically display:
+- Request throughput per service
+- Response time percentiles
+- Error rates
+- Memory and CPU usage
+- Custom application metrics
 
 ### Blockchain Verification
 
