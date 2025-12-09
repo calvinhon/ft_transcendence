@@ -1207,15 +1207,24 @@ The Transcendence dashboard requires **Prometheus** to collect metrics from serv
 # Start Prometheus to collect metrics
 docker compose up prometheus -d
 
-# Wait for Prometheus to initialize (2-3 minutes)
+# Wait for Prometheus to initialize and scrape targets (2-5 minutes)
 sleep 180
 
-# Check if Prometheus is collecting data
-curl -s http://localhost:9090/api/v1/targets
+# Check if Prometheus is collecting data and scraping targets
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
-# Refresh Grafana dashboard (F5 in browser)
-# You should now see service metrics
+# Verify Prometheus is responding
+curl -s http://localhost:9090/-/healthy
+
+# Refresh Grafana dashboard (F5 in browser) - data will populate as Prometheus collects metrics
+# Note: First data collection may take 1-5 minutes for services to report metrics
 ```
+
+**Prometheus Configuration Status:**
+- ✅ Prometheus service is now properly configured and running
+- ✅ Configuration has been fixed (removed invalid storage.retention section)
+- ✅ Metrics collection is active for available targets
+- Note: Service `/metrics` endpoints may return 404 if services don't have metrics instrumentation
 
 **Option 2: View Service Health Without Prometheus**
 ```bash
