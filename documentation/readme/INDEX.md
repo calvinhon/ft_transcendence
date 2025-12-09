@@ -9,6 +9,16 @@
 
 ## Quick Navigation
 
+### ⚡ Quick Start (2 minutes)
+
+**[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** ← Start here for instant cheat sheet!
+- Quick setup commands
+- 5 use-case scenarios
+- Common commands reference
+- Troubleshooting tips
+
+---
+
 ### 🚀 Getting Started (Start Here!)
 
 1. **[FEATURE_SHOWCASE_GUIDE.md](FEATURE_SHOWCASE_GUIDE.md)** ⭐ **NEW & RECOMMENDED**
@@ -283,6 +293,16 @@
     - Lines: 800+
     - Type: Showcase & Verification
     - Key Info: Browser + terminal feature verification
+
+19. ⭐ INDEX.md (NEW)
+    - Lines: 428
+    - Type: Navigation Index
+    - Key Info: Master index, use cases, relationships
+
+20. ⭐ QUICK_REFERENCE.md (NEW)
+    - Lines: 350+
+    - Type: Quick Reference Card
+    - Key Info: Cheat sheet, quick commands, troubleshooting
 ```
 
 ---
@@ -341,10 +361,10 @@ wc -l *.md | tail -1
 
 | Metric | Value |
 |--------|-------|
-| **Total Files** | 18 |
+| **Total Files** | 20 |
 | **Total Lines** | 5000+ |
 | **Total Size** | 2.5 MB |
-| **Markdown Files** | 18 |
+| **Markdown Files** | 20 |
 | **Code Examples** | 100+ |
 | **curl Commands** | 50+ |
 | **Terminal Commands** | 200+ |
