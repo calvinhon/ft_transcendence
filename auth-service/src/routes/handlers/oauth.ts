@@ -45,25 +45,47 @@ export async function oauthCallbackHandler(
     let user = await getQuery<any>(`SELECT * FROM users WHERE email = ?`, [userInfo.email]);
 
     if (!user) {
-      // Create new user from OAuth data
+      console.log(`📝 Creating new OAuth user: ${userInfo.email} from ${provider}`);
+      
+      // Create new OAuth user from OAuth data
       await runQuery(`
-        INSERT INTO users (username, email, password_hash, avatar_url)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO users (username, email, password_hash, avatar_url, oauth_provider)
+        VALUES (?, ?, NULL, ?, ?)
       `, [
         userInfo.name || userInfo.login,
         userInfo.email,
-        'oauth_' + provider, // Mark as OAuth user
-        userInfo.picture || userInfo.avatar_url || null
+        userInfo.picture || userInfo.avatar_url || null,
+        provider
       ]);
 
       user = await getQuery<any>(`SELECT * FROM users WHERE email = ?`, [userInfo.email]);
+      
+      if (!user) {
+        console.error('❌ Failed to create OAuth user in database');
+        reply.status(500).send({ error: 'Failed to create user' });
+        return;
+      }
+      
+      console.log(`✅ Created OAuth user: ${user.username} (ID: ${user.id}) from ${provider}`);
+      
+      // Immediately create user profile in user-service to ensure sync
+      try {
+        await createUserProfileInUserService(user.id, { ...userInfo, provider });
+      } catch (profileError) {
+        console.warn(`⚠️ Failed to create user profile in user-service:`, profileError);
+        // Don't fail the OAuth flow if profile creation fails
+      }
+      
     } else {
-      // Update avatar if provided
-      if (userInfo.picture || userInfo.avatar_url) {
+      console.log(`✅ Existing user found: ${user.username} (ID: ${user.id})`);
+      
+      // Update avatar if provided and user is OAuth user
+      if ((userInfo.picture || userInfo.avatar_url) && user.oauth_provider) {
         await runQuery(`UPDATE users SET avatar_url = ? WHERE id = ?`, [
           userInfo.picture || userInfo.avatar_url,
           user.id
         ]);
+        console.log(`✅ Updated avatar for OAuth user: ${user.username}`);
       }
     }
 
@@ -91,6 +113,49 @@ export async function oauthCallbackHandler(
     console.error('❌ OAuth callback error:', err);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost';
     reply.redirect(`${frontendUrl}?code=error&message=${encodeURIComponent((err as Error).message)}`);
+  }
+}
+
+/**
+ * Ensure user profile exists in user-service database
+ */
+async function createUserProfileInUserService(userId: number, userInfo: any): Promise<void> {
+  try {
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3003';
+    
+    // Try to get existing profile first
+    const getResponse = await axios.get(`${userServiceUrl}/api/user/profile/${userId}`, {
+      timeout: 5000 // 5 second timeout
+    });
+    
+    if (getResponse.status === 200) {
+      console.log(`✅ User profile already exists in user-service for user ${userId}`);
+      return;
+    }
+  } catch (error: any) {
+    // Profile doesn't exist (404) or service unavailable - try to create it
+    if (error.response?.status !== 404) {
+      console.warn(`⚠️ User-service unavailable for profile creation:`, error.message);
+      return; // Don't fail OAuth if user-service is down
+    }
+  }
+  
+  try {
+    // Create profile in user-service
+    const createResponse = await axios.put(`${userServiceUrl}/api/user/profile/${userId}`, {
+      displayName: userInfo.name || userInfo.login,
+      bio: `OAuth user from ${userInfo.provider || 'external provider'}`,
+      avatarUrl: userInfo.picture || userInfo.avatar_url
+    }, {
+      timeout: 5000
+    });
+    
+    if (createResponse.status === 200) {
+      console.log(`✅ Created user profile in user-service for OAuth user ${userId}`);
+    }
+  } catch (error: any) {
+    console.warn(`⚠️ Failed to create user profile in user-service:`, error.message);
+    // Don't fail the OAuth flow if profile creation fails
   }
 }
 

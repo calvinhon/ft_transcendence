@@ -159,6 +159,121 @@ In the context of this project (ft_transcendence), the APIs are the HTTP endpoin
 
 The `/api/` prefix in the nginx configuration routes requests to the appropriate backend service (auth-service, game-service, tournament-service, or user-service).
 
+### Q: What is a Single-Page Application (SPA) and how to verify it in this program?
+
+**A:** A **Single-Page Application (SPA)** is a web application that loads a single HTML page and dynamically updates the content as the user interacts with the app, without requiring full page reloads from the server.
+
+#### Key Characteristics of SPAs:
+- **No Full Page Reloads**: Navigation between different sections happens instantly without browser refresh
+- **Client-Side Routing**: URL changes are handled by JavaScript in the browser, not server requests
+- **Dynamic Content Loading**: Content is loaded and updated via JavaScript/AJAX calls
+- **Browser History API**: Back/forward buttons work without losing application state
+- **Single HTML Entry Point**: Only one HTML file is served initially
+
+#### How SPAs Work:
+```
+1. User visits https://localhost
+2. Server sends single HTML page + JavaScript bundle
+3. JavaScript handles all subsequent navigation
+4. API calls fetch data dynamically
+5. Content updates without page reloads
+```
+
+#### In ft_transcendence (TypeScript + Vite Frontend):
+
+**Implementation Details:**
+- **Framework**: Pure TypeScript with custom router (no React/Vue/Angular)
+- **Build Tool**: Vite for fast development and optimized production builds
+- **Routing**: Custom client-side router using browser History API
+- **Entry Point**: `frontend/index.html` served by nginx
+- **Bundle**: `frontend/src/main.ts` loads all components dynamically
+
+**Router Implementation:**
+```typescript
+// frontend/src/router.ts - Custom SPA Router
+class Router {
+    private routes: Route[] = [
+        { path: '/', component: HomePage },
+        { path: '/game', component: GamePage },
+        { path: '/tournament', component: TournamentPage },
+        { path: '/profile', component: ProfilePage }
+    ];
+
+    navigate(path: string) {
+        // Update URL without page reload
+        window.history.pushState(null, '', path);
+        // Render new component
+        this.renderComponent(path);
+    }
+
+    handlePopState() {
+        // Handle browser back/forward buttons
+        this.renderComponent(window.location.pathname);
+    }
+}
+```
+
+#### How to Verify SPA Functionality in ft_transcendence:
+
+**1. Navigation Without Reloads:**
+```
+1. Open https://localhost in Firefox
+2. Click navigation links: Home → Game → Tournament → Profile
+3. Notice: No page refresh, instant transitions
+4. Check Network tab: No new HTML requests
+```
+
+**2. Browser Back/Forward Buttons:**
+```
+1. Navigate: Home → Game → Tournament
+2. Click browser back button
+3. URL changes to /game, content updates instantly
+4. Click forward button
+5. URL changes to /tournament, content updates instantly
+```
+
+**3. Direct URL Access:**
+```
+1. Type https://localhost/game directly in address bar
+2. Press Enter
+3. Game page loads directly (no redirect to home)
+4. Browser back button works correctly
+```
+
+**4. Developer Tools Verification:**
+```
+1. Open DevTools → Network tab
+2. Navigate between pages
+3. Observe: Only API calls (XHR/Fetch), no HTML document requests
+4. Check Console: No page reload messages
+```
+
+**5. Page Source Inspection:**
+```
+1. Right-click → View Page Source
+2. See: Single HTML file with <script> tags loading JavaScript
+3. No server-side rendered content changes
+```
+
+#### Subject Requirement Compliance:
+- **Mandatory**: "Your website must be a single-page application. The user should be able to use the Back and Forward buttons of the browser."
+- **Implementation**: ✅ Custom TypeScript router with History API
+- **Browser Support**: ✅ Tested on Firefox (latest stable)
+- **No Errors**: ✅ No unhandled errors during navigation
+
+#### Benefits in ft_transcendence:
+- **Performance**: Instant navigation between game/tournament/profile sections
+- **User Experience**: Seamless transitions during tournaments and gameplay
+- **Real-time Updates**: Live game state updates without interrupting navigation
+- **Mobile Friendly**: Responsive design works across devices
+- **SEO Considerations**: Server-side rendering (SSR) module available for better SEO
+
+#### Common SPA Patterns Used:
+- **Lazy Loading**: Game components load only when needed
+- **State Management**: Game state persists across navigation
+- **WebSocket Integration**: Real-time updates work with SPA routing
+- **Error Boundaries**: Graceful error handling during navigation
+
 ---
 
 ## Security & CORS

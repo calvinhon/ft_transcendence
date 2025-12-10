@@ -29,12 +29,13 @@ function initializeDatabase(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,  -- Allow NULL for OAuth users
       avatar_url TEXT,
       two_factor_secret TEXT,
       two_factor_enabled BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
+      last_login DATETIME,
+      oauth_provider TEXT  -- Track OAuth provider (google, github, 42)
     )
   `, (err) => {
     if (err) {
@@ -43,6 +44,7 @@ function initializeDatabase(): void {
       // After creating table, check and add missing columns
       ensureColumnExists('users', 'two_factor_enabled', 'BOOLEAN DEFAULT FALSE');
       ensureColumnExists('users', 'avatar_url', 'TEXT');
+      ensureColumnExists('users', 'oauth_provider', 'TEXT');
     }
   });
 

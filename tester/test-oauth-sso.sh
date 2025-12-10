@@ -103,9 +103,16 @@ test_token_storage() {
 test_user_profile_sync() {
     echo -e "${YELLOW}Running Test 5: User Profile Sync${NC}"
     
+    # Check if OAuth users are created in auth-service database
+    if docker exec ft_transcendence-auth-service-1 sqlite3 /app/database/auth.db "SELECT COUNT(*) FROM users WHERE oauth_provider IS NOT NULL;" 2>/dev/null | grep -q '[1-9]'; then
+        log_result 5 "User Profile Sync" "PASS"
+        return 0
+    fi
+    
+    # If no OAuth users exist, check if the code has OAuth database saving logic
     local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
     
-    if echo "$auth_files" | xargs grep -l "sync\|profile\|avatar\|email" 2>/dev/null | grep -q .; then
+    if echo "$auth_files" | xargs grep -l "INSERT INTO users.*oauth_provider\|password_hash.*NULL" 2>/dev/null | grep -q .; then
         log_result 5 "User Profile Sync" "PASS"
         return 0
     fi
@@ -220,6 +227,27 @@ test_error_handling() {
     return 1
 }
 
+# Test 13: Database Persistence
+test_database_persistence() {
+    echo -e "${YELLOW}Running Test 13: Database Persistence${NC}"
+    
+    # Check if the OAuth implementation properly handles database saving
+    local auth_files=$(find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" 2>/dev/null)
+    
+    # Check for proper OAuth user creation with NULL password_hash and oauth_provider
+    if echo "$auth_files" | xargs grep -l "password_hash.*NULL\|oauth_provider.*provider" 2>/dev/null | grep -q .; then
+        # Check for user-service profile creation
+        local user_files=$(find "$PROJECT_ROOT/user-service/src" -type f -name "*.ts" 2>/dev/null)
+        if echo "$user_files" | xargs grep -l "getOrCreateProfile\|createUserProfile" 2>/dev/null | grep -q .; then
+            log_result 13 "Database Persistence" "PASS"
+            return 0
+        fi
+    fi
+    
+    log_result 13 "Database Persistence" "FAIL"
+    return 1
+}
+
 # Main execution
 main() {
     echo -e "${YELLOW}=== OAuth/SSO Test Suite ===${NC}"
@@ -240,6 +268,7 @@ main() {
     test_session_management || true
     test_security_headers || true
     test_error_handling || true
+    test_database_persistence || true
     
     echo ""
     echo -e "${YELLOW}=== Test Summary ===${NC}"

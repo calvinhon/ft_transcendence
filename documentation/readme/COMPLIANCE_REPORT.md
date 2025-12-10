@@ -1,17 +1,32 @@
 # FT_TRANSCENDENCE - Subject Compliance Report
 
 **Project:** ft_transcendence  
-**Status:** 125/125 Points ✅  
+**Status:** 125/125 Points ✅ (100% Compliance Achieved)  
 **Test Results:** 180/180 Tests Passing ✅  
 **Date:** December 10, 2025  
-**Version:** 16.2  
-**Architecture:** Microservices with SQLite (optimized, no external DB)
+**Subject Version:** 16.1  
+**Project Architecture:** Microservices with SQLite databases, Docker containerization, comprehensive monitoring and security
 
 ---
 
 ## Executive Summary
 
 This project achieves **100% compliance** with the ft_transcendence subject requirements (v16.1), implementing **7 major modules** (70 points) and **11 minor modules** (55 points) for a total of **125 points**. All mandatory requirements have been fulfilled with comprehensive testing demonstrating full functionality.
+
+### Subject Overview (from subject v16.1)
+This project involves creating a website for the mighty Pong contest, requiring implementation of unfamiliar technologies and adaptation skills. The project includes:
+- **Mandatory Part** (25 points): Core Pong game with basic requirements
+- **Modules** (100 points): Additional features divided into major (10 points each) and minor (5 points each) modules
+- **Minimum Requirement**: 7 major modules for 100% completion (2 minor modules count as 1 major module for minimum calculation)
+
+**Project Philosophy** (from subject preamble):
+"This project is a surprise. As you are reaching the end of your Common Core, you have developed strong adaptation and problem-solving skills. This project will confront you with -maybe- unknown technologies, intentionally. Once again, you will have to adapt, discover, explore, experiment to create the expected software."
+
+**Pedagogical Goals**:
+- Develop self-confidence in facing unfamiliar technologies
+- Practice adaptation and problem-solving skills
+- Experience real-world software development challenges
+- Learn to manage complex projects with multiple constraints
 
 ### Points Breakdown
 - **Mandatory Part:** 25 points ✅
@@ -2912,7 +2927,272 @@ GET http://localhost:9200/filebeat-*/_search
 
 ---
 
-## III. Testing Evidence
+## III. Feature Showcase & Manual Testing Guide
+
+This section provides step-by-step instructions for demonstrating and manually testing all implemented features during evaluation. The project uses Docker Compose for deployment and includes comprehensive test suites.
+
+### Prerequisites
+```bash
+# Start the complete system
+make start
+
+# Wait for all services to be healthy (check with)
+make health
+
+# Access the application at https://localhost (accept self-signed certificate)
+```
+
+### Mandatory Features Testing
+
+#### 1. Single-Page Application & Browser Navigation
+**Showcase:** Demonstrate SPA functionality with browser navigation
+```
+1. Open https://localhost in Firefox
+2. Navigate through different sections (Home → Game → Tournament → Profile)
+3. Use browser back/forward buttons - URL should change and content should update
+4. Refresh page - should maintain current route
+5. Direct URL access: https://localhost/game - should load game page directly
+```
+
+#### 2. HTTPS Security & WebSocket
+**Showcase:** Verify HTTPS enforcement and secure WebSocket connections
+```bash
+# Test HTTP redirect to HTTPS
+curl -i http://localhost
+# Expected: 301 redirect to https://localhost
+
+# Test HTTPS certificate
+curl -k https://localhost
+# Expected: 200 OK with HTML content
+
+# Test secure WebSocket in browser console
+# Open https://localhost/game, open DevTools Console:
+navigator.webSocket = WebSocket
+console.log(location.protocol) // "https:"
+# Game should connect via wss:// protocol
+```
+
+#### 3. Live Pong Game (Same Keyboard)
+**Showcase:** Two players using same keyboard
+```
+1. Navigate to https://localhost/game
+2. Select "Local Multiplayer" mode
+3. Player 1 uses W/S keys, Player 2 uses Arrow Up/Down
+4. Demonstrate ball physics, scoring, paddle movement
+5. Show game ends when reaching score limit
+```
+
+#### 4. Tournament System
+**Showcase:** Complete tournament workflow
+```
+1. Go to https://localhost/tournament
+2. Create new tournament (set max players, name)
+3. Register multiple players (use different accounts or aliases)
+4. Start tournament - verify bracket display
+5. Play matches - show progression through rounds
+6. Verify winner declaration and final standings
+```
+
+### Major Module Testing
+
+#### 5. Backend Framework (Fastify/Node.js)
+**Showcase:** API functionality and performance
+```bash
+# Test API endpoints
+curl -k https://localhost/api/auth/health
+curl -k https://localhost/api/game/health
+curl -k https://localhost/api/user/health
+curl -k https://localhost/api/tournament/health
+
+# Test WebSocket connection
+# Use browser DevTools Network tab to verify WSS connections
+```
+
+#### 6. Database (SQLite)
+**Showcase:** Data persistence across services
+```bash
+# Check database files exist
+docker exec ft_transcendence-auth-service-1 ls -la database/
+docker exec ft_transcendence-game-service-1 ls -la database/
+docker exec ft_transcendence-user-service-1 ls -la database/
+docker exec ft_transcendence-tournament-service-1 ls -la database/
+
+# Verify data persistence after restart
+make restart
+# Check that user accounts, game history, tournaments persist
+```
+
+#### 7. Blockchain Integration (Avalanche/Solidity)
+**Showcase:** Tournament scores on blockchain
+```bash
+# Check Hardhat network is running
+curl http://localhost:8545
+# Expected: {"jsonrpc":"2.0","id":null,"result":"0x..."}
+
+# Deploy contract (if not already deployed)
+cd blockchain && npx hardhat run scripts/deploy.js --network localhost
+
+# Record tournament result
+# Use tournament UI to complete a tournament
+# Check blockchain for recorded scores
+```
+
+#### 8. Standard User Management
+**Showcase:** Complete user lifecycle
+```
+1. Register new account at https://localhost/auth/register
+2. Login and update profile (username, avatar)
+3. Add friends and view friend list
+4. Check match history and statistics
+5. Update profile information
+```
+
+#### 9. Remote Authentication (OAuth)
+**Showcase:** Google OAuth login
+```
+1. Click "Sign in with Google" on login page
+2. Complete OAuth flow (may need Google credentials configured)
+3. Verify automatic account creation
+4. Check that OAuth users can access all features
+```
+
+#### 10. AI Opponent
+**Showcase:** Play against AI at different difficulty levels
+```
+1. Go to https://localhost/game
+2. Select "Play vs AI" mode
+3. Choose difficulty: Easy/Medium/Hard
+4. Demonstrate AI paddle movement and ball prediction
+5. Show AI can win occasionally (especially on Easy)
+```
+
+#### 11. Server-Side Pong
+**Showcase:** Server-side game logic
+```bash
+# Test game service API
+curl -k -X POST https://localhost/api/game/match \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "quick", "player1": "player1", "player2": "player2"}'
+
+# Verify WebSocket real-time updates
+# Monitor network traffic during gameplay
+```
+
+#### 12. Two-Factor Authentication (2FA) + JWT
+**Showcase:** 2FA setup and JWT authentication
+```
+1. Login to account
+2. Go to Profile → Security Settings
+3. Enable 2FA (scan QR code with authenticator app)
+4. Logout and login again - should require 2FA code
+5. Test JWT token expiration (tokens expire after 1 hour)
+```
+
+#### 13. WAF/ModSecurity + Vault
+**Showcase:** Security protections
+```bash
+# Test WAF blocks malicious requests
+curl -k "https://localhost/api/auth/login?<script>alert('xss')</script>"
+# Expected: 403 Forbidden
+
+# Test SQL injection protection
+curl -k -X POST https://localhost/api/auth/login \
+  -d "username=admin' OR '1'='1&password="
+# Expected: 403 Forbidden or validation error
+
+# Check Vault secrets management
+docker logs ft_transcendence-vault-server-1
+```
+
+#### 14. GDPR Compliance
+**Showcase:** Data privacy features
+```
+1. Login to account
+2. Go to Profile → Privacy Settings
+3. Request data export/download
+4. Test account deletion (creates backup, anonymizes data)
+5. Verify data anonymization in database
+```
+
+#### 15. ELK Stack Logging
+**Showcase:** Centralized logging
+```
+1. Access Kibana at http://localhost:5601
+2. Create index pattern for ft_transcendence logs
+3. Search for application logs
+4. Show log correlation across services
+5. Demonstrate log analysis and filtering
+```
+
+#### 16. Monitoring (Prometheus/Grafana)
+**Showcase:** System monitoring
+```
+1. Access Grafana at http://localhost:3000 (admin/admin)
+2. View pre-configured dashboards
+3. Show service health metrics
+4. Demonstrate alerting capabilities
+5. Check Prometheus at http://localhost:9090/targets
+```
+
+#### 17. Microservices Architecture
+**Showcase:** Service independence and communication
+```bash
+# Test service isolation
+docker stop ft_transcendence-user-service-1
+# Other services should continue functioning
+make health
+
+# Test inter-service communication
+# Create tournament → should call auth-service for user validation
+# Play game → should update user-service with statistics
+```
+
+#### 18. User & Game Stats Dashboards
+**Showcase:** Statistics visualization
+```
+1. Login and play several games
+2. Go to Profile → Statistics
+3. View win/loss ratio, total games played
+4. Check leaderboard rankings
+5. View detailed match history
+```
+
+### Automated Testing
+```bash
+# Run complete test suite
+make test
+# Expected: 180/180 tests passing
+
+# Run specific test categories
+./tester/test-backend-framework.sh
+./tester/test-gdpr-compliance.sh
+./tester/test-monitoring.sh
+./tester/test-elk-logging.sh
+```
+
+### Performance Testing
+```bash
+# Load testing (requires additional tools)
+# Test concurrent users playing games
+# Verify WebSocket performance under load
+# Check database performance with multiple tournaments
+```
+
+### Security Testing
+```bash
+# Penetration testing
+./tester/test-security.sh
+
+# Certificate validation
+openssl s_client -connect localhost:443 -servername localhost
+
+# CORS testing
+curl -k -H "Origin: https://evil.com" https://localhost/api/auth/health
+```
+
+---
+
+## IV. Testing Evidence
 
 ### Test Execution Summary
 
@@ -2978,7 +3258,7 @@ All test results are documented in:
 
 ---
 
-## IV. Technical Architecture
+## V. Technical Architecture
 
 ### System Overview
 
@@ -3075,7 +3355,7 @@ All test results are documented in:
 
 ---
 
-## V. Code Metrics
+## VI. Code Metrics
 
 ### Lines of Code by Component
 
@@ -3126,7 +3406,7 @@ ft_transcendence/
 
 ---
 
-## VI. Deployment Instructions
+## VII. Deployment Instructions
 
 ### Prerequisites
 
@@ -3199,7 +3479,7 @@ VAULT_ADDR=http://vault:8200
 
 ---
 
-## VII. Evaluation Guide
+## VIII. Evaluation Guide
 
 ### How to Test Each Module
 
@@ -3345,7 +3625,7 @@ cd tester
 
 ---
 
-## VIII. Subject Compliance Matrix
+## IX. Subject Compliance Matrix
 
 | Requirement | Status | Evidence | Test |
 |-------------|--------|----------|------|
@@ -3384,7 +3664,7 @@ cd tester
 
 ---
 
-## IX. Known Limitations & Future Improvements
+## X. Known Limitations & Future Improvements
 
 ### Current Limitations
 
@@ -3406,7 +3686,7 @@ cd tester
 
 ---
 
-## X. Conclusion
+## XI. Conclusion
 
 This ft_transcendence project successfully implements **all mandatory requirements** and **18 optional modules** for a total of **125/125 points** (100% compliance).
 
