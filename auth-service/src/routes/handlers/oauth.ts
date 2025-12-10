@@ -120,9 +120,9 @@ export async function oauthCallbackHandler(
  * Ensure user profile exists in user-service database
  */
 async function createUserProfileInUserService(userId: number, userInfo: any): Promise<void> {
+  const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user:3000';
+  
   try {
-    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3003';
-    
     // Try to get existing profile first
     const getResponse = await axios.get(`${userServiceUrl}/api/user/profile/${userId}`, {
       timeout: 5000 // 5 second timeout
