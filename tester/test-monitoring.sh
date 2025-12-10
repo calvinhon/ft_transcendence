@@ -201,8 +201,8 @@ test_visualization() {
 test_data_retention() {
     echo -e "${YELLOW}Running Test 12: Data Retention${NC}"
     
-    # Check Prometheus configuration for retention
-    if grep -q "retention\|storage" "$PROJECT_ROOT/prometheus/prometheus.yml"; then
+    # Check Prometheus configuration for retention (in yml or docker-compose)
+    if grep -q "retention\|storage" "$PROJECT_ROOT/prometheus/prometheus.yml" || grep -q "retention" "$PROJECT_ROOT/docker-compose.yml"; then
         log_result 12 "Data Retention" "PASS"
         return 0
     fi

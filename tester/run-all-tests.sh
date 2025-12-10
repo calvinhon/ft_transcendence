@@ -67,7 +67,7 @@ run_test_module() {
 main() {
     echo -e "${YELLOW}╔════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${YELLOW}║        FT_TRANSCENDENCE - COMPREHENSIVE TEST SUITE         ║${NC}"
-    echo -e "${YELLOW}║              15 Modules, 156 Total Tests                   ║${NC}"
+    echo -e "${YELLOW}║              15 Modules, 180 Total Tests                   ║${NC}"
     echo -e "${YELLOW}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     

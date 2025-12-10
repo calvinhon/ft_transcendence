@@ -1,8 +1,8 @@
 # FT_TRANSCENDENCE - Comprehensive Evaluation Guide
 
 **Purpose:** Complete step-by-step verification of all 18 modules (125 points) for evaluators  
-**Version:** 2.0.0 (Enhanced with Detailed Verification Instructions)  
-**Date:** December 8, 2025  
+**Version:** 2.0.1 (Updated for current working state)  
+**Date:** December 10, 2025  
 **Total Points:** 125/125 ✅  
 **Architecture:** Microservices with SQLite + Blockchain + ELK Stack + Monitoring  
 **Evaluation Time:** ~2 hours for comprehensive verification
@@ -23,21 +23,21 @@ make start  # This starts all 13 services including monitoring
 # Check all containers
 docker compose ps
 
-# Expected Output:
-# NAME                          STATUS
-# elasticsearch                 Up (healthy)
-# hardhat-node                  Up (healthy)  
-# auth-service                  Up (healthy)
-# game-service                  Up (healthy)
-# user-service                  Up (healthy)
-# tournament-service            Up (healthy)
-# frontend (nginx)              Up
-# prometheus                    Up
-# grafana                       Up
-# vault-server                  Up
-# filebeat                      Up
-# kibana                        Up
-# ssr-service                   Up
+# Expected Output (actual status as of Dec 10, 2025):
+# NAME            STATUS
+# auth            Up
+# elasticsearch   Up (healthy)
+# filebeat        Up
+# game            Up
+# grafana         Up (healthy)
+# hardhat-node    Up (healthy)
+# kibana          Up (healthy)
+# nginx           Up
+# prometheus      Up (unhealthy)
+# ssr             Up
+# tournament      Up
+# user            Up
+# vault-server    Up
 ```
 
 ### Quick Manual Tests (5 minutes)
@@ -75,7 +75,7 @@ curl http://localhost:3000/api/health
 # 1. Clone and navigate to project
 git clone <repo-url>
 cd ft_transcendence
-git checkout debug/finalizing
+git checkout debug/evaluating
 
 # 2. Clean start (remove any stale databases)
 docker compose down -v --remove-orphans
@@ -89,12 +89,13 @@ make start
 
 # 4. Wait for full initialization (2-3 minutes)
 # Watch logs for "Connected to SQLite database" messages
-docker compose logs -f auth
+docker compose logs -f auth-service
 
 # 5. Verify login endpoint works (should return "Invalid credentials", not 500)
-curl -X POST http://localhost/api/auth/login \
+curl -X POST https://localhost/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"test"}'
+  -d '{"username":"test","password":"test"}' \
+  --insecure
 
 # Expected response: {"success":false,"error":"Invalid credentials"}
 # NOT: {"error":"Internal server error"}
@@ -1915,7 +1916,7 @@ docker exec ft_transcendence-nginx-1 ls /etc/nginx/modsecurity/rules/
 
 ```bash
 # Test SQL Injection detection
-curl "http://localhost/api/user/profile?id=1' OR '1'='1"
+curl "https://localhost/api/user/profile?id=1' OR '1'='1" --insecure
 
 # Expected: 403 Forbidden
 # {"error":"Request blocked by security policy"}
@@ -2425,9 +2426,9 @@ docker exec ft_transcendence-nginx-1 cat /etc/nginx/nginx.conf | grep -A 5 "loca
 # }
 
 # Test routing
-curl http://localhost/api/auth/health   # Routes to auth-service:3000
-curl http://localhost/api/game/health   # Routes to game-service:3000
-curl http://localhost/api/user/health   # Routes to user-service:3000
+curl https://localhost/api/auth/health --insecure   # Routes to auth-service:3000
+curl https://localhost/api/game/health --insecure   # Routes to game-service:3000
+curl https://localhost/api/user/health --insecure   # Routes to user-service:3000
 ```
 
 #### 14.4 Service Communication
@@ -2867,8 +2868,8 @@ function ensureColumnExists(table: string, column: string, type: string)
 docker compose down -v
 docker compose up -d
 # Wait 2-3 minutes for services to initialize
-curl http://localhost/api/auth/login -X POST -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"test"}'
+curl https://localhost/api/auth/login -X POST -H "Content-Type: application/json" \
+  -d '{"username":"test","password":"test"}' --insecure
 
 # Option 2: Delete just the auth database
 docker stop auth

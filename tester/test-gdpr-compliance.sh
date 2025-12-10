@@ -166,7 +166,7 @@ test_right_to_be_forgotten() {
 test_privacy_policy() {
     echo -e "${YELLOW}Running Test 9: Privacy Policy Compliance${NC}"
     
-    if [ -f "$PROJECT_ROOT/documentation/GDPR_IMPLEMENTATION.md" ]; then
+    if [ -f "$PROJECT_ROOT/documentation/readme/GDPR_IMPLEMENTATION.md" ]; then
         log_result 9 "Privacy Policy Compliance" "PASS"
         return 0
     fi
