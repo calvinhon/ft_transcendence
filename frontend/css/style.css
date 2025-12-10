@@ -79,7 +79,7 @@ body {
   height: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  transform-origin: top left;
+  transform-origin: center center;
   background: var(--bg-primary);
   visibility: hidden;
   display: flex;
