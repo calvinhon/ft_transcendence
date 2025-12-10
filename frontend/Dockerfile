@@ -77,6 +77,9 @@ COPY --from=waf /opt/modsec /etc/nginx/modsec
 COPY nginx/certs /etc/nginx/certs
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
+# Remove default nginx config to avoid conflicts
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 RUN apk add --no-cache yajl libstdc++ libmaxminddb-libs lmdb libxml2 pcre
 
 EXPOSE 80 443
