@@ -109,20 +109,18 @@ services:
       retries: 3
       start_period: 20s
 
-  vault:
-    image: hashicorp/vault:latest
-    container_name: vault-server
+  vault-service:
+    build: ./vault
+    container_name: vault-service
     ports:
       - "8200:8200"
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=dev-token
-      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
-      - VAULT_ADDR=http://127.0.0.1:8200
     volumes:
-      - vault-data:/vault/data
-      - ./vault/config.hcl:/vault/config.hcl:ro
+      - ./vault/config:/vault/config
+      - ./vault/data:/vault/data
     cap_add:
       - IPC_LOCK
+    env_file:
+      - .env
     mem_limit: 256m
     networks:
       - transcendence-network
@@ -134,16 +132,13 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - vault
+      - vault-service
       - auth-service
       - game-service
       - tournament-service
       - user-service
       - ssr-service
       - hardhat-node
-    environment:
-      - VAULT_ADDR=http://vault:8200
-      - VAULT_TOKEN=dev-token
     mem_limit: 128m
     networks:
       - transcendence-network
@@ -159,13 +154,8 @@ services:
       - PORT=3000
       - SERVICE_NAME=auth-service
       - NODE_ENV=development
-      - SCHOOL42_CLIENT_ID=${SCHOOL42_CLIENT_ID}
-      - SCHOOL42_CLIENT_SECRET=${SCHOOL42_CLIENT_SECRET}
-      - SCHOOL42_CALLBACK_URL=${SCHOOL42_CALLBACK_URL}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
-      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
+    env_file:
+      - .env
     mem_limit: 256m
     networks:
       - transcendence-network
@@ -255,9 +245,4 @@ volumes:
   elasticsearch-data:
   prometheus-data:
   grafana-data:
-  vault-data:
-  auth-db:
-  games-db:
-  tournaments-db:
-  users-db:
   hardhat-data:

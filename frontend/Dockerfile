@@ -21,7 +21,7 @@ RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || ec
 
 FROM alpine:3.17 AS waf
 
-ENV NGINX_VERSION=1.29.3
+ENV NGINX_VERSION=1.29.4
 ENV MODSEC_TAG=v3.0.14
 ENV OWASP_TAG=v3.3.4
 
@@ -58,9 +58,7 @@ RUN echo "Setting up ModSecurity" && \
 
 
 # Production stage
-FROM nginx:1.29.3-alpine
-
-ENV NGINX_VERSION=1.29.3
+FROM nginx:alpine
 
 # Create the www-data user and group for nginx to use
 RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true
