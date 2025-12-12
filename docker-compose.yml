@@ -109,9 +109,9 @@ services:
       retries: 3
       start_period: 20s
 
-  vault-service:
+  vault:
     build: ./vault
-    container_name: vault-service
+    container_name: vault
     ports:
       - "8200:8200"
     volumes:
@@ -119,20 +119,22 @@ services:
       - ./vault/data:/vault/data
     cap_add:
       - IPC_LOCK
+    environment:
+      - VAULT_ADDR=http://127.0.0.1:8200
     env_file:
       - .env
     mem_limit: 256m
     networks:
       - transcendence-network
 
-  nginx:
+  frontend:
     build: ./frontend
-    container_name: nginx
+    container_name: frontend
     ports:
       - "80:80"
       - "443:443"
     depends_on:
-      - vault-service
+      - vault
       - auth-service
       - game-service
       - tournament-service
@@ -154,6 +156,8 @@ services:
       - PORT=3000
       - SERVICE_NAME=auth-service
       - NODE_ENV=development
+      - VAULT_ADDR=http://vault:8200
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     env_file:
       - .env
     mem_limit: 256m

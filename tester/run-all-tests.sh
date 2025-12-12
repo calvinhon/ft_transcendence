@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Master Test Runner
-# Executes all 12 module test suites
-# Date: December 5, 2025
+# Executes all 15 module test suites with full stack validation
+# Date: December 13, 2025
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -22,6 +22,40 @@ echo "" >> "$MASTER_RESULTS"
 echo "Date: $(date)" >> "$MASTER_RESULTS"
 echo "Project: FT_Transcendence" >> "$MASTER_RESULTS"
 echo "" >> "$MASTER_RESULTS"
+
+# Check if containers are running (full stack validation)
+echo -e "${YELLOW}Checking container status...${NC}"
+CONTAINERS=(
+    "auth"
+    "game"
+    "tournament"
+    "user"
+    "vault"
+    "hardhat-node"
+    "frontend"
+    "ssr"
+    "elasticsearch"
+    "kibana"
+    "filebeat"
+    "prometheus"
+    "grafana"
+)
+
+ALL_RUNNING=true
+for container in "${CONTAINERS[@]}"; do
+    if ! docker ps --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo -e "${RED}✗ Container not running: ${container}${NC}"
+        ALL_RUNNING=false
+    else
+        echo -e "${GREEN}✓ Running: ${container}${NC}"
+    fi
+done
+
+if [ "$ALL_RUNNING" = false ]; then
+    echo -e "${RED}Please start all containers first: make full-start${NC}"
+    exit 1
+fi
+echo ""
 
 # Test tracking
 TOTAL_TESTS=0
@@ -138,7 +172,7 @@ main() {
     if [ "$fail_count" -eq 0 ] && [ "$missing_count" -eq 0 ]; then
         echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${GREEN}║                   ALL TESTS PASSED! ✓                      ║${NC}"
-        echo -e "${GREEN}║              12/12 Modules - 100% Complete                 ║${NC}"
+        echo -e "${GREEN}║              15/15 Modules - 100% Complete                 ║${NC}"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
         EXIT_CODE=0
     else

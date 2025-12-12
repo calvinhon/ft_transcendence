@@ -56,7 +56,7 @@ test_modsecurity_configuration() {
 test_vault_initialization() {
     echo -e "${YELLOW}Running Test 2: Vault Initialization${NC}"
     
-    if [ -f "$PROJECT_ROOT/vault/init.sh" ] && [ -f "$PROJECT_ROOT/vault/config.hcl" ]; then
+    if [ -f "$PROJECT_ROOT/vault/config/config.hcl" ] && [ -f "$PROJECT_ROOT/vault/unseal.sh" ]; then
         log_result 2 "Vault Initialization" "PASS"
         return 0
     fi

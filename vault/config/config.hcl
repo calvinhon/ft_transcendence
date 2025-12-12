@@ -16,13 +16,11 @@ storage "raft" {
 # For real production, you would provide cert_file and key_file.
 listener "tcp" {
   address     = "0.0.0.0:8200"
-  tls_disable = "false"
-  tls_cert_file = "/vault/certs/vault-cert.pem"
-  tls_key_file = "/vault/certs/vault-key.pem"
+  tls_disable = "true"
 }
 
 # API Address - address to advertise to other cluster members
-api_addr = "https://localhost:8200"
+api_addr = "http://localhost:8200"
 
 # Cluster Address - address for cluster-to-cluster communication
 cluster_addr = "http://127.0.0.1:8201"

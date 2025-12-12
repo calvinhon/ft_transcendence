@@ -1,7 +1,6 @@
 FROM alpine:latest
 
 ENV VERSION=1.21.1
-ENV VAULT_ADDR=https://127.0.0.1:8200
 ENV VAULT_SKIP_VERIFY=true
 
 RUN apk add --update --virtual .deps --no-cache gnupg ca-certificates openssl && \

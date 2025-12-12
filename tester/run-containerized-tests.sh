@@ -27,7 +27,15 @@ CONTAINERS=(
     "game"
     "tournament"
     "user"
+    "vault"
+    "hardhat-node"
+    "frontend"
     "ssr"
+    "elasticsearch"
+    "kibana"
+    "filebeat"
+    "prometheus"
+    "grafana"
 )
 
 ALL_RUNNING=true
@@ -41,7 +49,7 @@ for container in "${CONTAINERS[@]}"; do
 done
 
 if [ "$ALL_RUNNING" = false ]; then
-    echo -e "${RED}Please start all containers first: make start${NC}"
+    echo -e "${RED}Please start all containers first: make full-start${NC}"
     exit 1
 fi
 

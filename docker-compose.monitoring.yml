@@ -7,7 +7,7 @@ services:
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - xpack.security.enabled=false
       - xpack.monitoring.collection.enabled=true
     ports:
@@ -15,15 +15,15 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-    mem_limit: 1024m
+    mem_limit: 2048m
     networks:
       - transcendence-network
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.0
@@ -83,7 +83,7 @@ services:
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9090/-/healthy | grep -q Healthy || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3

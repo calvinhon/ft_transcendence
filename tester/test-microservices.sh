@@ -96,8 +96,11 @@ test_api_gateway() {
 test_load_balancing() {
     echo -e "${YELLOW}Running Test 4: Load Balancing${NC}"
     
-    # Check docker compose for nginx (gateway/load balancer) or multiple service instances
+    # Check for nginx configuration (either as separate service or mounted in frontend)
     if [ -f "$PROJECT_ROOT/docker-compose.yml" ] && grep -q "nginx\|gateway\|proxy" "$PROJECT_ROOT/docker-compose.yml" 2>/dev/null; then
+        log_result 4 "Load Balancing" "PASS"
+        return 0
+    elif [ -f "$PROJECT_ROOT/frontend/nginx/nginx.conf" ]; then
         log_result 4 "Load Balancing" "PASS"
         return 0
     fi

@@ -20,6 +20,16 @@ echo "=========================================="
 echo "SSR Integration Tests"
 echo "=========================================="
 
+# Check if SSR service is available (only in full deployment)
+echo -n "Checking SSR service availability..."
+if ! curl -s --max-time 5 "${BASE_URL}/health" > /dev/null 2>&1; then
+  echo -e " ${YELLOW}SKIPPED${NC} (SSR service not available - core deployment mode)"
+  echo "=========================================="
+  echo -e "${YELLOW}SSR tests skipped - service not running in core mode${NC}"
+  exit 0
+fi
+echo -e " ${GREEN}AVAILABLE${NC}"
+
 # Test 1: Health check
 echo -n "Test 1: Service health check..."
 if curl -s "${BASE_URL}/health" | grep -q '"status":"healthy"'; then

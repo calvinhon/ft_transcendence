@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Set the correct Vault address for unsealing
+export VAULT_ADDR=http://127.0.0.1:8200
+
 # Send the server into the background
 vault server -config=/vault/config/config.hcl &
 
