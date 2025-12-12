@@ -4,6 +4,56 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { config } from '../../utils/config';
 import { getQuery, runQuery } from '../../utils/database';
+// Hoach Edited
+// Vault client setup
+const vault = require('node-vault')({
+  endpoint: process.env.VAULT_ADDR || 'https://vault-service:8200',
+  token: process.env.VAULT_TOKEN,
+  tls: {
+    rejectUnauthorized: false // Skip TLS verification for self-signed cert
+  }
+});
+
+// Cache for OAuth secrets (avoid repeated Vault calls)
+let oauthSecrets: any = null;
+
+/**
+ * Load OAuth secrets from Vault
+ */
+async function loadOAuthSecrets(): Promise<void> {
+  if (oauthSecrets) return; // Use cache if available
+
+  try {
+    console.log('🔐 Loading OAuth secrets from Vault...');
+
+    // Load all OAuth provider secrets
+    const [school42, google, github] = await Promise.all([
+      vault.read('kv/data/oauth/42school'),
+      vault.read('kv/data/oauth/google'),
+      vault.read('kv/data/oauth/github')
+    ]);
+
+    oauthSecrets = {
+      school42: {
+        client_id: school42.data.data.school42_client_id,
+        client_secret: school42.data.data.school42_client_secret
+      },
+      google: {
+        client_id: google.data.data.google_client_id,
+        client_secret: google.data.data.google_client_secret
+      },
+      github: {
+        client_id: github.data.data.github_client_id,
+        client_secret: github.data.data.github_client_secret
+      }
+    };
+
+    console.log('✅ OAuth secrets loaded from Vault');
+  } catch (error) {
+    console.error('❌ Failed to load OAuth secrets from Vault:', error);
+    throw error;
+  }
+}
 
 /**
  * OAuth callback handler - receives authorization code from OAuth provider
@@ -22,7 +72,13 @@ export async function oauthCallbackHandler(
   try {
     const { code, state, provider } = request.query;
 
-    if (!code || !provider) {
+    // Handle provider detection for 42 School (encoded in state)
+    let actualProvider = provider;
+    if (!actualProvider && state && state.startsWith('42_')) {
+      actualProvider = '42';
+    }
+
+    if (!code || !actualProvider) {
       reply.status(400).send({ error: 'Missing code or provider' });
       return;
     }
@@ -30,11 +86,11 @@ export async function oauthCallbackHandler(
     let userInfo: any;
 
     // Handle different OAuth providers
-    if (provider === '42') {
+    if (actualProvider === '42') {
       userInfo = await exchange42Code(code);
-    } else if (provider === 'google') {
+    } else if (actualProvider === 'google') {
       userInfo = await exchangeGoogleCode(code);
-    } else if (provider === 'github') {
+    } else if (actualProvider === 'github') {
       userInfo = await exchangeGithubCode(code);
     } else {
       reply.status(400).send({ error: 'Unsupported provider' });
@@ -99,19 +155,19 @@ export async function oauthCallbackHandler(
     // Set secure HTTP-only cookie
     reply.setCookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always use secure cookies since we use HTTPS
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 // 7 days
     });
 
     // Redirect to frontend with success parameters
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost';
-    console.log(`✅ OAuth success for provider ${provider}, user: ${user.username}, redirecting to: ${frontendUrl}?code=success&provider=${provider}`);
-    reply.redirect(`${frontendUrl}?code=success&provider=${provider}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'https://localhost';
+    console.log(`✅ OAuth success for provider ${actualProvider}, user: ${user.username}, redirecting to: ${frontendUrl}?code=success&provider=${actualProvider}`);
+    reply.redirect(`${frontendUrl}?code=success&provider=${actualProvider}`);
   } catch (err) {
     console.error('❌ OAuth callback error:', err);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://localhost';
     reply.redirect(`${frontendUrl}?code=error&message=${encodeURIComponent((err as Error).message)}`);
   }
 }
@@ -164,13 +220,16 @@ async function createUserProfileInUserService(userId: number, userInfo: any): Pr
  */
 async function exchange42Code(code: string): Promise<any> {
   try {
-    const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=42`;
+    // Load secrets from Vault if not cached
+    await loadOAuthSecrets();
+
+    const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=42`;
     console.log(`🔄 Exchanging 42 code for token, callback URL: ${callbackUrl}`);
     
-    const response = await axios.post('https://api.intra.42.fr/oauth/token', {
+    const response = await axios.post('https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/token', {
       code,
-      client_id: process.env.SCHOOL42_CLIENT_ID,
-      client_secret: process.env.SCHOOL42_CLIENT_SECRET,
+      client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
+      client_secret: oauthSecrets.school42.client_secret, // 🔐 FROM VAULT
       redirect_uri: callbackUrl,
       grant_type: 'authorization_code'
     });
@@ -179,7 +238,7 @@ async function exchange42Code(code: string): Promise<any> {
     console.log(`✅ Got 42 access token`);
 
     // Get user info from 42 API
-    const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
+    const userResponse = await axios.get('https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/userinfo', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
 
@@ -205,11 +264,15 @@ async function exchange42Code(code: string): Promise<any> {
  */
 async function exchangeGoogleCode(code: string): Promise<any> {
   console.log('🔄 Exchanging Google authorization code...');
-  const callbackUrl = `${process.env.GOOGLE_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=google`;
+
+  // Load secrets from Vault if not cached
+  await loadOAuthSecrets();
+
+  const callbackUrl = `${process.env.GOOGLE_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=google`;
   const response = await axios.post('https://oauth2.googleapis.com/token', {
     code,
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    client_secret: process.env.GOOGLE_CLIENT_SECRET,
+    client_id: oauthSecrets.google.client_id,        // 🔐 FROM VAULT
+    client_secret: oauthSecrets.google.client_secret, // 🔐 FROM VAULT
     redirect_uri: callbackUrl,
     grant_type: 'authorization_code'
   });
@@ -239,11 +302,15 @@ async function exchangeGoogleCode(code: string): Promise<any> {
  */
 async function exchangeGithubCode(code: string): Promise<any> {
   console.log('🔄 Exchanging GitHub authorization code...');
-  const callbackUrl = `${process.env.GITHUB_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=github`;
+
+  // Load secrets from Vault if not cached
+  await loadOAuthSecrets();
+
+  const callbackUrl = `${process.env.GITHUB_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=github`;
   const response = await axios.post('https://github.com/login/oauth/access_token', {
     code,
-    client_id: process.env.GITHUB_CLIENT_ID,
-    client_secret: process.env.GITHUB_CLIENT_SECRET,
+    client_id: oauthSecrets.github.client_id,        // 🔐 FROM VAULT
+    client_secret: oauthSecrets.github.client_secret, // 🔐 FROM VAULT
     redirect_uri: callbackUrl
   }, {
     headers: { Accept: 'application/json' }
@@ -301,33 +368,36 @@ export async function oauthInitHandler(
       return;
     }
 
-    // Generate state for CSRF protection
-    const state = Math.random().toString(36).substring(7);
+    // Load OAuth secrets from Vault if not cached
+    await loadOAuthSecrets();
+
+    // Generate state for CSRF protection (include provider for 42 School)
+    const state = provider === '42' ? `42_${Math.random().toString(36).substring(7)}` : Math.random().toString(36).substring(7);
 
     let authUrl: string;
 
     if (provider === '42') {
-      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=42`;
-      authUrl = `https://api.intra.42.fr/oauth/authorize?${new URLSearchParams({
-        client_id: process.env.SCHOOL42_CLIENT_ID || '',
+      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=42`;
+      authUrl = `https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/auth?${new URLSearchParams({
+        client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
         response_type: 'code',
-        scope: 'public',
+        scope: 'openid profile email',
         state
       }).toString()}`;
     } else if (provider === 'google') {
-      const callbackUrl = `${process.env.GOOGLE_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=google`;
+      const callbackUrl = `${process.env.GOOGLE_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=google`;
       authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_id: oauthSecrets.google.client_id,          // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
         response_type: 'code',
         scope: 'openid profile email',
         state
       }).toString()}`;
     } else if (provider === 'github') {
-      const callbackUrl = `${process.env.GITHUB_CALLBACK_URL || 'http://localhost/api/auth/oauth/callback'}?provider=github`;
+      const callbackUrl = `${process.env.GITHUB_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=github`;
       authUrl = `https://github.com/login/oauth/authorize?${new URLSearchParams({
-        client_id: process.env.GITHUB_CLIENT_ID || '',
+        client_id: oauthSecrets.github.client_id,          // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
         scope: 'user:email',
         state
