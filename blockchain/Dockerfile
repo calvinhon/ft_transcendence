@@ -6,18 +6,15 @@ COPY package*.json ./
 
 RUN npm install
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl bash
 
 COPY hardhat.config.cjs ./
 COPY contracts ./contracts
 COPY scripts ./scripts
-COPY entrypoint.sh ./
 # COPY test ./test
-
-RUN chmod +x entrypoint.sh
 
 RUN mkdir -p /app/data /app/deployments
 
 EXPOSE 8545
 
-CMD ["./entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]

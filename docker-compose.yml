@@ -69,43 +69,20 @@ services:
     container_name: blockchain
     ports:
       - "8545:8545"
-    command: ["sh", "-c", "npx hardhat node --hostname 0.0.0.0 --port 8545"]
+    command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
-      - ./blockchain/artifacts:/app/artifacts
-      - ./blockchain/deployments:/app/deployments
     networks:
       - transcendence-network
     healthcheck:
       test:
         - CMD-SHELL
-        - |
-          curl -fsS http://localhost:8545 >/dev/null \
-          && test -f /app/deployments/contract-address.json
-      interval: 10s
-      timeout: 5s
+        - curl -fsS http://127.0.0.1:8545 || exit 1
+      interval: 5s
+      timeout: 3s
       retries: 5
-
-  explorer:
-    build: ./explorer
-    container_name: explorer
-    ports:
-      - "3000:3000"
-    environment:
-      - ETHERNAL_EMAIL=hmmc42@gmail.com
-      - ETHERNAL_PASSWORD=42isAwesome!
-      - ETHERNAL_WORKSPACE=pong-blockchain
-    entrypoint: ["sh", "-c"]
-    command: "ethernal listen --rpc http://blockchain:8545 --workspace pong-blockchain"
-    volumes:
-      - ethernal-data:/app/data
-    depends_on:
-      blockchain:
-        condition: service_healthy
-    networks:
-      - transcendence-network
 
   blockchain-deploy:
     build: ./blockchain
@@ -113,9 +90,11 @@ services:
       blockchain:
         condition: service_healthy
     working_dir: /app
-    volumes:
-      - ./blockchain:/app
-    entrypoint: [ "sh", "-c" ]
+    volumes: 
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
     command: "npx hardhat run scripts/deploy.ts --network docker"
     networks:
       - transcendence-network
@@ -142,16 +121,6 @@ services:
     networks:
       - transcendence-network
 
-  party-service:
-    build: ./party-service
-    ports:
-      - "3006:3000"
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=party-service
-    networks:
-      - transcendence-network
-
 networks:
   transcendence-network:
     driver: bridge
@@ -162,4 +131,3 @@ volumes:
   tournaments-db:
   users-db:
   hardhat-data:
-  ethernal-data:

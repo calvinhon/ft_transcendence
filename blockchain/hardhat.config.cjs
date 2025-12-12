@@ -5,8 +5,8 @@ const config = {
   defaultNetwork: "docker",
   networks: {
     docker: { 
-      url: "http://blockchain:8545",
-      chainId: 1337
+      url: "http://blockchain:8545", 
+      chainId: 31337
     }
   }
 };
