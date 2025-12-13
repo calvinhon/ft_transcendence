@@ -94,11 +94,17 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/entrypoint.sh:/entrypoint.sh:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+    env_file:
+      - .env
+    entrypoint: ["/entrypoint.sh"]
     depends_on:
       - prometheus
+      - vault
     mem_limit: 512m
     networks:
       - transcendence-network
