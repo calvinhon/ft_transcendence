@@ -1,3 +1,4 @@
+// cli-client/src/ui/game-display.ts
 import chalk from 'chalk';
 import { GameState } from '../api/client.js';
 

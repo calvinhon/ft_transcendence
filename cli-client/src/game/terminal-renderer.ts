@@ -1,3 +1,4 @@
+// cli-client/src/game/terminal-renderer.ts
 import chalk from 'chalk';
 
 interface GameState {

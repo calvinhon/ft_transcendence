@@ -1,3 +1,4 @@
+// frontend/src/router.ts
 // SPA routing logic
 import { Route } from './types';
 

@@ -1,3 +1,4 @@
+// cli-client/src/commands/login.ts
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { gameClient } from '../api/client.js';

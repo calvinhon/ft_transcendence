@@ -1,3 +1,4 @@
+// frontend/src/core/playerService.ts
 // Wrapper service for PlayerManager (migration bridge)
 import { playerManager as existingPlayerManager } from '../managers/PlayerManager';
 

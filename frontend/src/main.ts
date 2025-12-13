@@ -1,3 +1,4 @@
+// frontend/src/main.ts
 // App entry point and initialization
 import { Router } from './router';
 import { handleHostLogin, handleHostRegister } from './host-auth';

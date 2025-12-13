@@ -1,3 +1,4 @@
+// frontend/src/types.ts
 // Add GameSettings interface for shared use
 export interface GameSettings {
   gameMode: 'coop' | 'arcade' | 'tournament';

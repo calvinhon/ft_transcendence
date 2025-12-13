@@ -1,3 +1,4 @@
+// frontend/src/blockchain.ts
 import { showToast } from './toast';
 // Stub file - blockchain module
 // frontend/src/blockchain.ts - TypeScript version of blockchain manager

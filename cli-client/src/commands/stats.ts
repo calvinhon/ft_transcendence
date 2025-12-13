@@ -1,3 +1,4 @@
+// cli-client/src/commands/stats.ts
 import chalk from 'chalk';
 import { table as createTable } from 'table';
 import { gameClient } from '../api/client.js';

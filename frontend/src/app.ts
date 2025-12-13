@@ -1,3 +1,4 @@
+// frontend/src/app.ts
 import { showToast } from './toast';
 
 // Type definitions moved to types.ts

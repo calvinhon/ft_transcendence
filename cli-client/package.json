@@ -4,7 +4,7 @@
   "description": "Terminal-based Pong game client",
   "main": "dist/index.js",
   "bin": {
-    "pong": "dist/index.js"
+    "pong": "cli.js"
   },
   "type": "module",
   "scripts": {

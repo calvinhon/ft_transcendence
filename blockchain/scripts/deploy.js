@@ -1,3 +1,4 @@
+// blockchain/scripts/deploy.js
 import { ethers } from "hardhat";
 
 /**

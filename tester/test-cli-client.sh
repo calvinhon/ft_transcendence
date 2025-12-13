@@ -125,17 +125,17 @@ fi
 print_test 6 "TypeScript Compilation"
 
 # Auto-build if not present
-if [ ! -d "$CLI_DIR/dist" ] || [ ! -f "$CLI_DIR/dist/index.js" ]; then
+if [ ! -d "$CLI_DIR/dist" ] || [ ! -f "$CLI_DIR/dist/index.js" ] || [ ! -f "$CLI_DIR/cli.js" ]; then
     echo "  Building TypeScript..."
     (cd "$CLI_DIR" && npm run build --silent) > /dev/null 2>&1 || true
 fi
 
-if [ -d "$CLI_DIR/dist" ] && [ -f "$CLI_DIR/dist/index.js" ]; then
-    # Check if the built file has shebang or valid JS
-    if head -n 1 "$CLI_DIR/dist/index.js" | grep -q "#!/usr/bin/env node\|\"use strict\""; then
+if [ -d "$CLI_DIR/dist" ] && [ -f "$CLI_DIR/dist/index.js" ] && [ -f "$CLI_DIR/cli.js" ]; then
+    # Check if the built file has valid JS and cli.js has shebang
+    if head -n 1 "$CLI_DIR/cli.js" | grep -q "#!/usr/bin/env node" && grep -q "import.*commander" "$CLI_DIR/dist/index.js"; then
         pass 6 "TypeScript Compilation"
     else
-        fail 6 "TypeScript Compilation" "Invalid or missing content in dist/index.js"
+        fail 6 "TypeScript Compilation" "Invalid or missing content in dist/index.js or cli.js"
     fi
 else
     fail 6 "TypeScript Compilation" "dist/index.js not found"

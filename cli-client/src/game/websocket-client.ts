@@ -1,3 +1,4 @@
+// cli-client/src/game/websocket-client.ts
 import WebSocket from 'ws';
 import EventEmitter from 'events';
 

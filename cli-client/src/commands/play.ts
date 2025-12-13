@@ -1,3 +1,4 @@
+// cli-client/src/commands/play.ts
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { WebSocketGameClient } from '../game/websocket-client.js';

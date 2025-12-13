@@ -1,4 +1,4 @@
-// user-service/src/routes/utils.ts
+// user-service/src/utils/database.ts
 import { FastifyReply } from 'fastify';
 import sqlite3 from 'sqlite3';
 

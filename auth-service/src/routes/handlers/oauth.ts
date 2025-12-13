@@ -4,15 +4,6 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { config } from '../../utils/config';
 import { getQuery, runQuery } from '../../utils/database';
-// Hoach Edited
-// Vault client setup
-const vault = require('node-vault')({
-  endpoint: process.env.VAULT_ADDR || 'https://vault-service:8200',
-  token: process.env.VAULT_TOKEN,
-  tls: {
-    rejectUnauthorized: false // Skip TLS verification for self-signed cert
-  }
-});
 
 // Cache for OAuth secrets (avoid repeated Vault calls)
 let oauthSecrets: any = null;
@@ -26,25 +17,28 @@ async function loadOAuthSecrets(): Promise<void> {
   try {
     console.log('🔐 Loading OAuth secrets from Vault...');
 
+    const vaultAddr = process.env.VAULT_ADDR || 'http://vault:8200';
+    const vaultToken = process.env.VAULT_TOKEN;
+
     // Load all OAuth provider secrets
     const [school42, google, github] = await Promise.all([
-      vault.read('kv/data/oauth/42school'),
-      vault.read('kv/data/oauth/google'),
-      vault.read('kv/data/oauth/github')
+      axios.get(`${vaultAddr}/v1/kv/data/oauth/42school`, { headers: { 'X-Vault-Token': vaultToken } }),
+      axios.get(`${vaultAddr}/v1/kv/data/oauth/google`, { headers: { 'X-Vault-Token': vaultToken } }),
+      axios.get(`${vaultAddr}/v1/kv/data/oauth/github`, { headers: { 'X-Vault-Token': vaultToken } })
     ]);
 
     oauthSecrets = {
       school42: {
-        client_id: school42.data.data.school42_client_id,
-        client_secret: school42.data.data.school42_client_secret
+        client_id: school42.data.data.data.school42_client_id,
+        client_secret: school42.data.data.data.school42_client_secret
       },
       google: {
-        client_id: google.data.data.google_client_id,
-        client_secret: google.data.data.google_client_secret
+        client_id: google.data.data.data.google_client_id,
+        client_secret: google.data.data.data.google_client_secret
       },
       github: {
-        client_id: github.data.data.github_client_id,
-        client_secret: github.data.data.github_client_secret
+        client_id: github.data.data.data.github_client_id,
+        client_secret: github.data.data.data.github_client_secret
       }
     };
 

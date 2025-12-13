@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+// cli-client/src/index.ts
 
 import { Command } from 'commander';
 import { loginCommand } from './commands/login.js';
@@ -27,15 +27,4 @@ program
   .description('View your game statistics')
   .action(statsCommand);
 
-program
-  .command('help')
-  .description('Show help information')
-  .action(() => {
-    program.outputHelp();
-  });
-
 program.parse(process.argv);
-
-if (!process.argv.slice(2).length) {
-  program.outputHelp();
-}

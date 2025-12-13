@@ -1,3 +1,4 @@
+// frontend/src/managers/GameRenderer.ts
 import { GameSettings } from '../types';
 
 // Local renderer-specific game state interface (keeps renderer decoupled

@@ -1,3 +1,4 @@
+// game-service/src/routes/index.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
