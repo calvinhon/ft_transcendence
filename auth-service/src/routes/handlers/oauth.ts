@@ -217,10 +217,10 @@ async function exchange42Code(code: string): Promise<any> {
     // Load secrets from Vault if not cached
     await loadOAuthSecrets();
 
-    const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=42`;
+    const callbackUrl = process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback';
     console.log(`🔄 Exchanging 42 code for token, callback URL: ${callbackUrl}`);
     
-    const response = await axios.post('https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/token', {
+    const response = await axios.post('https://api.intra.42.fr/oauth/token', {
       code,
       client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
       client_secret: oauthSecrets.school42.client_secret, // 🔐 FROM VAULT
@@ -232,7 +232,7 @@ async function exchange42Code(code: string): Promise<any> {
     console.log(`✅ Got 42 access token`);
 
     // Get user info from 42 API
-    const userResponse = await axios.get('https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/userinfo', {
+    const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
 
@@ -371,14 +371,12 @@ export async function oauthInitHandler(
     let authUrl: string;
 
     if (provider === '42') {
-      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}`;
+      const callbackUrl = process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback';
       console.log(`🔄 42 School OAuth init - callbackUrl: ${callbackUrl}`);
-      authUrl = `https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/auth?${new URLSearchParams({
+      authUrl = `https://api.intra.42.fr/oauth/authorize?${new URLSearchParams({
         client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
-        response_type: 'code',
-        scope: 'openid profile email',
-        state
+        response_type: 'code'
       }).toString()}`;
       console.log(`🔄 42 School OAuth URL: ${authUrl}`);
     } else if (provider === 'google') {
