@@ -236,9 +236,15 @@ export class AuthManager {
 
   // Handle OAuth callback
   async handleOAuthCallback(): Promise<AuthResult> {
+
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    const provider = urlParams.get('provider');
+    let provider = urlParams.get('provider');
+
+    // If code is present but provider is missing, assume 42 School (since only 42 omits provider)
+    if (code && !provider) {
+      provider = '42';
+    }
 
     if (!code || !provider) {
       return {
