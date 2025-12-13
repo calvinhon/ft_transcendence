@@ -371,7 +371,8 @@ export async function oauthInitHandler(
     let authUrl: string;
 
     if (provider === '42') {
-      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=42`;
+      const callbackUrl = `${process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}`;
+      console.log(`🔄 42 School OAuth init - callbackUrl: ${callbackUrl}`);
       authUrl = `https://auth.42.fr/auth/realms/students-42/protocol/openid-connect/auth?${new URLSearchParams({
         client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
@@ -379,6 +380,7 @@ export async function oauthInitHandler(
         scope: 'openid profile email',
         state
       }).toString()}`;
+      console.log(`🔄 42 School OAuth URL: ${authUrl}`);
     } else if (provider === 'google') {
       const callbackUrl = `${process.env.GOOGLE_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback'}?provider=google`;
       authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
