@@ -66,9 +66,13 @@ export async function oauthCallbackHandler(
   try {
     const { code, state, provider } = request.query;
 
-    // Handle provider detection for 42 School (encoded in state)
+    // Handle provider detection for 42 School (encoded in state or assume 42 if no provider)
     let actualProvider = provider;
     if (!actualProvider && state && state.startsWith('42_')) {
+      actualProvider = '42';
+    }
+    // If still no provider, assume 42 School (since only 42 uses pure callback URL)
+    if (!actualProvider) {
       actualProvider = '42';
     }
 
@@ -217,7 +221,8 @@ async function exchange42Code(code: string): Promise<any> {
     // Load secrets from Vault if not cached
     await loadOAuthSecrets();
 
-    const callbackUrl = process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback';
+    // Always use the pure callback URL for 42 School (no query params)
+    const callbackUrl = 'https://localhost/api/auth/oauth/callback';
     console.log(`🔄 Exchanging 42 code for token, callback URL: ${callbackUrl}`);
     
     const response = await axios.post('https://api.intra.42.fr/oauth/token', {
@@ -371,12 +376,14 @@ export async function oauthInitHandler(
     let authUrl: string;
 
     if (provider === '42') {
-      const callbackUrl = process.env.SCHOOL42_CALLBACK_URL || 'https://localhost/api/auth/oauth/callback';
+      // Always use the pure callback URL for 42 School (no query params)
+      const callbackUrl = 'https://localhost/api/auth/oauth/callback';
       console.log(`🔄 42 School OAuth init - callbackUrl: ${callbackUrl}`);
       authUrl = `https://api.intra.42.fr/oauth/authorize?${new URLSearchParams({
         client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
         redirect_uri: callbackUrl,
-        response_type: 'code'
+        response_type: 'code',
+        state
       }).toString()}`;
       console.log(`🔄 42 School OAuth URL: ${authUrl}`);
     } else if (provider === 'google') {
