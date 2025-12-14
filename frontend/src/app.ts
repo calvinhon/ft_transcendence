@@ -259,6 +259,8 @@ export class App {
   private lastStartGameClick: number = 0;
   // Prevent duplicate event listener setup
   private eventListenersInitialized: boolean = false;
+  // Track if OAuth callback was handled to prevent double navigation
+  private oauthHandled: boolean = false;
 
   // Screen elements
   private loginScreen!: HTMLElement;
@@ -367,9 +369,7 @@ export class App {
     // Check authentication and update chat visibility
     await this.checkExistingLogin();
 
-    // Navigate to initial route based on URL and auth state
-    const initialRoute = this.router.getInitialRoute();
-    this.router.navigateToPath(initialRoute, false);
+    // Navigation to initial route is now handled inside checkExistingLogin()
 
     // Pause game when user navigates away from the game screen or when
     // the page becomes hidden. Stop the game on page unload to ensure
@@ -1007,6 +1007,10 @@ export class App {
   }
 
   async checkExistingLogin(): Promise<void> {
+    if (this.oauthHandled) {
+      // Already handled OAuth callback, prevent double navigation
+      return;
+    }
     const authManager = (window as any).authManager;
     if (!authManager) return;
 
@@ -1023,17 +1027,118 @@ export class App {
         const user = authManager.getCurrentUser();
         console.log('✅ Current user after OAuth:', user);
         if (user) {
-          // Clear OAuth parameters from URL AFTER successful verification
-          window.history.replaceState({}, document.title, '/');
-          console.log('🎯 Showing welcome toast and navigating to main-menu...');
-          showToast(`Welcome, ${user.username}!`, 'success');
-          console.log('🚀 Calling router.navigate(main-menu)...');
-          this.router.navigate('main-menu');
-          console.log('📊 Updating user display...');
-          this.updateUserDisplay();
-          this.updateHostPlayerDisplay();
-          console.log('✅ OAuth login complete, should be on main-menu now');
-          return;
+          // Check if this is for local player addition
+          const isForLocalPlayer = localStorage.getItem('oauthForLocalPlayer') === 'true';
+          if (isForLocalPlayer) {
+            console.log('🎯 OAuth for local player detected, adding to local players...');
+            this.oauthHandled = true; // Set immediately to prevent race condition
+            localStorage.removeItem('oauthForLocalPlayer');
+            // Get saved host user from localStorage (saved before OAuth redirect)
+            const savedHostUserJson = localStorage.getItem('savedHostUser');
+            let savedHostUser = null;
+            if (savedHostUserJson) {
+              try {
+                savedHostUser = JSON.parse(savedHostUserJson);
+                localStorage.removeItem('savedHostUser'); // Clean up
+                console.log('💾 Restored saved host user from localStorage:', savedHostUser.username);
+              } catch (e) {
+                console.error('❌ Failed to parse saved host user:', e);
+              }
+            }
+            // Get saved host token
+            const savedHostTokenJson = localStorage.getItem('savedHostToken');
+            if (savedHostTokenJson) {
+              try {
+                const savedHostToken = JSON.parse(savedHostTokenJson);
+                localStorage.removeItem('savedHostToken');
+                console.log('💾 Restored saved host token');
+              } catch (e) {
+                console.error('❌ Failed to parse saved host token:', e);
+                localStorage.removeItem('savedHostToken');
+              }
+            }
+            // Restore host user BEFORE adding OAuth user as local player
+            if (savedHostUser) {
+              if (savedHostTokenJson) {
+                try {
+                  const savedHostToken = JSON.parse(savedHostTokenJson);
+                  authManager.token = savedHostToken;
+                } catch (e) {
+                  console.error('❌ Failed to parse saved host token:', e);
+                }
+              }
+              authManager.currentUser = savedHostUser;
+              console.log('✅ Restored host user:', savedHostUser.username);
+              this.updateHostPlayerDisplay(); // Update UI immediately
+            }
+            // Restore saved game mode
+            const savedGameMode = localStorage.getItem('savedGameMode');
+            if (savedGameMode) {
+              this.gameSettings.gameMode = savedGameMode as 'coop' | 'arcade' | 'tournament';
+              localStorage.removeItem('savedGameMode');
+              console.log('✅ Restored game mode:', savedGameMode);
+              
+              // Update game mode tabs to reflect the restored mode
+              const modeTab = document.querySelector(`.game-mode-tab[data-mode="${savedGameMode}"]`) as HTMLElement;
+              if (modeTab) {
+                // Remove active from all tabs
+                document.querySelectorAll('.game-mode-tab').forEach(t => t.classList.remove('active'));
+                modeTab.classList.add('active');
+                // Show correct mode description
+                document.querySelectorAll('.mode-desc').forEach(desc => desc.classList.remove('active'));
+                const activeDesc = document.getElementById(`mode-desc-${savedGameMode}`);
+                if (activeDesc) activeDesc.classList.add('active');
+                console.log('✅ Updated game mode tabs for:', savedGameMode);
+              }
+            }
+              // Restore persisted localPlayers from before the OAuth redirect
+              const savedLocalPlayersJson = localStorage.getItem('savedLocalPlayers');
+              if (savedLocalPlayersJson) {
+                try {
+                  const parsed = JSON.parse(savedLocalPlayersJson);
+                  if (Array.isArray(parsed)) {
+                    this.localPlayers = parsed;
+                    // Rebuild selectedPlayerIds set if necessary
+                    if (!this.selectedPlayerIds) this.selectedPlayerIds = new Set();
+                    parsed.forEach((p: any) => {
+                      if (p && p.id) this.selectedPlayerIds.add(String(p.id));
+                    });
+                    console.log('💾 Restored', parsed.length, 'localPlayers from savedLocalPlayers');
+                  }
+                } catch (e) {
+                  console.error('❌ Failed to parse savedLocalPlayers:', e);
+                }
+                localStorage.removeItem('savedLocalPlayers');
+              }
+            // Navigate to play-config first (replicating normal navigation logic)
+            if (this.router) {
+              this.router.navigate('play-config');
+            }
+            // Add OAuth user as local player; show success only if added
+            const added = await this.addOAuthUserAsLocalPlayer(user);
+            // Clear OAuth parameters from URL
+            window.history.replaceState({}, document.title, '/');
+            if (added) {
+              showToast(`${user.username} added as local player!`, 'success');
+            } else {
+              // Duplicate case: user already informed by addOAuthUserAsLocalPlayer
+              console.log('[OAuth] Duplicate local player detected; no addition performed');
+            }
+            return;
+          } else {
+            // Normal OAuth login for host
+            // Clear OAuth parameters from URL AFTER successful verification
+            window.history.replaceState({}, document.title, '/');
+            console.log('🎯 Showing welcome toast and navigating to main-menu...');
+            showToast(`Welcome, ${user.username}!`, 'success');
+            console.log('🚀 Calling router.navigate(main-menu)...');
+            this.router.navigate('main-menu');
+            console.log('📊 Updating user display...');
+            this.updateUserDisplay();
+            this.updateHostPlayerDisplay();
+            console.log('✅ OAuth login complete, should be on main-menu now');
+            return;
+          }
         } else {
           console.error('❌ User is null after valid token verification');
         }
@@ -1056,8 +1161,66 @@ export class App {
         this.updateUserDisplay();
         this.updateHostPlayerDisplay();
         // this.updateChatVisibility();
+        return;
       }
     }
+    // If not authenticated and not an OAuth callback, do not navigate (handled elsewhere)
+  }
+
+  // Add OAuth-authenticated user as local player
+  private async addOAuthUserAsLocalPlayer(user: any): Promise<boolean> {
+    console.log('🎯 Adding OAuth user as local player:', user);
+
+    // Reuse central duplicate-check helper so OAuth flow behaves exactly
+    // like normal local-player add (checks host + existing local players)
+    const dup = this.isDuplicateLocalPlayer(user);
+    if (dup.duplicate) {
+      console.warn('⚠️ [Duplicate Check] Duplicate detected:', dup.reason);
+      showToast(dup.reason || 'This player is already added.', 'error');
+      return false;
+    }
+    console.log('✅ [Duplicate Check] No duplicates found, proceeding to add OAuth player');
+
+    // Determine team assignment
+    let addPlayerTeam: number | string = 1;
+    if ((window as any).addPlayerTeam !== undefined) {
+      addPlayerTeam = (window as any).addPlayerTeam;
+    }
+
+    // If adding from tournament mode, randomly assign to team 1 or 2
+    if (addPlayerTeam === 'tournament') {
+      const team1Count = this.localPlayers.filter((p: any) => p.team === 1).length + 1;
+      const team2Count = this.localPlayers.filter((p: any) => p.team === 2).length + 1;
+      addPlayerTeam = team1Count <= team2Count ? 1 : 2;
+    }
+
+    // Create player object
+    const playerObj = {
+      id: user.userId.toString(),
+      username: user.username,
+      isCurrentUser: false,
+      userId: user.userId,
+      token: '', // OAuth users don't need separate token for local play
+      email: user.email || '',
+      team: addPlayerTeam
+    };
+
+    // Add to local players
+    this.localPlayers.push(playerObj);
+    console.log('✅ Added OAuth user as local player:', playerObj);
+
+    // Mark as selected
+    if (!this.selectedPlayerIds) this.selectedPlayerIds = new Set();
+    this.selectedPlayerIds.add(playerObj.id);
+
+    // Update display (navigation is handled by caller)
+    setTimeout(() => {
+      this.updateGamePartyDisplay();
+      // Ensure the UI reflects the correct game mode after adding player
+      this.updatePlayersForMode(this.gameSettings.gameMode);
+    }, 50);
+
+    return true;
   }
 
   updateUserDisplay(): void {
@@ -1077,6 +1240,67 @@ export class App {
     
     const currentUser = authManager.getCurrentUser();
     return currentUser;
+  }
+
+  // Reusable duplicate-check helper used for both normal local-player adds
+  // and OAuth local-player additions. Checks host and existing localPlayers
+  // by userId, username, and email. Returns { duplicate, reason }.
+  public isDuplicateLocalPlayer(user: any): { duplicate: boolean; reason?: string } {
+    try {
+      const hostUser = this.getHostUser();
+      // Normalize possible id fields (some responses use `id`, others `userId`)
+      const userIdRaw = user?.userId ?? user?.id;
+      const userIdStr = userIdRaw != null ? String(userIdRaw) : null;
+      const username = user?.username ?? user?.name ?? null;
+      const email = user?.email ?? null;
+
+      console.debug('[DuplicateCheck] Checking user:', { userIdRaw, userIdStr, username, email });
+      console.debug('[DuplicateCheck] Current hostUser:', hostUser);
+
+      // Check against host
+      if (hostUser) {
+        const hostIdRaw = hostUser?.userId ?? hostUser?.id;
+        const hostIdStr = hostIdRaw != null ? String(hostIdRaw) : null;
+        const hostUsername = hostUser?.username ?? hostUser?.name ?? null;
+        const hostEmail = hostUser?.email ?? null;
+
+        console.debug('[DuplicateCheck] Normalized host:', { hostIdRaw, hostIdStr, hostUsername, hostEmail });
+
+        if (hostIdStr && userIdStr && hostIdStr === userIdStr) {
+          return { duplicate: true, reason: 'This is the host player account. Host cannot be added as local player.' };
+        }
+        if (hostUsername && username && hostUsername.toLowerCase() === username.toLowerCase()) {
+          return { duplicate: true, reason: 'Cannot add the host as a local player (username match).' };
+        }
+        if (hostEmail && email && hostEmail.toLowerCase() === email.toLowerCase()) {
+          return { duplicate: true, reason: 'Cannot add the host as a local player (email match).' };
+        }
+      }
+
+      // Check against existing localPlayers
+      if (this.localPlayers && this.localPlayers.length > 0) {
+        for (const p of this.localPlayers) {
+          const pIdRaw = p?.userId ?? p?.id;
+          const pId = pIdRaw != null ? String(pIdRaw) : null;
+          const pUsername = p?.username ?? p?.name ?? null;
+          const pEmail = p?.email ?? null;
+          if (pId && userIdStr && pId === userIdStr) {
+            return { duplicate: true, reason: `Player ${p.username} is already added` };
+          }
+          if (pEmail && email && pEmail.toLowerCase() === email.toLowerCase()) {
+            return { duplicate: true, reason: `Player with email ${email} is already added` };
+          }
+          if (pUsername && username && pUsername.toLowerCase() === username.toLowerCase()) {
+            return { duplicate: true, reason: `Player ${username} is already added` };
+          }
+        }
+      }
+
+      return { duplicate: false };
+    } catch (e) {
+      console.warn('Duplicate check failed, assuming not duplicate', e);
+      return { duplicate: false };
+    }
   }
 
   updateHostPlayerDisplay(): void {
