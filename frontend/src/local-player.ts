@@ -82,6 +82,20 @@ export function setupLocalPlayerLoginModal(app: any) {
     // Save the host's currentUser before authenticating local player
     const savedHostUser = authManager.getCurrentUser();
     console.log('[LocalPlayer] Saved host user for restoration:', savedHostUser);
+
+    // Persist current localPlayers to localStorage so OAuth round-trip doesn't lose them
+    try {
+      const appInstance = (window as any).app;
+      if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+        localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+        console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+      } else {
+        // Ensure we don't leave stale data
+        localStorage.removeItem('savedLocalPlayers');
+      }
+    } catch (e) {
+      console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+    }
     
     try {
       const result = await authManager.login(email, password);
@@ -134,61 +148,33 @@ export function setupLocalPlayerLoginModal(app: any) {
       
       console.log('[LocalPlayer] Authenticated user data:', { userId: loginUserId, username: loginUsername, email: loginEmail });
       
-      // Now check for duplicates using the actual authenticated user data
-      let duplicate = false;
-      let duplicateReason = '';
-      
-      // Check against host player by userId, email, and username
-      // Only check if host data is actually available
-      if (hostUserId && loginUserId && hostUserId === loginUserId) {
-        duplicate = true;
-        duplicateReason = 'This is the host player account. Host cannot be added as local player.';
-        console.log('[LocalPlayer] Duplicate: userId match with host');
-      } else if (hostEmail && loginEmail && hostEmail.toLowerCase() === loginEmail.toLowerCase()) {
-        duplicate = true;
-        duplicateReason = 'Host player is already using this email';
-        console.log('[LocalPlayer] Duplicate: email match with host');
-      } else if (hostUsername && loginUsername && hostUsername.toLowerCase() === loginUsername.toLowerCase()) {
-        duplicate = true;
-        duplicateReason = 'Host player is already using this username';
-        console.log('[LocalPlayer] Duplicate: username match with host');
-      }
-      
-      // Check against local players array
-      if (!duplicate && app.localPlayers && app.localPlayers.length > 0) {
-        console.log('[LocalPlayer] Checking against', app.localPlayers.length, 'existing local players');
-        app.localPlayers.forEach((player: any, index: number) => {
-          console.log(`[LocalPlayer] Checking player ${index}:`, { 
-            userId: player.userId, 
-            username: player.username, 
-            email: player.email 
-          });
-          
-          if (player.userId?.toString() === loginUserId) {
-            duplicate = true;
-            duplicateReason = `Player ${player.username} is already added`;
-            console.log('[LocalPlayer] Duplicate: userId match with existing player');
-          } else if (player.email && loginEmail && player.email.toLowerCase() === loginEmail.toLowerCase()) {
-            duplicate = true;
-            duplicateReason = `Player with email ${loginEmail} is already added`;
-            console.log('[LocalPlayer] Duplicate: email match with existing player');
-          } else if (player.username && loginUsername && player.username.toLowerCase() === loginUsername.toLowerCase()) {
-            duplicate = true;
-            duplicateReason = `Player ${loginUsername} is already added`;
-            console.log('[LocalPlayer] Duplicate: username match with existing player');
+      // Use centralized duplicate check from the main App so both OAuth and
+      // email/password flows share identical logic and avoid inconsistent
+      // acceptance/rejection of players.
+      try {
+        const appInstance = (window as any).app;
+        if (!appInstance || typeof appInstance.isDuplicateLocalPlayer !== 'function') {
+          console.warn('[LocalPlayer] Central duplicate-check helper not available, falling back to inline check');
+        } else {
+          const dup = appInstance.isDuplicateLocalPlayer(userData);
+          if (dup && dup.duplicate) {
+            console.warn('⚠️ [LocalPlayer] Duplicate detected (centralized):', dup.reason);
+            // Prefer a toast message if available, otherwise fall back to the modal error element
+            if ((window as any).showToast) {
+              (window as any).showToast(dup.reason || 'This player is already added.', 'error');
+            } else {
+              error!.textContent = dup.reason || 'This player is already added.';
+              error!.style.display = 'block';
+            }
+            isSubmittingLogin = false; // Reset guard
+            return;
           }
-        });
+        }
+      } catch (err) {
+        console.error('[LocalPlayer] Error calling centralized duplicate check:', err);
       }
-      
-      if (duplicate) {
-        console.warn('⚠️ [LocalPlayer] Duplicate detected:', duplicateReason);
-        error!.textContent = duplicateReason || 'This player is already added.';
-        error!.style.display = 'block';
-        isSubmittingLogin = false;  // Reset guard
-        return;
-      }
-      
-      console.log('[LocalPlayer] ✅ No duplicates found, proceeding to add player');
+
+      console.log('[LocalPlayer] ✅ No duplicates found (centralized or fallback), proceeding to add player');
       
       // Prepare to add the player
       if (!app.localPlayers) app.localPlayers = [];
@@ -403,6 +389,12 @@ export function setupLocalPlayerLoginModal(app: any) {
   } else {
     console.warn('⚠️ [LocalPlayer] Create account link not found in DOM');
   }
+  
+  // Cancel button
+  document.getElementById('cancel-local-player-login')?.addEventListener('click', () => {
+    console.log('[LocalPlayer] Login modal cancelled via Cancel button');
+    hideLocalPlayerLoginModal();
+  });
   
   // Close button (X)
   document.getElementById('close-local-player-login-modal')?.addEventListener('click', () => {
@@ -805,6 +797,12 @@ export function setupLocalPlayerRegisterModal(app: any) {
     }
   });
   
+  // Cancel button
+  document.getElementById('cancel-local-player-register')?.addEventListener('click', () => {
+    console.log('[LocalPlayer] Register modal cancelled via Cancel button');
+    hideLocalPlayerRegisterModal();
+  });
+  
   // Close button (X)
   document.getElementById('close-local-player-register-modal')?.addEventListener('click', () => {
     console.log('[LocalPlayer] Register modal closed via X button');
@@ -854,6 +852,9 @@ function showLocalPlayerLoginModal() {
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
     console.log('[LocalPlayer] Modal display set to flex (centered)');
+    
+    // Inject OAuth buttons when modal is shown
+    injectOAuthButtonsIntoLoginModal();
   }
   if (error) {
     error.style.display = 'none';
@@ -891,6 +892,9 @@ function showLocalPlayerRegisterModal() {
   if (modal) {
     modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    
+    // Inject OAuth buttons when modal is shown
+    injectOAuthButtonsIntoRegisterModal();
   }
   if (error) {
     error.style.display = 'none';
@@ -912,6 +916,293 @@ function hideLocalPlayerRegisterModal() {
     console.log('[LocalPlayer] Verified modal classList:', modal.classList.toString());
   } else {
     console.error('[LocalPlayer] ❌ Cannot hide modal - element not found!');
+  }
+}
+
+// Function to inject OAuth buttons into login modal when it's shown
+function injectOAuthButtonsIntoLoginModal() {
+  // Dynamically add OAuth buttons to local player login modal
+  const loginModalElement = document.getElementById('local-player-login-modal');
+  console.log('[LocalPlayer] Login modal element found:', !!loginModalElement);
+  
+  const loginLinks = document.querySelector('#local-player-login-modal .login-links') as HTMLElement;
+  console.log('[LocalPlayer] Login modal setup - loginLinks found:', !!loginLinks);
+  
+  console.log('[LocalPlayer] Login modal setup - checking for existing OAuth button:', !!document.getElementById('local-player-school42-login-btn'));
+  
+  if (loginLinks && !document.getElementById('local-player-school42-login-btn')) {
+    console.log('[LocalPlayer] Adding OAuth buttons to login modal');
+    
+    // Create OAuth divider
+    const oauthDivider = document.createElement('div');
+    oauthDivider.className = 'oauth-divider';
+    oauthDivider.style.cssText = 'margin: 20px 0; text-align: center; color: #ccc;';
+    oauthDivider.innerHTML = '<span style="background: #1a1a2e; padding: 0 10px;">OR SIGN IN WITH</span>';
+    
+    // Create OAuth buttons container
+    const oauthButtons = document.createElement('div');
+    oauthButtons.className = 'oauth-buttons';
+    oauthButtons.style.cssText = 'display: flex; gap: 10px; margin: 15px 0;';
+    
+    // Create individual buttons
+    const school42Btn = document.createElement('button');
+    school42Btn.id = 'local-player-school42-login-btn';
+    school42Btn.className = 'oauth-btn school42-btn';
+    school42Btn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #00babc; color: white; font-weight: 500; transition: background 0.3s;';
+    school42Btn.innerHTML = '<span style="font-weight: 700;">42</span><span>School</span>';
+    
+    const googleBtn = document.createElement('button');
+    googleBtn.id = 'local-player-google-login-btn';
+    googleBtn.className = 'oauth-btn google-btn';
+    googleBtn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #4285f4; color: white; font-weight: 500; transition: background 0.3s;';
+    googleBtn.innerHTML = '<i class="fab fa-google"></i><span>Google</span>';
+    
+    const githubBtn = document.createElement('button');
+    githubBtn.id = 'local-player-github-login-btn';
+    githubBtn.className = 'oauth-btn github-btn';
+    githubBtn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #333; color: white; font-weight: 500; transition: background 0.3s;';
+    githubBtn.innerHTML = '<i class="fab fa-github"></i><span>GitHub</span>';
+    
+    // Add buttons to container
+    oauthButtons.appendChild(school42Btn);
+    oauthButtons.appendChild(googleBtn);
+    oauthButtons.appendChild(githubBtn);
+    
+    // Insert after login links
+    loginLinks.parentNode?.insertBefore(oauthDivider, loginLinks.nextSibling);
+    loginLinks.parentNode?.insertBefore(oauthButtons, oauthDivider.nextSibling);
+    
+    console.log('[LocalPlayer] OAuth buttons added to login modal successfully');
+    
+    // Add event listeners for OAuth buttons
+    const app = (window as any).app;
+    if (school42Btn) {
+      school42Btn.addEventListener('click', () => {
+        console.log('[LocalPlayer] 42 School OAuth login clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('42');
+      });
+    }
+
+    if (googleBtn) {
+      googleBtn.addEventListener('click', () => {
+        console.log('[LocalPlayer] Google OAuth login clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('google');
+      });
+    }
+
+    if (githubBtn) {
+      githubBtn.addEventListener('click', () => {
+        console.log('[LocalPlayer] GitHub OAuth login clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('github');
+      });
+    }
+  } else {
+    console.log('[LocalPlayer] OAuth buttons not added to login modal - loginLinks:', !!loginLinks, 'existing button:', !!document.getElementById('local-player-school42-login-btn'));
+  }
+}
+
+// Function to inject OAuth buttons into register modal when it's shown
+function injectOAuthButtonsIntoRegisterModal() {
+  // Dynamically add OAuth buttons to local player register modal
+  const registerModalElement = document.getElementById('local-player-register-modal');
+  console.log('[LocalPlayer] Register modal element found:', !!registerModalElement);
+  
+  const registerLinks = document.querySelector('#local-player-register-modal .login-links') as HTMLElement;
+  console.log('[LocalPlayer] Register modal setup - registerLinks found:', !!registerLinks);
+  
+  console.log('[LocalPlayer] Register modal setup - checking for existing OAuth button:', !!document.getElementById('local-player-school42-register-btn'));
+  
+  if (registerLinks && !document.getElementById('local-player-school42-register-btn')) {
+    console.log('[LocalPlayer] Adding OAuth buttons to register modal');
+    
+    // Create OAuth divider
+    const oauthDivider = document.createElement('div');
+    oauthDivider.className = 'oauth-divider';
+    oauthDivider.style.cssText = 'margin: 20px 0; text-align: center; color: #ccc;';
+    oauthDivider.innerHTML = '<span style="background: #1a1a2e; padding: 0 10px;">OR SIGN UP WITH</span>';
+    
+    // Create OAuth buttons container
+    const oauthButtons = document.createElement('div');
+    oauthButtons.className = 'oauth-buttons';
+    oauthButtons.style.cssText = 'display: flex; gap: 10px; margin: 15px 0;';
+    
+    // Create individual buttons
+    const school42Btn = document.createElement('button');
+    school42Btn.id = 'local-player-school42-register-btn';
+    school42Btn.className = 'oauth-btn school42-btn';
+    school42Btn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #00babc; color: white; font-weight: 500; transition: background 0.3s;';
+    school42Btn.innerHTML = '<span style="font-weight: 700;">42</span><span>School</span>';
+    
+    const googleBtn = document.createElement('button');
+    googleBtn.id = 'local-player-google-register-btn';
+    googleBtn.className = 'oauth-btn google-btn';
+    googleBtn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #4285f4; color: white; font-weight: 500; transition: background 0.3s;';
+    googleBtn.innerHTML = '<i class="fab fa-google"></i><span>Google</span>';
+    
+    const githubBtn = document.createElement('button');
+    githubBtn.id = 'local-player-github-register-btn';
+    githubBtn.className = 'oauth-btn github-btn';
+    githubBtn.style.cssText = 'flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #333; color: white; font-weight: 500; transition: background 0.3s;';
+    githubBtn.innerHTML = '<i class="fab fa-github"></i><span>GitHub</span>';
+    
+    // Add buttons to container
+    oauthButtons.appendChild(school42Btn);
+    oauthButtons.appendChild(googleBtn);
+    oauthButtons.appendChild(githubBtn);
+    
+    // Insert after register links
+    registerLinks.parentNode?.insertBefore(oauthDivider, registerLinks.nextSibling);
+    registerLinks.parentNode?.insertBefore(oauthButtons, oauthDivider.nextSibling);
+    
+    console.log('[LocalPlayer] OAuth buttons added to register modal successfully');
+    
+    // Add event listeners for OAuth buttons
+    const app = (window as any).app;
+    if (school42Btn) {
+      school42Btn.addEventListener('click', () => {
+        console.log('[LocalPlayer] 42 School OAuth register clicked');
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('42');
+      });
+    }
+
+    if (googleBtn) {
+      googleBtn.addEventListener('click', () => {
+        console.log('[LocalPlayer] Google OAuth register clicked');
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('google');
+      });
+    }
+
+    if (githubBtn) {
+      githubBtn.addEventListener('click', () => {
+        console.log('[LocalPlayer] GitHub OAuth register clicked');
+        // Save current host user before OAuth redirect
+        const authManager = (window as any).authManager;
+        const hostUser = authManager?.getCurrentUser();
+        if (hostUser) {
+          localStorage.setItem('savedHostUser', JSON.stringify(hostUser));
+          console.log('[LocalPlayer] Saved host user for restoration:', hostUser.username);
+        }
+        // Save current game mode before OAuth redirect
+        const currentGameMode = app.gameSettings?.gameMode;
+        if (currentGameMode) {
+          localStorage.setItem('savedGameMode', currentGameMode);
+          console.log('[LocalPlayer] Saved game mode for restoration:', currentGameMode);
+        }
+        localStorage.setItem('oauthForLocalPlayer', 'true');
+        app.handleOAuthLogin('github');
+      });
+    }
+  } else {
+    console.log('[LocalPlayer] OAuth buttons not added to register modal - registerLinks:', !!registerLinks, 'existing button:', !!document.getElementById('local-player-school42-register-btn'));
   }
 }
 
