@@ -114,10 +114,14 @@ export class TournamentOrchestrator {
 
   // Match result recording
   public async recordMatchResult(tournamentId: number, matchId: number, winnerId: number, player1Score: number, player2Score: number): Promise<void> {
-    await this.matchManager.recordMatchResult(tournamentId, matchId, winnerId, player1Score, player2Score);
+    console.log('🏆 [Orchestrator] Recording match result:', { tournamentId, matchId, winnerId, player1Score, player2Score });
+
+    const result = await this.matchManager.recordMatchResult(tournamentId, matchId, winnerId, player1Score, player2Score);
+    console.log('🏆 [Orchestrator] matchManager.recordMatchResult returned:', result);
 
     // Reload tournament to check if it's finished and show updated bracket
     const details = await this.networkManager.viewTournament(tournamentId);
+    console.log('🏆 [Orchestrator] viewTournament returned details:', details);
     this.dataManager.setParticipantMap(details.participants.reduce((map: { [key: number]: string }, p: any) => {
       map[p.user_id] = p.username || `Player ${p.user_id}`;
       return map;

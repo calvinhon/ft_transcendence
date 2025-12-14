@@ -378,7 +378,7 @@ export class TournamentMatchManager {
     });
   }
 
-  public async recordMatchResult(tournamentId: number, matchId: number, winnerId: number, player1Score: number, player2Score: number): Promise<void> {
+  public async recordMatchResult(tournamentId: number, matchId: number, winnerId: number, player1Score: number, player2Score: number): Promise<any> {
     console.log('🏆 [RECORD] ========== RECORDING MATCH RESULT ==========');
     console.log('🏆 [RECORD] Input parameters:', {
       tournamentId,
@@ -389,7 +389,8 @@ export class TournamentMatchManager {
     });
 
     try {
-      await this.networkManager.recordMatchResult(tournamentId, matchId, winnerId, player1Score, player2Score);
+      const result = await this.networkManager.recordMatchResult(tournamentId, matchId, winnerId, player1Score, player2Score);
+      console.log('🏆 [RECORD] networkManager.recordMatchResult returned:', result);
       showToast('Match result recorded', 'success');
 
       // Wait a moment for backend to process next round creation
@@ -397,13 +398,13 @@ export class TournamentMatchManager {
 
       // Reload tournament to check if it's finished and show updated bracket
       const details = await this.networkManager.viewTournament(tournamentId);
+      console.log('🏆 [RECORD] viewTournament returned details:', details);
       this.dataManager.setParticipantMap(details.participants.reduce((map: { [key: number]: string }, p: any) => {
         map[p.user_id] = p.username || `Player ${p.user_id}`;
         return map;
       }, {}));
 
-      // Show updated bracket with new match statuses
-      // This will be handled by the orchestrator
+      // Show updated bracket with new match statuses (orchestrator will also refresh)
       return details;
 
     } catch (error) {

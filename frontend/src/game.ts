@@ -3426,9 +3426,19 @@ export class GameManager {
             app.router.navigate('play-config');
           }
           
-          // Show tournament bracket again
+          // Show tournament bracket again and log raw details for diagnostics
           if (tournamentManager && tournamentManager.viewTournament) {
             tournamentManager.viewTournament(tournamentMatch.tournamentId);
+
+            // Also try to fetch raw details directly from the network manager (diagnostic)
+            (async () => {
+              try {
+                const raw = await (tournamentManager as any).networkManager?.viewTournament(tournamentMatch.tournamentId);
+                console.log('🏆 [GAME] Raw viewTournament details after recording (diagnostic):', raw);
+              } catch (err) {
+                console.warn('🏆 [GAME] Diagnostic viewTournament fetch failed', err);
+              }
+            })();
           }
         }, 3000);
       }).catch((error: any) => {
