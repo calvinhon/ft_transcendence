@@ -1142,6 +1142,19 @@ function injectOAuthButtonsIntoRegisterModal() {
     if (school42Btn) {
       school42Btn.addEventListener('click', () => {
         console.log('[LocalPlayer] 42 School OAuth register clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
         // Save current host user before OAuth redirect
         const authManager = (window as any).authManager;
         const hostUser = authManager?.getCurrentUser();
@@ -1163,6 +1176,19 @@ function injectOAuthButtonsIntoRegisterModal() {
     if (googleBtn) {
       googleBtn.addEventListener('click', () => {
         console.log('[LocalPlayer] Google OAuth register clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
         // Save current host user before OAuth redirect
         const authManager = (window as any).authManager;
         const hostUser = authManager?.getCurrentUser();
@@ -1184,6 +1210,19 @@ function injectOAuthButtonsIntoRegisterModal() {
     if (githubBtn) {
       githubBtn.addEventListener('click', () => {
         console.log('[LocalPlayer] GitHub OAuth register clicked');
+        // Persist current localPlayers so they survive the OAuth redirect
+        try {
+          const appInstance = (window as any).app;
+          if (appInstance && Array.isArray(appInstance.localPlayers) && appInstance.localPlayers.length > 0) {
+            localStorage.setItem('savedLocalPlayers', JSON.stringify(appInstance.localPlayers));
+            console.log('[LocalPlayer] Persisted current localPlayers to localStorage (savedLocalPlayers)');
+          } else {
+            localStorage.removeItem('savedLocalPlayers');
+          }
+        } catch (e) {
+          console.warn('[LocalPlayer] Failed to persist localPlayers before OAuth redirect', e);
+        }
+
         // Save current host user before OAuth redirect
         const authManager = (window as any).authManager;
         const hostUser = authManager?.getCurrentUser();
