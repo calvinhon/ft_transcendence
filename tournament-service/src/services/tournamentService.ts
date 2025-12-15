@@ -15,8 +15,8 @@ export class TournamentService {
     logger.info('Creating tournament', { name: data.name, createdBy: data.createdBy });
 
     const result = await dbRun(
-      'INSERT INTO tournaments (name, description, max_participants, created_by) VALUES (?, ?, ?, ?)',
-      [data.name, data.description || '', data.maxParticipants || 8, data.createdBy]
+      'INSERT INTO tournaments (name, created_by) VALUES (?, ?)',
+      [data.name, data.createdBy]
     );
 
     const tournament = await this.getTournamentById(result.lastID);
@@ -147,8 +147,8 @@ export class TournamentService {
     }
 
     const participants = await this.getTournamentParticipants(id);
-    if (participants.length < 2) {
-      throw new Error('Tournament needs at least 2 participants to start');
+    if (![4, 8].includes(participants.length)) {
+      throw new Error('Tournament needs either 4 or 8 participants to start');
     }
 
     // Generate bracket and matches

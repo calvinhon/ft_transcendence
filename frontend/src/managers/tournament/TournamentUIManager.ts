@@ -8,8 +8,6 @@ import { playerManager } from '../PlayerManager';
 interface Tournament {
   id: number;
   name: string;
-  description?: string;
-  max_participants: number;
   current_participants: number;
   status: 'open' | 'active' | 'finished' | 'full';
   created_by: number;
@@ -282,83 +280,83 @@ export class TournamentUIManager {
   }
 
   // Tournament display methods
-  public displayAvailableTournaments(tournaments: Tournament[]): void {
-    const container = document.getElementById('tournaments-list');
-    if (!container) return;
+  // public displayAvailableTournaments(tournaments: Tournament[]): void {
+  //   const container = document.getElementById('tournaments-list');
+  //   if (!container) return;
 
-    const availableTournaments = tournaments.filter(t => t.status === 'open');
+  //   const availableTournaments = tournaments.filter(t => t.status === 'open');
 
-    if (availableTournaments.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">🏆</div>
-          <p class="muted">No tournaments available</p>
-          <p class="muted small">Create one to get started!</p>
-        </div>
-      `;
-      return;
-    }
+  //   if (availableTournaments.length === 0) {
+  //     container.innerHTML = `
+  //       <div class="empty-state">
+  //         <div class="empty-icon">🏆</div>
+  //         <p class="muted">No tournaments available</p>
+  //         <p class="muted small">Create one to get started!</p>
+  //       </div>
+  //     `;
+  //     return;
+  //   }
 
-    container.innerHTML = availableTournaments.map(tournament => `
-      <div class="tournament-card">
-        <div class="tournament-info">
-          <h3>${this.escapeHtml(tournament.name)}</h3>
-          ${tournament.description ? `<p class="tournament-description">${this.escapeHtml(tournament.description)}</p>` : ''}
-          <div class="tournament-meta">
-            <span class="participants">${tournament.current_participants}/${tournament.max_participants} players</span>
-            <span class="status status-${tournament.status}">${tournament.status}</span>
-          </div>
-          <div class="tournament-details">
-            <span class="created-by">Created by: User ${tournament.created_by}</span>
-            <span class="created-at">Created: ${new Date(tournament.created_at).toLocaleDateString()}</span>
-          </div>
-          ${tournament.started_at ? `<div class="start-time">Started: ${new Date(tournament.started_at).toLocaleString()}</div>` : ''}
-        </div>
-        <div class="tournament-actions">
-          ${tournament.status === 'open' ? `
-            <button class="btn btn-primary" data-action="tournament:join" data-id="${tournament.id}">
-              Join Tournament
-            </button>
-          ` : ''}
-          <button class="btn btn-secondary" data-action="tournament:view" data-id="${tournament.id}">
-            View Details
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
+  //   container.innerHTML = availableTournaments.map(tournament => `
+  //     <div class="tournament-card">
+  //       <div class="tournament-info">
+  //         <h3>${this.escapeHtml(tournament.name)}</h3>
+  //         ${tournament.description ? `<p class="tournament-description">${this.escapeHtml(tournament.description)}</p>` : ''}
+  //         <div class="tournament-meta">
+  //           <span class="participants">${tournament.current_participants}/${tournament.max_participants} players</span>
+  //           <span class="status status-${tournament.status}">${tournament.status}</span>
+  //         </div>
+  //         <div class="tournament-details">
+  //           <span class="created-by">Created by: User ${tournament.created_by}</span>
+  //           <span class="created-at">Created: ${new Date(tournament.created_at).toLocaleDateString()}</span>
+  //         </div>
+  //         ${tournament.started_at ? `<div class="start-time">Started: ${new Date(tournament.started_at).toLocaleString()}</div>` : ''}
+  //       </div>
+  //       <div class="tournament-actions">
+  //         ${tournament.status === 'open' ? `
+  //           <button class="btn btn-primary" data-action="tournament:join" data-id="${tournament.id}">
+  //             Join Tournament
+  //           </button>
+  //         ` : ''}
+  //         <button class="btn btn-secondary" data-action="tournament:view" data-id="${tournament.id}">
+  //           View Details
+  //         </button>
+  //       </div>
+  //     </div>
+  //   `).join('');
+  // }
 
-  public displayMyTournaments(): void {
-    const container = document.getElementById('tournaments-list');
-    if (!container) return;
+  // public displayMyTournaments(): void {
+  //   const container = document.getElementById('tournaments-list');
+  //   if (!container) return;
 
-    // For now, show empty state as we need to implement user tournaments endpoint
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🎯</div>
-        <p class="muted">No tournaments joined yet</p>
-        <p class="muted small">Join a tournament to see it here</p>
-      </div>
-    `;
-  }
+  //   // For now, show empty state as we need to implement user tournaments endpoint
+  //   container.innerHTML = `
+  //     <div class="empty-state">
+  //       <div class="empty-icon">🎯</div>
+  //       <p class="muted">No tournaments joined yet</p>
+  //       <p class="muted small">Join a tournament to see it here</p>
+  //     </div>
+  //   `;
+  // }
 
   // Tab switching
-  public switchTab(tabType: string): void {
-    // Update tab buttons
-    document.querySelectorAll('[data-tab]').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-tab') === tabType);
-    });
+  // public switchTab(tabType: string): void {
+  //   // Update tab buttons
+  //   document.querySelectorAll('[data-tab]').forEach(btn => {
+  //     btn.classList.toggle('active', btn.getAttribute('data-tab') === tabType);
+  //   });
 
-    // Update content
-    switch (tabType) {
-      case 'available':
-        // This will be handled by the main TournamentManager
-        break;
-      case 'my-tournaments':
-        this.displayMyTournaments();
-        break;
-    }
-  }
+  //   // Update content
+  //   switch (tabType) {
+  //     case 'available':
+  //       // This will be handled by the main TournamentManager
+  //       break;
+  //     case 'my-tournaments':
+  //       this.displayMyTournaments();
+  //       break;
+  //   }
+  // }
 
   // Utility methods
   private escapeHtml(text: string): string {

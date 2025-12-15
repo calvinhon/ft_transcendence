@@ -170,9 +170,7 @@ export class TournamentCreationManager {
 
     const tournamentData = {
       name: tournamentName,
-      description: formData.get('tournament-description') as string || '',
-      maxParticipants: parseInt(formData.get('max-participants') as string) || 8,
-      createdBy: user.userId || user.id,
+      createdBy: user.userId,
       participants: participantIds
     };
 

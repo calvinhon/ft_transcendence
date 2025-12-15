@@ -1997,13 +1997,8 @@ export class App {
         // No match data means user clicked "Start Game" to CREATE a tournament
         console.log('🏆 [App.startGame] Tournament CREATE mode - opening tournament creation modal');
         const tournamentManager = (window as any).tournamentManager;
-        if (tournamentManager && typeof tournamentManager.openCreateTournamentModal === 'function') {
-          tournamentManager.openCreateTournamentModal();
-        } else {
-          console.error('TournamentManager not available');
-          showToast('Tournament system not available', 'error');
-        }
-        console.log('🏁 [App.startGame] === COMPLETED (Tournament modal opened) ===');
+        tournamentManager.createTournamentWithParty();
+        console.log('🏁 [App.startGame] === COMPLETED (Tournament started) ===');
         return;
       }
     }

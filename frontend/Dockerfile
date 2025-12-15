@@ -21,7 +21,7 @@ RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || ec
 
 FROM alpine:3.17 AS waf
 # move nginx versio back to 1.29.2
-ENV NGINX_VERSION=1.29.2
+ENV NGINX_VERSION=1.29.4
 ENV MODSEC_TAG=v3.0.14
 ENV OWASP_TAG=v3.3.4
 
