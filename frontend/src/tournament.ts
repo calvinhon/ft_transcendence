@@ -37,8 +37,6 @@ export class TournamentManager {
 
     const app = (window as any).app;
     const selectedPlayerIds = Array.from(app.selectedPlayerIds);
-    console.log('Selected Player IDs:', selectedPlayerIds);
-    console.log('Count:', selectedPlayerIds.length);
     if (![4,8].includes(selectedPlayerIds.length)) {
       showToast('Need 4 or 8 participants to start a tournament', 'error');
       return;
@@ -221,11 +219,6 @@ export class TournamentManager {
     }
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Initialize drag and drop for pending matches (with slight delay to ensure DOM is ready)
-    setTimeout(() => {
-      this.initializeDragAndDrop();
-    }, 100);
   }
 
   private renderBracket(matches: any[], participants: any[], tournament: any): string {
@@ -276,10 +269,6 @@ export class TournamentManager {
     const isPending = match.status === 'pending' && match.player1_id && match.player2_id;
     const isBye = match.player1_id === 0 || match.player2_id === 0;
 
-    // For pending matches, make players draggable
-    const draggableAttr = isPending && tournament.status === 'active' ? 'draggable="true"' : '';
-    const dragClass = isPending && tournament.status === 'active' ? 'draggable-player' : '';
-
     return `
       <div class="match-card ${isCompleted ? 'completed' : ''} ${isBye ? 'bye' : ''}" 
            data-match-id="${match.id}"
@@ -287,7 +276,6 @@ export class TournamentManager {
         <div class="match-header">
           <span class="match-number">Match ${match.match_number}</span>
           ${isCompleted ? '<span class="match-status-badge">✓</span>' : ''}
-          ${isPending && tournament.status === 'active' ? '<span class="drag-hint">🔄 Drag to swap sides</span>' : ''}
         </div>
         <div class="match-players-container" data-match-id="${match.id}">
           <div class="match-player-slot left-slot" data-side="left">
@@ -296,8 +284,7 @@ export class TournamentManager {
               <span class="side-text">LEFT</span>
               <span class="side-controls">W/S or ↑/↓</span>
             </div>
-            <div class="match-player ${match.winner_id === match.player1_id ? 'winner' : ''} ${dragClass}"
-                 ${draggableAttr}
+            <div class="match-player ${match.winner_id === match.player1_id ? 'winner' : ''}"
                  data-player-id="${match.player1_id}"
                  data-player-name="${player1Name}"
                  data-original-side="left">
@@ -314,8 +301,7 @@ export class TournamentManager {
               <span class="side-text">RIGHT</span>
               <span class="side-controls">U/J</span>
             </div>
-            <div class="match-player ${match.winner_id === match.player2_id ? 'winner' : ''} ${dragClass}"
-                 ${draggableAttr}
+            <div class="match-player ${match.winner_id === match.player2_id ? 'winner' : ''}"
                  data-player-id="${match.player2_id}"
                  data-player-name="${player2Name}"
                  data-original-side="right">
@@ -334,217 +320,9 @@ export class TournamentManager {
     `;
   }
 
-  public async playMatch(tournamentId: number, matchId: number, player1Id: number, player2Id: number): Promise<void> {
-    console.log('Playing tournament match:', { tournamentId, matchId, player1Id, player2Id });
-    
-    // Close bracket modal
-    const modal = document.getElementById('tournament-bracket-modal');
-    if (modal) {
-      modal.remove();
-    }
-
-    const app = (window as any).app;
-    const authManager = (window as any).authManager;
-    const currentUser = authManager?.getCurrentUser();
-    
-    if (app && app.startGame && currentUser) {
-      // Check if current user is player 1 or player 2
-      const isPlayer1 = currentUser.userId === player1Id;
-      const isPlayer2 = currentUser.userId === player2Id;
-      
-      // Show side selection dialog
-      const sideChoice = await this.showSideSelectionDialog(
-        player1Id, 
-        player2Id, 
-        this.participantMap[player1Id] || `Player ${player1Id}`,
-        this.participantMap[player2Id] || `Player ${player2Id}`,
-        currentUser.userId
-      );
-
-      // If user cancelled, don't start the match
-      if (!sideChoice) {
-        return;
-      }
-
-      // Apply side swap if user chose right side
-      let finalPlayer1Id = player1Id;
-      let finalPlayer2Id = player2Id;
-      let finalPlayer1Name = this.participantMap[player1Id] || `Player ${player1Id}`;
-      let finalPlayer2Name = this.participantMap[player2Id] || `Player ${player2Id}`;
-
-      if (sideChoice === 'swap') {
-        // Swap the players
-        finalPlayer1Id = player2Id;
-        finalPlayer2Id = player1Id;
-        finalPlayer1Name = this.participantMap[player2Id] || `Player ${player2Id}`;
-        finalPlayer2Name = this.participantMap[player1Id] || `Player ${player1Id}`;
-        console.log('🔄 [Tournament] Players swapped - User chose RIGHT side');
-      } else {
-        console.log('✅ [Tournament] Players in original order - User chose LEFT side');
-      }
-
-      app.currentTournamentMatch = {
-        tournamentId,
-        matchId,
-        player1Id: finalPlayer1Id,
-        player2Id: finalPlayer2Id,
-        player1Name: finalPlayer1Name,
-        player2Name: finalPlayer2Name,
-        originalPlayer1Id: player1Id,
-        originalPlayer2Id: player2Id
-      };
-
-      app.gameSettings = app.gameSettings || {};
-      app.gameSettings.gameMode = 'tournament';
-      
-      console.log('🏆 [Tournament] Preserving localPlayers for match restart');
-      
-      console.log('🏆 [Tournament] Setting up players for match');
-      console.log('🏆 [Tournament] Current user:', currentUser.userId);
-      console.log('🏆 [Tournament] Player 1 (LEFT):', finalPlayer1Id, finalPlayer1Name);
-      console.log('🏆 [Tournament] Player 2 (RIGHT):', finalPlayer2Id, finalPlayer2Name);
-
-      await app.startGame();
-    } else {
-      showToast('Game start failed', 'error');
-    }
-  }
-
-  private initializeDragAndDrop(): void {
-    const draggablePlayers = document.querySelectorAll('.draggable-player');
-    const playerSlots = document.querySelectorAll('.match-player-slot');
-
-    console.log('🎯 [DRAG-DROP] Initializing drag and drop:');
-    console.log('  - Draggable players found:', draggablePlayers.length);
-    console.log('  - Player slots found:', playerSlots.length);
-    
-    if (draggablePlayers.length === 0) {
-      console.warn('⚠️ [DRAG-DROP] No draggable players found! Check if tournament is active and matches are pending.');
-      return;
-    }
-
-    draggablePlayers.forEach((player, index) => {
-      const playerElement = player as HTMLElement;
-      console.log(`  - Player ${index}:`, {
-        name: playerElement.getAttribute('data-player-name'),
-        draggable: playerElement.getAttribute('draggable'),
-        hasClass: playerElement.classList.contains('draggable-player')
-      });
-
-      player.addEventListener('dragstart', (e: Event) => {
-        const dragEvent = e as DragEvent;
-        const target = dragEvent.target as HTMLElement;
-        target.classList.add('dragging');
-        dragEvent.dataTransfer!.effectAllowed = 'move';
-        dragEvent.dataTransfer!.setData('text/plain', target.getAttribute('data-player-id') || '');
-        console.log('🎯 [DRAG-DROP] Drag started:', target.getAttribute('data-player-name'));
-      });
-
-      player.addEventListener('dragend', (e: Event) => {
-        const target = e.target as HTMLElement;
-        target.classList.remove('dragging');
-        // Clean up all drag-over classes
-        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-        console.log('🎯 [DRAG-DROP] Drag ended');
-      });
-    });
-
-    playerSlots.forEach(slot => {
-      slot.addEventListener('dragover', (e: Event) => {
-        e.preventDefault();
-        const dragEvent = e as DragEvent;
-        dragEvent.dataTransfer!.dropEffect = 'move';
-        const slotElement = slot as HTMLElement;
-        slotElement.classList.add('drag-over');
-      });
-
-      slot.addEventListener('dragleave', (e: Event) => {
-        const dragEvent = e as DragEvent;
-        const slotElement = e.currentTarget as HTMLElement;
-        // Only remove if we're actually leaving the slot (not entering a child)
-        const rect = slotElement.getBoundingClientRect();
-        const x = dragEvent.clientX;
-        const y = dragEvent.clientY;
-        if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
-          slotElement.classList.remove('drag-over');
-        }
-      });
-
-      slot.addEventListener('drop', (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const dragEvent = e as DragEvent;
-        
-        console.log('🎯 [DRAG-DROP] Drop event triggered');
-        
-        // Get the target slot (could be the slot itself or a child element)
-        let targetSlot = e.target as HTMLElement;
-        if (!targetSlot.classList.contains('match-player-slot')) {
-          targetSlot = targetSlot.closest('.match-player-slot') as HTMLElement;
-        }
-        
-        if (!targetSlot) {
-          console.warn('🎯 [DRAG-DROP] Target slot not found');
-          return;
-        }
-        
-        targetSlot.classList.remove('drag-over');
-
-        const draggingElement = document.querySelector('.dragging') as HTMLElement;
-        if (!draggingElement) {
-          console.log('🎯 [DRAG-DROP] No dragging element found');
-          return;
-        }
-
-        const sourceSlot = draggingElement.parentElement as HTMLElement;
-
-        // Only allow swapping within the same match
-        const sourceMatchId = sourceSlot.closest('.match-players-container')?.getAttribute('data-match-id');
-        const targetMatchId = targetSlot.closest('.match-players-container')?.getAttribute('data-match-id');
-
-        console.log('🎯 [DRAG-DROP] Drop details:', {
-          sourceMatchId,
-          targetMatchId,
-          sourceSlot: sourceSlot.getAttribute('data-side'),
-          targetSlot: targetSlot.getAttribute('data-side')
-        });
-
-        if (sourceMatchId !== targetMatchId) {
-          showToast('Can only swap players within the same match', 'error');
-          return;
-        }
-
-        // Don't swap if dropping on the same slot
-        if (sourceSlot === targetSlot) {
-          console.log('🎯 [DRAG-DROP] Same slot, no swap needed');
-          return;
-        }
-
-        // Get the player in the target slot
-        const targetPlayer = targetSlot.querySelector('.match-player') as HTMLElement;
-
-        if (targetPlayer) {
-          // Swap the players
-          console.log('🎯 [DRAG-DROP] Swapping players:', {
-            source: draggingElement.getAttribute('data-player-name'),
-            target: targetPlayer.getAttribute('data-player-name')
-          });
-          
-          sourceSlot.appendChild(targetPlayer);
-          targetSlot.appendChild(draggingElement);
-          
-          showToast('Players swapped! Click Play Match to start.', 'success');
-        }
-      });
-    });
-
-    console.log('🎯 [DRAG-DROP] Initialization complete!');
-  }
-
   public async playMatchFromCard(tournamentId: number, matchId: number): Promise<void> {
     console.log('Playing tournament match from card:', { tournamentId, matchId });
     
-    // Get the current player arrangement from the card
     const matchCard = document.querySelector(`.match-card[data-match-id="${matchId}"]`) as HTMLElement;
     if (!matchCard) {
       console.error('Match card not found');
@@ -564,29 +342,9 @@ export class TournamentManager {
     const leftPlayerName = leftPlayer.getAttribute('data-player-name') || `Player ${leftPlayerId}`;
     const rightPlayerName = rightPlayer.getAttribute('data-player-name') || `Player ${rightPlayerId}`;
 
-    // Determine original player IDs from the data attributes
-    const leftOriginalSide = leftPlayer.getAttribute('data-original-side');
-    const rightOriginalSide = rightPlayer.getAttribute('data-original-side');
-    
-    // Determine the true original player1 and player2 based on original sides
-    let originalPlayer1Id: number;
-    let originalPlayer2Id: number;
-    
-    if (leftOriginalSide === 'left') {
-      // Left player is original player1
-      originalPlayer1Id = leftPlayerId;
-      originalPlayer2Id = rightPlayerId;
-    } else {
-      // Left player was originally on right (swapped)
-      originalPlayer1Id = rightPlayerId;
-      originalPlayer2Id = leftPlayerId;
-    }
-
     console.log('🎮 Starting match with current arrangement:', {
-      leftSide: { id: leftPlayerId, name: leftPlayerName, originalSide: leftOriginalSide },
-      rightSide: { id: rightPlayerId, name: rightPlayerName, originalSide: rightOriginalSide },
-      originalPlayer1Id,
-      originalPlayer2Id
+      leftSide: { id: leftPlayerId, name: leftPlayerName},
+      rightSide: { id: rightPlayerId, name: rightPlayerName}
     });
 
     const modal = document.getElementById('tournament-bracket-modal');
@@ -594,7 +352,6 @@ export class TournamentManager {
       modal.remove();
     }
 
-    // Navigate to game screen with tournament mode
     const app = (window as any).app;
     const authManager = (window as any).authManager;
     const currentUser = authManager?.getCurrentUser();
@@ -614,9 +371,7 @@ export class TournamentManager {
         player1Id: leftPlayerId,
         player2Id: rightPlayerId,
         player1Name: leftPlayerName,
-        player2Name: rightPlayerName,
-        originalPlayer1Id,
-        originalPlayer2Id
+        player2Name: rightPlayerName
       };
 
       app.gameSettings = app.gameSettings || {};
@@ -628,185 +383,11 @@ export class TournamentManager {
       console.log('🏆 [Tournament] Current user:', currentUser.userId);
       console.log('🏆 [Tournament] Player 1 (LEFT):', leftPlayerId, leftPlayerName);
       console.log('🏆 [Tournament] Player 2 (RIGHT):', rightPlayerId, rightPlayerName);
-      console.log('🏆 [Tournament] Original IDs:', { originalPlayer1Id, originalPlayer2Id });
 
       await app.startGame();
     } else {
       showToast('Game start failed', 'error');
     }
-  }
-
-  private showSideSelectionDialog(
-    player1Id: number, 
-    player2Id: number, 
-    player1Name: string, 
-    player2Name: string,
-    currentUserId: number
-  ): Promise<'keep' | 'swap' | null> {
-    return new Promise((resolve) => {
-      const backdrop = document.createElement('div');
-      backdrop.className = 'modal-backdrop';
-      backdrop.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        backdrop-filter: blur(5px);
-      `;
-
-      // Determine current user's name and opponent's name
-      const isCurrentPlayer1 = currentUserId === player1Id;
-      const currentUserName = isCurrentPlayer1 ? player1Name : player2Name;
-      const opponentName = isCurrentPlayer1 ? player2Name : player1Name;
-
-      // Create modal content
-      const modalContent = document.createElement('div');
-      modalContent.style.cssText = `
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        padding: 40px;
-        max-width: 600px;
-        width: 90%;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        color: white;
-        text-align: center;
-      `;
-
-      modalContent.innerHTML = `
-        <div style="margin-bottom: 30px;">
-          <h2 style="font-size: 32px; margin-bottom: 10px; font-weight: bold;">
-            ⚔️ Choose Your Side
-          </h2>
-          <p style="font-size: 18px; opacity: 0.9;">
-            Select which side you want to play on
-          </p>
-        </div>
-
-        <div style="display: flex; gap: 20px; margin-bottom: 30px; justify-content: center;">
-          <button id="side-left-btn" class="side-choice-btn" style="
-            flex: 1;
-            max-width: 250px;
-            padding: 30px 20px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-          ">
-            <div style="font-size: 48px; margin-bottom: 10px;">⬅️</div>
-            <div style="font-weight: bold; margin-bottom: 8px;">LEFT SIDE</div>
-            <div style="font-size: 14px; opacity: 0.8; margin-bottom: 8px;">Controls: W/S or ↑/↓</div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffd700;">
-              ${isCurrentPlayer1 ? currentUserName : opponentName}
-            </div>
-          </button>
-
-          <button id="side-right-btn" class="side-choice-btn" style="
-            flex: 1;
-            max-width: 250px;
-            padding: 30px 20px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-          ">
-            <div style="font-size: 48px; margin-bottom: 10px;">➡️</div>
-            <div style="font-weight: bold; margin-bottom: 8px;">RIGHT SIDE</div>
-            <div style="font-size: 14px; opacity: 0.8; margin-bottom: 8px;">Controls: U/J</div>
-            <div style="font-size: 16px; font-weight: bold; color: #ffd700;">
-              ${isCurrentPlayer1 ? opponentName : currentUserName}
-            </div>
-          </button>
-        </div>
-
-        <button id="cancel-side-btn" style="
-          padding: 12px 30px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 10px;
-          color: white;
-          font-size: 16px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        ">
-          Cancel
-        </button>
-      `;
-
-      backdrop.appendChild(modalContent);
-      document.body.appendChild(backdrop);
-
-      // Add hover effects
-      const leftBtn = modalContent.querySelector('#side-left-btn') as HTMLElement;
-      const rightBtn = modalContent.querySelector('#side-right-btn') as HTMLElement;
-      const cancelBtn = modalContent.querySelector('#cancel-side-btn') as HTMLElement;
-
-      const addHoverEffect = (btn: HTMLElement) => {
-        btn.addEventListener('mouseenter', () => {
-          btn.style.background = 'rgba(255, 255, 255, 0.25)';
-          btn.style.border = '3px solid rgba(255, 255, 255, 0.6)';
-          btn.style.transform = 'scale(1.05)';
-        });
-        btn.addEventListener('mouseleave', () => {
-          btn.style.background = 'rgba(255, 255, 255, 0.15)';
-          btn.style.border = '3px solid rgba(255, 255, 255, 0.3)';
-          btn.style.transform = 'scale(1)';
-        });
-      };
-
-      addHoverEffect(leftBtn);
-      addHoverEffect(rightBtn);
-
-      cancelBtn.addEventListener('mouseenter', () => {
-        cancelBtn.style.background = 'rgba(255, 255, 255, 0.2)';
-        cancelBtn.style.border = '2px solid rgba(255, 255, 255, 0.5)';
-      });
-      cancelBtn.addEventListener('mouseleave', () => {
-        cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-        cancelBtn.style.border = '2px solid rgba(255, 255, 255, 0.3)';
-      });
-
-      // Handle button clicks
-      leftBtn.addEventListener('click', () => {
-        backdrop.remove();
-        // If current user is player1, keep order. If player2, swap.
-        resolve(isCurrentPlayer1 ? 'keep' : 'swap');
-      });
-
-      rightBtn.addEventListener('click', () => {
-        backdrop.remove();
-        // If current user is player1, swap. If player2, keep order.
-        resolve(isCurrentPlayer1 ? 'swap' : 'keep');
-      });
-
-      cancelBtn.addEventListener('click', () => {
-        backdrop.remove();
-        resolve(null);
-      });
-
-      // Allow ESC key to cancel
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          backdrop.remove();
-          resolve(null);
-          document.removeEventListener('keydown', handleEscape);
-        }
-      };
-      document.addEventListener('keydown', handleEscape);
-    });
   }
 
   public async recordMatchResult(tournamentId: number, matchId: number, winnerId: number, player1Score: number, player2Score: number): Promise<void> {
@@ -868,7 +449,6 @@ export class TournamentManager {
         
         this.showBracketModal(details);
         
-        // If tournament is finished, record on blockchain
         if (details.tournament.status === 'finished' && details.tournament.winner_id) {
           showToast(`Tournament complete! Winner: ${this.participantMap[details.tournament.winner_id]}`, 'success');
         }

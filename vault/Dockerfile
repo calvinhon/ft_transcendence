@@ -8,7 +8,7 @@ RUN apk add --update --virtual .deps --no-cache gnupg ca-certificates openssl &&
     wget https://releases.hashicorp.com/vault/${VERSION}/vault_${VERSION}_linux_amd64.zip && \
     wget https://releases.hashicorp.com/vault/${VERSION}/vault_${VERSION}_SHA256SUMS && \
     wget https://releases.hashicorp.com/vault/${VERSION}/vault_${VERSION}_SHA256SUMS.sig && \
-    wget -qO- https://www.hashicorp.com/.well-known/pgp-key.txt | gpg --import && \
+    gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys C874011F0AB405110D02105534365D9472D7468F && \
     gpg --verify vault_${VERSION}_SHA256SUMS.sig vault_${VERSION}_SHA256SUMS && \
     grep vault_${VERSION}_linux_amd64.zip vault_${VERSION}_SHA256SUMS | sha256sum -c && \
     unzip /tmp/vault_${VERSION}_linux_amd64.zip -d /tmp && \
