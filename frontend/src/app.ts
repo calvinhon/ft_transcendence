@@ -1552,6 +1552,7 @@ export class App {
         if (hostUser && hostUser.userId) this.selectedPlayerIds.add(String(hostUser.userId));
       } catch (e) { /* ignore */ }
     }
+    this.selectedPlayerIds.delete('ai-player');
     
     // Show the add player button for tournament mode
     const addTournamentPlayerBtn = document.getElementById('add-tournament-player-btn');
