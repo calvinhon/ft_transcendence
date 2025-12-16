@@ -366,7 +366,7 @@ CREATE TABLE game_events (
 - **Memory Management**: Automatic cleanup of finished games
 - **Database Optimization**: Indexed queries for statistics
 
-## 🔧 Monitoring & Debugging
+## 🔧 Operations & Debugging
 
 ### **Logging**
 - **Request Logging**: All HTTP/WebSocket requests

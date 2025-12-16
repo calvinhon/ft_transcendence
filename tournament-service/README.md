@@ -442,7 +442,7 @@ CREATE TABLE tournament_matches (
 - **Database Optimization**: Indexed queries for large tournaments
 - **Blockchain Efficiency**: Gas-optimized contract calls
 
-## 🔧 Monitoring & Operations
+## 🔧 Operations
 
 ### **Health Checks**
 - **Service Status**: Overall service health

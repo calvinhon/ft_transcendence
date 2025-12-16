@@ -4,7 +4,7 @@ import { AuthService } from '../../services/authService';
 import { validateEmail, sendError, sendSuccess } from '../../utils/responses';
 
 export async function forgotPasswordHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService(request.server);
+  const authService = new AuthService();
   try {
     const { email } = request.body as { email: string };
 

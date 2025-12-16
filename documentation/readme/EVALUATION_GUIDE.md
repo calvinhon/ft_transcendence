@@ -26,14 +26,9 @@ docker compose ps
 # Expected Output (actual status as of Dec 10, 2025):
 # NAME            STATUS
 # auth            Up
-# elasticsearch   Up (healthy)
-# filebeat        Up
 # game            Up
-# grafana         Up (healthy)
 # hardhat-node    Up (healthy)
-# kibana          Up (healthy)
 # nginx           Up
-# prometheus      Up (unhealthy)
 # ssr             Up
 # tournament      Up
 # user            Up
@@ -50,15 +45,6 @@ curl http://localhost:3001/health  # auth
 curl http://localhost:3002/health  # game  
 curl http://localhost:3004/health  # user
 curl http://localhost:3003/health  # tournament
-
-# 3. Elasticsearch working
-curl http://localhost:9200/_cluster/health
-
-# 4. Prometheus collecting metrics
-curl http://localhost:9090/-/healthy
-
-# 5. Grafana accessible
-curl http://localhost:3000/api/health
 ```
 
 ---
@@ -304,11 +290,6 @@ docker compose ps
 # FULL STACK (make start - adds 6 more):
 # ✅ nginx              - Reverse proxy with ModSecurity
 # ✅ ssr-service        - Server-side rendering
-# ✅ elasticsearch      - Log storage
-# ✅ kibana             - Log visualization (port 5601)
-# ✅ grafana            - Metrics dashboards (port 3000)
-# ✅ prometheus         - Metrics collection (port 9090)
-# ✅ filebeat           - Log shipping
 # 
 # 💡 Architecture: Each service uses embedded SQLite - no PostgreSQL needed!
 ```
@@ -500,12 +481,11 @@ make start
 
 # Verify all services start
 docker compose ps | grep -c "Up"
-# Expected: 12 (number of services)
+# Expected: 8 (number of services)
 
 # Check logs for errors
 docker compose logs | grep -i "error\|fatal" | grep -v "error_page"
-# Expected: Some startup connection errors (Kibana/Filebeat waiting for Elasticsearch)
-# These are transient and resolve once all services are ready
+# Expected: Minimal startup errors, services should be healthy within 2 minutes
 ```
 
 **Alternative Commands:**
@@ -2119,105 +2099,15 @@ curl http://localhost:3004/api/user/gdpr/consents \
 
 ---
 
-### 12. ELK Stack Logging (10 Points) ✅
+### 12. ELK Stack Logging (10 Points) ❌ REMOVED
 
-**Verification:**
+**Status:** ELK Stack was implemented but subsequently removed for architectural simplification.
 
-#### 12.1 Elasticsearch
+**Current State:** Basic logging remains in individual services using console.log and service-specific logging utilities.
 
-```bash
-# Check Elasticsearch health
-curl http://localhost:9200/_cluster/health?pretty
+---
 
-# Expected:
-# {
-#   "cluster_name": "docker-cluster",
-#   "status": "green",
-#   "number_of_nodes": 1
-# }
-
-# List indices
-curl http://localhost:9200/_cat/indices?v
-
-# Expected: filebeat-* indices
-# health status index                    docs.count
-# green  open   filebeat-2025.12.06      12345
-
-# Search logs
-curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": {
-      "match": {
-        "fields.service": "auth-service"
-      }
-    },
-    "size": 5
-  }'
-
-# Expected: Recent logs from auth-service
-```
-
-#### 12.2 Kibana
-
-**Browser Test:**
-
-1. Open http://localhost:5601
-2. Wait for Kibana to initialize
-3. Go to: Menu → Discover
-4. Create index pattern: `filebeat-*`
-5. Set time field: `@timestamp`
-6. View logs:
-   - See real-time log stream
-   - Filter by service
-   - Search for errors
-   - Create visualizations
-
-**API Test:**
-
-```bash
-# Check Kibana health
-curl http://localhost:5601/api/status
-
-# Expected:
-# {
-#   "status": {
-#     "overall": {
-#       "state": "green"
-#     }
-#   }
-# }
-```
-
-#### 12.3 Filebeat
-
-```bash
-# Check Filebeat is collecting logs
-docker logs filebeat | tail -20
-
-# Expected: "Publish event" messages
-
-# Verify logs are being shipped
-docker logs filebeat | grep -i "elasticsearch"
-
-# Expected: Connection to Elasticsearch successful
-
-# Check log volume
-curl "http://localhost:9200/filebeat-*/_count?pretty"
-
-# Expected: Thousands of documents
-# {
-#   "count": 12345
-# }
-```
-
-#### 12.4 Log Search Examples
-
-```bash
-# Find errors in last hour
-curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
-  -H "Content-Type: application/json" \
-  -d '{
+### 13. Monitoring - Prometheus/Grafana (5 Points) ❌ REMOVED
     "query": {
       "bool": {
         "must": [
@@ -2247,11 +2137,11 @@ curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
 
 ---
 
-### 13. Monitoring - Prometheus/Grafana (5 Points) ✅
+### 13. Monitoring - Prometheus/Grafana (5 Points) ❌ REMOVED
 
-**Verification:**
+**Status:** Monitoring infrastructure was implemented but subsequently removed for architectural simplification.
 
-#### 13.1 Prometheus
+**Current State:** Basic health checks remain in individual services.
 
 **Browser Test:**
 
@@ -2350,14 +2240,6 @@ curl http://admin:admin@localhost:3000/api/search?query=
 docker exec prometheus cat /etc/prometheus/prometheus.yml
 
 # Expected: Scrape configs for all services
-
-# Check metrics endpoints
-curl http://localhost:3001/metrics  # auth-service
-curl http://localhost:3002/metrics  # game-service
-
-# Expected: Prometheus format metrics
-# TYPE http_requests_total counter
-# http_requests_total{method="GET",route="/health"} 1234
 ```
 
 **Points:** 5/5 ✅

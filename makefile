@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: start full-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -12,96 +12,52 @@ help:
 	@echo "📚 FT_TRANSCENDENCE - Available Commands:"
 	@echo ""
 	@echo "🚀 Main Commands:"
-	@echo "  make start              - Quick start (FASTEST - uses cache)"
-	@echo "  make dev                - ⚡ DEV MODE: Core only (7 services, ~15s)"
-	@echo "  make full               - Full stack with monitoring (12 services, ~2-3min)"
-	@echo "  make full-start         - Full clean start (slower, fresh build)"
-	@echo "  make restart            - Restart services without rebuild"
-	@echo "  make rebuild            - Force rebuild from scratch (slowest)"
-	@echo "  make stop               - Stop all services"
-	@echo "  make logs               - View service logs"
-	@echo "  make health             - Check health of all services ⭐ NEW"
+	@echo "  make dev                - 🚀 DEV: Quick start with cached builds (~30s)"
+	@echo "  make clean-start        - 🧹 CLEAN: Remove images/volumes + fresh build (~2-3min)"
+	@echo "  make restart            - 🔄 RESTART: Restart containers without rebuild (~5s)"
+	@echo "  make rebuild            - 🔨 REBUILD: Rebuild from scratch, keep volumes (~2min)"
+	@echo "  make stop               - 🛑 STOP: Stop all services"
+	@echo "  make logs               - 📋 LOGS: View service logs"
+	@echo "  make health             - 🏥 HEALTH: Check all services status ⭐ NEW"
 	@echo ""
 	@echo "🔧 Maintenance:"
 	@echo "  make clean              - Remove containers, images, volumes"
 	@echo "  make clean-dev          - Clean node_modules and build artifacts"
-	@echo "  make optimize-monitoring - Apply monitoring stack optimizations"
-	@echo "  make cleanup-logs       - Delete old Elasticsearch indices"
 	@echo "  make ps                 - Show container status"
 	@echo "  make test               - Show test documentation"
 	@echo ""
-	@echo "💡 Tip: Use 'make dev' for daily coding (7 services, SQLite DB)"
-	@echo "💡 Use 'make full' when you need monitoring/logging (12 services)"
-	@echo "💡 Run 'make optimize-monitoring' after first 'make full'"
+	@echo "💡 Quick dev cycle: 'make dev' → code → 'make restart'"
+	@echo "💡 Fresh start: 'make clean-start' (removes everything)"
 	@echo "💡 Architecture: Microservices with SQLite (no external DB needed)"
 	@echo ""
 
-# Quick start - fastest option (use cached builds)
-start: check-docker check-compose ensure-database-folders
-	@echo "🛑 Stopping any running containers first..."
-	@docker compose down --remove-orphans 2>/dev/null || true
-	@docker ps -q | xargs -r docker stop 2>/dev/null || true
-	@echo "🚀 Quick starting services with cache..."
-	docker compose up -d --build --force-recreate
-	@$(MAKE) open
-	@echo "✅ Services started! Visit http://localhost"
-
-# Dev mode - core services only (no monitoring stack)
+# Dev mode - quick development start with cached builds
 dev: check-docker check-compose ensure-database-folders
 	@echo "🛑 Stopping any running containers first..."
 	@docker compose down --remove-orphans 2>/dev/null || true
-	@docker compose -f docker-compose.core.yml down --remove-orphans 2>/dev/null || true
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
-	@echo "⚡ Starting DEV MODE (core services only, no monitoring)..."
-	docker compose -f docker-compose.core.yml up -d --build --force-recreate
+	@echo "🚀 Starting all services for development (uses build cache)..."
+	docker compose up -d --build --force-recreate
 	@$(MAKE) open
-	@echo "✅ Core services started! Visit http://localhost"
-	@echo "💡 To add monitoring: make monitoring-start"
+	@echo "✅ All services started! Visit http://localhost"
 
-# Full stack with monitoring
-full: check-docker check-compose ensure-database-folders
-	@echo "🛑 Stopping any running containers first..."
-	@docker compose down --remove-orphans 2>/dev/null || true
-	@docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml down --remove-orphans 2>/dev/null || true
-	@docker ps -q | xargs -r docker stop 2>/dev/null || true
-	@echo "🚀 Starting FULL STACK (with monitoring)..."
-	docker compose -f docker-compose.core.yml -f docker-compose.monitoring.yml up -d --build --force-recreate
-	@$(MAKE) open
-	@echo "✅ Full stack started! Visit http://localhost"
-	@echo "📊 Monitoring: Kibana (5601), Grafana (3000), Prometheus (9090)"
-
-# Start only monitoring services (assumes core is running)
-monitoring-start: check-docker check-compose
-	@echo "📊 Starting monitoring services..."
-	docker compose -f docker-compose.monitoring.yml up -d
-	@echo "✅ Monitoring started!"
-	@echo "📊 Kibana: http://localhost:5601"
-	@echo "📊 Grafana: http://localhost:3000 (admin/admin)"
-	@echo "📊 Prometheus: http://localhost:9090"
-
-# Stop only monitoring services
-monitoring-stop: check-docker check-compose
-	@echo "🛑 Stopping monitoring services..."
-	docker compose -f docker-compose.monitoring.yml down
-	@echo "✅ Monitoring stopped!"
-
-# Full start with clean (slower but ensures fresh build)
-full-start: check-docker check-compose clean-dev clean ensure-database-folders
-	@echo "🛑 Stopping any running containers first..."
-	@docker ps -q | xargs -r docker stop 2>/dev/null || true
-	@echo "🚀 Full start with clean build..."
+# Clean start - complete reset: removes images, volumes, host artifacts + fresh build
+clean-start: check-docker check-compose clean-dev clean ensure-database-folders
+	@echo "� Clean start with fresh build (after removing images & volumes)..."
 	docker compose build
 	docker compose up -d --force-recreate
 	@$(MAKE) open
 	@echo "✅ Services started! Visit http://localhost"
 
+# Restart - quick restart of existing containers without rebuilding
 restart: check-docker check-compose
 	@echo "🔄 Restarting services without rebuild..."
 	docker compose restart
 	@echo "✅ Services restarted!"
 
+# Rebuild - rebuild images from scratch (no cache) but keep data volumes
 rebuild: check-docker check-compose clean-dev ensure-database-folders
-	@echo "🔨 Rebuilding and restarting services..."
+	@echo "🔨 Rebuilding and restarting services from scratch..."
 	docker compose down
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
@@ -230,24 +186,6 @@ logs:
 down:
 	@echo "🛑 Stopping and removing containers..."
 	docker compose down --remove-orphans
-
-optimize-monitoring:
-	@echo "🔧 Applying monitoring stack optimizations..."
-	@if ! docker ps | grep -q elasticsearch; then \
-		echo "⚠️  Services not running. Start services first with 'make start'"; \
-		exit 1; \
-	fi
-	@./scripts/apply-elasticsearch-optimization.sh
-	@echo "✅ Optimizations applied!"
-
-cleanup-logs:
-	@echo "🧹 Cleaning up old Elasticsearch data..."
-	@if ! docker ps | grep -q elasticsearch; then \
-		echo "⚠️  Elasticsearch not running. Start services first with 'make start'"; \
-		exit 1; \
-	fi
-	@./scripts/cleanup-elasticsearch.sh
-	@echo "✅ Cleanup complete!"
 
 ps:
 	@echo "📊 Container status:"

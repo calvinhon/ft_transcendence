@@ -4,7 +4,7 @@ import { AuthService } from '../../services/authService';
 import { sendError, sendSuccess } from '../../utils/responses';
 
 export async function profileHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService(request.server);
+  const authService = new AuthService();
   try {
     const { userId } = request.params as { userId: string };
     const userIdNum = parseInt(userId, 10);

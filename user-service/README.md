@@ -17,7 +17,6 @@ user-service/
 │   └── index.ts           # TypeScript interfaces & types
 ├── utils/
 │   ├── database.ts        # Database utility functions
-│   ├── logging.ts         # Shared logging middleware
 │   └── responses.ts       # Response utilities (if applicable)
 └── routes/
     ├── index.ts           # Route aggregation & health check
@@ -257,7 +256,7 @@ interface SearchSuggestion {
 - **Development**: ts-node-dev (hot reload)
 - **Build**: TypeScript compiler
 - **Testing**: Custom bash scripts with TARGET support
-- **Logging**: Pino logger with custom middleware
+- **Logging**: Pino logger with built-in request logging
 
 ## 📦 Dependencies
 
@@ -484,7 +483,7 @@ CREATE TABLE user_statistics (
 - **Caching Strategy**: Frequently accessed data caching
 - **Scalable Storage**: File storage for user uploads
 
-## 🔧 Monitoring & Operations
+## 🔧 Operations
 
 ### **Health Monitoring**
 - **Service Status**: Overall service health
@@ -549,8 +548,7 @@ await fetch(`/user/achievements/${userId}/tournament_win`, {
 - **Compression**: Image optimization and WebP format
 
 ### **Search Scaling**
-- **Elasticsearch**: Advanced search capabilities
-- **Search Sharding**: Distributed search indexes
+- **Database Indexing**: Optimized search queries
 - **Query Optimization**: Complex search query handling
 
 ## 🧪 Testing Strategy
@@ -569,7 +567,7 @@ This service follows **Modular Monolith** principles with recent refactoring for
 2. **Shared Database**: Single database with clear boundaries
 3. **API Composition**: Route aggregation for unified API
 4. **Independent Deployment**: Service-level deployment units
-5. **Shared Infrastructure**: Common logging and monitoring
+5. **Shared Infrastructure**: Common logging
 6. **Business Logic Layer**: Extracted services for clean separation of concerns
 
 ## 🔄 Recent Refactoring (2025)
@@ -577,7 +575,6 @@ This service follows **Modular Monolith** principles with recent refactoring for
 ### **Modularization Changes**
 - **File Structure**: Moved types to `src/types/index.ts`, utils to `src/utils/`
 - **Service Layer**: Created `src/services/userService.ts` for business logic
-- **Logging**: Added shared logging middleware in `src/utils/logging.ts`
 - **Database**: Centralized database utilities in `src/database/index.ts`
 - **Routes**: Updated imports to use new modular structure
 

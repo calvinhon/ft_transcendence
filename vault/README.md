@@ -11,28 +11,14 @@
 #     const vaultToken = process.env.VAULT_TOKEN || 'dev-token';
 #
 #     try {
-#       // Get JWT secret
-#       const jwtResponse = await axios.get(
-#         `${vaultAddr}/v1/secret/data/jwt-secret`,
+#       // Get database credentials
+#       const dbResponse = await axios.get(
+#         `${vaultAddr}/v1/secret/data/database`,
 #         { headers: { 'X-Vault-Token': vaultToken } }
 #       );
-#       process.env.JWT_SECRET = jwtResponse.data.data.data.value;
-#
-#       // Get OAuth credentials
-#       const googleResponse = await axios.get(
-#         `${vaultAddr}/v1/secret/data/google-oauth`,
-#         { headers: { 'X-Vault-Token': vaultToken } }
-#       );
-#       process.env.GOOGLE_CLIENT_ID = googleResponse.data.data.data.client_id;
-#       process.env.GOOGLE_CLIENT_SECRET = googleResponse.data.data.data.client_secret;
-#
-#       // Get GitHub credentials
-#       const githubResponse = await axios.get(
-#         `${vaultAddr}/v1/secret/data/github-oauth`,
-#         { headers: { 'X-Vault-Token': vaultToken } }
-#       );
-#       process.env.GITHUB_CLIENT_ID = githubResponse.data.data.data.client_id;
-#       process.env.GITHUB_CLIENT_SECRET = githubResponse.data.data.data.client_secret;
+#       process.env.DB_HOST = dbResponse.data.data.data.host;
+#       process.env.DB_USER = dbResponse.data.data.data.user;
+#       process.env.DB_PASSWORD = dbResponse.data.data.data.password;
 #
 #       console.log('Secrets loaded from Vault');
 #     } catch (err) {

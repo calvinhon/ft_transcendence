@@ -532,13 +532,8 @@ docker compose ps
 # tournament-service  Up (healthy)        3003/tcp
 # user-service        Up (healthy)        3004/tcp
 # frontend            Up                  80/tcp, 443/tcp
-# elasticsearch       Up (healthy)        9200/tcp
 # hardhat-node        Up (healthy)        8545/tcp
-# prometheus          Up                  9090/tcp
-# grafana             Up                  3000/tcp
-# kibana              Up                  5601/tcp
 # vault               Up                  8200/tcp
-# filebeat            Created/Running
 # ssr-service         Up                  3005/tcp
 ```
 
@@ -865,19 +860,11 @@ curl -s "http://localhost:9200/logs-auth-*/_search?q=login" | jq '.hits.hits[0:5
 curl -s "http://localhost:9200/_cat/indices" | awk '{print $3}' | sort | uniq -c
 ```
 
-### Prometheus & Monitoring
+### Prometheus & Monitoring ❌ REMOVED
 
-#### Dashboard Overview
+**Status:** Monitoring infrastructure was implemented but subsequently removed for architectural simplification.
 
-The Grafana dashboard displays system metrics collected by Prometheus:
-
-- **Prometheus Status**: Real-time health of the metrics collection system
-- **Vault Status**: Health of the Hashicorp Vault service
-- **Microservices Health Check**: Guide for manually checking microservice health
-
-#### Why Microservices Show Zero/Down
-
-**Current Status:** The 4 microservices (Auth, Game, Tournament, User) do not yet have Prometheus metric exporters implemented. This is why they appear as "Down" or show "0" in Prometheus queries.
+**Current State:** Basic health checks remain in individual services.
 
 **What's happening:**
 - Prometheus is configured to scrape `/metrics` endpoint from each service

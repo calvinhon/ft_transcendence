@@ -32,8 +32,6 @@ function initializeTables(): void {
     CREATE TABLE IF NOT EXISTS tournaments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      description TEXT,
-      max_participants INTEGER DEFAULT 8,
       current_participants INTEGER DEFAULT 0,
       status TEXT DEFAULT 'open',
       created_by INTEGER NOT NULL,
@@ -95,8 +93,6 @@ function initializeTestTables(): void {
       CREATE TABLE IF NOT EXISTS tournaments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        description TEXT,
-        max_participants INTEGER DEFAULT 8,
         current_participants INTEGER DEFAULT 0,
         status TEXT DEFAULT 'open',
         created_by INTEGER NOT NULL,

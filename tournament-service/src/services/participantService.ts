@@ -23,10 +23,6 @@ export class ParticipantService {
       throw new Error('Tournament is not open for registration');
     }
 
-    if (tournament.current_participants >= tournament.max_participants) {
-      throw new Error('Tournament is full');
-    }
-
     // Check if user is already a participant
     const existingParticipant = await dbGet<TournamentParticipant>(
       'SELECT * FROM tournament_participants WHERE tournament_id = ? AND user_id = ?',
@@ -48,12 +44,6 @@ export class ParticipantService {
       'UPDATE tournaments SET current_participants = current_participants + 1 WHERE id = ?',
       [tournamentId]
     );
-
-    // Check if tournament is now full
-    const updatedTournament = await TournamentService.getTournamentById(tournamentId);
-    if (updatedTournament && updatedTournament.current_participants >= updatedTournament.max_participants) {
-      await dbRun('UPDATE tournaments SET status = ? WHERE id = ?', ['full', tournamentId]);
-    }
 
     const participant = await this.getParticipantById(result.lastID);
     if (!participant) {
@@ -90,13 +80,6 @@ export class ParticipantService {
         'UPDATE tournaments SET current_participants = current_participants - 1 WHERE id = ?',
         [tournamentId]
       );
-
-      // Change status back to open if it was full
-      const updatedTournament = await TournamentService.getTournamentById(tournamentId);
-      if (updatedTournament && updatedTournament.status === 'full' &&
-          updatedTournament.current_participants < updatedTournament.max_participants) {
-        await dbRun('UPDATE tournaments SET status = ? WHERE id = ?', ['open', tournamentId]);
-      }
 
       logger.info('User left tournament successfully', { tournamentId, userId });
       return true;

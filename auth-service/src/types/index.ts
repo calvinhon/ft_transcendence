@@ -16,13 +16,6 @@ export interface DatabaseUser {
   last_login?: string;
 }
 
-export interface JWTPayload {
-  userId: number;
-  username: string;
-  iat?: number;
-  exp?: number;
-}
-
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -42,9 +35,5 @@ export interface ServiceConfig {
   cors: {
     origin: boolean | string | string[];
     credentials?: boolean;
-  };
-  jwt: {
-    secret: string;
-    expiresIn: string;
   };
 }

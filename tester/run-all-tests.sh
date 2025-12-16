@@ -34,11 +34,6 @@ CONTAINERS=(
     "hardhat-node"
     "frontend"
     "ssr"
-    "elasticsearch"
-    "kibana"
-    "filebeat"
-    "prometheus"
-    "grafana"
 )
 
 ALL_RUNNING=true
@@ -101,7 +96,7 @@ run_test_module() {
 main() {
     echo -e "${YELLOW}╔════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${YELLOW}║        FT_TRANSCENDENCE - COMPREHENSIVE TEST SUITE         ║${NC}"
-    echo -e "${YELLOW}║              15 Modules, 180 Total Tests                   ║${NC}"
+    echo -e "${YELLOW}║              12 Modules, 143 Total Tests                   ║${NC}"
     echo -e "${YELLOW}╚════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     
@@ -115,15 +110,10 @@ main() {
     run_test_module "Microservices Architecture" "test-microservices.sh"
     run_test_module "Server-Side Pong" "test-server-side-pong.sh"
     
-    # Advanced Modules (65 points)
-    echo -e "${YELLOW}=== TESTING ADVANCED MODULES (65 Points) ===${NC}"
-    run_test_module "OAuth/SSO" "test-oauth-sso.sh"
+    # Advanced Modules (50 points)
+    echo -e "${YELLOW}=== TESTING ADVANCED MODULES (50 Points) ===${NC}"
     run_test_module "WAF & Vault" "test-waf-vault.sh"
-    run_test_module "ELK Logging" "test-elk-logging.sh"
-    run_test_module "Monitoring (Prometheus/Grafana)" "test-monitoring.sh"
     run_test_module "GDPR Compliance" "test-gdpr-compliance.sh"
-    run_test_module "CLI Pong Client" "test-cli-client.sh"
-    run_test_module "2FA/TOTP" "test-2fa.sh"
     run_test_module "SSR Integration" "test-ssr.sh"
     
     # Print summary
@@ -172,7 +162,7 @@ main() {
     if [ "$fail_count" -eq 0 ] && [ "$missing_count" -eq 0 ]; then
         echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${GREEN}║                   ALL TESTS PASSED! ✓                      ║${NC}"
-        echo -e "${GREEN}║              15/15 Modules - 100% Complete                 ║${NC}"
+        echo -e "${GREEN}║              12/12 Modules - 100% Complete                 ║${NC}"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
         EXIT_CODE=0
     else

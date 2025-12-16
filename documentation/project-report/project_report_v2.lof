@@ -1,0 +1,47 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Observability Stack}}{12}{figure.caption.5}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{13}{figure.caption.6}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{15}{figure.caption.7}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{15}{figure.caption.8}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{16}{figure.caption.9}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{18}{figure.caption.12}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{19}{figure.caption.13}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Login User Interface: Email/Password Authentication with Remember Me Option}}{20}{figure.caption.15}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Account Registration UI: New Account Creation with Email Verification}}{21}{figure.caption.17}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces 2FA Verification: OAuth 2-Step Verification and TOTP Setup}}{21}{figure.caption.19}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Password Recovery: Secure Password Reset Flow with Email Verification}}{22}{figure.caption.21}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Main Menu: Game Mode Selection (Arcade, Campaign, Tournament, Training)}}{25}{figure.caption.38}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Available Game Modes: Quick Play, Campaign, Tournament, Bot Training}}{26}{figure.caption.39}%
+\contentsline {figure}{\numberline {6.3}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{27}{figure.caption.40}%
+\contentsline {figure}{\numberline {6.4}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{28}{figure.caption.41}%
+\contentsline {figure}{\numberline {6.5}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{28}{figure.caption.42}%
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Campaign Level Up: Progression System with Difficulty Scaling}}{29}{figure.caption.43}%
+\contentsline {figure}{\numberline {6.7}{\ignorespaces Campaign AI Opponent: Machine Learning-Based Adaptive Difficulty}}{29}{figure.caption.44}%
+\contentsline {figure}{\numberline {6.8}{\ignorespaces Campaign Retry Interface: Level Restart and Progress Recovery}}{30}{figure.caption.45}%
+\contentsline {figure}{\numberline {6.9}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{30}{figure.caption.46}%
+\contentsline {figure}{\numberline {6.10}{\ignorespaces Tournament Bracket: Visual Tournament Progression and Schedule}}{31}{figure.caption.47}%
+\contentsline {figure}{\numberline {6.11}{\ignorespaces Tournament Match: Live Game During Tournament Competition}}{31}{figure.caption.48}%
+\contentsline {figure}{\numberline {6.12}{\ignorespaces Tournament Match Result: Winner Determination and Bracket Advancement}}{32}{figure.caption.49}%
+\contentsline {figure}{\numberline {6.13}{\ignorespaces Tournament Games List: All Scheduled and Completed Matches}}{32}{figure.caption.50}%
+\contentsline {figure}{\numberline {6.14}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{33}{figure.caption.51}%
+\contentsline {figure}{\numberline {6.15}{\ignorespaces Game Statistics: Win/Loss Record, Win Rate, Rating, Achievement Progress}}{33}{figure.caption.52}%
+\contentsline {figure}{\numberline {6.16}{\ignorespaces Match History: Complete Record of All Played Matches with Results and Duration}}{34}{figure.caption.53}%
+\contentsline {figure}{\numberline {6.17}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{34}{figure.caption.54}%
+\contentsline {figure}{\numberline {6.18}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{35}{figure.caption.55}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Project Gantt Chart: Phases, milestones, and timeline}}{41}{figure.caption.56}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {B.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{42}{figure.caption.57}%
+\contentsline {figure}{\numberline {B.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{43}{figure.caption.58}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

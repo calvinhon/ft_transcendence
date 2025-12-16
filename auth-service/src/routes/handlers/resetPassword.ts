@@ -4,7 +4,7 @@ import { AuthService } from '../../services/authService';
 import { sendError, sendSuccess } from '../../utils/responses';
 
 export async function resetPasswordHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService(request.server);
+  const authService = new AuthService();
   try {
     const { token, newPassword } = request.body as { token: string; newPassword: string };
 

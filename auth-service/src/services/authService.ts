@@ -1,15 +1,11 @@
 // auth-service/src/services/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { FastifyInstance } from 'fastify';
-import { User, DatabaseUser, JWTPayload } from '../types';
+import { User, DatabaseUser } from '../types';
 import { getQuery, runQuery } from '../utils/database';
-import { twoFactorService } from './twoFactorService.js';
 
 export class AuthService {
-  constructor(private fastify: FastifyInstance) {}
-
-  async register(username: string, email: string, password: string): Promise<{ userId: number; token: string }> {
+  async register(username: string, email: string, password: string): Promise<{ userId: number }> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await runQuery(
@@ -17,17 +13,12 @@ export class AuthService {
       [username, email, hashedPassword]
     );
 
-    const token = this.fastify.jwt.sign({
-      userId: (result as any).lastID,
-      username
-    } as JWTPayload, { expiresIn: '24h' });
-
-    return { userId: (result as any).lastID, token };
+    return { userId: (result as any).lastID };
   }
 
-  async login(identifier: string, password: string, totpToken?: string): Promise<{ user: User; token: string; requires2FA?: boolean }> {
-    const user = await getQuery<DatabaseUser & { two_factor_enabled: boolean }>(
-      'SELECT id, username, email, password_hash, two_factor_enabled FROM users WHERE username = ? OR email = ?',
+  async login(identifier: string, password: string): Promise<User> {
+    const user = await getQuery<DatabaseUser>(
+      'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
     );
 
@@ -40,46 +31,16 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Check if 2FA is enabled
-    if (user.two_factor_enabled) {
-      if (!totpToken) {
-        // Return special response indicating 2FA is required
-        return {
-          user: {
-            userId: user.id,
-            username: user.username,
-            email: user.email
-          },
-          token: '', // No token yet
-          requires2FA: true
-        };
-      }
-
-      // Verify TOTP token
-      const isValidToken = await twoFactorService.verifyToken(user.id, totpToken);
-      if (!isValidToken) {
-        throw new Error('Invalid 2FA token');
-      }
-    }
-
     // Update last login
     await runQuery(
       'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?',
       [user.id]
     );
 
-    const token = this.fastify.jwt.sign({
-      userId: user.id,
-      username: user.username
-    } as JWTPayload, { expiresIn: '24h' });
-
     return {
-      user: {
-        userId: user.id,
-        username: user.username,
-        email: user.email
-      },
-      token
+      userId: user.id,
+      username: user.username,
+      email: user.email
     };
   }
 
@@ -99,14 +60,6 @@ export class AuthService {
       email: user.email,
       created_at: user.created_at
     };
-  }
-
-  async verifyToken(token: string): Promise<JWTPayload> {
-    try {
-      return this.fastify.jwt.verify(token) as JWTPayload;
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
   }
 
   async createPasswordResetToken(email: string): Promise<{ resetToken: string; resetLink: string }> {
