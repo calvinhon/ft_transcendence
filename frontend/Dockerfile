@@ -20,7 +20,6 @@ COPY index.html ./
 RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"
 
 FROM alpine:3.17 AS waf
-# move nginx versio back to 1.29.2
 ENV NGINX_VERSION=1.29.4
 ENV MODSEC_TAG=v3.0.14
 ENV OWASP_TAG=v3.3.4
@@ -66,7 +65,6 @@ RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /
 # Copy all built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
-# COPY --from=waf /opt/nginx-${NGINX_VERSION}/objs/ngx_http_modsecurity_module.so /usr/lib/nginx/modules/
 COPY --from=waf /opt/nginx-${NGINX_VERSION}/objs/ngx_http_modsecurity_module.so /usr/lib/nginx/modules/
 COPY --from=waf /usr/local/modsecurity /usr/local/modsecurity
 COPY --from=waf /usr/local/owasp-modsecurity-crs /usr/local/modsecurity-crs
