@@ -1,6 +1,6 @@
 # vault/config/config.hcl
 
-# UI configuration - enables the web dashboard at http://localhost:8200
+# UI configuration - enables the web dashboard at https://localhost:8200
 ui = true
 
 # Integrated Storage (Raft) configuration
@@ -16,14 +16,16 @@ storage "raft" {
 # For real production, you would provide cert_file and key_file.
 listener "tcp" {
   address     = "0.0.0.0:8200"
-  tls_disable = "true"
+  tls_disable = "false"
+  tls_cert_file = "/vault/certs/vault-cert.pem"
+  tls_key_file = "/vault/certs/vault-key.pem"
 }
 
 # API Address - address to advertise to other cluster members
-api_addr = "http://localhost:8200"
+api_addr = "https://localhost:8200"
 
 # Cluster Address - address for cluster-to-cluster communication
-cluster_addr = "http://127.0.0.1:8201"
+cluster_addr = "https://127.0.0.1:8201"
 
 # Prevent memory swapping (important for security)
 disable_mlock = true
