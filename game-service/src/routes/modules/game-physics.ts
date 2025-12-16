@@ -16,6 +16,10 @@ export class GamePhysics {
   updateBall(ball: Ball, paddles: Paddles, gameId: number): { scored: boolean; scorer?: 'player1' | 'player2' } {
     if (ball.frozen) return { scored: false };
 
+    // Store previous position for swept collision detection
+    const prevX = ball.x;
+    const prevY = ball.y;
+
     // Update ball position
     ball.x += ball.dx;
     ball.y += ball.dy;
@@ -25,46 +29,10 @@ export class GamePhysics {
       ball.dy = -ball.dy;
     }
 
-    // Ball collision with paddles - Left side (team1/player1)
-    if (ball.x <= 60 && ball.x >= 50) {
-      if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
-        // Check team1 paddles
-        if (paddles.team1 && paddles.team1.length > 0) {
-          for (const paddle of paddles.team1) {
-            if (ball.y >= paddle.y && ball.y <= paddle.y + 100) {
-              this.handlePaddleHit(ball, paddle, 'left', gameId);
-              return { scored: false };
-            }
-          }
-        }
-      } else {
-        // Check single player1 paddle
-        if (ball.y >= paddles.player1.y && ball.y <= paddles.player1.y + 100) {
-          this.handlePaddleHit(ball, paddles.player1, 'left', gameId);
-          return { scored: false };
-        }
-      }
-    }
-
-    // Ball collision with paddles - Right side (team2/player2)
-    if (ball.x >= 740 && ball.x <= 750) {
-      if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
-        // Check team2 paddles
-        if (paddles.team2 && paddles.team2.length > 0) {
-          for (const paddle of paddles.team2) {
-            if (ball.y >= paddle.y && ball.y <= paddle.y + 100) {
-              this.handlePaddleHit(ball, paddle, 'right', gameId);
-              return { scored: false };
-            }
-          }
-        }
-      } else {
-        // Check single player2 paddle
-        if (ball.y >= paddles.player2.y && ball.y <= paddles.player2.y + 100) {
-          this.handlePaddleHit(ball, paddles.player2, 'right', gameId);
-          return { scored: false };
-        }
-      }
+    // Swept collision detection for paddles
+    const collisionResult = this.checkSweptPaddleCollision(ball, prevX, prevY, paddles, gameId);
+    if (collisionResult.collided) {
+      return { scored: false };
     }
 
     // Check for scoring
@@ -78,8 +46,76 @@ export class GamePhysics {
     return { scored: false };
   }
 
+  private checkSweptPaddleCollision(ball: Ball, prevX: number, prevY: number, paddles: Paddles, gameId: number): { collided: boolean } {
+    // Check left side paddles
+    if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
+      // Check team1 paddles
+      if (paddles.team1 && paddles.team1.length > 0) {
+        for (const paddle of paddles.team1) {
+          if (this.checkSweptCollisionWithPaddle(ball, prevX, prevY, paddle, 'left', gameId)) {
+            return { collided: true };
+          }
+        }
+      }
+    } else {
+      // Check single player1 paddle
+      if (this.checkSweptCollisionWithPaddle(ball, prevX, prevY, paddles.player1, 'left', gameId)) {
+        return { collided: true };
+      }
+    }
+
+    // Check right side paddles
+    if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
+      // Check team2 paddles
+      if (paddles.team2 && paddles.team2.length > 0) {
+        for (const paddle of paddles.team2) {
+          if (this.checkSweptCollisionWithPaddle(ball, prevX, prevY, paddle, 'right', gameId)) {
+            return { collided: true };
+          }
+        }
+      }
+    } else {
+      // Check single player2 paddle
+      if (this.checkSweptCollisionWithPaddle(ball, prevX, prevY, paddles.player2, 'right', gameId)) {
+        return { collided: true };
+      }
+    }
+
+    return { collided: false };
+  }
+
+  private checkSweptCollisionWithPaddle(ball: Ball, prevX: number, prevY: number, paddle: Paddle, side: 'left' | 'right', gameId: number): boolean {
+    // Define paddle boundaries (10 pixel width)
+    const paddleLeft = side === 'left' ? paddle.x : paddle.x - 10;
+    const paddleRight = side === 'left' ? paddle.x + 10 : paddle.x;
+    const paddleX = side === 'left' ? paddleRight : paddleLeft; // The edge the ball should hit
+
+    // Check if ball crosses the paddle's collision plane
+    const crossedPaddleX = (prevX <= paddleX && ball.x >= paddleX) || (prevX >= paddleX && ball.x <= paddleX);
+
+    if (crossedPaddleX) {
+      // Calculate the y-position where the ball crosses the paddle's collision plane
+      const t = (paddleX - prevX) / (ball.x - prevX);
+      const crossY = prevY + t * (ball.y - prevY);
+
+      // Check if the crossing point is within the paddle's y-range
+      if (crossY >= paddle.y && crossY <= paddle.y + 110) {
+        // Adjust ball position to just outside the paddle boundary
+        // Add small offset to prevent sticking
+        const offset = side === 'left' ? 1 : -1;
+        ball.x = paddleX + offset;
+        ball.y = crossY;
+
+        this.handlePaddleHit(ball, paddle, side, gameId);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   private handlePaddleHit(ball: Ball, paddle: Paddle, side: 'left' | 'right', gameId: number): void {
-    const hitPos = (ball.y - paddle.y) / 100;
+    const hitPos = (ball.y - paddle.y) / 110;
     const angle = side === 'left'
       ? (hitPos - 0.5) * Math.PI / 2
       : Math.PI + (hitPos - 0.5) * Math.PI / 2;

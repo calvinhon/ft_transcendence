@@ -8,6 +8,10 @@ export class GameAI {
   private ballX: number = 400;
   private ballY: number = 300;
   private paddleSpeed: number;
+  
+  // Simple smoothing: reduce decision frequency
+  private frameCounter: number = 0;
+  private targetY: number = 300; // Consistent target position
 
   constructor(aiDifficulty: 'easy' | 'medium' | 'hard', gameMode: string, paddleSpeed: number) {
     this.aiDifficulty = aiDifficulty;
@@ -21,61 +25,70 @@ export class GameAI {
   }
 
   moveBotPaddle(paddles: Paddles, gameId: number, team2Players?: any[]): void {
-    let reactionDelay = false;
-    let errorMargin = 0;
-    let moveSpeed = this.paddleSpeed;
-
-    // Adjust AI behavior based on difficulty
-    switch (this.aiDifficulty) {
-      case 'easy':
-        reactionDelay = Math.random() > 0.4; // 40% chance bot doesn't react
-        errorMargin = 30; // Large error margin
-        break;
-      case 'medium':
-        reactionDelay = Math.random() > 0.6; // 20% chance bot doesn't react
-        errorMargin = 15; // Medium error margin
-        break;
-      case 'hard':
-        reactionDelay = Math.random() > 0.8; // Only 2% chance bot doesn't react (nearly perfect)
-        errorMargin = 5; // Very small error margin (nearly perfect aim)
-        break;
+    this.frameCounter++;
+    
+    // Make decisions every 4 frames (15 FPS) for smooth movement
+    const decisionFrequency = 4;
+    if (this.frameCounter % decisionFrequency !== 0) {
+      // Continue moving towards current target
+      this.smoothMoveTowardsTarget(paddles, team2Players);
+      return;
     }
 
-    if (reactionDelay) return; // Sometimes bot doesn't react
+    // Update target position based on ball with some error margin
+    let errorMargin = 0;
+    switch (this.aiDifficulty) {
+      case 'easy': errorMargin = 25; break;
+      case 'medium': errorMargin = 12; break;
+      case 'hard': errorMargin = 3; break;
+    }
+    
+    // Sometimes don't react (difficulty-based)
+    const reactionChance = this.aiDifficulty === 'easy' ? 0.3 : this.aiDifficulty === 'medium' ? 0.5 : 0.9;
+    if (Math.random() > reactionChance) {
+      this.smoothMoveTowardsTarget(paddles, team2Players);
+      return;
+    }
 
+    // Set new target with consistent error margin
+    this.targetY = this.ballY + (Math.random() - 0.5) * errorMargin * 2;
+    this.targetY = Math.max(50, Math.min(550, this.targetY)); // Keep within bounds
+    
+    this.smoothMoveTowardsTarget(paddles, team2Players);
+  }
+
+  private smoothMoveTowardsTarget(paddles: Paddles, team2Players?: any[]): void {
     // Handle arcade/tournament mode with multiple paddles
     if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
       if (paddles.team2 && paddles.team2.length > 0) {
-        // Only control paddles that correspond to bot players
         if (team2Players && team2Players.length > 0) {
-          team2Players.forEach((player, index) => {
+          team2Players.forEach((player) => {
             if (player.isBot && paddles.team2 && paddles.team2[player.paddleIndex]) {
-              this.moveSingleBotPaddle(paddles.team2[player.paddleIndex], errorMargin, moveSpeed);
+              this.movePaddleTowardsTarget(paddles.team2[player.paddleIndex]);
             }
           });
         } else {
-          // Fallback: if no team2Players data, control all paddles (legacy behavior)
           paddles.team2.forEach((botPaddle) => {
-            this.moveSingleBotPaddle(botPaddle, errorMargin, moveSpeed);
+            this.movePaddleTowardsTarget(botPaddle);
           });
         }
       }
     } else {
       // Handle coop mode with single paddle
       if (paddles.player2) {
-        this.moveSingleBotPaddle(paddles.player2, errorMargin, moveSpeed);
+        this.movePaddleTowardsTarget(paddles.player2);
       }
     }
   }
 
-  private moveSingleBotPaddle(botPaddle: any, errorMargin: number, moveSpeed: number): void {
-    const paddleCenter = botPaddle.y + 50; // Center of 100px paddle
-    const ballY = this.ballY + errorMargin * (Math.random() - 0.5); // Add some randomness
-
-    if (paddleCenter < ballY - errorMargin && botPaddle.y < 500) {
-      botPaddle.y = Math.min(500, botPaddle.y + moveSpeed); // Move down
-    } else if (paddleCenter > ballY + errorMargin && botPaddle.y > 0) {
-      botPaddle.y = Math.max(0, botPaddle.y - moveSpeed); // Move up
+  private movePaddleTowardsTarget(paddle: any): void {
+    const paddleCenter = paddle.y + 50;
+    const deadzone = 8; // Small deadzone to prevent micro-movements
+    
+    if (paddleCenter < this.targetY - deadzone && paddle.y < 500) {
+      paddle.y += this.paddleSpeed;
+    } else if (paddleCenter > this.targetY + deadzone && paddle.y > 0) {
+      paddle.y -= this.paddleSpeed;
     }
   }
 
