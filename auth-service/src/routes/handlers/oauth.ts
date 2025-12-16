@@ -100,7 +100,7 @@ export async function oauthCallbackHandler(
 
     if (!user) {
       console.log(`📝 Creating new OAuth user: ${userInfo.email} from ${provider}`);
-      
+
       // Create new OAuth user from OAuth data
       await runQuery(`
         INSERT INTO users (username, email, password_hash, avatar_url, oauth_provider)
@@ -113,15 +113,15 @@ export async function oauthCallbackHandler(
       ]);
 
       user = await getQuery<any>(`SELECT * FROM users WHERE email = ?`, [userInfo.email]);
-      
+
       if (!user) {
         console.error('❌ Failed to create OAuth user in database');
         reply.status(500).send({ error: 'Failed to create user' });
         return;
       }
-      
+
       console.log(`✅ Created OAuth user: ${user.username} (ID: ${user.id}) from ${provider}`);
-      
+
       // Immediately create user profile in user-service to ensure sync
       try {
         await createUserProfileInUserService(user.id, { ...userInfo, provider });
@@ -129,10 +129,10 @@ export async function oauthCallbackHandler(
         console.warn(`⚠️ Failed to create user profile in user-service:`, profileError);
         // Don't fail the OAuth flow if profile creation fails
       }
-      
+
     } else {
       console.log(`✅ Existing user found: ${user.username} (ID: ${user.id})`);
-      
+
       // Update avatar if provided and user is OAuth user
       if ((userInfo.picture || userInfo.avatar_url) && user.oauth_provider) {
         await runQuery(`UPDATE users SET avatar_url = ? WHERE id = ?`, [
@@ -175,13 +175,13 @@ export async function oauthCallbackHandler(
  */
 async function createUserProfileInUserService(userId: number, userInfo: any): Promise<void> {
   const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user:3000';
-  
+
   try {
     // Try to get existing profile first
     const getResponse = await axios.get(`${userServiceUrl}/api/user/profile/${userId}`, {
       timeout: 5000 // 5 second timeout
     });
-    
+
     if (getResponse.status === 200) {
       console.log(`✅ User profile already exists in user-service for user ${userId}`);
       return;
@@ -193,7 +193,7 @@ async function createUserProfileInUserService(userId: number, userInfo: any): Pr
       return; // Don't fail OAuth if user-service is down
     }
   }
-  
+
   try {
     // Create profile in user-service
     const createResponse = await axios.put(`${userServiceUrl}/api/user/profile/${userId}`, {
@@ -203,7 +203,7 @@ async function createUserProfileInUserService(userId: number, userInfo: any): Pr
     }, {
       timeout: 5000
     });
-    
+
     if (createResponse.status === 200) {
       console.log(`✅ Created user profile in user-service for OAuth user ${userId}`);
     }
@@ -224,7 +224,7 @@ async function exchange42Code(code: string): Promise<any> {
     // Always use the pure callback URL for 42 School (no query params)
     const callbackUrl = 'https://localhost/api/auth/oauth/callback';
     console.log(`🔄 Exchanging 42 code for token, callback URL: ${callbackUrl}`);
-    
+
     const response = await axios.post('https://api.intra.42.fr/oauth/token', {
       code,
       client_id: oauthSecrets.school42.client_id,        // 🔐 FROM VAULT
@@ -244,7 +244,7 @@ async function exchange42Code(code: string): Promise<any> {
     // Transform 42 API response to match our format
     const user42 = userResponse.data;
     console.log(`✅ Got 42 user info: ${user42.login} (${user42.email})`);
-    
+
     return {
       email: user42.email,
       name: user42.login,

@@ -8,8 +8,6 @@ import { authManager } from '../auth';
 interface Tournament {
   id: number;
   name: string;
-  description?: string;
-  max_participants: number;
   current_participants: number;
   status: 'open' | 'active' | 'finished' | 'full';
   created_by: number;

@@ -71,21 +71,15 @@ export class LoginModal extends AbstractComponent {
             const errorDiv = this.$('#modal-error-msg')!;
 
             try {
-                // We use AuthService but we need a method that DOESN'T navigate away.
-                // Assuming AuthService.login does navigation, we might need to use Api directly or modify AuthService.
-                // For now, let's use the public login but catch the navigation? 
-                // Getting the token/user is what matters. 
-                // Ideally AuthService should have `authenticate(u, p)` returning User, and `login` handling the flow.
-                // Let's call the API directly here to avoid AuthService's side effects (navigation).
+                // Use AuthService to login without auto-navigation (pass false as 3rd arg)
+                const { AuthService } = await import('../services/AuthService');
+                const result = await AuthService.getInstance().login(username, password, false);
 
-                const { Api } = await import('../core/Api');
-                const response = await Api.post('/api/auth/login', { username, password });
-
-                if (response.success && response.data?.user) {
-                    this.onLoginSuccess(response.data.user);
+                if (result.success && result.user) {
+                    this.onLoginSuccess(result.user);
                     this.destroy();
                 } else {
-                    throw new Error("Invalid credentials");
+                    throw new Error(result.error || "Invalid credentials");
                 }
             } catch (err: any) {
                 errorDiv.textContent = err.message || "Authentication Failed";

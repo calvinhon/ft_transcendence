@@ -14,6 +14,7 @@ export class Api {
         try {
             const response = await fetch(url, {
                 method,
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     ...authHeaders,

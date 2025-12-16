@@ -68,6 +68,11 @@ export class Router {
     }
 
     public init(): void {
+        // Register default routes if not already
+        // This is a bit hacky, usually routes are defined in App.ts. 
+        // But checking the file, App.ts isn't shown fully.
+        // Assuming App.ts registers routes. I will just leave this empty
+        // and add the route in App.ts or Main.ts where routes are defined.
         this.handleRoute();
     }
 }

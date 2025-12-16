@@ -570,17 +570,19 @@ export class MainMenuPage extends AbstractComponent {
             }
             const modal = new TournamentAliasModal(
                 this.tournamentPlayers,
-                (playersWithAliases) => {
-                    setup.tournamentPlayers = playersWithAliases.map(p => ({
-                        userId: p.id,
-                        username: p.alias || p.username
-                    })) as any;
+                async (playersWithAliases) => {
+                    try {
+                        const { TournamentService } = await import('../services/TournamentService');
+                        const playerIds = playersWithAliases.map(p => p.id);
+                        // Use a generic name or prompt for one?
+                        const name = "Tournament " + new Date().toLocaleTimeString();
 
-                    GameStateService.getInstance().setSetup(setup as any);
-                    // navigate to bracket or game? For now game logic assumes init
-                    // But tournament usually needs a bracket page first.
-                    // Assuming game service handles tournament logic init
-                    App.getInstance().router.navigateTo('/game');
+                        await TournamentService.getInstance().create(name, playerIds);
+
+                        App.getInstance().router.navigateTo('/tournament');
+                    } catch (e) {
+                        alert("Failed to create tournament: " + e);
+                    }
                 },
                 () => { }
             );

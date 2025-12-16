@@ -41,7 +41,7 @@ export class GameRenderer {
         return (val / GAME_HEIGHT) * this.canvas.height;
     }
 
-    public render(gameState: any): void {
+    public render(gameState: any, gameMode: string = 'coop'): void {
         if (!this.ctx || !this.canvas) return;
         const width = this.canvas.width;
         const height = this.canvas.height;
@@ -65,6 +65,11 @@ export class GameRenderer {
         this.drawScores(gameState.scores, width);
         this.drawCenterLine(height);
         this.drawBorder(width, height);
+
+        // Arcade Controls
+        if (gameMode === 'arcade') {
+            this.drawArcadeControls(width, height);
+        }
 
         // Draw Countdown if active
         if (gameState.countdownValue !== undefined && gameState.gameState === 'countdown') {
@@ -134,24 +139,29 @@ export class GameRenderer {
 
         const paddleWidth = this.scaleX(PADDLE_WIDTH);
         const paddleHeight = this.scaleY(PADDLE_HEIGHT);
-        const color = '#ffffff';
 
-        // Prefer TEAM paddles if present (Arcade/Tournament)
-        // If team1 exists, we assume it supersedes player1 single paddle to avoid ghosts
+        // Default colors
+        const c1 = '#77e6ff';
+        const c2 = '#ff77e6';
+
+        // Arcade/Tournament Team Arrays
         if (paddles.team1 && paddles.team1.length > 0) {
-            paddles.team1.forEach((p: any) => {
-                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, color);
+            paddles.team1.forEach((p: any, i: number) => {
+                // Cycle colors for arcade teams
+                const colors = ['#77e6ff', '#77ff77', '#ffff77'];
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
             });
         } else if (paddles.player1) {
-            this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, paddleHeight, color);
+            this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, paddleHeight, c1);
         }
 
         if (paddles.team2 && paddles.team2.length > 0) {
-            paddles.team2.forEach((p: any) => {
-                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, color);
+            paddles.team2.forEach((p: any, i: number) => {
+                const colors = ['#ff7777', '#ff77e6', '#aa77ff'];
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
             });
         } else if (paddles.player2) {
-            this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, paddleHeight, color);
+            this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, paddleHeight, c2);
         }
     }
 
@@ -166,6 +176,32 @@ export class GameRenderer {
         ctx.fillRect(x, y, w, h);
 
         ctx.shadowBlur = 0;
+    }
+
+    private drawArcadeControls(w: number, h: number): void {
+        const ctx = this.ctx;
+        ctx.save();
+
+        // Semi-transparent bottom bar
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, h - 30, w, 30);
+
+        ctx.font = '10px "PixelCode", monospace';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const y = h - 15;
+
+        // Left Controls
+        ctx.textAlign = 'left';
+        ctx.fillText('TEAM 1: Q/A (P1) | W/S (P2) | E/D (P3)', 20, y);
+
+        // Right Controls
+        ctx.textAlign = 'right';
+        ctx.fillText('TEAM 2: U/J (P1) | I/K (P2) | O/L (P3)', w - 20, y);
+
+        ctx.restore();
     }
 
     private drawBall(ball: any): void {

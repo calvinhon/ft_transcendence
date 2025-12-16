@@ -44,6 +44,17 @@ export class LoginPage extends AbstractComponent {
                     </form>
 
                     <div class="flex flex-col items-center gap-3 mt-8 pt-4 border-t border-panel-border">
+                        <div class="flex gap-4 mb-2 w-full justify-center">
+                            <button id="login-42" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with 42">
+                                <span class="font-vcr font-bold text-white group-hover:text-accent">42</span>
+                            </button>
+                            <button id="login-google" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with Google">
+                                <i class="fab fa-google text-white group-hover:text-accent text-lg"></i>
+                            </button>
+                            <button id="login-github" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with GitHub">
+                                <i class="fab fa-github text-white group-hover:text-accent text-lg"></i>
+                            </button>
+                        </div>
                         <span class="text-text-muted text-[10px] uppercase">NEW USER?</span>
                         <a href="#" id="go-to-register" class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors">
                             Create an Account
@@ -63,17 +74,24 @@ export class LoginPage extends AbstractComponent {
             const errorDiv = this.$('#error-msg')!;
 
             try {
-                // Determine if registering or logging in? 
-                // Wait, simpler to just have login here. 
-                // The prompt said "start scratch" but I should keep it simple.
-                // It's a login page.
-
                 await AuthService.getInstance().login(username, password);
                 // Router navigation happens in AuthService on success
             } catch (err: any) {
                 errorDiv.textContent = err.message || "Authentication Failed";
                 errorDiv.classList.remove('hidden');
             }
+        });
+
+        this.$('#login-42')?.addEventListener('click', async () => {
+            await AuthService.getInstance().loginWithSchool42();
+        });
+
+        this.$('#login-google')?.addEventListener('click', async () => {
+            await AuthService.getInstance().loginWithGoogle();
+        });
+
+        this.$('#login-github')?.addEventListener('click', async () => {
+            await AuthService.getInstance().loginWithGithub();
         });
 
         this.$('#go-to-register')?.addEventListener('click', (e) => {

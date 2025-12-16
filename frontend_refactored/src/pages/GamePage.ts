@@ -6,10 +6,6 @@ import { GameStateService } from "../services/GameStateService";
 
 export class GamePage extends AbstractComponent {
     private renderer: GameRenderer | null = null;
-    private keysHeld: Set<string> = new Set();
-    private animationFrameId: number | null = null;
-
-    // Store players for input mapping
     private p1Ids: number[] = [];
     private p2Ids: number[] = [];
 
@@ -71,20 +67,14 @@ export class GamePage extends AbstractComponent {
 
         this.renderer = new GameRenderer(canvas);
 
-        // Input handling
         window.addEventListener('keydown', this.handleKeyDown);
         window.addEventListener('keyup', this.handleKeyUp);
 
-        // Start Input Loop
-        this.inputLoop();
-
         this.$('#exit-btn')?.addEventListener('click', () => {
-            GameService.getInstance().disconnect();
-            GameStateService.getInstance().clearSetup();
-            App.getInstance().router.navigateTo('/');
+            this.exitGame();
         });
 
-        // Store IDs for loop
+        // Store IDs for loop if needed, but GameService handles it now
         this.p1Ids = setup.team1.map(p => p.userId);
         this.p2Ids = setup.team2.map(p => p.userId);
 
@@ -111,56 +101,44 @@ export class GamePage extends AbstractComponent {
         if (p2El) p2El.innerText = p2Name;
 
         service.onGameState((state) => {
-            if (this.renderer) this.renderer.render(state);
+            if (this.renderer) this.renderer.render(state, setup.mode);
 
             // Update Status Text once
-            if (state) {
+            if (state && state.gameState === 'playing') {
                 const status = this.$('#game-status-text');
-                if (status && status.innerText === "INITIALIZING...") {
-                    status.innerText = "LIVE COMBAT";
-                }
+                if (status) status.innerText = "LIVE COMBAT";
+            } else if (state && state.gameState === 'finished') {
+                // handled by renderer, but maybe update HUD text
+                const status = this.$('#game-status-text');
+                if (status) status.innerText = "MISSION COMPLETE";
             }
         });
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
-        this.keysHeld.add(e.key);
+        GameService.getInstance().handleKeyDown(e.key);
     }
 
     private handleKeyUp = (e: KeyboardEvent) => {
-        this.keysHeld.delete(e.key);
-        this.keysHeld.delete(e.key.toLowerCase()); // Handle W vs w
-        this.keysHeld.delete(e.key.toUpperCase());
+        GameService.getInstance().handleKeyUp(e.key);
     }
 
-    private inputLoop = () => {
-        this.animationFrameId = requestAnimationFrame(this.inputLoop);
+    private exitGame(): void {
+        const setup = GameStateService.getInstance().getSetup();
+        GameService.getInstance().disconnect();
 
-        const service = GameService.getInstance();
-
-        // Player 1 Control (W/S) - Moves ALL P1 paddles (or just the first/captain)
-        // If local team, we iterate? Or just send for first?
-        // Let's send for ALL p1Ids to be safe (sync movement)
-        if (this.keysHeld.has('w') || this.keysHeld.has('W')) {
-            this.p1Ids.forEach(id => service.sendMove('up', id));
-        }
-        if (this.keysHeld.has('s') || this.keysHeld.has('S')) {
-            this.p1Ids.forEach(id => service.sendMove('down', id));
+        let nextRoute = '/';
+        if (setup && (setup as any).tournamentContext) {
+            nextRoute = '/tournament';
         }
 
-        // Player 2 Control (Arrows)
-        if (this.keysHeld.has('ArrowUp')) {
-            this.p2Ids.forEach(id => service.sendMove('up', id));
-        }
-        if (this.keysHeld.has('ArrowDown')) {
-            this.p2Ids.forEach(id => service.sendMove('down', id));
-        }
+        GameStateService.getInstance().clearSetup();
+        App.getInstance().router.navigateTo(nextRoute);
     }
 
     onDestroy(): void {
         window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('keyup', this.handleKeyUp);
-        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
         GameService.getInstance().disconnect();
     }
 }

@@ -1,4 +1,4 @@
-import { logger } from '../utils/Logger';
+import { logger } from './Logger';
 
 /**
  * Performance monitoring and metrics collection for the frontend application
@@ -71,8 +71,8 @@ export class PerformanceMonitor {
 
       // Navigation type
       navigationType: navigation.type === 0 ? 'navigate' :
-                     navigation.type === 1 ? 'reload' :
-                     navigation.type === 2 ? 'back_forward' : 'unknown'
+        navigation.type === 1 ? 'reload' :
+          navigation.type === 2 ? 'back_forward' : 'unknown'
     };
 
     this.setMetric('pageLoad', metrics);

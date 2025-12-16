@@ -41,6 +41,11 @@ export class App {
             return new MainMenuPage();
         });
 
+        this.router.addRoute('/tournament', async () => {
+            const { TournamentBracketPage } = await import('../pages/TournamentBracketPage');
+            return new TournamentBracketPage();
+        });
+
         this.router.addRoute('/main-menu', async () => {
             const { MainMenuPage } = await import('../pages/MainMenuPage');
             return new MainMenuPage();
@@ -64,6 +69,11 @@ export class App {
         this.router.addRoute('/profile', async () => {
             const { ProfilePage } = await import('../pages/ProfilePage');
             return new ProfilePage();
+        });
+
+        this.router.addRoute('/oauth/callback', async () => {
+            const { OAuthCallbackPage } = await import('../pages/OAuthCallbackPage');
+            return new OAuthCallbackPage();
         });
 
         // Global Navigation Interceptor
