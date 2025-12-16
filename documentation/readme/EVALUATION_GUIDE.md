@@ -2240,14 +2240,6 @@ curl http://admin:admin@localhost:3000/api/search?query=
 docker exec prometheus cat /etc/prometheus/prometheus.yml
 
 # Expected: Scrape configs for all services
-
-# Check metrics endpoints
-curl http://localhost:3001/metrics  # auth-service
-curl http://localhost:3002/metrics  # game-service
-
-# Expected: Prometheus format metrics
-# TYPE http_requests_total counter
-# http_requests_total{method="GET",route="/health"} 1234
 ```
 
 **Points:** 5/5 ✅

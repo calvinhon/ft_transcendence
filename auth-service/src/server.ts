@@ -1,9 +1,8 @@
 // auth-service/src/server.ts
-import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
+import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import jwt from '@fastify/jwt';
-import { register, Counter, Histogram } from 'prom-client';
 import authRoutes from './routes/auth';
 import { config } from './utils/config';
 import axios from 'axios';
@@ -17,31 +16,8 @@ const vault = require('node-vault')({
   }
 });
 
-// Augment FastifyRequest to include startTime
-declare global {
-  namespace FastifyRequest {
-    interface FastifyRequest {
-      startTime?: number;
-    }
-  }
-}
-
 const fastify: FastifyInstance = Fastify({
   logger: true
-});
-
-// Create metrics
-const httpRequestDuration = new Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.1, 0.5, 1, 2, 5]
-});
-
-const httpRequestsTotal = new Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code']
 });
 
 /**
@@ -78,29 +54,6 @@ export async function buildServer(): Promise<FastifyInstance> {
   await fastify.register(cookie);
   await fastify.register(jwt, {
     secret: config.jwt.secret
-  });
-
-  // Metrics endpoint
-  fastify.get('/metrics', async () => {
-    return register.metrics();
-  });
-
-  // Request duration tracking middleware
-  fastify.addHook('preHandler', async (request) => {
-    (request as any).startTime = Date.now();
-  });
-
-  fastify.addHook('onResponse', async (request, reply) => {
-    const duration = (Date.now() - ((request as any).startTime || Date.now())) / 1000;
-    httpRequestDuration.observe(
-      { method: request.method, route: request.url, status_code: reply.statusCode },
-      duration
-    );
-    httpRequestsTotal.inc({
-      method: request.method,
-      route: request.url,
-      status_code: reply.statusCode
-    });
   });
 
   // Register routes

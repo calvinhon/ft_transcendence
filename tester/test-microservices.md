@@ -454,9 +454,6 @@ docker-compose logs game | tail -20
 # Check for errors
 docker-compose logs | grep -i "error\|exception" | head -20
 
-# Check metrics endpoint (if available)
-curl -s http://auth:3000/metrics | head -20
-
 # Long-running service test with log monitoring
 docker-compose logs -f auth &
 sleep 30

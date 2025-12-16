@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@fastify/cors": "^8.4.0",
-    "prom-client": "^15.1.0",
     "@fastify/websocket": "^8.3.1",
     "fastify": "^4.24.3",
     "sqlite3": "^5.1.6"

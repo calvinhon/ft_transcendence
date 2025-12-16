@@ -93,13 +93,8 @@ curl -s "http://localhost:3001/invalid-endpoint"
 # Should return proper error response
 ```
 
-#### Fastify Performance Metrics
+#### Fastify Performance Testing
 ```bash
-# Check Fastify performance metrics
-echo "=== Fastify Performance Metrics ==="
-curl -s "http://localhost:3002/metrics" | head -10
-# Shows: http_request_duration_seconds, nodejs_heap_size, etc.
-
 # Test response times
 echo "=== Fastify Response Time Testing ==="
 for i in {1..5}; do
@@ -290,46 +285,6 @@ echo "=== Smart Contract Deployment ==="
 docker exec hardhat-node ls -la /app/artifacts/
 ```
 
-### Monitoring Stack Integration
-
-#### Prometheus Metrics Collection
-```bash
-# Check service metrics collection
-echo "=== Prometheus Service Metrics ==="
-curl -s "http://localhost:9090/api/v1/query?query=up" | jq '.data.result[] | {name: .metric.__name__, value: .value[1]}'
-
-# Check HTTP request metrics
-echo "=== HTTP Request Metrics ==="
-curl -s "http://localhost:9090/api/v1/query?query=http_requests_total" | jq '.data.result[0]'
-```
-
-#### ELK Stack Log Analysis
-```bash
-# Check Elasticsearch indices
-echo "=== Elasticsearch Indices ==="
-curl -s "http://localhost:9200/_cat/indices?v"
-
-# Search recent logs
-echo "=== Recent Application Logs ==="
-curl -s "http://localhost:9200/logs-*/_search?size=5" | jq '.hits.hits[]._source | {timestamp: ."@timestamp", service: .container.name, message: .message}'
-
-# Search for errors
-echo "=== Error Logs ==="
-curl -s "http://localhost:9200/logs-*/_search" -H 'Content-Type: application/json' \
-  -d '{"query":{"match":{"level":"error"}},"size":3}' | jq '.hits.hits[]._source.message'
-```
-
-#### Grafana Dashboard Access
-```bash
-# Check Grafana health
-echo "=== Grafana Status ==="
-curl -s "http://localhost:3000/api/health" | jq .
-
-# List available dashboards
-echo "=== Grafana Dashboards ==="
-curl -s "http://localhost:3000/api/search?query=%" | jq '.[].title'
-```
-
 ### Security Features Showcase
 
 #### WAF (ModSecurity) Testing
@@ -480,13 +435,10 @@ curl -s "http://localhost:3001/auth/oauth/callback?code=OAUTH_CODE&state=STATE"
 
 ## 🎮 GAME SERVICE (Port 3002)
 
-### Health & Metrics
+### Health Check
 ```bash
 # Health check
 curl -s "http://localhost:3002/health"
-
-# Prometheus metrics
-curl -s "http://localhost:3002/metrics"
 ```
 
 ### Game Operations
