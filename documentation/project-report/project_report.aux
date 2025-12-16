@@ -44,10 +44,6 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2.3}Security Requirements}{11}{subsection.3.2.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2.4}Performance Requirements}{12}{subsection.3.2.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2.5}Monitoring \& Observability}{12}{subsection.3.2.5}\protected@file@percent }
-\gdef \LT@i {\LT@entry 
-    {1}{83.13188pt}\LT@entry 
-    {1}{239.62204pt}\LT@entry 
-    {1}{83.13188pt}}
 \@writefile{toc}{\contentsline {chapter}{\numberline {4}Design}{13}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
@@ -55,160 +51,243 @@
 \@writefile{toc}{\contentsline {section}{\numberline {4.1}System Architecture}{13}{section.4.1}\protected@file@percent }
 \newlabel{sec:architecture}{{4.1}{13}{System Architecture}{section.4.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{13}{subsection.4.1.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Observability Stack}}{13}{figure.caption.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices and API Gateway}}{13}{figure.caption.5}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:architecture_diagram}{{4.1}{13}{High-level System Architecture with Microservices, API Gateway, and Observability Stack}{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}Service Responsibilities}{13}{subsection.4.1.2}\protected@file@percent }
+\newlabel{fig:architecture_diagram}{{4.1}{13}{High-level System Architecture with Microservices and API Gateway}{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}Deployment Topology}{13}{subsection.4.1.2}\protected@file@percent }
+\gdef \LT@i {\LT@entry 
+    {1}{83.13188pt}\LT@entry 
+    {1}{239.62204pt}\LT@entry 
+    {1}{83.13188pt}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{14}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:deployment_topology}{{4.2}{14}{Docker Compose Deployment Topology with All Services and Persistent Volumes}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.3}Service Responsibilities}{14}{subsection.4.1.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces Microservices Overview}}{14}{table.4.1}\protected@file@percent }
 \newlabel{tab:services}{{4.1}{14}{Microservices Overview}{table.4.1}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4.2}Data Model}{14}{section.4.2}\protected@file@percent }
 \newlabel{sec:data_model}{{4.2}{14}{Data Model}{section.4.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}Auth Service Database (auth.db)}{14}{subsection.4.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{14}{subsection.4.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{14}{subsection.4.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{15}{subsection.4.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{15}{subsection.4.2.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2.4}Tournament Service Database (tournaments.db)}{15}{subsection.4.2.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4.3}Security Design}{15}{section.4.3}\protected@file@percent }
 \newlabel{sec:security_design}{{4.3}{15}{Security Design}{section.4.3}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{15}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:security_layers}{{4.2}{15}{Defense-in-Depth Security Architecture with Seven Protective Layers}{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.1}Layer 1: Network Security}{15}{subsection.4.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.2}Layer 2: Application Security}{16}{subsection.4.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.3}Layer 3: Authentication \& Authorization}{16}{subsection.4.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.4}Layer 4: Data Protection}{16}{subsection.4.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.5}Security Implementation Details}{16}{subsection.4.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{SQL Injection Prevention}{16}{section*.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{16}{section*.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{16}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:security_layers}{{4.3}{16}{Defense-in-Depth Security Architecture with Seven Protective Layers}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.1}HTTPS and Security Certificates}{16}{subsection.4.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{16}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:https_evidence}{{4.4}{16}{HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{17}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:https_certificate}{{4.5}{17}{PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.2}Layer 1: Network Security}{17}{subsection.4.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.3}Layer 2: Application Security}{17}{subsection.4.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.4}Layer 3: Authentication \& Authorization}{17}{subsection.4.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.5}Layer 4: Data Protection}{17}{subsection.4.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.6}Security Implementation Details}{18}{subsection.4.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{SQL Injection Prevention}{18}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{18}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Implementation}{19}{chapter.5}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:implementation}{{5}{19}{Implementation}{chapter.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Game Loop Synchronization}{19}{section.5.1}\protected@file@percent }
+\newlabel{sec:game_loop_sync}{{5.1}{19}{Game Loop Synchronization}{section.5.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{19}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:game_loop}{{5.1}{19}{60 FPS Server-Authoritative Game Loop with Client State Synchronization}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}User Authentication Flow}{20}{section.5.2}\protected@file@percent }
+\newlabel{sec:auth_flow}{{5.2}{20}{User Authentication Flow}{section.5.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{20}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:auth_flow}{{5.2}{20}{User Registration and Authentication Flow with Optional 2FA}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.1}Authentication UI Implementation}{20}{subsection.5.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Login Interface}{21}{section*.14}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Login User Interface: Email/Password Authentication with Remember Me Option}}{21}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:login_ui}{{5.3}{21}{Login User Interface: Email/Password Authentication with Remember Me Option}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Registration Interface}{22}{section*.16}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces Account Registration UI: New Account Creation with Email Verification}}{22}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:register_ui}{{5.4}{22}{Account Registration UI: New Account Creation with Email Verification}{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {subsubsection}{Two-Factor Authentication (2FA)}{22}{section*.18}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.5}{\ignorespaces 2FA Verification: OAuth 2-Step Verification and TOTP Setup}}{22}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:2fa_ui}{{5.5}{22}{2FA Verification: OAuth 2-Step Verification and TOTP Setup}{figure.caption.19}{}}
 \gdef \LT@ii {\LT@entry 
     {1}{97.35826pt}\LT@entry 
     {1}{125.81102pt}\LT@entry 
     {1}{54.67912pt}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Implementation}{17}{chapter.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Password Recovery}{23}{section*.20}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.6}{\ignorespaces Password Recovery: Secure Password Reset Flow with Email Verification}}{23}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:password_reset_ui}{{5.6}{23}{Password Recovery: Secure Password Reset Flow with Email Verification}{figure.caption.21}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}Technology Stack Summary}{23}{section.5.3}\protected@file@percent }
+\newlabel{sec:tech_stack}{{5.3}{23}{Technology Stack Summary}{section.5.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Technology Stack}}{23}{table.5.1}\protected@file@percent }
+\newlabel{tab:tech_stack}{{5.1}{23}{Technology Stack}{table.5.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}Core Modules Implementation}{23}{section.5.4}\protected@file@percent }
+\newlabel{sec:modules}{{5.4}{23}{Core Modules Implementation}{section.5.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.1}Mandatory Part (25 Points)}{23}{subsection.5.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Backend Framework (Fastify + Node.js + TypeScript)}{23}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Frontend (TypeScript + Vite)}{24}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Single-Page Application (SPA)}{24}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.2}Major Modules (70 Points)}{24}{subsection.5.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. Backend Framework (10 Points) (check)}{24}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. Database Connection (10 Points) (check)}{24}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. Backend Gameplay (10 Points) (check)}{24}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{4. Real-Time Synchronization (10 Points) (check)}{24}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{5. OAuth \& Account Handling (10 Points) (check)}{24}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{6. Blockchain Integration (10 Points) (check)}{25}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{7. Server-Side Rendering (10 Points) (check)}{25}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.3}Minor Modules (55 Points)}{25}{subsection.5.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. CLI Client (5 Points) (check)}{25}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. Artificial Intelligence (5 Points) (check)}{25}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. Web Application Firewall (5 Points) (check)}{25}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{4. Vault Integration (5 Points) (check)}{25}{section*.35}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{7. GDPR Compliance (5 Points) (check)}{25}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{8. Two-Factor Authentication (5 Points) (check)}{25}{section*.37}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{9. HTTP-Only Cookies (5 Points) (check)}{25}{section*.38}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{10. Microservices Architecture (5 Points) (check)}{25}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{11. Campaign \& Leaderboards (5 Points) (check)}{25}{section*.40}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}User Interface and Gameplay Demonstration}{26}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:implementation}{{5}{17}{Implementation}{chapter.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Game Loop Synchronization}{17}{section.5.1}\protected@file@percent }
-\newlabel{sec:game_loop_sync}{{5.1}{17}{Game Loop Synchronization}{section.5.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{17}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:game_loop}{{5.1}{17}{60 FPS Server-Authoritative Game Loop with Client State Synchronization}{figure.caption.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}User Authentication Flow}{17}{section.5.2}\protected@file@percent }
-\newlabel{sec:auth_flow}{{5.2}{17}{User Authentication Flow}{section.5.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.3}Technology Stack Summary}{17}{section.5.3}\protected@file@percent }
-\newlabel{sec:tech_stack}{{5.3}{17}{Technology Stack Summary}{section.5.3}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Technology Stack}}{18}{table.5.1}\protected@file@percent }
-\newlabel{tab:tech_stack}{{5.1}{18}{Technology Stack}{table.5.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.4}Core Modules Implementation}{18}{section.5.4}\protected@file@percent }
-\newlabel{sec:modules}{{5.4}{18}{Core Modules Implementation}{section.5.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.1}Mandatory Part (25 Points)}{18}{subsection.5.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{Backend Framework (Fastify + Node.js + TypeScript)}{18}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{Frontend (TypeScript + Vite)}{18}{section*.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{Single-Page Application (SPA)}{18}{section*.13}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{19}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:auth_flow}{{5.2}{19}{User Registration and Authentication Flow with Optional 2FA}{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.2}Major Modules (70 Points)}{19}{subsection.5.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{1. Backend Framework (10 Points) (check)}{19}{section*.14}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{2. Database Connection (10 Points) (check)}{19}{section*.15}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{3. Backend Gameplay (10 Points) (check)}{19}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{4. Real-Time Synchronization (10 Points) (check)}{19}{section*.17}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{5. OAuth \& Account Handling (10 Points) (check)}{19}{section*.18}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{6. Blockchain Integration (10 Points) (check)}{20}{section*.19}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{7. Server-Side Rendering (10 Points) (check)}{20}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.3}Minor Modules (55 Points)}{20}{subsection.5.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{1. CLI Client (5 Points) (check)}{20}{section*.21}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{2. Artificial Intelligence (5 Points) (check)}{20}{section*.22}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{3. Web Application Firewall (5 Points) (check)}{20}{section*.23}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{4. Vault Integration (5 Points) (check)}{20}{section*.24}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{5. ELK Stack Logging (5 Points) (check)}{20}{section*.25}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{6. Prometheus Monitoring (5 Points) (check)}{20}{section*.26}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{7. GDPR Compliance (5 Points) (check)}{20}{section*.27}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{8. Two-Factor Authentication (5 Points) (check)}{20}{section*.28}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{9. HTTP-Only Cookies (5 Points) (check)}{20}{section*.29}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{10. Microservices Architecture (5 Points) (check)}{20}{section*.30}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{11. Campaign \& Leaderboards (5 Points) (check)}{20}{section*.31}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Testing \& Verification}{21}{chapter.6}\protected@file@percent }
-\@writefile{lof}{\addvspace {10\p@ }}
-\@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:testing}{{6}{21}{Testing \& Verification}{chapter.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Testing Strategy}{21}{section.6.1}\protected@file@percent }
-\newlabel{sec:testing_strategy}{{6.1}{21}{Testing Strategy}{section.6.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{21}{figure.caption.32}\protected@file@percent }
-\newlabel{fig:testing_pyramid}{{6.1}{21}{Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}{figure.caption.32}{}}
+\newlabel{ch:ui_demo}{{6}{26}{User Interface and Gameplay Demonstration}{chapter.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Main Menu and Game Modes}{26}{section.6.1}\protected@file@percent }
+\newlabel{sec:main_menu}{{6.1}{26}{Main Menu and Game Modes}{section.6.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.1}Main Menu Interface}{26}{subsection.6.1.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Main Menu: Game Mode Selection (Arcade, Campaign, Tournament, Training)}}{26}{figure.caption.41}\protected@file@percent }
+\newlabel{fig:main_menu}{{6.1}{26}{Main Menu: Game Mode Selection (Arcade, Campaign, Tournament, Training)}{figure.caption.41}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.2}Game Mode Selection}{27}{subsection.6.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Available Game Modes: Quick Play, Campaign, Tournament, Bot Training}}{27}{figure.caption.42}\protected@file@percent }
+\newlabel{fig:game_modes}{{6.2}{27}{Available Game Modes: Quick Play, Campaign, Tournament, Bot Training}{figure.caption.42}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Gameplay in Action}{28}{section.6.2}\protected@file@percent }
+\newlabel{sec:gameplay_action}{{6.2}{28}{Gameplay in Action}{section.6.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.1}Arcade Mode - Multiplayer Pong}{28}{subsection.6.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{28}{figure.caption.43}\protected@file@percent }
+\newlabel{fig:arcade_gameplay}{{6.3}{28}{Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}{figure.caption.43}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.2}Arcade Mode Settings}{29}{subsection.6.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{29}{figure.caption.44}\protected@file@percent }
+\newlabel{fig:game_settings}{{6.4}{29}{Game Settings: Difficulty, Ball Speed, Paddle Size Customization}{figure.caption.44}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.3}Campaign Mode - Single Player}{29}{subsection.6.2.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.5}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{29}{figure.caption.45}\protected@file@percent }
+\newlabel{fig:campaign_gameplay}{{6.5}{29}{Campaign Mode: Single-Player Progression Against AI Opponent}{figure.caption.45}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.4}Campaign Level Progression}{30}{subsection.6.2.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.6}{\ignorespaces Campaign Level Up: Progression System with Difficulty Scaling}}{30}{figure.caption.46}\protected@file@percent }
+\newlabel{fig:campaign_level_up}{{6.6}{30}{Campaign Level Up: Progression System with Difficulty Scaling}{figure.caption.46}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.5}Campaign with AI Bot}{30}{subsection.6.2.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.7}{\ignorespaces Campaign AI Opponent: Machine Learning-Based Adaptive Difficulty}}{30}{figure.caption.47}\protected@file@percent }
+\newlabel{fig:campaign_ai_bot}{{6.7}{30}{Campaign AI Opponent: Machine Learning-Based Adaptive Difficulty}{figure.caption.47}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.6}Campaign Retry}{31}{subsection.6.2.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.8}{\ignorespaces Campaign Retry Interface: Level Restart and Progress Recovery}}{31}{figure.caption.48}\protected@file@percent }
+\newlabel{fig:campaign_retry}{{6.8}{31}{Campaign Retry Interface: Level Restart and Progress Recovery}{figure.caption.48}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Tournament Features}{31}{section.6.3}\protected@file@percent }
+\newlabel{sec:tournament_features}{{6.3}{31}{Tournament Features}{section.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.1}Tournament Mode Selection}{31}{subsection.6.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.9}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{31}{figure.caption.49}\protected@file@percent }
+\newlabel{fig:tournament_mode}{{6.9}{31}{Tournament Mode: Bracket-Based Competition with Multiple Players}{figure.caption.49}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.2}Tournament Bracket Matches}{32}{subsection.6.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.10}{\ignorespaces Tournament Bracket: Visual Tournament Progression and Schedule}}{32}{figure.caption.50}\protected@file@percent }
+\newlabel{fig:tournament_bracket}{{6.10}{32}{Tournament Bracket: Visual Tournament Progression and Schedule}{figure.caption.50}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.3}Tournament Game in Progress}{32}{subsection.6.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.11}{\ignorespaces Tournament Match: Live Game During Tournament Competition}}{32}{figure.caption.51}\protected@file@percent }
+\newlabel{fig:tournament_game}{{6.11}{32}{Tournament Match: Live Game During Tournament Competition}{figure.caption.51}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.4}Tournament Match Results}{33}{subsection.6.3.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.12}{\ignorespaces Tournament Match Result: Winner Determination and Bracket Advancement}}{33}{figure.caption.52}\protected@file@percent }
+\newlabel{fig:tournament_result}{{6.12}{33}{Tournament Match Result: Winner Determination and Bracket Advancement}{figure.caption.52}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.5}Tournament Games List}{33}{subsection.6.3.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.13}{\ignorespaces Tournament Games List: All Scheduled and Completed Matches}}{33}{figure.caption.53}\protected@file@percent }
+\newlabel{fig:tournament_games_list}{{6.13}{33}{Tournament Games List: All Scheduled and Completed Matches}{figure.caption.53}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}User Profile and Statistics}{34}{section.6.4}\protected@file@percent }
+\newlabel{sec:user_profile}{{6.4}{34}{User Profile and Statistics}{section.6.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.1}User Dashboard and Profile}{34}{subsection.6.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.14}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{34}{figure.caption.54}\protected@file@percent }
+\newlabel{fig:user_dashboard}{{6.14}{34}{User Dashboard: Profile Information, Statistics Overview, Recent Activity}{figure.caption.54}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.2}Game Statistics}{34}{subsection.6.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.15}{\ignorespaces Game Statistics: Win/Loss Record, Win Rate, Rating, Achievement Progress}}{34}{figure.caption.55}\protected@file@percent }
+\newlabel{fig:game_stats}{{6.15}{34}{Game Statistics: Win/Loss Record, Win Rate, Rating, Achievement Progress}{figure.caption.55}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.3}Match History}{35}{subsection.6.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.16}{\ignorespaces Match History: Complete Record of All Played Matches with Results and Duration}}{35}{figure.caption.56}\protected@file@percent }
+\newlabel{fig:match_history}{{6.16}{35}{Match History: Complete Record of All Played Matches with Results and Duration}{figure.caption.56}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}Blockchain Integration}{35}{section.6.5}\protected@file@percent }
+\newlabel{sec:blockchain_demo}{{6.5}{35}{Blockchain Integration}{section.6.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5.1}Blockchain Tournament Record}{35}{subsection.6.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.17}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{35}{figure.caption.57}\protected@file@percent }
+\newlabel{fig:blockchain_record}{{6.17}{35}{Blockchain Record: Tournament Result Verification on Immutable Ledger}{figure.caption.57}{}}
+\newlabel{ch:testing}{{6.5.1}{35}{Blockchain Tournament Record}{figure.caption.57}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Testing Strategy}{35}{section.6.6}\protected@file@percent }
+\newlabel{sec:testing_strategy}{{6.6}{35}{Testing Strategy}{section.6.6}{}}
 \gdef \LT@iii {\LT@entry 
     {1}{111.58464pt}\LT@entry 
     {1}{68.9055pt}\LT@entry 
-    {1}{54.67912pt}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}Automated Test Results}{22}{section.6.2}\protected@file@percent }
-\newlabel{sec:test_results}{{6.2}{22}{Automated Test Results}{section.6.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.1}Overall Test Metrics}{22}{subsection.6.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.2}Module Test Breakdown}{22}{subsection.6.2.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Module Test Results}}{22}{table.6.1}\protected@file@percent }
-\newlabel{tab:test_results}{{6.1}{22}{Module Test Results}{table.6.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.3}Test Execution in Browser}{22}{section.6.3}\protected@file@percent }
-\newlabel{sec:browser_testing}{{6.3}{22}{Test Execution in Browser}{section.6.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.1}Running Tests in Browser}{23}{subsection.6.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.2}Browser Test Dashboard Features}{23}{subsection.6.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.4}Test Execution in Terminal}{23}{section.6.4}\protected@file@percent }
-\newlabel{sec:terminal_testing}{{6.4}{23}{Test Execution in Terminal}{section.6.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.1}Run All Tests}{23}{subsection.6.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.2}Run Specific Module Tests}{23}{subsection.6.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.3}Terminal Output Example}{24}{subsection.6.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.5}Manual User Acceptance Testing}{24}{section.6.5}\protected@file@percent }
-\newlabel{sec:uat}{{6.5}{24}{Manual User Acceptance Testing}{section.6.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.5.1}Test Scenarios}{24}{subsection.6.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {7}Evolution \& Future Work}{25}{chapter.7}\protected@file@percent }
+    {3}{161.36964pt}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.18}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{36}{figure.caption.58}\protected@file@percent }
+\newlabel{fig:testing_pyramid}{{6.18}{36}{Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}{figure.caption.58}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Automated Test Results}{36}{section.6.7}\protected@file@percent }
+\newlabel{sec:test_results}{{6.7}{36}{Automated Test Results}{section.6.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.1}Overall Test Metrics}{36}{subsection.6.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.2}Module Test Breakdown}{36}{subsection.6.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Module Test Results}}{37}{table.6.1}\protected@file@percent }
+\newlabel{tab:test_results}{{6.1}{37}{Module Test Results}{table.6.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.8}Test Execution in Browser}{37}{section.6.8}\protected@file@percent }
+\newlabel{sec:browser_testing}{{6.8}{37}{Test Execution in Browser}{section.6.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8.1}Running Tests in Browser}{37}{subsection.6.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8.2}Browser Test Dashboard Features}{37}{subsection.6.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.9}Test Execution in Terminal}{38}{section.6.9}\protected@file@percent }
+\newlabel{sec:terminal_testing}{{6.9}{38}{Test Execution in Terminal}{section.6.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9.1}Run All Tests}{38}{subsection.6.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9.2}Run Specific Module Tests}{38}{subsection.6.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9.3}Terminal Output Example}{38}{subsection.6.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.10}Manual User Acceptance Testing}{39}{section.6.10}\protected@file@percent }
+\newlabel{sec:uat}{{6.10}{39}{Manual User Acceptance Testing}{section.6.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.10.1}Test Scenarios}{39}{subsection.6.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Evolution \& Future Work}{40}{chapter.7}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:evolution}{{7}{25}{Evolution \& Future Work}{chapter.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7.1}Current State}{25}{section.7.1}\protected@file@percent }
-\newlabel{sec:current_state}{{7.1}{25}{Current State}{section.7.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7.2}Future Enhancements}{25}{section.7.2}\protected@file@percent }
-\newlabel{sec:future_work}{{7.2}{25}{Future Enhancements}{section.7.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Phase 2: Production Hardening}{25}{subsection.7.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.2}Phase 3: Distributed Deployment}{25}{subsection.7.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.3}Phase 4: Enhanced Features}{25}{subsection.7.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {8}Conclusion}{26}{chapter.8}\protected@file@percent }
+\newlabel{ch:evolution}{{7}{40}{Evolution \& Future Work}{chapter.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Current State}{40}{section.7.1}\protected@file@percent }
+\newlabel{sec:current_state}{{7.1}{40}{Current State}{section.7.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Future Enhancements}{40}{section.7.2}\protected@file@percent }
+\newlabel{sec:future_work}{{7.2}{40}{Future Enhancements}{section.7.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Phase 2: Production Hardening}{40}{subsection.7.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.2}Phase 3: Distributed Deployment}{40}{subsection.7.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.3}Phase 4: Enhanced Features}{40}{subsection.7.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {8}Conclusion}{41}{chapter.8}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:conclusion}{{8}{26}{Conclusion}{chapter.8}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Gantt Chart and Project Timeline}{27}{appendix.A}\protected@file@percent }
+\newlabel{ch:conclusion}{{8}{41}{Conclusion}{chapter.8}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Gantt Chart and Project Timeline}{42}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:gantt}{{A}{27}{Gantt Chart and Project Timeline}{appendix.A}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Project Gantt Chart: Phases, milestones, and timeline}}{27}{figure.caption.33}\protected@file@percent }
-\newlabel{fig:gantt_chart}{{A.1}{27}{Project Gantt Chart: Phases, milestones, and timeline}{figure.caption.33}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {A.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{28}{figure.caption.34}\protected@file@percent }
-\newlabel{fig:deployment_topology}{{A.2}{28}{Docker Compose Deployment Topology with All Services and Persistent Volumes}{figure.caption.34}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {B}Data Flow and System Diagrams}{29}{appendix.B}\protected@file@percent }
+\newlabel{app:gantt}{{A}{42}{Gantt Chart and Project Timeline}{appendix.A}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {A.1}{\ignorespaces Project Gantt Chart: Phases, milestones, and timeline}}{42}{figure.caption.59}\protected@file@percent }
+\newlabel{fig:gantt_chart}{{A.1}{42}{Project Gantt Chart: Phases, milestones, and timeline}{figure.caption.59}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {B}Data Flow and System Diagrams}{43}{appendix.B}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:data_flow}{{B}{29}{Data Flow and System Diagrams}{appendix.B}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {B.1}Game Match Data Flow}{29}{section.B.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {B.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{29}{figure.caption.35}\protected@file@percent }
-\newlabel{fig:data_flow}{{B.1}{29}{Game Match Data Flow: From Player Input to Rendering and Persistence}{figure.caption.35}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {B.2}GDPR Compliance Data Flow}{29}{section.B.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {B.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{30}{figure.caption.36}\protected@file@percent }
-\newlabel{fig:gdpr_flow}{{B.2}{30}{GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}{figure.caption.36}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {C}Risk Register and Risk Matrix}{31}{appendix.C}\protected@file@percent }
+\newlabel{app:data_flow}{{B}{43}{Data Flow and System Diagrams}{appendix.B}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.1}Game Match Data Flow}{43}{section.B.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {B.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{43}{figure.caption.60}\protected@file@percent }
+\newlabel{fig:data_flow}{{B.1}{43}{Game Match Data Flow: From Player Input to Rendering and Persistence}{figure.caption.60}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B.2}GDPR Compliance Data Flow}{44}{section.B.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {B.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{44}{figure.caption.61}\protected@file@percent }
+\newlabel{fig:gdpr_flow}{{B.2}{44}{GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}{figure.caption.61}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {C}Risk Register and Risk Matrix}{45}{appendix.C}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:risk}{{C}{31}{Risk Register and Risk Matrix}{appendix.C}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {C.1}{\ignorespaces Risk Register}}{31}{table.caption.37}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {D}Code Repository Structure}{32}{appendix.D}\protected@file@percent }
+\newlabel{app:risk}{{C}{45}{Risk Register and Risk Matrix}{appendix.C}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {C.1}{\ignorespaces Risk Register}}{45}{table.caption.62}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {D}Code Repository Structure}{46}{appendix.D}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:codebase}{{D}{32}{Code Repository Structure}{appendix.D}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {E}Deployment \& Operations}{33}{appendix.E}\protected@file@percent }
+\newlabel{app:codebase}{{D}{46}{Code Repository Structure}{appendix.D}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {E}Deployment \& Operations}{47}{appendix.E}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:deployment}{{E}{33}{Deployment \& Operations}{appendix.E}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {E.1}Quick Start}{33}{section.E.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {E.2}Service URLs}{33}{section.E.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {E.3}Stopping Services}{33}{section.E.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {F}Glossary}{34}{appendix.F}\protected@file@percent }
+\newlabel{app:deployment}{{E}{47}{Deployment \& Operations}{appendix.E}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {E.1}Quick Start}{47}{section.E.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {E.2}Service URLs}{47}{section.E.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {E.3}Stopping Services}{47}{section.E.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {F}Glossary}{48}{appendix.F}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:glossary}{{F}{34}{Glossary}{appendix.F}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {G}References}{35}{appendix.G}\protected@file@percent }
+\newlabel{app:glossary}{{F}{48}{Glossary}{appendix.F}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {G}References}{49}{appendix.G}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{app:references}{{G}{35}{References}{appendix.G}{}}
-\gdef \@abspage@last{37}
+\newlabel{app:references}{{G}{49}{References}{appendix.G}{}}
+\gdef \@abspage@last{51}

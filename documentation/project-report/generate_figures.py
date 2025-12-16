@@ -136,25 +136,11 @@ def create_architecture_diagram():
     ax.annotate('', xy=(12.7, data_y), xytext=(12.5, data_y),
                arrowprops=dict(arrowstyle='<->', lw=2, color='orange'))
     
-    # OBSERVABILITY LAYER
+    # OBSERVABILITY LAYER (omitted in this build)
     obs_y = 1.5
-    ax.text(7, obs_y + 1.2, 'Observability & Monitoring', fontsize=10, fontweight='bold',
+    ax.text(7, obs_y + 1.2, 'Observability (omitted)', fontsize=10, fontweight='bold',
             ha='center', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
-    
-    # Arrow from data to observability (dashed)
-    ax.annotate('', xy=(7, obs_y + 0.35), xytext=(7, data_y - 0.35),
-               arrowprops=dict(arrowstyle='->', lw=2, color='black', linestyle='dashed'))
-    
-    obs_systems = [
-        (2.5, 'Prometheus\nMetrics'),
-        (5.5, 'Grafana\nDashboards'),
-        (8.5, 'Elasticsearch\nLogs'),
-        (11.5, 'Kibana\nUI')
-    ]
-    
-    for x, text in obs_systems:
-        create_box_with_text(ax, x, obs_y, 2.0, 0.7, text,
-                            color='lightcyan', edgecolor='teal', fontsize=7)
+    # Monitoring systems (Prometheus/Grafana/ELK) are intentionally omitted from this figure
     
     plt.tight_layout()
     plt.savefig('architecture_diagram.png', dpi=300, bbox_inches='tight')
@@ -256,7 +242,7 @@ def create_security_layers_diagram():
         ('Layer 4: Authentication', 'JWT (HS256) | Bcrypt (cost 10) | 2FA (TOTP) | OAuth', 'lightgreen', 6.7),
         ('Layer 5: Authorization', 'Role-Based Access Control (RBAC) | Resource-Level Permissions', 'cyan', 5.5),
         ('Layer 6: Data Protection', 'Encryption at Rest | Vault Secrets | Rotation Policy', 'lightblue', 4.3),
-        ('Layer 7: Monitoring', 'Audit Logs (ELK) | Anomaly Detection | Security Events', 'plum', 3.1),
+        # ('Layer 7: Monitoring', 'Audit Logs (ELK) | Anomaly Detection | Security Events', 'plum', 3.1),
     ]
     
     for title, description, color, y in layers_info:
@@ -495,7 +481,7 @@ def create_deployment_topology():
         (1.8, 'SSR\nService\n:3005'),
         (4.3, 'Vault\nServer\n:8200'),
         (6.8, 'Hardhat\nNode\n:8545'),
-        (9.3, 'Prometheus\n:9090'),
+        # (9.3, 'Prometheus\n:9090'),
     ]
     
     for x, label in services_row2:
@@ -504,10 +490,10 @@ def create_deployment_topology():
     
     # SERVICES ROW 3 (Monitoring Stack)
     services_row3 = [
-        (1.8, 'Elasticsearch\n:9200'),
-        (4.3, 'Kibana\n:5601'),
-        (6.8, 'Grafana\n:3000'),
-        (9.3, 'Filebeat'),
+        # (1.8, 'Elasticsearch\n:9200'),
+        # (4.3, 'Kibana\n:5601'),
+        # (6.8, 'Grafana\n:3000'),
+        # (9.3, 'Filebeat'),
     ]
     
     for x, label in services_row3:

@@ -12,7 +12,7 @@
         │ Database (SQLite) │ Cache (Redis)       │
         │ Vault (Secrets)   │ Queue (Messages)    │
         ├─────────────────────────────────────────┤
-        │ Monitoring: ELK, Prometheus, Grafana    │
+        │ Monitoring: omitted in this build        │
         │ Security: ModSecurity WAF, HTTPS        │
         └─────────────────────────────────────────┘
         \end{lstlisting}

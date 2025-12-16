@@ -36,108 +36,135 @@ def add_content_to_slide(slide, title, content_bullets):
                     shape.text = title
 
 def update_slide_content(prs):
-    """Update all slides with enhanced content"""
-    
-    # Slide 3: Introduction
-    slide = prs.slides[2]
-    for shape in slide.shapes:
-        if hasattr(shape, "text_frame") and "Title" not in shape.name:
-            tf = shape.text_frame
-            tf.clear()
-            
-            bullets = [
-                "Comprehensive multiplayer Pong game platform",
-                "125/125 points compliance with all requirements",
-                "Advanced security: JWT, 2FA (TOTP), ModSecurity WAF",
-                "Real-time gameplay: 60 FPS server-authoritative sync",
-                "Enterprise monitoring: ELK Stack, Prometheus, Grafana",
-                "Tournament system with blockchain record-keeping",
-                "GDPR compliant user data management",
-                "Microservices architecture with Docker deployment"
-            ]
-            
-            for bullet in bullets:
-                p = tf.add_paragraph()
-                p.text = bullet
-                p.level = 0
-                p.font.size = Pt(18)
-            break
-    
-    # Slide 4: Major Modules
-    slide = prs.slides[3]
-    for shape in slide.shapes:
-        if hasattr(shape, "text_frame") and "Title" not in shape.name:
-            tf = shape.text_frame
-            tf.clear()
-            
-            modules = [
-                ("Backend Framework (12/12)", "Fastify 4.29 + Node.js 18+ + TypeScript 5.3"),
-                ("Database Connection (12/12)", "SQLite 3 with per-service isolation"),
-                ("Backend Gameplay (12/12)", "Server-authoritative Pong with physics"),
-                ("Real-Time Sync (12/12)", "WebSocket 60 FPS game state broadcasting"),
-                ("OAuth & Authentication (12/12)", "42 School OAuth + JWT + 2FA (TOTP)"),
-                ("Blockchain Integration (12/12)", "Hardhat + Solidity for tournament records"),
-                ("Server-Side Rendering (12/12)", "SSR service for SEO and offline content"),
-            ]
-            
-            for title, desc in modules:
-                p = tf.add_paragraph()
-                p.text = f"{title}: {desc}"
-                p.level = 0
-                p.font.size = Pt(16)
-            break
-    
-    # Slide 5: Minor Modules
-    slide = prs.slides[4]
-    for shape in slide.shapes:
-        if hasattr(shape, "text_frame") and "Title" not in shape.name:
-            tf = shape.text_frame
-            tf.clear()
-            
-            modules = [
-                "CLI Client (Terminal-based game interface)",
-                "AI Opponent (Machine learning-based Pong bot)",
-                "Web Application Firewall (ModSecurity + Nginx)",
-                "Vault Integration (HashiCorp secrets management)",
-                "ELK Logging (Elasticsearch, Logstash, Kibana)",
-                "Prometheus Monitoring (Metrics and alerting)",
-                "GDPR Compliance (Data export, deletion, consent)",
-                "2FA Authentication (TOTP authenticator support)",
-                "HTTP-Only Cookies (Secure session management)",
-                "Microservices Architecture (4 independent services)",
-                "Campaign & Leaderboards (Global rankings system)",
-            ]
-            
-            for module in modules:
-                p = tf.add_paragraph()
-                p.text = module
-                p.level = 0
-                p.font.size = Pt(16)
-            break
-    
-    # Slide 6: SDLC
-    slide = prs.slides[5]
-    for shape in slide.shapes:
-        if hasattr(shape, "text_frame") and "Title" not in shape.name:
-            tf = shape.text_frame
-            tf.clear()
-            
-            phases = [
-                ("Phase 1: Requirements & Planning (Week 1-2)", "Define 125 point requirements, architecture design"),
-                ("Phase 2: Core Development (Week 3-7)", "Implement auth, game, user services"),
-                ("Phase 3: Advanced Features (Week 8-10)", "Add 2FA, blockchain, monitoring, GDPR"),
-                ("Phase 4: Testing & Optimization (Week 11-12)", "180 automated tests, performance tuning"),
-                ("Phase 5: Deployment & Documentation (Week 13)", "Docker deployment, final reporting"),
-            ]
-            
-            for phase, desc in phases:
-                p = tf.add_paragraph()
-                p.text = f"{phase} - {desc}"
-                p.level = 0
-                p.font.size = Pt(16)
-            break
-    
-    # Slide 8: User Management
+    """Update key slides in the generated presentation.
+
+    This function updates a subset of slides with current project metrics,
+    removes monitoring/logging items, and reflects the adjusted score/test counts.
+    """
+
+    # Slide 3: Introduction / Key Metrics
+    try:
+        slide = prs.slides[2]
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame") and "Title" not in shape.name:
+                tf = shape.text_frame
+                tf.clear()
+                bullets = [
+                    "Comprehensive multiplayer Pong game platform",
+                    "95/125 points achieved (monitoring/logging omitted)",
+                    "Advanced security: JWT, 2FA (TOTP), ModSecurity WAF",
+                    "Real-time gameplay: 60 FPS server-authoritative sync",
+                    "Tournament system with blockchain record-keeping",
+                    "GDPR compliant user data management",
+                    "Microservices architecture with Docker deployment",
+                ]
+                for bullet in bullets:
+                    p = tf.add_paragraph()
+                    p.text = bullet
+                    p.level = 0
+                    p.font.size = Pt(18)
+                break
+    except Exception:
+        pass
+
+    # Slide 4: Major Modules (titles + short desc)
+    try:
+        slide = prs.slides[3]
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame") and "Title" not in shape.name:
+                tf = shape.text_frame
+                tf.clear()
+                modules = [
+                    ("Backend Framework (12/12)", "Fastify + Node.js + TypeScript"),
+                    ("Database Connection (12/12)", "SQLite per-service with prepared statements"),
+                    ("Backend Gameplay (12/12)", "Server-authoritative Pong logic"),
+                    ("Real-Time Sync (12/12)", "WebSocket-based state broadcasting"),
+                    ("OAuth & Authentication (12/12)", "42 School SSO + JWT + 2FA"),
+                    ("Blockchain Integration (12/12)", "Hardhat + smart contracts for tournaments"),
+                    ("Server-Side Rendering (12/12)", "SSR for initial HTML and SEO"),
+                ]
+                for title, desc in modules:
+                    p = tf.add_paragraph()
+                    p.text = f"{title}: {desc}"
+                    p.level = 0
+                    p.font.size = Pt(16)
+                break
+    except Exception:
+        pass
+
+    # Slide 5: Minor Modules (monitoring entries removed)
+    try:
+        slide = prs.slides[4]
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame") and "Title" not in shape.name:
+                tf = shape.text_frame
+                tf.clear()
+                modules = [
+                    "CLI Client (Terminal-based game interface)",
+                    "AI Opponent (Pong bot)",
+                    "Web Application Firewall (ModSecurity + Nginx)",
+                    "Vault Integration (HashiCorp secrets management)",
+                    "GDPR Compliance (Data export, deletion, consent)",
+                    "2FA Authentication (TOTP support)",
+                    "HTTP-Only Cookies (Secure session management)",
+                    "Microservices Architecture (4 independent services)",
+                    "Campaign & Leaderboards (Global rankings)",
+                ]
+                for module in modules:
+                    p = tf.add_paragraph()
+                    p.text = module
+                    p.level = 0
+                    p.font.size = Pt(16)
+                break
+    except Exception:
+        pass
+
+    # Slide 6: SDLC phases (update test counts)
+    try:
+        slide = prs.slides[5]
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame") and "Title" not in shape.name:
+                tf = shape.text_frame
+                tf.clear()
+                phases = [
+                    ("Phase 1: Requirements & Planning (Week 1-2)", "Define requirements and architecture"),
+                    ("Phase 2: Core Development (Week 3-7)", "Implement core services and game logic"),
+                    ("Phase 3: Advanced Features (Week 8-10)", "Add 2FA, blockchain, GDPR features"),
+                    ("Phase 4: Testing & Optimization (Week 11-12)", "156 automated tests, performance tuning"),
+                    ("Phase 5: Deployment & Documentation (Week 13)", "Docker deployment, final reporting"),
+                ]
+                for phase, desc in phases:
+                    p = tf.add_paragraph()
+                    p.text = f"{phase} - {desc}"
+                    p.level = 0
+                    p.font.size = Pt(16)
+                break
+    except Exception:
+        pass
+
+    # Slide 27: Logging & Monitoring (note: monitoring omitted)
+    try:
+        slide = prs.slides[26]
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame") and "Title" not in shape.name:
+                tf = shape.text_frame
+                tf.clear()
+                items = [
+                    ("Logging:", 0),
+                    ("Application logs are stored locally and rotated", 1),
+                    ("Health checks and container restart policies provide basic availability", 1),
+                    ("Monitoring/alerting stacks (ELK/Prometheus/Grafana) were omitted in this build", 0),
+                ]
+                for text, level in items:
+                    p = tf.add_paragraph()
+                    p.text = text
+                    p.level = level
+                    p.font.size = Pt(18)
+                break
+    except Exception:
+        pass
+
+    # End of updates
     slide = prs.slides[7]
     for shape in slide.shapes:
         if hasattr(shape, "text_frame") and "Title" not in shape.name:
@@ -288,30 +315,7 @@ def update_slide_content(prs):
                 p.font.size = Pt(18)
             break
     
-    # Slide 27: Logging and Monitoring
-    slide = prs.slides[26]
-    for shape in slide.shapes:
-        if hasattr(shape, "text_frame") and "Title" not in shape.name:
-            tf = shape.text_frame
-            tf.clear()
-            
-            items = [
-                ("Logging Stack (ELK):", 0),
-                ("Elasticsearch: Central log storage", 1),
-                ("Logstash: Log parsing and enrichment", 1),
-                ("Kibana: Dashboard visualization", 1),
-                ("Monitoring Stack:", 0),
-                ("Prometheus: Metrics collection", 1),
-                ("Grafana: Dashboard and alerts", 1),
-                ("Custom metrics: API latency, game events, user actions", 1),
-            ]
-            
-            for text, level in items:
-                p = tf.add_paragraph()
-                p.text = text
-                p.level = level
-                p.font.size = Pt(18)
-            break
+    # Slide 27: Logging and Monitoring (simplified; monitoring omitted)
     
     # Slide 32: Security
     slide = prs.slides[31]

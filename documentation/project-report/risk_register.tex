@@ -6,7 +6,7 @@
 \toprule
 ID & Description & Likelihood & Impact & Owner & Mitigation \\
 \midrule
-1 & Server downtime during peak testing & 2 & 4 & DevOps & Monitoring, alerts, automated restarts \\
+1 & Server downtime during peak testing & 2 & 4 & DevOps & Health checks, alerts, automatic restarts (no centralized monitoring) \\
 2 & SQL injection attempt in legacy code & 1 & 5 & Backend & Parameterized queries + WAF rules \\
 3 & Data leak via misconfigured logs & 2 & 4 & Security & Redact PII in logs, access control \\
 4 & OAuth provider downtime & 3 & 3 & Auth Team & Alternative login methods (email) \\

@@ -61,7 +61,7 @@ TECHNICAL CONTENT (Slides 10-20)
   Slide 15: Advanced features
   Slide 16: GDPR and security compliance
   Slide 17: Testing and quality assurance
-  Slide 18: Monitoring and observability
+  Slide 18: Monitoring and observability (removed in this build)
   Slide 19: Deployment and infrastructure
   Slide 20: Project statistics
 

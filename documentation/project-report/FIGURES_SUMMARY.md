@@ -4,7 +4,7 @@
 
 ### 1. **architecture_diagram.png** (287 KB)
    - **Purpose:** High-level system architecture
-   - **Shows:** Client layer → Nginx Gateway → Microservices (Auth, User, Game, Tournament) → Databases → Observability Stack (Prometheus, Grafana, ELK)
+   - **Shows:** Client layer → Nginx Gateway → Microservices (Auth, User, Game, Tournament) → Databases
    - **Location in Report:** Chapter 3 (Design), Section "System Architecture"
 
 ### 2. **game_loop_diagram.png** (296 KB)
@@ -15,7 +15,7 @@
 
 ### 3. **security_layers.png** (320 KB)
    - **Purpose:** Defense-in-depth security architecture
-   - **Shows:** 7 protective layers (Network, Input Validation, Application, Authentication, Authorization, Data Protection, Monitoring)
+   - **Shows:** 6 protective layers (Network, Input Validation, Application, Authentication, Authorization, Data Protection)
    - **Coverage:** Prevents SQLi, XSS, CSRF, DDoS, Brute Force, Unauthorized Access
    - **Location in Report:** Chapter 3 (Design), Section "Security Design"
 
@@ -33,14 +33,14 @@
 
 ### 6. **deployment_topology.png** (235 KB)
    - **Purpose:** Docker Compose deployment architecture
-   - **Shows:** Docker network with all 12 services (4 microservices + SSR + Vault + Hardhat + Prometheus + Elasticsearch + Kibana + Grafana + Filebeat)
+   - **Shows:** Docker network with core services (4 microservices + SSR + Vault + Hardhat). Monitoring/logging services were omitted in this version.
    - **Feature:** Persistent volumes for SQLite databases
    - **Location in Report:** Appendix A (Gantt Chart)
 
 ### 7. **testing_pyramid.png** (177 KB)
    - **Purpose:** Testing strategy and distribution
    - **Shows:** Three-tier pyramid (Unit Tests: 60, Integration Tests: 80, E2E Tests: 40)
-   - **Metric:** Total 180/180 tests passing (100%)
+   - **Metric:** Total 156/180 tests passing (monitoring/logging modules removed)
    - **Location in Report:** Chapter 5 (Testing), Section "Testing Strategy"
 
 ### 8. **gdpr_flow.png** (296 KB)

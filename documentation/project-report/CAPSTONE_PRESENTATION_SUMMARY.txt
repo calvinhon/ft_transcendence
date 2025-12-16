@@ -16,7 +16,7 @@
 1. INTRODUCTION (Slide 1-3)
    • Project overview and vision
    • Key highlights and objectives
-   • 125/125 points compliance
+  • 95/125 points achieved (monitoring/logging omitted)
 
 2. SELECTED MODULES (Slides 4-7)
    • Mandatory Part: 25/25 points
@@ -37,7 +37,7 @@
    • GDPR and security compliance
 
 5. TESTING & QUALITY (Slide 15)
-   • 180/180 automated tests passing
+  • 156/180 automated tests passing (monitoring/logging modules removed)
    • Unit, integration, E2E test coverage
    • Performance testing results
 
@@ -51,7 +51,7 @@
    • Member 2: Real-Time Game Implementation
    • Member 3: Frontend & User Service
    • Member 4: Tournament & Blockchain
-   • Member 5: Infrastructure & DevOps
+  • Member 5: Infrastructure & DevOps (monitoring omitted)
    • Member 6: Security, Testing, AI & Documentation
 
 8. LIMITATIONS (Slide 19)
@@ -96,7 +96,7 @@ SECTION 5: FEATURES & COVERAGE (5 SLIDES)
   • Slide 17: Testing & Quality Assurance
 
 SECTION 6: INFRASTRUCTURE & MONITORING (2 SLIDES)
-  • Slide 18: Monitoring & Observability (ELK, Prometheus)
+  • Slide 18: Monitoring & Observability (removed in this build)
   • Slide 19: Deployment & Infrastructure
 
 SECTION 7: COMPLIANCE & STATISTICS (2 SLIDES)
@@ -258,7 +258,7 @@ Before the presentation, verify:
 ☐ All services responding (curl http://localhost/api/health)
 ☐ Database populated with test data
 ☐ CLI client compiled and ready
-☐ Monitoring dashboards accessible
+☐ Monitoring dashboards omitted in this build
 ☐ Smart contracts deployed on local blockchain
 
 DEMO SCENARIOS (5-10 minutes):
