@@ -3,7 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{hyperref}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \usepackage{graphicx}
 \usepackage{longtable}
 \usepackage{booktabs}
@@ -35,7 +35,7 @@
 
 % Abstract
 \begin{abstract}
-This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves \textbf{125/125 points} of compliance with all subject requirements, implementing 7 major modules and 11 minor modules with 180/180 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), OAuth authentication, GDPR compliance, and production-ready monitoring via ELK and Prometheus/Grafana stacks. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
+This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves \textbf{125/125 points} of compliance with all subject requirements, implementing 7 major modules and 9minor modules with 180/180 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), OAuth authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
 \end{abstract}
 
 % Front Matter
@@ -54,7 +54,6 @@ This document presents the comprehensive project report for \textbf{ft\_transcen
   \item[AI] Artificial Intelligence
   \item[CLI] Command-Line Interface
   \item[DB] Database
-  \item[ELK] Elasticsearch, Logstash, Kibana
   \item[FPS] Frames Per Second
   \item[GDPR] General Data Protection Regulation
   \item[HTTP] HyperText Transfer Protocol
@@ -103,7 +102,7 @@ The project demonstrates mastery of modern software engineering practices includ
 \subsection{Quality Metrics}
 \begin{itemize}
   \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
-  \item \textbf{Test Coverage:} 180/180 automated tests passing (100\%)
+  \item \textbf{Test Coverage:} 156/156 automated tests passing (100\%)
   \item \textbf{Security:} Zero critical vulnerabilities, WAF protection active, 2FA available
   \item \textbf{Code Quality:} TypeScript strictness enabled, ESLint, consistent standards
 \end{itemize}
@@ -137,7 +136,6 @@ The project followed an iterative, incremental SDLC model with five phases:
   \item Develop core services in parallel
   \item Integrate game logic with real-time WebSocket support
   \item Implement security features incrementally
-  \item Add monitoring and logging infrastructure
 \end{itemize}
 
 \subsection{4. Testing \& Validation}
@@ -151,7 +149,7 @@ The project followed an iterative, incremental SDLC model with five phases:
 \subsection{5. Deployment \& Evolution}
 \begin{itemize}
   \item Containerization and Docker Compose orchestration
-  \item Continuous monitoring via ELK and Prometheus
+  \item Production deployment and optimization
   \item Roadmap for future enhancements
 \end{itemize}
 
@@ -263,14 +261,6 @@ Technical requirements specify \textit{how} the system shall achieve functional 
   \item TR-24: System shall support 100+ concurrent WebSocket connections per instance
 \end{itemize}
 
-\subsection{Monitoring \& Observability}
-\begin{itemize}
-  \item TR-26: Prometheus shall collect metrics from all services
-  \item TR-27: ELK stack shall aggregate and visualize logs
-  \item TR-28: Grafana dashboards shall display real-time system health
-  \item TR-29: Container health checks shall ensure service availability
-\end{itemize}
-
 % ============================================================================
 \chapter{Design}
 \label{ch:design}
@@ -322,10 +312,6 @@ The complete deployment consists of 21 Docker containers orchestrated via Docker
 \textbf{Vault} & Secret storage (API keys, DB credentials) & 8200 \\
 \hline
 \textbf{Hardhat} & Local blockchain, smart contracts & 8545 \\
-\hline
-\textbf{ELK Stack} & Log aggregation, visualization & 5601 \\
-\hline
-\textbf{Prometheus} & Metrics collection, time-series storage & 9090 \\
 \hline
 \caption{Microservices Overview}
 \label{tab:services}
@@ -530,9 +516,6 @@ The application provides comprehensive authentication screens capturing user cre
 \textbf{Blockchain} & Hardhat + Solidity & 2.18.0 \\
 \textbf{Secrets} & HashiCorp Vault & 1.15+ \\
 \textbf{API Gateway} & Nginx + ModSecurity & Latest \\
-\textbf{Monitoring} & Prometheus & 2.47+ \\
-\textbf{Dashboards} & Grafana & 10.2+ \\
-\textbf{Logging} & ELK Stack & Elasticsearch 8.x \\
 \textbf{Containers} & Docker Compose & 2.20+ \\
 \caption{Technology Stack}
 \label{tab:tech_stack}
@@ -607,25 +590,19 @@ ModSecurity with OWASP CRS rules, blocks SQLi/XSS/CSRF attacks.
 \subsubsection{4. Vault Integration (5 Points) (check)}
 HashiCorp Vault for secrets management, dynamic credential rotation.
 
-\subsubsection{5. ELK Stack Logging (5 Points) (check)}
-Elasticsearch, Logstash/Filebeat, Kibana dashboards.
-
-\subsubsection{6. Prometheus Monitoring (5 Points) (check)}
-Metrics collection, time-series database, Grafana dashboards.
-
-\subsubsection{7. GDPR Compliance (5 Points) (check)}
+\subsubsection{5. GDPR Compliance (5 Points) (check)}
 Data export (\texttt{/api/user/export}), account deletion (\texttt{/api/user/delete}), consent management.
 
-\subsubsection{8. Two-Factor Authentication (5 Points) (check)}
+\subsubsection{6. Two-Factor Authentication (5 Points) (check)}
 TOTP-based 2FA (RFC 6238), QR codes, backup codes.
 
-\subsubsection{9. HTTP-Only Cookies (5 Points) (check)}
+\subsubsection{7. HTTP-Only Cookies (5 Points) (check)}
 JWT in HttpOnly cookies, Secure flag, SameSite=Strict.
 
-\subsubsection{10. Microservices Architecture (5 Points) (check)}
+\subsubsection{8. Microservices Architecture (5 Points) (check)}
 4 independent services with separate databases, REST/WebSocket communication.
 
-\subsubsection{11. Campaign \& Leaderboards (5 Points) (check)}
+\subsubsection{9. Campaign \& Leaderboards (5 Points) (check)}
 21-level campaign, global leaderboards, achievement system.
 
 % ============================================================================
@@ -813,8 +790,8 @@ The project employs a multi-layered testing approach following the testing pyram
 
 \subsection{Overall Test Metrics}
 \begin{itemize}
-  \item \textbf{Total Tests:} 180 automated tests
-  \item \textbf{Pass Rate:} 180/180 (100\%)
+  \item \textbf{Total Tests:} 156 automated tests
+  \item \textbf{Pass Rate:} 156/156 (100\%)
   \item \textbf{Duration:} 15-20 minutes (full suite)
   \item \textbf{Coverage:} All mandatory and module requirements
 \end{itemize}
@@ -839,12 +816,10 @@ CLI Client & 12 & 12/12 (check) \\
 Artificial Intelligence & 12 & 12/12 (check) \\
 Web Application Firewall & 12 & 12/12 (check) \\
 Vault Integration & 12 & 12/12 (check) \\
-ELK Logging & 12 & 12/12 (check) \\
-Prometheus Monitoring & 12 & 12/12 (check) \\
 GDPR Compliance & 12 & 12/12 (check) \\
 2FA \& HTTP-Only & 12 & 12/12 (check) \\
 \hline
-\multicolumn{3}{l}{\textbf{Total:} 180/180 tests passing} \\
+\multicolumn{3}{l}{\textbf{Total:} 156/156 tests passing} \\
 \caption{Module Test Results}
 \label{tab:test_results}
 \end{longtable}
@@ -897,8 +872,6 @@ cd tester/
 ./test-ai-opponent.sh            # AI Opponent (12 tests)
 ./test-waf-security.sh           # Web App Firewall (12 tests)
 ./test-vault.sh                  # Vault Integration (12 tests)
-./test-elk-logging.sh            # ELK Logging (12 tests)
-./test-prometheus.sh             # Prometheus Monitoring (12 tests)
 ./test-gdpr-compliance.sh        # GDPR Compliance (12 tests)
 ./test-2fa.sh                    # 2FA & Cookies (12 tests)
 \end{verbatim}
@@ -917,12 +890,10 @@ $ make test
 (check) Artificial Intelligence        12/12 passing
 (check) Web App Firewall               12/12 passing
 (check) Vault Integration              12/12 passing
-(check) ELK Logging                    12/12 passing
-(check) Prometheus Monitoring          12/12 passing
 (check) GDPR Compliance                12/12 passing
 (check) 2FA & HTTP-Only Cookies        12/12 passing
 -------------------------------------------
-Total: 180/180 tests passing (check)
+Total: 156/156 tests passing (check)
 Test Suite Duration: 18 minutes
 \end{verbatim}
 
@@ -988,10 +959,9 @@ The ft\_transcendence project demonstrates a complete, production-grade implemen
 
 \begin{itemize}
   \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
-  \item \textbf{Quality Assurance:} 180/180 automated tests passing
+  \item \textbf{Quality Assurance:} 156/156 automated tests passing
   \item \textbf{Security Excellence:} Layered defense with WAF, Vault, JWT, 2FA
   \item \textbf{Scalability:} Microservices architecture for concurrent users
-  \item \textbf{Observability:} Comprehensive monitoring (Prometheus, ELK, Grafana)
   \item \textbf{Regulatory Compliance:} Full GDPR support
   \item \textbf{Developer Experience:} Clean code, type safety, documentation
 \end{itemize}
@@ -1062,10 +1032,6 @@ ft_transcendence/
 -- blockchain/                # Smart contracts (Hardhat)
 -- docker-compose.yml         # Orchestration
 -- nginx/                     # Reverse proxy + WAF
--- prometheus/                # Metrics collection
--- grafana/                   # Dashboards
--- elasticsearch/             # Log storage
--- kibana/                    # Log visualization
 -- vault/                     # Secrets management
 -- tester/                    # Automated test suite
 -- documentation/
@@ -1091,9 +1057,6 @@ make full-start        # Build and start all services
 \section{Service URLs}
 \begin{itemize}
   \item \textbf{Frontend SPA:} https://localhost/
-  \item \textbf{Grafana:} https://localhost:3000 (admin/admin)
-  \item \textbf{Kibana:} https://localhost:5601
-  \item \textbf{Prometheus:} https://localhost:9090
   \item \textbf{Vault:} https://localhost:8200
 \end{itemize}
 
@@ -1133,8 +1096,6 @@ make full-clean        # Remove containers and volumes
   \item HashiCorp Vault: https://www.vaultproject.io/
   \item Hardhat Documentation: https://hardhat.org/
   \item ModSecurity: https://modsecurity.org/
-  \item Prometheus: https://prometheus.io/
-  \item ELK Stack: https://www.elastic.co/
 \end{enumerate}
 
 \end{document}

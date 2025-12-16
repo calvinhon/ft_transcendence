@@ -7,9 +7,5 @@ export const config: ServiceConfig = {
   cors: {
     origin: process.env.CORS_ORIGIN === 'true' || true,
     credentials: true
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET || 'supersecretkey',
-    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
   }
 };
