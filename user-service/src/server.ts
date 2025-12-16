@@ -2,7 +2,6 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import userRoutes from './routes/index';
-import { setupLogging } from './utils/logging';
 
 const fastify = Fastify({ 
   logger: true
@@ -12,9 +11,6 @@ const fastify = Fastify({
 fastify.register(cors, {
   origin: true
 });
-
-// Setup logging
-setupLogging(fastify);
 
 // Register routes
 fastify.register(userRoutes);

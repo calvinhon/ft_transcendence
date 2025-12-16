@@ -4,7 +4,7 @@ import { sendSuccess } from '../../utils/responses';
 
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
-    // Clear the JWT cookie
+    // Clear the session cookie
     reply.clearCookie('token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

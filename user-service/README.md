@@ -17,7 +17,6 @@ user-service/
 │   └── index.ts           # TypeScript interfaces & types
 ├── utils/
 │   ├── database.ts        # Database utility functions
-│   ├── logging.ts         # Shared logging middleware
 │   └── responses.ts       # Response utilities (if applicable)
 └── routes/
     ├── index.ts           # Route aggregation & health check
@@ -257,7 +256,7 @@ interface SearchSuggestion {
 - **Development**: ts-node-dev (hot reload)
 - **Build**: TypeScript compiler
 - **Testing**: Custom bash scripts with TARGET support
-- **Logging**: Pino logger with custom middleware
+- **Logging**: Pino logger with built-in request logging
 
 ## 📦 Dependencies
 
@@ -576,7 +575,6 @@ This service follows **Modular Monolith** principles with recent refactoring for
 ### **Modularization Changes**
 - **File Structure**: Moved types to `src/types/index.ts`, utils to `src/utils/`
 - **Service Layer**: Created `src/services/userService.ts` for business logic
-- **Logging**: Added shared logging middleware in `src/utils/logging.ts`
 - **Database**: Centralized database utilities in `src/database/index.ts`
 - **Routes**: Updated imports to use new modular structure
 

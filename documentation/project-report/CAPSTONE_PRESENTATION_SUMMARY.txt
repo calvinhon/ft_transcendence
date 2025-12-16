@@ -33,16 +33,15 @@
    • Technology stack overview
    • Core gameplay mechanics
    • Social features and user management
-   • Advanced features (tournaments, blockchain, CLI, AI)
+   • Advanced features (tournaments, blockchain, AI)
    • GDPR and security compliance
 
 5. TESTING & QUALITY (Slide 15)
-   • 180/180 automated tests passing
+   • 144/144 automated tests passing
    • Unit, integration, E2E test coverage
    • Performance testing results
 
 6. DEPLOYMENT & INFRASTRUCTURE (Slides 16-17)
-   • Monitoring stack (ELK + Prometheus)
    • Docker Compose setup (21 containers)
    • Full deployment architecture
 
@@ -257,9 +256,6 @@ Before the presentation, verify:
 ☐ Web application accessible (http://localhost)
 ☐ All services responding (curl http://localhost/api/health)
 ☐ Database populated with test data
-☐ CLI client compiled and ready
-☐ Monitoring dashboards accessible
-☐ Smart contracts deployed on local blockchain
 
 DEMO SCENARIOS (5-10 minutes):
 ☐ User registration and login
@@ -267,10 +263,7 @@ DEMO SCENARIOS (5-10 minutes):
 ☐ Friend request and profile update
 ☐ Tournament creation and bracket
 ☐ Blockchain verification
-☐ CLI client gameplay
 ☐ AI opponent match
-☐ Monitoring dashboard view
-☐ Log search in Kibana
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -1,8 +1,8 @@
 # FT_TRANSCENDENCE - Multiplayer Pong Platform
 
-**Status:** 125/125 Points ✅ | 180/180 Tests Passing ✅ | Production Ready
+**Status:** 125/125 Points ✅ | 144/144 Tests Passing ✅ | Production Ready
 
-A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, blockchain integration, OAuth authentication, and GDPR compliance.
+A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, and blockchain integration.
 
 ## 🎮 Game Features
 
@@ -172,9 +172,6 @@ make help
 
 ## 🔐 Security Features
 
-- **JWT Authentication**: Secure token-based authentication
-- **OAuth/SSO**: Google and GitHub integration
-- **2FA/TOTP**: Two-factor authentication support
 - **Password Hashing**: bcrypt for secure password storage
 - **WAF Protection**: ModSecurity for SQL injection/XSS prevention
 - **Vault Integration**: Centralized secrets management

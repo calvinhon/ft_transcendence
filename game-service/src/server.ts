@@ -5,7 +5,6 @@ import websocket from '@fastify/websocket';
 // Import the routes directory (index.ts) directly — this is more
 // robust during container builds and avoids module resolution issues.
 import gameRoutes from './routes';
-import { logger } from './routes/modules/logger';
 
 interface ServiceConfig {
   port: number;
@@ -28,21 +27,6 @@ async function buildServer(): Promise<FastifyInstance> {
   });
 
   await fastify.register(websocket);
-
-  // Add request/response logging middleware
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    const timestamp = new Date().toISOString();
-    logger.info(`[${timestamp}] ← ${request.method} ${request.url}`);
-    
-    if (request.body && typeof request.body === 'object' && Object.keys(request.body).length > 0) {
-      logger.debug(`Request body:`, request.body);
-    }
-  });
-
-  fastify.addHook('onSend', async (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
-    const timestamp = new Date().toISOString();
-    logger.info(`[${timestamp}] → ${request.method} ${request.url} - Status: ${reply.statusCode}`);
-  });
 
   // Register routes
   await fastify.register(gameRoutes);
