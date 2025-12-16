@@ -88,10 +88,8 @@ tester/
 ### Bonus Modules (50 points)
 8. **OAuth/SSO** - Authentication
 9. **WAF & Vault** - Security
-10. **ELK Logging** - Log management
-11. **Monitoring** - Prometheus/Grafana
-12. **GDPR Compliance** - Data protection
-13. **CLI Pong Client** - Terminal-based game client (+10 points)
+10. **GDPR Compliance** - Data protection
+11. **CLI Pong Client** - Terminal-based game client (+10 points)
 
 ---
 
@@ -146,10 +144,6 @@ Expected services:
 - game (3002)
 - tournament (3003)
 - user (3004)
-- elasticsearch (9200)
-- kibana (5601)
-- prometheus (9090)
-- grafana (3000)
 - vault (8200)
 - hardhat-node (8545)
 

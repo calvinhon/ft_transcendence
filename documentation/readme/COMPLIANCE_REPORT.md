@@ -2512,24 +2512,13 @@ Headers: { Authorization: "Bearer jwt_token" }
 
 ---
 
-#### 12. ELK Stack Logging (10 Points) ✅
+#### 12. ELK Stack Logging (10 Points) ❌ REMOVED
 
 **Subject Reference:** IV.7 Devops - "Infrastructure Setup with ELK (Elasticsearch, Logstash, Kibana) for Log Management"
 
-**Definition:**  
-Elasticsearch, Logstash (replaced by Filebeat), Kibana stack for centralized logging, enabling real-time log aggregation, full-text search, and visualization across all microservices and containers.
+**Status:** ELK Stack was implemented but subsequently removed for architectural simplification.
 
-**Benefits:**
-- 📊 **Centralized Logging**: All services log to single location
-- 🔍 **Searchability**: Full-text search across millions of logs
-- ⏱️ **Real-Time**: Live log streaming and monitoring
-- 📊 **Visualization**: Kibana dashboards and graphs
-- 🔍 **Debugging**: Quickly locate errors and issues
-- 📝 **Audit Trail**: Complete history of system events
-- 💡 **Insights**: Pattern detection and anomaly identification
-- 🚀 **Scalability**: Handles terabytes of log data
-
-**Implementation:**
+**Original Implementation:**
 - **Elasticsearch 7.17**: Distributed search and analytics engine
 - **Kibana 7.17**: Data visualization and exploration UI
 - **Filebeat**: Lightweight log shipper (replaces Logstash)
@@ -2537,6 +2526,10 @@ Elasticsearch, Logstash (replaced by Filebeat), Kibana stack for centralized log
 - Index lifecycle management (ILM)
 - 30-day data retention policy
 - Index templates and patterns
+
+**Removal Reason:** To simplify the project architecture and reduce complexity.
+
+**Current State:** Basic logging remains in individual services using console.log and service-specific logging utilities.
 
 **Evidence:**
 - `docker-compose.yml` - ELK service definitions
@@ -2847,43 +2840,19 @@ GET http://localhost:9200/filebeat-*/_search
 
 ---
 
-#### 13. Monitoring - Prometheus/Grafana (5 Points) ✅
+#### 13. Monitoring - Prometheus/Grafana (5 Points) ❌ REMOVED
 
 **Subject Reference:** IV.7 Devops - "Monitoring system"  
 **Required:** Prometheus and Grafana
 
-**Implementation:**
-- Prometheus for metrics collection
-- Grafana for dashboards
-- Service health monitoring
-- Performance metrics
+**Status:** Monitoring infrastructure was implemented but subsequently removed for architectural simplification.
 
-**Evidence:**
-- `docker-compose.monitoring.yml` - Monitoring services
-- `prometheus/prometheus.yml` - Prometheus configuration
-- `grafana/provisioning/` - Grafana dashboards
+**Removal Reason:** To simplify the project architecture and reduce complexity.
 
-**Monitored Services:**
-- All 4 microservices
+**Current State:** Basic health checks remain in individual services.
 - Elasticsearch
 - Vault
-- System resources
-
-**Test Results:** 12/12 tests passing
-```
-✓ Prometheus Startup and Health
-✓ Prometheus Configuration
-✓ Metrics Collection from Services
-✓ Grafana Startup and Access
-✓ Service Health Dashboard
-✓ Metrics Visualization
-✓ Alert Rules
-✓ Dashboard Provisioning
-✓ Datasource Configuration
-✓ Custom Metrics Dashboard
-✓ Performance Monitoring
-✓ Metrics Storage and History
-```
+**Current State:** Basic health checks remain in individual services.
 
 ---
 

@@ -269,12 +269,6 @@ CREATE TABLE password_reset_tokens (
 - Database connection status
 - Health check monitoring
 
-### **Monitoring**
-- Health endpoint for load balancers
-- Error rate tracking
-- Response time monitoring
-- Database connection health
-
 ### **Backup & Recovery**
 - SQLite database files can be backed up
 - JWT tokens are stateless (no session storage)

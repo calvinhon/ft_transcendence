@@ -94,12 +94,6 @@ cd tester
 # WAF & Vault
 ./test-waf-vault.sh
 
-# ELK Logging
-./test-elk-logging.sh
-
-# Monitoring
-./test-monitoring.sh
-
 # GDPR Compliance
 ./test-gdpr-compliance.sh
 
@@ -194,23 +188,7 @@ cd tester
    - Secrets management
    - Rate limiting
 
-10. **ELK Logging** - 12 tests
-    - Elasticsearch health
-    - Index creation
-    - Log ingestion
-    - Kibana access
-    - Document indexing
-    - Full-text search
-
-11. **Monitoring (Prometheus/Grafana)** - 12 tests
-    - Prometheus health check
-    - Metrics collection
-    - Grafana dashboards
-    - Alert rules
-    - Performance metrics
-    - Resource monitoring
-
-12. **GDPR Compliance** - 12 tests
+10. **GDPR Compliance** - 12 tests
     - GDPR endpoints
     - Data export
     - Data deletion
@@ -218,7 +196,7 @@ cd tester
     - Consent management
     - Audit trails
 
-13. **CLI Pong Client** - 12 tests
+11. **CLI Pong Client** - 12 tests
     - CLI structure
     - Package configuration
     - TypeScript compilation
@@ -226,7 +204,7 @@ cd tester
     - Game client
     - Command execution
 
-14. **2FA/TOTP** - 12 tests
+12. **2FA/TOTP** - 12 tests
     - 2FA setup
     - Secret generation
     - QR code creation
@@ -234,7 +212,7 @@ cd tester
     - Token validation
     - Integration with login
 
-15. **SSR Integration** - 12 tests
+13. **SSR Integration** - 12 tests
     - Server-side rendering
     - SEO meta tags
     - OpenGraph tags
@@ -245,28 +223,6 @@ cd tester
 ---
 
 ## Troubleshooting
-
-### Issue: Elasticsearch/Kibana Tests Failing
-
-**Cause:** ELK Stack needs time to initialize (can take 20-30 seconds)
-
-**Solution:**
-1. Wait for containers to be healthy:
-   ```bash
-   docker ps --filter "name=elasticsearch"
-   ```
-2. Check health status:
-   ```bash
-   curl http://elasticsearch:9200/_cluster/health
-   ```
-3. Re-run tests after services are ready:
-   ```bash
-   ./run-all-tests.sh
-   ```
-
-**Fixed in latest version:** Tests now include automatic retry logic with 10 retries and 2-3 second delays.
-
----
 
 ### Issue: CLI Client Tests Failing
 
@@ -378,7 +334,6 @@ Test results are saved to:
 - **Backend Framework**: <10 seconds
 - **Database Tests**: ~15 seconds
 - **Blockchain Tests**: ~20 seconds
-- **ELK Tests**: ~30-60 seconds (due to initialization)
 
 ---
 
@@ -388,10 +343,6 @@ Test results are saved to:
    ```bash
    make start
    ```
-
-2. **Wait for ELK Stack to initialize:**
-   - Elasticsearch can take 20-30 seconds
-   - Tests now have automatic retry logic
 
 3. **Run full test suite before commits:**
    ```bash

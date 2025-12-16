@@ -154,21 +154,12 @@ docker compose exec auth-service bash
 
 **Services won't start:**
 ```bash
-docker compose logs -f elasticsearch
-# Check Elasticsearch errors
+# Check service logs
+docker compose logs -f
 
 # Rebuild
 docker compose build --no-cache
 make start
-```
-
-**Elasticsearch failed to start:**
-```bash
-# This is common - Elasticsearch needs more memory
-# Check: docker compose logs elasticsearch
-
-# Solution: Restart
-docker compose restart elasticsearch
 ```
 
 **Login fails with 500 error:**
@@ -212,7 +203,6 @@ documentation/readme/
 ├── OAUTH_42_SETUP.md (OAuth configuration)
 ├── OAUTH_IMPLEMENTATION.md (OAuth technical details)
 ├── GDPR_IMPLEMENTATION.md (data privacy features)
-├── MONITORING_FIX_GUIDE.md (ELK Stack setup)
 ├── MODULE_VERIFICATION_REPORT.md (module test status)
 ├── README_PROFILE_DASHBOARD.md (profile docs index)
 ├── PROFILE_DASHBOARD_DEBUG.md (technical fixes)
@@ -272,10 +262,8 @@ docker compose ps
 - [x] Blockchain Integration
 - [x] Database Persistence
 - [x] GDPR Compliance
-- [x] ELK Logging
-- [x] Prometheus Metrics
 
-**All 20 features documented and ready to demo!**
+**All 18 features documented and ready to demo!**
 
 ## 📞 Need Help?
 
@@ -283,7 +271,6 @@ docker compose ps
 |-------|----------|
 | SSL warning | Normal for self-signed cert, click "Continue" |
 | Services slow | Wait 2-3 min for startup, check logs |
-| Elasticsearch failed | Restart: `docker compose restart elasticsearch` |
 | Login 500 error | Check: `docker compose logs auth-service` |
 | Frontend blank | Verify nginx: `docker compose ps nginx` |
 | Don't know what to do | Read: `documentation/readme/FAQ.md` |
@@ -293,8 +280,6 @@ docker compose ps
 - **Documentation**: `/home/honguyen/ft_transcendence/documentation/readme/`
 - **Source**: `/home/honguyen/ft_transcendence/`
 - **Frontend**: https://localhost
-- **Grafana**: http://localhost:3000
-- **Kibana**: http://localhost:5601
 
 ---
 

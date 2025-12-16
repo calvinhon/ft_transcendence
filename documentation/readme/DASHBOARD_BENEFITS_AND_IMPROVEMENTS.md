@@ -1,13 +1,22 @@
-# Grafana Dashboard: Benefits and Improvements Guide
+# Monitoring Dashboards: Benefits and Improvements Guide ❌ REMOVED
 
-## Current Dashboard Benefits
+## Status: Monitoring Infrastructure Removed
+
+The Grafana dashboard and Prometheus monitoring system were implemented but subsequently removed for architectural simplification.
+
+## Current State
+
+Basic health checks remain available for individual services:
+
+- Auth Service: `http://localhost:3001/health`
+- Game Service: `http://localhost:3002/health`
+- Tournament Service: `http://localhost:3003/health`
+- User Service: `http://localhost:3004/health`
+
+## Previous Dashboard Benefits (For Reference)
 
 ### 1. **System Health Monitoring**
-The dashboard provides real-time visibility into critical infrastructure:
-
-| Component | Benefit | Status |
-|-----------|---------|--------|
-| **Prometheus Status** | Know if metrics collection is working | ✅ Up |
+The dashboard previously provided real-time visibility into critical infrastructure:
 | **Vault Status** | Verify secrets management is operational | ✅ Up |
 | **Service Availability** | See if critical services are responding | 📊 Graph |
 | **Uptime Tracking** | Monitor how long services have been running | ⏱️ Hours |

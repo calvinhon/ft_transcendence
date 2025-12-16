@@ -31,11 +31,6 @@ CONTAINERS=(
     "hardhat-node"
     "frontend"
     "ssr"
-    "elasticsearch"
-    "kibana"
-    "filebeat"
-    "prometheus"
-    "grafana"
 )
 
 ALL_RUNNING=true
@@ -143,8 +138,6 @@ run_containerized_test "Server-Side Pong" "test-server-side-pong.sh"
 echo -e "${YELLOW}=== TESTING ADVANCED MODULES ===${NC}"
 run_containerized_test "OAuth/SSO" "test-oauth-sso.sh"
 run_containerized_test "WAF & Vault" "test-waf-vault.sh"
-run_containerized_test "ELK Logging" "test-elk-logging.sh"
-run_containerized_test "Monitoring (Prometheus/Grafana)" "test-monitoring.sh"
 run_containerized_test "GDPR Compliance" "test-gdpr-compliance.sh"
 run_containerized_test "CLI Pong Client" "test-cli-client.sh"
 run_containerized_test "2FA/TOTP" "test-2fa.sh"
@@ -164,8 +157,7 @@ echo ""
 echo "=== DETAILED RESULTS ==="
 for module in "Backend Framework (Fastify)" "Database (SQLite)" "Blockchain (Solidity/Hardhat)" \
               "AI Opponent" "Stats Dashboards" "Microservices Architecture" "Server-Side Pong" \
-              "OAuth/SSO" "WAF & Vault" "ELK Logging" "Monitoring (Prometheus/Grafana)" \
-              "GDPR Compliance" "CLI Pong Client" "2FA/TOTP" "SSR Integration"; do
+              "OAuth/SSO" "WAF & Vault" "GDPR Compliance" "CLI Pong Client" "2FA/TOTP" "SSR Integration"; do
     result="${MODULE_RESULTS[$module]}"
     if [ "$result" = "PASS" ]; then
         echo -e "${GREEN}✓${NC} $module"

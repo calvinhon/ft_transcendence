@@ -119,8 +119,6 @@ main() {
     echo -e "${YELLOW}=== TESTING ADVANCED MODULES (65 Points) ===${NC}"
     run_test_module "OAuth/SSO" "test-oauth-sso.sh"
     run_test_module "WAF & Vault" "test-waf-vault.sh"
-    run_test_module "ELK Logging" "test-elk-logging.sh"
-    run_test_module "Monitoring (Prometheus/Grafana)" "test-monitoring.sh"
     run_test_module "GDPR Compliance" "test-gdpr-compliance.sh"
     run_test_module "CLI Pong Client" "test-cli-client.sh"
     run_test_module "2FA/TOTP" "test-2fa.sh"

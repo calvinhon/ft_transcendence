@@ -57,7 +57,7 @@ RUN echo "Setting up ModSecurity" && \
 
 
 # Production stage
-FROM nginx:alpine
+FROM nginx:1.29.4-alpine
 
 # Create the www-data user and group for nginx to use
 RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true

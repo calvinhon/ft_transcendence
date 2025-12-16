@@ -264,39 +264,39 @@ make start
 # Application will be available at: http://localhost
 ```
 
-### Development Mode (Fast, Core Services Only)
+### Development Mode (Recommended)
 
-For daily development when you don't need monitoring:
+For daily development and production:
 
 ```bash
-# Start core services only (no ELK, Prometheus, Grafana)
+# Start all services
 make dev
 
 # Starts in ~15 seconds
-# Saves ~2GB RAM
-# No 400MB monitoring images
+# Includes all core services
+# Optimized for development
 ```
 
-### Full Stack (With Monitoring)
+### Full Stack (Complete Environment)
 
-For production-like environment with full observability:
+For comprehensive testing with all services:
 
 ```bash
-# Start everything (core + monitoring)
+# Start complete environment
 make full
 
 # Takes 2-3 minutes
-# Includes: ELK, Prometheus, Grafana
-# Requires more resources
+# Includes all services and dependencies
+# Production-like setup
 ```
 
 ### What Each Command Does
 
 | Command | Services Started | Build Time | RAM Usage | Use Case |
 |---------|------------------|------------|-----------|----------|
-| `make start` | All (cached) | ~30s | 6 GB | Quick testing |
-| `make dev` | Core only | ~15s | 4 GB | Daily development |
-| `make full` | Core + Monitoring | ~3min | 8 GB | Production testing |
+| `make start` | All (cached) | ~30s | 4 GB | Quick testing |
+| `make dev` | All services | ~15s | 4 GB | Daily development |
+| `make full` | Complete stack | ~3min | 6 GB | Full testing |
 
 ---
 
@@ -392,9 +392,6 @@ docker stats
 | **Game API** | http://localhost/api/game | Game endpoints |
 | **User API** | http://localhost/api/user | User endpoints |
 | **Tournament API** | http://localhost/api/tournament | Tournament endpoints |
-| **Prometheus** | http://localhost:9090 | Metrics dashboard |
-| **Grafana** | http://localhost:3000 | Monitoring dashboards |
-| **Kibana** | http://localhost:5601 | Log visualization |
 | **Vault** | http://localhost:8200 | Secrets management |
 
 ### Health Checks
@@ -713,15 +710,8 @@ docker system prune -a
 # 1. Check which services use most memory
 docker stats --no-stream
 
-# 2. Stop monitoring if not needed
-docker-compose stop prometheus grafana elasticsearch kibana
-
-# 3. Reduce Elasticsearch memory
+# 2. Limit container memory if needed
 # Edit docker-compose.yml:
-environment:
-  - "ES_JAVA_OPTS=-Xms256m -Xmx512m"  # Reduce from 512/1024
-
-# 4. Limit container memory
 services:
   auth-service:
     mem_limit: 256m

@@ -122,8 +122,8 @@ test_consent_management() {
 test_audit_trail() {
     echo -e "${YELLOW}Running Test 6: Audit Trail${NC}"
     
-    # Check if logging infrastructure exists
-    if [ -f "$PROJECT_ROOT/docker-compose.yml" ] && grep -q "elasticsearch\|elk" "$PROJECT_ROOT/docker-compose.yml"; then
+    # Check for audit logging in auth service
+    if [ -d "$PROJECT_ROOT/auth-service/src" ] && find "$PROJECT_ROOT/auth-service/src" -type f -name "*.ts" -exec grep -l "audit\|log.*user\|log.*action" {} \; 2>/dev/null | head -1 | grep -q .; then
         log_result 6 "Audit Trail" "PASS"
         return 0
     fi

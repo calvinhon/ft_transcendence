@@ -1825,7 +1825,7 @@ fastify.post<{ Body: LoginRequest }>(
 **Database**: SQLite (4 instances)  
 **Blockchain**: Solidity + Hardhat + Ethers.js  
 **Security**: ModSecurity + Vault + JWT + 2FA + OAuth  
-**DevOps**: Docker + Nginx + Prometheus + Grafana + ELK  
+**DevOps**: Docker + Nginx + Vault  
 **Testing**: 180 automated tests across 12 modules
 
 ---
@@ -1997,17 +1997,10 @@ Internet → ModSecurity (WAF) → Nginx → Services → Vault (secrets)
 - **Functions**: SSL/TLS termination, load balancing, routing
 - **ModSecurity**: Built-in WAF protection
 
-**3. Prometheus + Grafana**:
-- **Prometheus**: Metrics collection (CPU, memory, request counts)
-- **Grafana**: Visual dashboards and alerting
-- **Metrics**: Scrape every 15 seconds from all services
-- **Dashboards**: Service health, performance, error rates
-
-**4. ELK Stack (Elasticsearch + Logstash + Kibana)**:
-- **Elasticsearch**: Log storage and full-text search
-- **Filebeat**: Ships logs from containers to Elasticsearch
-- **Kibana**: Log visualization and analysis
-- **Capacity**: 10,000+ logs/second, 30-day retention
+**3. Vault**:
+- **Purpose**: Secrets management and encryption
+- **Functions**: Secure storage of sensitive data
+- **Integration**: JWT tokens, database credentials, API keys
 
 **Benefits**:
 - 📊 **Observability**: See what's happening in real-time
@@ -2035,10 +2028,8 @@ Stats Dashboards                - 12 tests ✅
 2FA + JWT                       - 12 tests ✅
 WAF + Vault                     - 12 tests ✅
 GDPR Compliance                 - 12 tests ✅
-ELK Logging                     - 12 tests ✅
-Monitoring (Prometheus/Grafana) - 12 tests ✅
 
-Total: 180/180 tests passing (100% success rate)
+Total: 144/144 tests passing (100% success rate)
 ```
 
 **Test Execution**:
@@ -2107,18 +2098,14 @@ cd tester && ./run-all-tests.sh
 11. Frontend
     Redirect to game dashboard
     ↓
-12. Logging (Filebeat → Elasticsearch)
-    Log: "User logged in successfully"
-    ↓
-13. Monitoring (Prometheus)
-    Metric: auth_login_success_total++
+12. Health Check
+    Status: 200 OK
 ```
 
 **Why This Stack?**
 - ⚡ **Fast**: Vite HMR, Fastify performance, SQLite speed
 - 🔒 **Secure**: Multiple security layers (WAF, Vault, JWT, 2FA)
-- 📊 **Observable**: Complete logging and monitoring
-- 🧪 **Tested**: 180 automated tests
+- 🧪 **Tested**: 144 automated tests
 - 🐳 **Portable**: Docker runs anywhere
 - 🔗 **Blockchain**: Immutable tournament records
 - 🌐 **Real-time**: WebSocket for live gameplay

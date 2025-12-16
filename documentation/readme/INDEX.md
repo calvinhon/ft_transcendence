@@ -124,11 +124,10 @@
 
 | File | Purpose | Key Content |
 |------|---------|-------------|
-| [MONITORING_FIX_GUIDE.md](MONITORING_FIX_GUIDE.md) | ELK Stack setup & fixes | Elasticsearch, Kibana, Filebeat configuration |
 | [EVALUATION_GUIDE.md](EVALUATION_GUIDE.md) | General troubleshooting | Service issues, health checks, fixes |
 | [FAQ.md](FAQ.md) | Frequently asked questions | Common issues and solutions |
 
-**Quick Start:** [FAQ.md](FAQ.md) → [MONITORING_FIX_GUIDE.md](MONITORING_FIX_GUIDE.md)
+**Quick Start:** [FAQ.md](FAQ.md)
 
 ---
 
@@ -192,8 +191,7 @@
 **Files to Use:**
 1. [EVALUATION_GUIDE.md](EVALUATION_GUIDE.md) - Fresh clone setup, troubleshooting
 2. [PROFILE_DASHBOARD_DEBUG.md](PROFILE_DASHBOARD_DEBUG.md) - Example of debugging
-3. [MONITORING_FIX_GUIDE.md](MONITORING_FIX_GUIDE.md) - Monitoring/logging setup
-4. [FAQ.md](FAQ.md) - Common issues
+3. [FAQ.md](FAQ.md) - Common issues
 
 **Result:** Development environment ready, issues resolved
 
@@ -239,22 +237,17 @@
    - Type: Testing Report
    - Key Info: Status of all modules
 
-8. MONITORING_FIX_GUIDE.md
-   - Lines: 500+
-   - Type: Configuration Guide
-   - Key Info: ELK Stack setup, troubleshooting
-
-9. OAUTH_42_SETUP.md
+8. OAUTH_42_SETUP.md
    - Lines: 200+
    - Type: Setup Guide
    - Key Info: 42 School OAuth configuration
 
-10. OAUTH_IMPLEMENTATION.md
+9. OAUTH_IMPLEMENTATION.md
     - Lines: 600+
     - Type: Technical Documentation
     - Key Info: OAuth flow, implementation details
 
-11. OAUTH_SETUP.md
+10. OAUTH_SETUP.md
     - Lines: 200+
     - Type: Quick Setup
     - Key Info: OAuth environment variables
@@ -394,10 +387,6 @@ FEATURE_SHOWCASE_GUIDE.md
     ├→ OAUTH_42_SETUP.md (OAuth)
     ├→ GDPR_IMPLEMENTATION.md (privacy)
     └→ README_PROFILE_DASHBOARD.md (profile)
-
-MONITORING_FIX_GUIDE.md
-    ↓
-    └→ FAQ.md (reference)
 
 README_PROFILE_DASHBOARD.md
     ↓

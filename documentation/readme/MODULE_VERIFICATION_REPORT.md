@@ -58,9 +58,8 @@
 - **Files Verified:**
   - `docker-compose.yml` - Main orchestration
   - `docker-compose.core.yml` - Core services
-  - `docker-compose.monitoring.yml` - Monitoring
   - `makefile` - Simplified commands
-- **Test:** `make start` successfully launches 13 containers
+- **Test:** `make start` successfully launches containers
 - **Status:** PASSED
 
 ### Game Requirements
@@ -576,35 +575,9 @@
 
 ---
 
-### 5. Monitoring - 5 Points ✅
+### 5. Monitoring - REMOVED
 
-**Subject Reference:** IV.7 Devops - "Monitoring system"
-
-**Implementation:**
-- Prometheus (metrics collection)
-- Grafana (dashboards)
-- Service health monitoring
-- Performance metrics
-- Alert rules
-- 15-second scrape interval
-
-**Test Results:** 12/12 PASSED
-```
-✓ Prometheus Health Check
-✓ Prometheus Configuration
-✓ Metrics Collection
-✓ Grafana Dashboard
-✓ Data Source Configuration
-✓ Service Monitoring
-✓ Alert Rules
-✓ Metric Queries
-✓ Performance Metrics
-✓ Resource Monitoring
-✓ Visualization
-✓ Data Retention
-```
-
-**Status:** ✅ PASSED
+**Note:** Monitoring services (Elasticsearch, Kibana, Prometheus, Grafana) have been removed from the project to simplify the architecture.
 
 ---
 
@@ -735,8 +708,6 @@ TOTAL: 168/168 tests passed (100%)
 | Stats Dashboards | Minor | 5 | 12/12 | ✅ PASSED |
 | WAF & Vault | Major+Minor | 10 | 12/12 | ✅ PASSED |
 | 2FA/JWT | Minor | 5 | 12/12 | ✅ PASSED |
-| ELK Logging | Major | 10 | 12/12 | ✅ PASSED |
-| Monitoring | Minor | 5 | 12/12 | ✅ PASSED |
 | GDPR Compliance | Minor | 5 | 12/12 | ✅ PASSED |
 | SSR Integration | Minor | 5 | 12/12 | ✅ PASSED |
 
@@ -771,11 +742,11 @@ TOTAL: 168/168 tests passed (100%)
                                  └─────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                    Security & Monitoring                     │
-├─────────────┬─────────────┬─────────────┬─────────────────┤
-│   Vault     │ ModSecurity │   ELK Stack │  Prometheus +   │
-│  :8200      │    (WAF)    │  :9200,5601 │   Grafana       │
-└─────────────┴─────────────┴─────────────┴─────────────────┘
+│                        Security                            │
+├─────────────┬─────────────┬─────────────────────────────────┤
+│   Vault     │ ModSecurity │            WAF                 │
+│  :8200      │    (WAF)    │                                 │
+└─────────────┴─────────────┴─────────────────────────────────┘
 ```
 
 ### Technology Stack
@@ -858,7 +829,7 @@ All subject requirements have been successfully implemented and verified:
 - **Security-First** - Multiple layers of protection (WAF, Vault, 2FA, JWT)
 - **Performance Optimized** - 60 FPS server-side game loop
 - **GDPR Compliant** - Full data privacy implementation
-- **Observable** - Complete logging and monitoring stack
+- **Simplified Architecture** - Streamlined for core functionality
 
 ### Evaluation Readiness
 

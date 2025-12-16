@@ -484,7 +484,7 @@ CREATE TABLE user_statistics (
 - **Caching Strategy**: Frequently accessed data caching
 - **Scalable Storage**: File storage for user uploads
 
-## 🔧 Monitoring & Operations
+## 🔧 Operations
 
 ### **Health Monitoring**
 - **Service Status**: Overall service health
@@ -549,8 +549,7 @@ await fetch(`/user/achievements/${userId}/tournament_win`, {
 - **Compression**: Image optimization and WebP format
 
 ### **Search Scaling**
-- **Elasticsearch**: Advanced search capabilities
-- **Search Sharding**: Distributed search indexes
+- **Database Indexing**: Optimized search queries
 - **Query Optimization**: Complex search query handling
 
 ## 🧪 Testing Strategy
@@ -569,7 +568,7 @@ This service follows **Modular Monolith** principles with recent refactoring for
 2. **Shared Database**: Single database with clear boundaries
 3. **API Composition**: Route aggregation for unified API
 4. **Independent Deployment**: Service-level deployment units
-5. **Shared Infrastructure**: Common logging and monitoring
+5. **Shared Infrastructure**: Common logging
 6. **Business Logic Layer**: Extracted services for clean separation of concerns
 
 ## 🔄 Recent Refactoring (2025)

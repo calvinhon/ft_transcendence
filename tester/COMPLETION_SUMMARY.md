@@ -23,9 +23,7 @@
 ### Module 8-12: New Modules (40 points)
 10. ✅ **test-oauth-sso.md** - OAuth/SSO (10 pts, 12 tests)
 11. ✅ **test-waf-vault.md** - Security/Vault (10 pts, 12 tests)
-12. ✅ **test-elk-logging.md** - ELK logging (10 pts, 12 tests)
-13. ✅ **test-monitoring.md** - Prometheus/Grafana (5 pts, 12 tests)
-14. ✅ **test-gdpr-compliance.md** - GDPR compliance (5 pts, 12 tests)
+12. ✅ **test-gdpr-compliance.md** - GDPR compliance (5 pts, 12 tests)
 
 ---
 
@@ -138,20 +136,6 @@
 ### File: test-elk-logging.md
 **Size:** ~850 lines  
 **Coverage:** Elasticsearch, Kibana, Filebeat, Log Queries  
-**Tests:** 12 comprehensive tests  
-**Commands:** 32+ elasticsearch/kibana commands  
-**Points:** 10
-
-### File: test-monitoring.md
-**Size:** ~750 lines  
-**Coverage:** Prometheus, Grafana, Metrics Collection  
-**Tests:** 12 comprehensive tests  
-**Commands:** 28+ prometheus/grafana commands  
-**Points:** 5
-
-### File: test-gdpr-compliance.md
-**Size:** ~850 lines  
-**Coverage:** Data Rights, Audit Trails, Compliance  
 **Tests:** 12 comprehensive tests  
 **Commands:** 30+ GDPR endpoint tests  
 **Points:** 5
@@ -313,11 +297,9 @@ cat tester/test-[module-name].md
 ### Advanced Features (40 points)
 8. ✅ OAuth/SSO - Google/GitHub (10 pts)
 9. ✅ WAF/Vault - Security/Secrets (10 pts)
-10. ✅ ELK - Logging/Monitoring (10 pts)
-11. ✅ Prometheus/Grafana - Metrics (5 pts)
-12. ✅ GDPR - Compliance (5 pts)
+10. ✅ GDPR - Compliance (5 pts)
 
-**Total: 100/125 points (80% complete)**
+**Total: 80/100 points (80% complete)**
 
 ---
 

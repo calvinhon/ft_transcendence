@@ -2,7 +2,7 @@
 
 **Status:** 125/125 Points ✅ | 180/180 Tests Passing ✅ | Production Ready
 
-A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, blockchain integration, OAuth authentication, comprehensive monitoring, and GDPR compliance.
+A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, blockchain integration, OAuth authentication, and GDPR compliance.
 
 ## 🎮 Game Features
 
@@ -123,14 +123,11 @@ curl http://localhost/api/auth/health
 # ⚡ Fast dev mode (core only, NO 2GB images, ~15s)
 make dev
 
-# 📊 Full stack with monitoring (~2-3 min, includes Kibana/Grafana)
+# 📊 Full stack with all services (~2-3 min)
 make full
 
 # Quick start (legacy, all services, ~30-60s)
 make start
-
-# Apply monitoring optimizations (run after first 'make full')
-make optimize-monitoring
 
 # Restart services (no rebuild, ~10s)
 make restart
@@ -145,7 +142,6 @@ make stop
 make logs
 
 # Maintenance commands
-make cleanup-logs           # Remove old Elasticsearch data (30+ days)
 make clean                  # Remove all containers/volumes
 make clean-dev              # Clean node_modules and build artifacts
 
@@ -203,7 +199,7 @@ make help
 - ✅ Statistics & Dashboards
 - ✅ Microservices Architecture
 - ✅ Authentication & Security
-- ✅ Infrastructure (ELK, Monitoring)
+- ✅ Infrastructure & Security
 - ✅ Compliance (GDPR)
 
 ## 📈 Performance
