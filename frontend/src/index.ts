@@ -6,7 +6,7 @@ import './match';
 import './tournament';
 import './profile';
 import './leaderboard';
-import './chat';
+// import './chat'; // Removed - chat.ts file doesn't exist
 import './blockchain';
 
 // Import CSS
