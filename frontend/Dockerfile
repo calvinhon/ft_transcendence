@@ -5,8 +5,10 @@ WORKDIR /app
 
 # Copy all configuration files
 COPY package*.json ./
-COPY ../tsconfig.json ./tsconfig.json
+COPY tsconfig.json ./tsconfig.json
 COPY vite.config.js ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
 
 # Install dependencies
 RUN npm install
@@ -14,6 +16,7 @@ RUN npm install
 # Copy source code
 COPY src/ ./src/
 COPY css/ ./css/
+COPY assets/ ./assets/
 COPY index.html ./
 
 # Clean any existing build artifacts and build the application
