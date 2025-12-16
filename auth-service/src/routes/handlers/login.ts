@@ -7,9 +7,9 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
   const authService = new AuthService(request.server);
   let identifier = 'unknown';
   try {
-    const body = request.body as { username: string; password: string };
+    const body = request.body as { username: string; password: string; totpToken?: string };
     identifier = body.username;
-    const { password } = body;
+    const { password, totpToken } = body;
 
     console.log('Login attempt for identifier:', identifier);
 
@@ -21,13 +21,21 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     console.log('Validation passed for', identifier);
 
-    const result = await authService.login(identifier, password);
+    const result = await authService.login(identifier, password, totpToken);
 
     console.log('Login successful for', identifier);
 
+    // Set JWT as HTTP-only cookie
+    reply.setCookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 24 * 60 * 60 // 24 hours in seconds
+    });
+
     sendSuccess(reply, {
-      user: result.user,
-      token: result.token
+      user: result.user
     }, 'Login successful');
 
   } catch (error: any) {

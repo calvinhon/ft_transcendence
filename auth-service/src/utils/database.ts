@@ -22,16 +22,31 @@ function getDatabase(): sqlite3.Database {
 
 function initializeDatabase(): void {
   const database = getDatabase();
+  
+  // Create users table
   database.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,  -- Allow NULL for OAuth users
+      avatar_url TEXT,
+      two_factor_secret TEXT,
+      two_factor_enabled BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
+      last_login DATETIME,
+      oauth_provider TEXT  -- Track OAuth provider (google, github, 42)
     )
-  `);
+  `, (err) => {
+    if (err) {
+      console.error('Error creating users table:', err);
+    } else {
+      // After creating table, check and add missing columns
+      ensureColumnExists('users', 'two_factor_enabled', 'BOOLEAN DEFAULT FALSE');
+      ensureColumnExists('users', 'avatar_url', 'TEXT');
+      ensureColumnExists('users', 'oauth_provider', 'TEXT');
+    }
+  });
 
   // Create password reset tokens table
   database.run(`
@@ -45,6 +60,29 @@ function initializeDatabase(): void {
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
+}
+
+function ensureColumnExists(table: string, column: string, type: string): void {
+  const database = getDatabase();
+  database.all(`PRAGMA table_info(${table})`, (err, rows: any[]) => {
+    if (err) {
+      console.error(`Error checking columns for ${table}:`, err);
+      return;
+    }
+    
+    const columnExists = rows && rows.some(row => row.name === column);
+    
+    if (!columnExists) {
+      console.log(`Adding missing column ${column} to ${table}`);
+      database.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, (err) => {
+        if (err) {
+          console.error(`Error adding column ${column} to ${table}:`, err);
+        } else {
+          console.log(`Successfully added column ${column} to ${table}`);
+        }
+      });
+    }
+  });
 }
 
 export function runQuery<T = any>(query: string, params: any[] = []): Promise<T> {

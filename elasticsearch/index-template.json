@@ -1,0 +1,32 @@
+{
+  "index_patterns": ["logs-*", "filebeat-*"],
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "max_result_window": 10000,
+        "max_inner_result_window": 100,
+        "max_rescore_window": 10000,
+        "refresh_interval": "30s",
+        "lifecycle": {
+          "name": "logs-policy",
+          "rollover_alias": "logs"
+        }
+      }
+    },
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "strings_as_keywords": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      ]
+    }
+  }
+}

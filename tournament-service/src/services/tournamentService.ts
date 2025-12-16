@@ -4,6 +4,7 @@
 import { dbRun, dbGet, dbAll } from '../database';
 import { Tournament, TournamentParticipant, TournamentMatch, CreateTournamentBody, TournamentDetails } from '../types';
 import { BracketService } from './bracketService';
+import { MatchService } from './matchService';
 import { logger } from '../utils/logger';
 
 export class TournamentService {
@@ -160,6 +161,28 @@ export class TournamentService {
         'INSERT INTO tournament_matches (tournament_id, round, match_number, player1_id, player2_id) VALUES (?, ?, ?, ?, ?)',
         [id, match.round, match.matchNumber, match.player1, match.player2]
       );
+    }
+
+    // Auto-complete matches that contain a bye (player id 0)
+    // For non-power-of-two participant counts some first-round matches will have a bye
+    // Mark those matches as completed and set the winner to the non-bye player so the
+    // tournament can advance correctly (e.g., 3 participants -> one bye should auto-advance).
+    const insertedMatches = await this.getTournamentMatches(id);
+    for (const m of insertedMatches) {
+      if (m.round === 1 && (m.player1_id === 0 || m.player2_id === 0)) {
+        const winnerId = m.player1_id === 0 ? m.player2_id : m.player1_id;
+        await dbRun(
+          'UPDATE tournament_matches SET winner_id = ?, status = ?, played_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [winnerId, 'completed', m.id]
+        );
+      }
+    }
+
+    // After auto-completing bye matches, evaluate the round completion so next-round matches are created
+    try {
+      await MatchService.evaluateRoundCompletion(id, 1);
+    } catch (err) {
+      logger.error('Failed to evaluate round completion after inserting matches', { tournamentId: id, error: err });
     }
 
     // Update tournament status

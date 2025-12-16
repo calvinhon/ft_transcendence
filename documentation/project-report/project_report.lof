@@ -1,0 +1,24 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Observability Stack}}{13}{figure.caption.5}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{15}{figure.caption.6}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{17}{figure.caption.9}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{19}{figure.caption.10}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{21}{figure.caption.32}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Project Gantt Chart: Phases, milestones, and timeline}}{27}{figure.caption.33}%
+\contentsline {figure}{\numberline {A.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{28}{figure.caption.34}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {B.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{29}{figure.caption.35}%
+\contentsline {figure}{\numberline {B.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{30}{figure.caption.36}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

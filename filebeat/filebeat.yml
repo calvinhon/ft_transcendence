@@ -1,0 +1,43 @@
+filebeat.inputs:
+- type: container
+  enabled: true
+  paths:
+    - '/var/lib/docker/containers/*/*.log'
+
+processors:
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - drop_fields:
+      fields: ["host.name", "agent.ephemeral_id", "agent.id", "ecs.version"]
+      ignore_missing: true
+  - truncate_fields:
+      fields: ["message"]
+      max_bytes: 2048
+      fail_on_error: false
+
+# Performance optimization
+queue.mem:
+  events: 2048
+  flush.min_events: 512
+  flush.timeout: 1s
+
+output.elasticsearch:
+  hosts: ["${ELASTICSEARCH_HOSTS:elasticsearch:9200}"]
+  index: "logs-%{+yyyy.MM.dd}"
+  bulk_max_size: 50
+  worker: 2
+  compression_level: 1
+  loadbalance: true
+
+setup.template.name: "logs"
+setup.template.pattern: "logs-*"
+setup.template.enabled: true
+setup.ilm.enabled: false
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644

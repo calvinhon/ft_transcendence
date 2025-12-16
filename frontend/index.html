@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes" />
+    <title>ft_transcendence</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+      <div class="login-container">
+        <div class="login-panel">
+        
+          <div class="login-form-container">
+            <form id="login-form" class="login-form">
+              <input type="text" id="login-username" placeholder="Username" required class="login-input" />
+              <input type="password" id="login-password" placeholder="Password" required class="login-input" />
+              <button type="submit" class="login-btn">LOGIN</button>
+            </form>
+            
+            <!-- OAuth Sign-In Options -->
+            <div class="oauth-divider" style="margin: 20px 0; text-align: center; color: #ccc;">
+              <span style="background: #1a1a2e; padding: 0 10px;">OR SIGN IN WITH</span>
+            </div>
+            
+            <div class="oauth-buttons" style="display: flex; gap: 10px; margin: 15px 0;">
+              <button id="school42-login-btn" class="oauth-btn school42-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #00babc; color: white; font-weight: 500; transition: background 0.3s;">
+                <span style="font-weight: 700;">42</span>
+                <span>School</span>
+              </button>
+              <button id="google-login-btn" class="oauth-btn google-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #4285f4; color: white; font-weight: 500; transition: background 0.3s;">
+                <i class="fab fa-google"></i>
+                <span>Google</span>
+              </button>
+              <button id="github-login-btn" class="oauth-btn github-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #333; color: white; font-weight: 500; transition: background 0.3s;">
+                <i class="fab fa-github"></i>
+                <span>GitHub</span>
+              </button>
+            </div>
+            
+            <div class="login-links">
+              <a href="#" id="forgot-password-link" class="login-link">
+                <span style="color: #e94560;">▶</span> Forgot Password?
+              </a>
+              <span>OR</span>
+              <a href="#" id="create-account-link" class="login-link">
+                <span style="color: #e94560;">▶</span> Create an Account
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration Screen -->
+    <div id="register-screen" class="screen">
+      <div class="login-container">
+        <div class="login-panel">
+          <h1 class="login-title">Create Account</h1>
+          
+          <div class="login-form-container">
+            <form id="register-form" class="login-form">
+              <input type="text" id="register-username" placeholder="Username" required class="login-input" />
+              <input type="email" id="register-email" placeholder="Email" required class="login-input" />
+              <input type="password" id="register-password" placeholder="Password" required class="login-input" />
+              <button type="submit" class="login-btn">Create Account</button>
+            </form>
+            
+            <!-- OAuth Sign-Up Options -->
+            <div class="oauth-divider" style="margin: 20px 0; text-align: center; color: #ccc;">
+              <span style="background: #1a1a2e; padding: 0 10px;">OR SIGN UP WITH</span>
+            </div>
+            
+            <div class="oauth-buttons" style="display: flex; gap: 10px; margin: 15px 0;">
+              <button id="school42-register-btn" class="oauth-btn school42-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #00babc; color: white; font-weight: 500; transition: background 0.3s;">
+                <span style="font-weight: 700;">42</span>
+                <span>School</span>
+              </button>
+              <button id="google-register-btn" class="oauth-btn google-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #4285f4; color: white; font-weight: 500; transition: background 0.3s;">
+                <i class="fab fa-google"></i>
+                <span>Google</span>
+              </button>
+              <button id="github-register-btn" class="oauth-btn github-btn" style="flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: #333; color: white; font-weight: 500; transition: background 0.3s;">
+                <i class="fab fa-github"></i>
+                <span>GitHub</span>
+              </button>
+            </div>
+            
+            <div class="login-links">
+              <a href="#" id="back-to-login-link" class="login-link">
+                <span style="color: #e94560;">◀</span> Back to Login
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forgot Password Screen -->
+    <div id="forgot-password-screen" class="screen">
+      <div class="login-container">
+        <div class="login-panel">
+          <h1 class="login-title">Reset Password</h1>
+          
+          <div class="login-form-container">
+            <div class="forgot-password-info">
+              <p>Enter your email address and we'll send you a link to reset your password.</p>
+            </div>
+            
+            <form id="forgot-password-form" class="login-form">
+              <input type="email" id="forgot-password-email" placeholder="Email Address" required class="login-input" />
+              <button type="submit" class="login-btn">Send Reset Link</button>
+            </form>
+            
+            <div class="login-links">
+              <a href="#" id="back-to-login-from-forgot-link" class="login-link">
+                <span style="color: #e94560;">◀</span> Back to Login
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div id="main-menu-screen" class="screen">
+      <div class="main-menu-container">
+        <div class="main-menu-panel">
+            <h1 class="launch-seq">LAUNCHSEQ</h1>
+            <div class="main-menu-buttons">
+            <button id="play-btn" class="menu-btn play-btn" style="font-size: 24px;">▶</button>
+            <button id="profile-btn" class="menu-btn profile-btn" style="font-size: 24px;">👤</button>
+            <button id="settings-btn" class="menu-btn settings-btn" style="background: linear-gradient(180deg, #666 0%, #555 100%); color: white; font-size: 24px;">⚙️</button>
+          </div>
+          
+          <div class="logout-section" style="margin-top: 20px; text-align: center;">
+            <a href="#" id="main-menu-logout-btn" class="login-link" style="color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: bold;">
+              <span style="color: #e94560; font-size: 20px;">◀</span>
+              <span>LOGOUT</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play Configuration Screen -->
+    <div id="play-config-screen" class="screen">
+      <div class="main-menu-container">
+        <div class="main-menu-panel">
+          <!-- Center Title -->
+          <div class="play-header-center">
+            <h1 class="launch-seq">PLAY MODE</h1>
+          </div>
+          <div class="play-config-content">
+            <!-- Button Row Above Columns (only visible in config menu) -->
+            <div class="play-config-buttons">
+              <button id="back-to-main-btn" class="back-btn">
+                <span style="color: inherit;">◀</span>
+                <span>Back</span>
+              </button>
+              <div class="button-spacer"></div>
+              <button id="start-game-btn" class="start-game-btn">
+                <i class="fas fa-play"></i>
+                <span>START GAME</span>
+              </button>
+            </div>
+            <!-- Settings Column (unchanged) -->
+            <div class="play-config-columns">
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-sliders-h"></i>
+                  <span>SETTINGS</span>
+                </div>
+                <div class="column-subtitle">
+                </div>
+                
+                <div class="column-content">
+                  <!-- AI Difficulty -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>AI Difficulty</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option active" data-setting="ai-difficulty" data-value="easy" data-short="E">
+                        <span>EASY</span>
+                      </button>
+                      <button class="setting-option" data-setting="ai-difficulty" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="ai-difficulty" data-value="hard" data-short="H">
+                        <span>HARD</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Ball Speed -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>Ball Speed</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option" data-setting="ball-speed" data-value="slow" data-short="S">
+                        <span>SLOW</span>
+                      </button>
+                      <button class="setting-option active" data-setting="ball-speed" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="ball-speed" data-value="fast" data-short="F">
+                        <span>FAST</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Paddle Speed -->
+                  <div class="setting-group">
+                    <label class="setting-label">
+                      <span>Paddle Speed</span>
+                    </label>
+                    <div class="setting-options">
+                      <button class="setting-option" data-setting="paddle-speed" data-value="slow" data-short="S">
+                        <span>SLOW</span>
+                      </button>
+                      <button class="setting-option active" data-setting="paddle-speed" data-value="medium" data-short="M">
+                        <span>MEDIUM</span>
+                      </button>
+                      <button class="setting-option" data-setting="paddle-speed" data-value="fast" data-short="F">
+                        <span>FAST</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Checkboxes -->
+                  <div class="setting-checkboxes">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="powerups-enabled" class="setting-checkbox">
+                      <span class="checkbox-text">PowerUps</span>
+                    </label>
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="accelerate-on-hit" class="setting-checkbox">
+                      <span class="checkbox-text">Accelerate</span>
+                    </label>
+                  </div>
+                  
+                  <!-- Score to Win (Arcade Mode) -->
+                  <div class="setting-group arcade-only">
+                    <label class="setting-label">
+                      <span>Score to Win</span>
+                    </label>
+                    <div class="score-setting">
+                      <button class="score-btn decrement" id="score-decrement">
+                        <i class="fas fa-minus"></i>
+                      </button>
+                      <span class="score-value" id="score-value">5</span>
+                      <button class="score-btn increment" id="score-increment">
+                        <i class="fas fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Column 2: Game Mode -->
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-gamepad"></i>
+                  <span>MODES</span>
+                </div>
+                
+                <div class="column-content">
+                  <div class="game-mode-selection">
+                    <div class="game-mode-tabs">
+                      <button class="game-mode-tab active" data-mode="coop">
+                        <i class="fas fa-users"></i>
+                        <span>CO-OP</span>
+                        <small>Campaign</small>
+                      </button>
+                      <button class="game-mode-tab" data-mode="arcade">
+                        <i class="fas fa-coins"></i>
+                        <span>ARCADE</span>
+                        <small>Classic</small>
+                      </button>
+                      <button class="game-mode-tab" data-mode="tournament">
+                        <i class="fas fa-trophy"></i>
+                        <span>TOURNAMENT</span>
+                        <small>Competitive</small>
+                      </button>
+                    </div>
+                    <!-- Co-op campaign progress UI -->
+                    <div id="coop-campaign-progress" class="coop-campaign-progress" style="display:none; margin: 12px 0; text-align:center;">
+                      <span id="coop-level-label" style="font-weight:bold; font-size:1.1em;"></span>
+                      <span id="coop-next-ai" style="margin-left:12px; color:#e94560;"></span>
+                    </div>
+                    <div class="mode-description">
+                      <div id="mode-desc-coop" class="mode-desc active">
+                        <i class="fas fa-users"></i>
+                        <h4>Co-op Campaign</h4>
+                        <p>Defeat the AI at each level to increase your rank!<br>Progress: <span id="coop-campaign-desc"></span></p>
+                      </div>
+                      <div id="mode-desc-arcade" class="mode-desc">
+                        <i class="fas fa-coins"></i>
+                        <h4>Arcade Mode</h4>
+                        <p>Classic pong with customizable rules</p>
+                      </div>
+                      <div id="mode-desc-tournament" class="mode-desc">
+                        <i class="fas fa-trophy"></i>
+                        <h4>Tournament</h4>
+                        <p>Compete in ranked matches</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Column 3: Players -->
+              <div class="config-column">
+                <div class="column-title">
+                  <i class="fas fa-user-friends"></i>
+                  <span>Players</span>
+                </div>
+                <div class="column-content">
+                  <div id="game-party-list" class="players-list">
+                    <!-- COOP MODE: Single party frame (shown by default for coop) -->
+                    <div id="coop-party-frame" class="coop-party-frame" style="display: block;">
+                      <div class="party-list">
+                        <div id="host-player-card-coop" class="player-card host-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-crown"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name" id="host-player-name-coop">Loading...</div>
+                            <span class="role-badge host">HOST</span>
+                          </div>
+                        </div>
+                        
+                        <div id="ai-player-card-coop" class="player-card ai-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-robot"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name">AI</div>
+                            <span class="role-badge ai">AI</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TOURNAMENT MODE: Single party frame with host + add player -->
+                    <div id="tournament-party-frame" class="tournament-party-frame" style="display: none;">
+                      <div class="party-list">
+                        <div id="host-player-card-tournament" class="player-card host-player active">
+                          <div class="player-avatar">
+                            <i class="fas fa-crown"></i>
+                          </div>
+                          <div class="player-info">
+                            <div class="player-name" id="host-player-name-tournament">Loading...</div>
+                            <span class="role-badge host">HOST</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Local players will be injected here -->
+                        <div id="tournament-local-players" class="local-players"></div>
+                        
+                        <!-- Add Player button -->
+                        <button
+                          id="add-tournament-player-btn"
+                          class="add-player-btn"
+                          aria-controls="add-player-modal"
+                          aria-haspopup="dialog"
+                          title="Add local player"
+                        >
+                          <i class="fas fa-user-plus"></i>
+                          <span>Add Player</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- ARCADE MODE: Team-based layout -->
+                    <div class="teams-row" id="teams-row" style="display: none; flex-direction: column; gap: 32px; align-items: center; width: 100%;">
+                        <!-- TEAM 1 Section -->
+                        <div class="team-section" id="team1-section">
+                          <div class="team-title">TEAM 1</div>
+                          <div class="team-list" id="team1-list">
+                            <div id="host-player-card" class="player-card host-player active" draggable="true" data-player-id="host-player">
+                              <div class="player-avatar">
+                                <i class="fas fa-crown"></i>
+                              </div>
+                              <div class="player-info">
+                                <div class="player-name" id="host-player-name">Loading...</div>
+                                <span class="role-badge host">HOST</span>
+                              </div>
+                            </div>
+
+                            <!-- Local players will be injected here -->
+                            <div id="team1-local-players" class="local-players"></div>
+
+                            <!-- Add Player button (opens Add Player modal; limited to 4 players per team) -->
+                            <div class="add-player-container" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                              <button
+                                id="add-team1-player-btn"
+                                class="add-player-btn"
+                                data-team="team1"
+                                aria-controls="add-player-modal"
+                                aria-haspopup="dialog"
+                                title="Add player to Team 1"
+                              >
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Player</span>
+                              </button>
+                              <small class="slots-info" id="team1-slots-info" aria-live="polite">Slots: <span id="team1-slots-left">3</span>/4</small>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- TEAM 2 Section -->
+                        <div class="team-section" id="team2-section">
+                            <div class="team-title">TEAM 2</div>
+                            <div class="team-list" id="team2-list">
+                              <div id="ai-player-card" class="player-card ai-player" draggable="true" data-player-id="ai-player">
+                                <div class="player-avatar">
+                                  <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="player-info">
+                                  <div class="player-name">AI</div>
+                                  <span class="role-badge ai">AI</span>
+                                </div>
+                              </div>
+                              <!-- AI team local players will be injected here -->
+                              <button id="add-team2-player-btn" class="add-player-btn">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Add Player</span>
+                              </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Playing Screen -->
+    <div id="game-screen" class="screen">
+      <div class="game-container">
+        <div class="game-canvas-container">
+          <!-- Campaign  Display (shown during campaign mode) -->
+          <div id="campaign-level-display" class="campaign-level-display" style="display: none; text-align: center; margin: 10px 0; color: #ffffff; font-size: 18px; font-weight: bold;">
+            Campaign Level: <span id="current-level-number">1</span>
+            <div id="campaign-progress-bar" class="campaign-progress-bar" style="width: 200px; height: 8px; background: rgba(255,255,255,0.2); margin: 5px auto; border-radius: 4px; overflow: hidden;">
+              <div id="campaign-progress-fill" style="height: 100%; background: linear-gradient(90deg, #77e6ff, #e94560); width: 10%; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+          <!-- Game Control Buttons above canvas -->
+          <div class="game-canvas-controls">
+            <button id="pause-game-btn" class="game-control-btn">
+              <i class="fas fa-pause"></i>
+              <span>Pause</span>
+            </button>
+            <button id="stop-game-btn" class="game-control-btn quit">
+              <i class="fas fa-stop"></i>
+              <span>Quit</span>
+            </button>
+          </div>
+          <!-- UI overlay removed - all player info now rendered on canvas -->
+          <div class="canvas-wrapper">
+            <canvas id="game-canvas" width="800" height="600" aria-label="Pong game area" tabindex="0"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+      <div class="settings-container">
+        <div class="settings-panel">
+          <!-- Top Back Button (only visible in settings menu) -->
+          <button id="back-to-main-settings-btn" class="back-btn-simple">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+          
+          <h2 class="settings-title">Settings</h2>
+          
+          <div class="settings-content">
+            <div class="settings-grid">
+              <!-- Column 1: Audio Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Audio</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Master Volume</label>
+                  <input type="range" min="0" max="100" value="50" class="volume-slider">
+                  <span class="setting-value">50%</span>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Sound Effects</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Music Volume</label>
+                  <input type="range" min="0" max="100" value="30" class="volume-slider">
+                  <span class="setting-value">30%</span>
+                </div>
+              </div>
+              
+              <!-- Column 2: Graphics Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Graphics</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Particle Effects</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Screen Shake</label>
+                  <input type="checkbox" class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Visual Quality</label>
+                  <select class="setting-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <!-- Column 3: Controls Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Controls</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Player 1 Up</label>
+                  <button class="key-btn" data-key="w">W</button>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Player 1 Down</label>
+                  <button class="key-btn" data-key="s">S</button>
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Pause Game</label>
+                  <button class="key-btn" data-key="escape">ESC</button>
+                </div>
+              </div>
+              
+              <!-- Column 4: Game Settings -->
+              <div class="settings-column">
+                <h3 class="column-header">Game</h3>
+                <div class="setting-item">
+                  <label class="setting-label">Auto-Save</label>
+                  <input type="checkbox" checked class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Show FPS</label>
+                  <input type="checkbox" class="setting-checkbox">
+                </div>
+                <div class="setting-item">
+                  <label class="setting-label">Language</label>
+                  <select class="setting-select">
+                    <option value="en" selected>English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Bottom Back Button (only visible in settings menu) -->
+          <button id="back-to-main-settings-bottom-btn" class="back-btn-simple back-btn-bottom">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Dashboard Screen -->
+    <div id="profile-screen" class="screen">
+      <div class="profile-container">
+        <div class="profile-panel">
+          <!-- Top Back Button (only visible in profile menu) -->
+          <button id="back-to-main-profile-btn" class="back-btn-simple">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+          
+          <h2 class="profile-title">Player Dashboard</h2>
+          
+          <div class="profile-content">
+            <!-- Compact Profile Header -->
+            <div class="profile-header-compact">
+              <div class="user-avatar" id="profile-avatar">👤</div>
+              <div class="user-basic-info">
+                <h3 id="profile-username">Loading...</h3>
+                <div id="profile-display-name" style="font-size: 14px; color: #999; margin: 2px 0;">Loading...</div>
+                <div class="user-meta">
+                  <span id="profile-user-id" class="user-detail">ID: Loading...</span>
+                  <span class="separator">•</span>
+                  <span id="profile-member-since" class="user-detail">Member since: Loading...</span>
+                </div>
+              </div>
+              <div class="level-compact">
+                <div class="level-number" id="profile-level">1</div>
+                <div class="level-label">Level</div>
+                <div class="exp-compact">
+                  <div class="exp-bar">
+                    <div class="exp-fill" id="profile-exp-bar" style="width: 30%"></div>
+                  </div>
+                  <span class="exp-text" id="profile-exp-text">300 / 1000 XP</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Profile Details -->
+            <div class="profile-details">
+              <div class="detail-item">
+                <span class="detail-label">Bio:</span>
+                <span id="profile-bio" class="detail-value">No bio provided</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Country:</span>
+                <span id="profile-country" class="detail-value">Not specified</span>
+              </div>
+            </div>
+
+            <!-- Stats Table Layout -->
+            <div class="profile-stats-table">
+              <div class="stats-section">
+                <h4 class="section-title">Game Statistics</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Total Games</span>
+                    <span class="stat-value" id="profile-total-games">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Wins</span>
+                    <span class="stat-value" id="profile-wins">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Losses</span>
+                    <span class="stat-value" id="profile-losses">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Draws</span>
+                    <span class="stat-value" id="profile-draws">0</span>
+                  </div>
+                </div>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-value" id="profile-win-rate">0%</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Avg Duration</span>
+                    <span class="stat-value" id="profile-avg-duration">0s</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Performance Metrics</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Campaign Level</span>
+                    <span class="stat-value" id="profile-campaign-level">Level 1</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Current Streak</span>
+                    <span class="stat-value" id="profile-streak">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Best Streak</span>
+                    <span class="stat-value" id="profile-best-streak">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Global Rank</span>
+                    <span class="stat-value" id="profile-rank">#--</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Tournament History</h4>
+                <div class="stats-row">
+                  <div class="stat-cell">
+                    <span class="stat-label">Tournaments</span>
+                    <span class="stat-value" id="profile-tournaments">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Tournament Wins</span>
+                    <span class="stat-value" id="profile-tournament-wins">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Top 3 Finishes</span>
+                    <span class="stat-value" id="profile-top3">0</span>
+                  </div>
+                  <div class="stat-cell">
+                    <span class="stat-label">Prize Money</span>
+                    <span class="stat-value" id="profile-earnings">$0</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Recent Activity</h4>
+                <div class="activity-table">
+                  <div class="activity-row activity-header">
+                    <span>Date</span>
+                    <span>Game Mode</span>
+                    <span>Opponent</span>
+                    <span>Result</span>
+                    <span>Score</span>
+                  </div>
+                  <div id="profile-recent-activity" class="activity-list">
+                    <!-- Dynamic activity items will be inserted here -->
+                    <div class="activity-row">
+                      <span>Today</span>
+                      <span>Arcade</span>
+                      <span>Player42</span>
+                      <span class="result-win">Win</span>
+                      <span>8-5</span>
+                    </div>
+                    <div class="activity-row">
+                      <span>Yesterday</span>
+                      <span>Tournament</span>
+                      <span>ProGamer</span>
+                      <span class="result-loss">Loss</span>
+                      <span>6-8</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <h4 class="section-title">Tournament Rankings</h4>
+                <div class="activity-table">
+                  <div class="activity-row activity-header">
+                    <span>Tournament</span>
+                    <span>Date</span>
+                    <span>Rank</span>
+                    <span>Participants</span>
+                    <span>Status</span>
+                  </div>
+                  <div id="profile-tournament-rankings" class="activity-list">
+                    <!-- Dynamic tournament ranking items will be inserted here -->
+                    <div class="empty-state" style="padding: 20px; text-align: center; color: #aaa;">
+                      <p>No tournament history yet</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Bottom Back Button (only visible in profile menu) -->
+          <button id="back-to-main-profile-bottom-btn" class="back-btn-simple back-btn-bottom">
+            <span style="color: inherit;">◀</span>
+            <span>Back</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Player Modals will be injected here by app.ts -->
+  
+  <!-- Local Player Login Modal -->
+  <div id="local-player-login-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Login</h2>
+        <button type="button" class="modal-close" id="close-local-player-login-modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-description">Login with an existing account to add a local player to this game session.</p>
+        
+        <form id="local-player-login-form" class="login-form">
+          <div class="form-group">
+            <input 
+              type="text" 
+              id="local-player-login-email" 
+              class="login-input" 
+              placeholder="Username or Email" 
+              required 
+              autocomplete="username"
+            />
+          </div>
+          
+          <div class="form-group">
+            <input 
+              type="password" 
+              id="local-player-login-password" 
+              class="login-input" 
+              placeholder="Password" 
+              required 
+              autocomplete="current-password"
+            />
+          </div>
+          
+          <div id="local-player-login-error" class="error-message" style="display: none;"></div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-local-player-login">Cancel</button>
+            <button type="submit" class="login-btn">Login</button>
+          </div>
+        </form>
+        
+        <div class="login-links">
+          <a href="#" id="local-player-forgot-password-link" class="login-link">
+            <span style="color: #e94560;">▶</span> Forgot Password?
+          </a>
+          <span>OR</span>
+          <a href="#" id="local-player-create-account-link" class="login-link">
+            <span style="color: #e94560;">▶</span> Create an Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Player Register Modal -->
+  <div id="local-player-register-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Account</h2>
+        <button type="button" class="modal-close" id="close-local-player-register-modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <p class="modal-description">Create a new account to add a local player to this game session.</p>
+        
+        <form id="local-player-register-form" class="login-form">
+          <div class="form-group">
+            <input 
+              type="text" 
+              id="local-player-register-username" 
+              class="login-input" 
+              placeholder="Username" 
+              required 
+              autocomplete="username"
+            />
+          </div>
+          
+          <div class="form-group">
+            <input 
+              type="email" 
+              id="local-player-register-email" 
+              class="login-input" 
+              placeholder="Email" 
+              required 
+              autocomplete="email"
+            />
+          </div>
+          
+          <div class="form-group">
+            <input 
+              type="password" 
+              id="local-player-register-password" 
+              class="login-input" 
+              placeholder="Password" 
+              required 
+              minlength="6"
+              autocomplete="new-password"
+            />
+          </div>
+          
+          <div id="local-player-register-error" class="error-message" style="display: none;"></div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="cancel-local-player-register">Cancel</button>
+            <button type="submit" class="login-btn">Create Account</button>
+          </div>
+        </form>
+        
+        <div class="login-links">
+          <a href="#" id="local-player-back-to-login-link" class="login-link">
+            <span style="color: #e94560;">◀</span> Already have an account? Login
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tournament Creation Modal -->
+  <div id="create-tournament-modal" class="modal hidden" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content tournament-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Create Tournament</h2>
+        <button type="button" class="modal-close" id="cancel-tournament" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <form id="create-tournament-form">
+          <div class="form-group">
+            <label for="tournament-name">Tournament Name (Optional)</label>
+            <input 
+              type="text" 
+              id="tournament-name" 
+              name="tournament-name" 
+              class="login-input" 
+              placeholder="Leave empty for auto-generated name" 
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="tournament-description">Description (Optional)</label>
+            <textarea 
+              id="tournament-description" 
+              name="tournament-description" 
+              class="login-input" 
+              placeholder="Tournament details..."
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="max-participants">Maximum Players</label>
+            <select id="max-participants" name="max-participants" class="login-input">
+              <option value="2">2 Players</option>
+              <option value="4">4 Players</option>
+              <option value="8" selected>8 Players</option>
+              <option value="16">16 Players</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Select Participants from Party</label>
+            <div id="tournament-participants-list" class="tournament-participants-list">
+              <!-- Host automatically included -->
+              <div class="participant-item selected" data-player-type="host">
+                <input type="checkbox" checked disabled />
+                <span class="participant-name" id="tournament-host-name">You (Host)</span>
+                <span class="participant-badge host">HOST</span>
+              </div>
+              
+              <!-- Local players will be added here -->
+              <div id="tournament-local-players-list"></div>
+              
+              <!-- Online players will be added here -->
+              <div id="tournament-online-players-list"></div>
+              
+              <div class="participant-count">
+                <span>Selected: <strong id="tournament-selected-count">1</strong> / <strong id="tournament-max-count">8</strong></span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" id="cancel-tournament-btn" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create & Start</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="src/main.ts"></script>
+</body>
+</html>

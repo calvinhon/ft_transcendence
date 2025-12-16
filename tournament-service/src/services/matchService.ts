@@ -67,7 +67,17 @@ export class MatchService {
 
     // Check if all matches are completed
     const completedMatches = roundMatches.filter(m => m.status === 'completed');
+    // Diagnostic logging
+    logger.info('Checking round completion', {
+      tournamentId,
+      round,
+      totalMatches: roundMatches.length,
+      completedMatches: completedMatches.length,
+      roundMatches: roundMatches.map(m => ({ id: m.id, status: m.status, player1_id: m.player1_id, player2_id: m.player2_id, winner_id: m.winner_id }))
+    });
+
     if (completedMatches.length !== roundMatches.length) {
+      logger.info('Round not complete yet - awaiting more results', { tournamentId, round });
       return; // Round not complete yet
     }
 
@@ -81,6 +91,7 @@ export class MatchService {
       await this.completeTournament(tournamentId, winners[0]!);
     } else if (winners.length > 1) {
       // Create next round matches
+      logger.info('Winners ready to advance', { tournamentId, nextRound: round + 1, winners });
       await this.createNextRoundMatches(tournamentId, round + 1, winners);
     }
   }
@@ -96,6 +107,7 @@ export class MatchService {
       const player1 = winners[i];
       const player2 = winners[i + 1] || 0; // Bye if odd number
 
+      logger.info('Inserting next round match', { tournamentId, nextRound, matchNumber, player1, player2 });
       await dbRun(
         'INSERT INTO tournament_matches (tournament_id, round, match_number, player1_id, player2_id) VALUES (?, ?, ?, ?, ?)',
         [tournamentId, nextRound, matchNumber++, player1, player2]
@@ -155,5 +167,12 @@ export class MatchService {
       'SELECT * FROM tournament_matches WHERE tournament_id = ? AND status = ? ORDER BY round, match_number',
       [tournamentId, 'pending']
     );
+  }
+
+  /**
+   * Public wrapper to trigger round completion check (used after auto-completing bye matches)
+   */
+  static async evaluateRoundCompletion(tournamentId: number, round: number): Promise<void> {
+    return this.checkRoundCompletion(tournamentId, round);
   }
 }

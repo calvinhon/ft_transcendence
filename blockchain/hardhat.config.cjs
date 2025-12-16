@@ -1,3 +1,4 @@
+// blockchain/hardhat.config.cjs
 require('@nomicfoundation/hardhat-toolbox');
 const dotenv = require('dotenv');
 const path = require('path');

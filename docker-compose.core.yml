@@ -1,0 +1,136 @@
+# Docker Compose - Core Services Only (No Monitoring)
+# Use this for faster startup during development
+
+services:
+  vault:
+    build: ./vault
+    container_name: vault
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./vault/config:/vault/config
+      - ./vault/data:/vault/data
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_ADDR=http://127.0.0.1:8200
+    env_file:
+      - .env
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./auth-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=auth-service
+      - NODE_ENV=development
+      - VAULT_ADDR=http://vault:8200
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    env_file:
+      - .env
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  game-service:
+    build: ./game-service
+    container_name: game
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./game-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=game-service
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  tournament-service:
+    build: ./tournament-service
+    container_name: tournament
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./tournament-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=tournament-service
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  user-service:
+    build: ./user-service
+    container_name: user
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./user-service/database:/app/database
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=user-service
+    mem_limit: 256m
+    networks:
+      - transcendence-network
+
+  hardhat-node:
+    build: ./blockchain
+    container_name: hardhat-node
+    ports:
+      - "8545:8545"
+    volumes:
+      - hardhat-data:/app/data
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
+    env_file:
+      - .env
+    mem_limit: 1g
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/nginx/certs:/etc/nginx/certs:ro
+    environment:
+      - AUTH_SERVICE_URL=http://auth:3000
+      - USER_SERVICE_URL=http://user:3000
+      - GAME_SERVICE_URL=http://game:3000
+      - TOURNAMENT_SERVICE_URL=http://tournament:3000
+    depends_on:
+      - auth-service
+      - user-service
+      - game-service
+      - tournament-service
+    mem_limit: 128m
+    networks:
+      - transcendence-network
+
+networks:
+  transcendence-network:
+    driver: bridge
+
+volumes:
+  hardhat-data:
+
+

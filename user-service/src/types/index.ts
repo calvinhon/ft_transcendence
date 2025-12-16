@@ -1,4 +1,4 @@
-// user-service/src/routes/types.ts
+// user-service/src/types/index.ts
 export interface UserProfile {
   id: number;
   user_id: number;

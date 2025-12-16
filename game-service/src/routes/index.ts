@@ -1,3 +1,4 @@
+// game-service/src/routes/index.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
@@ -38,6 +39,22 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       logger.error('Error fetching game history:', error);
       sendError(reply, 'Error fetching game history', 500);
+    }
+  });
+
+  // Get overall statistics dashboard
+  fastify.get('/stats', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const onlineUsers = getOnlineUsers();
+      const stats = {
+        onlineUsers: onlineUsers.length,
+        timestamp: new Date().toISOString(),
+        service: 'game-service'
+      };
+      sendSuccess(reply, stats);
+    } catch (error) {
+      logger.error('Error fetching stats:', error);
+      sendError(reply, 'Error fetching statistics', 500);
     }
   });
 

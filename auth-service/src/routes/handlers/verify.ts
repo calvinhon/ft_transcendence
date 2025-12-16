@@ -6,8 +6,8 @@ import { sendError, sendSuccess } from '../../utils/responses';
 export async function verifyHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService(request.server);
   try {
-    const authHeader = request.headers.authorization;
-    const token = authHeader?.replace('Bearer ', '');
+    // Try to get token from cookie first, fallback to Authorization header for backward compatibility
+    const token = request.cookies.token || request.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
       return sendError(reply, 'No token provided', 401);

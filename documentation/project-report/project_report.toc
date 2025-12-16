@@ -1,0 +1,105 @@
+\contentsline {chapter}{\numberline {1}Introduction}{7}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Project Overview}{7}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Project Objectives}{7}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Primary Objectives}{7}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Quality Metrics}{7}{subsection.1.2.2}%
+\contentsline {chapter}{\numberline {2}Software Development Life Cycle (SDLC)}{8}{chapter.2}%
+\contentsline {section}{\numberline {2.1}SDLC Approach}{8}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}1. Planning \& Requirements Analysis}{8}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}2. Architectural Design}{8}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}3. Implementation (Iterative)}{8}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}4. Testing \& Validation}{8}{subsection.2.1.4}%
+\contentsline {subsection}{\numberline {2.1.5}5. Deployment \& Evolution}{9}{subsection.2.1.5}%
+\contentsline {section}{\numberline {2.2}Project Timeline and Gantt Chart}{9}{section.2.2}%
+\contentsline {chapter}{\numberline {3}Requirement Analysis}{10}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Functional Requirements}{10}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}User Management \& Authentication}{10}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Gameplay \& Real-Time Features}{10}{subsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.1.3}Social \& Leaderboard Features}{10}{subsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.1.4}Tournament Management}{11}{subsection.3.1.4}%
+\contentsline {subsection}{\numberline {3.1.5}GDPR Compliance}{11}{subsection.3.1.5}%
+\contentsline {section}{\numberline {3.2}Technical Requirements}{11}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Architecture \& Infrastructure}{11}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Technology Stack}{11}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Security Requirements}{11}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}Performance Requirements}{12}{subsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.2.5}Monitoring \& Observability}{12}{subsection.3.2.5}%
+\contentsline {chapter}{\numberline {4}Design}{13}{chapter.4}%
+\contentsline {section}{\numberline {4.1}System Architecture}{13}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{13}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Service Responsibilities}{13}{subsection.4.1.2}%
+\contentsline {section}{\numberline {4.2}Data Model}{14}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Auth Service Database (auth.db)}{14}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{14}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{14}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Tournament Service Database (tournaments.db)}{15}{subsection.4.2.4}%
+\contentsline {section}{\numberline {4.3}Security Design}{15}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Layer 1: Network Security}{15}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Layer 2: Application Security}{16}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Layer 3: Authentication \& Authorization}{16}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.3.4}Layer 4: Data Protection}{16}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}Security Implementation Details}{16}{subsection.4.3.5}%
+\contentsline {subsubsection}{SQL Injection Prevention}{16}{section*.7}%
+\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{16}{section*.8}%
+\contentsline {chapter}{\numberline {5}Implementation}{17}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Game Loop Synchronization}{17}{section.5.1}%
+\contentsline {section}{\numberline {5.2}User Authentication Flow}{17}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Technology Stack Summary}{17}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Core Modules Implementation}{18}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Mandatory Part (25 Points)}{18}{subsection.5.4.1}%
+\contentsline {subsubsection}{Backend Framework (Fastify + Node.js + TypeScript)}{18}{section*.11}%
+\contentsline {subsubsection}{Frontend (TypeScript + Vite)}{18}{section*.12}%
+\contentsline {subsubsection}{Single-Page Application (SPA)}{18}{section*.13}%
+\contentsline {subsection}{\numberline {5.4.2}Major Modules (70 Points)}{19}{subsection.5.4.2}%
+\contentsline {subsubsection}{1. Backend Framework (10 Points) (check)}{19}{section*.14}%
+\contentsline {subsubsection}{2. Database Connection (10 Points) (check)}{19}{section*.15}%
+\contentsline {subsubsection}{3. Backend Gameplay (10 Points) (check)}{19}{section*.16}%
+\contentsline {subsubsection}{4. Real-Time Synchronization (10 Points) (check)}{19}{section*.17}%
+\contentsline {subsubsection}{5. OAuth \& Account Handling (10 Points) (check)}{19}{section*.18}%
+\contentsline {subsubsection}{6. Blockchain Integration (10 Points) (check)}{20}{section*.19}%
+\contentsline {subsubsection}{7. Server-Side Rendering (10 Points) (check)}{20}{section*.20}%
+\contentsline {subsection}{\numberline {5.4.3}Minor Modules (55 Points)}{20}{subsection.5.4.3}%
+\contentsline {subsubsection}{1. CLI Client (5 Points) (check)}{20}{section*.21}%
+\contentsline {subsubsection}{2. Artificial Intelligence (5 Points) (check)}{20}{section*.22}%
+\contentsline {subsubsection}{3. Web Application Firewall (5 Points) (check)}{20}{section*.23}%
+\contentsline {subsubsection}{4. Vault Integration (5 Points) (check)}{20}{section*.24}%
+\contentsline {subsubsection}{5. ELK Stack Logging (5 Points) (check)}{20}{section*.25}%
+\contentsline {subsubsection}{6. Prometheus Monitoring (5 Points) (check)}{20}{section*.26}%
+\contentsline {subsubsection}{7. GDPR Compliance (5 Points) (check)}{20}{section*.27}%
+\contentsline {subsubsection}{8. Two-Factor Authentication (5 Points) (check)}{20}{section*.28}%
+\contentsline {subsubsection}{9. HTTP-Only Cookies (5 Points) (check)}{20}{section*.29}%
+\contentsline {subsubsection}{10. Microservices Architecture (5 Points) (check)}{20}{section*.30}%
+\contentsline {subsubsection}{11. Campaign \& Leaderboards (5 Points) (check)}{20}{section*.31}%
+\contentsline {chapter}{\numberline {6}Testing \& Verification}{21}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Testing Strategy}{21}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Automated Test Results}{22}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Overall Test Metrics}{22}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Module Test Breakdown}{22}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Test Execution in Browser}{22}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Running Tests in Browser}{23}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Browser Test Dashboard Features}{23}{subsection.6.3.2}%
+\contentsline {section}{\numberline {6.4}Test Execution in Terminal}{23}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Run All Tests}{23}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Run Specific Module Tests}{23}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}Terminal Output Example}{24}{subsection.6.4.3}%
+\contentsline {section}{\numberline {6.5}Manual User Acceptance Testing}{24}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}Test Scenarios}{24}{subsection.6.5.1}%
+\contentsline {chapter}{\numberline {7}Evolution \& Future Work}{25}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Current State}{25}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Future Enhancements}{25}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Phase 2: Production Hardening}{25}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Phase 3: Distributed Deployment}{25}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Phase 4: Enhanced Features}{25}{subsection.7.2.3}%
+\contentsline {chapter}{\numberline {8}Conclusion}{26}{chapter.8}%
+\contentsline {chapter}{\numberline {A}Gantt Chart and Project Timeline}{27}{appendix.A}%
+\contentsline {chapter}{\numberline {B}Data Flow and System Diagrams}{29}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Game Match Data Flow}{29}{section.B.1}%
+\contentsline {section}{\numberline {B.2}GDPR Compliance Data Flow}{29}{section.B.2}%
+\contentsline {chapter}{\numberline {C}Risk Register and Risk Matrix}{31}{appendix.C}%
+\contentsline {chapter}{\numberline {D}Code Repository Structure}{32}{appendix.D}%
+\contentsline {chapter}{\numberline {E}Deployment \& Operations}{33}{appendix.E}%
+\contentsline {section}{\numberline {E.1}Quick Start}{33}{section.E.1}%
+\contentsline {section}{\numberline {E.2}Service URLs}{33}{section.E.2}%
+\contentsline {section}{\numberline {E.3}Stopping Services}{33}{section.E.3}%
+\contentsline {chapter}{\numberline {F}Glossary}{34}{appendix.F}%
+\contentsline {chapter}{\numberline {G}References}{35}{appendix.G}%

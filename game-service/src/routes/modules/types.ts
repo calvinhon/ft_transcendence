@@ -22,7 +22,6 @@ export interface Ball {
 export interface Paddle {
   x: number;
   y: number;
-  playerId?: number;
 }
 
 export interface Paddles {
@@ -81,8 +80,9 @@ export interface JoinGameMessage extends WebSocketMessage {
 export interface MovePaddleMessage extends WebSocketMessage {
   type: 'movePaddle';
   direction: 'up' | 'down';
-  playerId?: number; // 1 for team1/left, 2 for team2/right
+  playerId?: number; // For coop mode - actual database player ID
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
+  side?: 'left' | 'right'; // For tournament/arcade - position-based control
 }
 
 export interface InputMessage extends WebSocketMessage {
