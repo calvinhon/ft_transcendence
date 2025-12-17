@@ -2,15 +2,15 @@
 \begin{table}[h!]
 \centering
 \caption{Risk Register}
-\begin{tabular}{p{1cm} p{6cm} c c p{2.5cm} p{4cm}}
+\begin{tabular}{p{0.8cm} p{5cm} c c c p{2cm} p{3.5cm}}
 \toprule
-ID & Description & Likelihood & Impact & Owner & Mitigation \\
+ID & Description & Likelihood & Impact & Severity & Owner & Mitigation \\
 \midrule
-1 & Server downtime during peak testing & 2 & 4 & DevOps & Monitoring, alerts, automated restarts \\
-2 & SQL injection attempt in legacy code & 1 & 5 & Backend & Parameterized queries + WAF rules \\
-3 & Data leak via misconfigured logs & 2 & 4 & Security & Redact PII in logs, access control \\
-4 & OAuth provider downtime & 3 & 3 & Auth Team & Alternative login methods (email) \\
-5 & Blockchain hardhat node failure & 1 & 4 & Blockchain Team & Automated backup and local fallback \\
+1 & Server downtime during peak testing & 2 & 4 & 8 & DevOps & Monitoring, alerts, automated restarts \\
+2 & SQL injection attempt in legacy code & 1 & 5 & 5 & Backend & Parameterized queries + WAF rules \\
+3 & Data leak via misconfigured logs & 2 & 4 & 8 & Security & Redact PII in logs, access control \\
+4 & OAuth provider downtime & 3 & 3 & 9 & Auth Team & Alternative login methods (email) \\
+5 & Blockchain hardhat node failure & 1 & 4 & 4 & Blockchain Team & Automated backup and local fallback \\
 \bottomrule
 \end{tabular}
 \end{table}

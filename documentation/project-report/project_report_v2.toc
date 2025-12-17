@@ -1,0 +1,145 @@
+\contentsline {chapter}{List of Figures}{5}{chapter*.2}%
+\contentsline {chapter}{List of Tables}{6}{chapter*.3}%
+\contentsline {chapter}{List of Abbreviations}{7}{chapter*.4}%
+\contentsline {chapter}{\numberline {1}Introduction}{8}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Project Overview}{8}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Project Objectives}{8}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Primary Objectives}{8}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Quality Metrics}{8}{subsection.1.2.2}%
+\contentsline {chapter}{\numberline {2}Software Development Life Cycle (SDLC)}{9}{chapter.2}%
+\contentsline {section}{\numberline {2.1}SDLC Approach}{9}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}1. Planning \& Requirements Analysis}{9}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}2. Architectural Design}{9}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}3. Implementation (Iterative)}{9}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}4. Testing \& Validation}{9}{subsection.2.1.4}%
+\contentsline {subsection}{\numberline {2.1.5}5. Deployment \& Evolution}{10}{subsection.2.1.5}%
+\contentsline {section}{\numberline {2.2}Project Timeline and Gantt Chart}{10}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Risk Register and Risk Matrix}{10}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Key Risk Categories}{11}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Risk Mitigation Integration in SDLC}{11}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}Risk Register Table}{11}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}Risk Matrix Table}{11}{subsection.2.3.4}%
+\contentsline {section}{\numberline {2.4}High-Level Overview of Functional and Technical Requirements}{11}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Functional Requirements Overview}{12}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Technical Requirements Overview}{12}{subsection.2.4.2}%
+\contentsline {section}{\numberline {2.5}Functional Requirements}{12}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}User Authentication and Account Management}{12}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}Gameplay and Real-Time Interaction}{13}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}Social Features and Community}{13}{subsection.2.5.3}%
+\contentsline {subsection}{\numberline {2.5.4}Administrative and Compliance}{13}{subsection.2.5.4}%
+\contentsline {section}{\numberline {2.6}Technical Requirements}{13}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1}Architecture and Infrastructure}{13}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.6.2}Performance and Scalability}{13}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.6.3}Security and Compliance}{14}{subsection.2.6.3}%
+\contentsline {subsection}{\numberline {2.6.4}Integration and Interoperability}{14}{subsection.2.6.4}%
+\contentsline {section}{\numberline {2.7}Wireframes and User Interface Design}{14}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}Authentication Flow Wireframes}{14}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}Game Interface Wireframes}{14}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}Social and Profile Features}{14}{subsection.2.7.3}%
+\contentsline {section}{\numberline {2.8}Flowcharts and System Processes}{15}{section.2.8}%
+\contentsline {subsection}{\numberline {2.8.1}User Authentication Flow}{15}{subsection.2.8.1}%
+\contentsline {subsection}{\numberline {2.8.2}Game Session Flow}{15}{subsection.2.8.2}%
+\contentsline {subsection}{\numberline {2.8.3}Tournament Management Flow}{15}{subsection.2.8.3}%
+\contentsline {chapter}{\numberline {3}Requirement Analysis}{16}{chapter.3}%
+\contentsline {section}{\numberline {3.1}High-Level Overview of Functional and Technical Requirements}{16}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Functional Requirements Overview}{16}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Technical Requirements Overview}{16}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}Functional Requirements}{16}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}User Management \& Authentication}{16}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Gameplay \& Real-Time Features}{17}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Social \& Leaderboard Features}{17}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}Tournament Management}{17}{subsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.2.5}GDPR Compliance}{17}{subsection.3.2.5}%
+\contentsline {section}{\numberline {3.3}Technical Requirements}{17}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Architecture \& Infrastructure}{17}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Technology Stack}{18}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Security Requirements}{18}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Performance Requirements}{18}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Wireframes}{19}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Main Menu Interface}{19}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Game Mode Selection}{20}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}Authentication UI Implementation}{20}{subsection.3.4.3}%
+\contentsline {subsubsection}{Login Interface}{21}{section*.10}%
+\contentsline {subsubsection}{Registration Interface}{22}{section*.12}%
+\contentsline {subsubsection}{Two-Factor Authentication (2FA)}{22}{section*.14}%
+\contentsline {subsection}{\numberline {3.4.4}Gameplay Interface}{23}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5}Game Settings}{24}{subsection.3.4.5}%
+\contentsline {subsection}{\numberline {3.4.6}Campaign Mode}{25}{subsection.3.4.6}%
+\contentsline {subsection}{\numberline {3.4.7}Tournament System}{26}{subsection.3.4.7}%
+\contentsline {subsection}{\numberline {3.4.8}User Profile and Statistics}{27}{subsection.3.4.8}%
+\contentsline {subsection}{\numberline {3.4.9}Blockchain Integration}{27}{subsection.3.4.9}%
+\contentsline {section}{\numberline {3.5}Flowcharts}{28}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Game Loop Synchronization}{28}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}User Authentication Flow}{29}{subsection.3.5.2}%
+\contentsline {chapter}{\numberline {4}Design}{30}{chapter.4}%
+\contentsline {section}{\numberline {4.1}System Architecture}{30}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{30}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Deployment Topology}{30}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Service Responsibilities}{31}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Data Model}{31}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Auth Service Database (auth.db)}{31}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{32}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{32}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Tournament Service Database (tournaments.db)}{32}{subsection.4.2.4}%
+\contentsline {section}{\numberline {4.3}Security Design}{32}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}HTTPS and Security Certificates}{33}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Layer 1: Network Security}{34}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Layer 2: Application Security}{34}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.3.4}Layer 3: Authentication \& Authorization}{34}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}Layer 4: Data Protection}{34}{subsection.4.3.5}%
+\contentsline {subsection}{\numberline {4.3.6}Security Implementation Details}{35}{subsection.4.3.6}%
+\contentsline {subsubsection}{SQL Injection Prevention}{35}{section*.29}%
+\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{35}{section*.30}%
+\contentsline {chapter}{\numberline {5}Implementation}{36}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Mandatory Implementation}{36}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Technology Stack Summary}{36}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Backend Framework}{36}{subsection.5.1.2}%
+\contentsline {subsubsection}{Frontend}{37}{section*.31}%
+\contentsline {subsubsection}{Single-Page Application (SPA)}{37}{section*.32}%
+\contentsline {section}{\numberline {5.2}Major Modules Implementation}{37}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Backend Framework}{37}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Database}{37}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}User Management}{37}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Gameplay and User Experience}{37}{subsection.5.2.4}%
+\contentsline {subsection}{\numberline {5.2.5}Cybersecurity}{37}{subsection.5.2.5}%
+\contentsline {subsection}{\numberline {5.2.6}DevOps}{38}{subsection.5.2.6}%
+\contentsline {subsection}{\numberline {5.2.7}Blockchain Integration}{38}{subsection.5.2.7}%
+\contentsline {subsection}{\numberline {5.2.8}Server-Side Pong}{38}{subsection.5.2.8}%
+\contentsline {section}{\numberline {5.3}Minor Modules Implementation}{38}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Frontend Framework}{38}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}3D Graphics}{38}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Accessibility Features}{38}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Server-Side Rendering}{38}{subsection.5.3.4}%
+\contentsline {subsection}{\numberline {5.3.5}Multi-Language Support}{38}{subsection.5.3.5}%
+\contentsline {subsection}{\numberline {5.3.6}Advanced Monitoring}{38}{subsection.5.3.6}%
+\contentsline {chapter}{\numberline {6}Testing}{39}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Testing Strategy}{39}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Automated Test Results}{40}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Overall Test Metrics}{40}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Module Test Breakdown}{40}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Test Execution in Browser}{40}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Running Tests in Browser}{40}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Browser Test Dashboard Features}{41}{subsection.6.3.2}%
+\contentsline {section}{\numberline {6.4}Test Execution in Terminal}{41}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Run All Tests}{41}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Run Specific Module Tests}{41}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}Terminal Output Example}{41}{subsection.6.4.3}%
+\contentsline {section}{\numberline {6.5}Manual User Acceptance Testing}{42}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}Test Scenarios}{42}{subsection.6.5.1}%
+\contentsline {chapter}{\numberline {7}Evolution}{43}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Current State}{43}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Future Enhancements}{43}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Phase 2: Production Hardening}{43}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Phase 3: Distributed Deployment}{43}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Phase 4: Enhanced Features}{43}{subsection.7.2.3}%
+\contentsline {chapter}{\numberline {8}Conclusion}{44}{chapter.8}%
+\contentsline {chapter}{\numberline {A}Data Flow and System Diagrams}{45}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Game Match Data Flow}{45}{section.A.1}%
+\contentsline {section}{\numberline {A.2}GDPR Compliance Data Flow}{46}{section.A.2}%
+\contentsline {chapter}{\numberline {B}Code Repository Structure}{47}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Deployment \& Operations}{49}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Quick Start}{49}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Service URLs}{49}{section.C.2}%
+\contentsline {section}{\numberline {C.3}Stopping Services}{49}{section.C.3}%
+\contentsline {chapter}{\numberline {D}Glossary}{50}{appendix.D}%
+\contentsline {chapter}{\numberline {E}References}{51}{appendix.E}%

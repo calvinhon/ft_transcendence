@@ -164,8 +164,10 @@ test_performance_metrics() {
 test_dashboard_ui() {
     echo -e "${YELLOW}Running Test 9: Dashboard UI Accessibility${NC}"
     
-    if [ -f "$PROJECT_ROOT/frontend/index.html" ]; then
-        if grep -q "stats\|dashboard\|leaderboard" "$PROJECT_ROOT/frontend/index.html"; then
+    # Check for dashboard/stats pages in the frontend source code
+    if [ -f "$PROJECT_ROOT/frontend/src/pages/DashboardPage.ts" ] && [ -f "$PROJECT_ROOT/frontend/src/pages/ProfilePage.ts" ]; then
+        # Check if ProfilePage contains stats-related functionality
+        if grep -q "stats\|dashboard\|leaderboard\|ranking" "$PROJECT_ROOT/frontend/src/pages/ProfilePage.ts"; then
             log_result 9 "Dashboard UI Accessibility" "PASS"
             return 0
         fi
