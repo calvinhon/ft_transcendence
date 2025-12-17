@@ -6,6 +6,7 @@ import { logoutHandler } from './handlers/logout';
 import { profileHandler } from './handlers/profile';
 import { forgotPasswordHandler } from './handlers/forgotPassword';
 import { resetPasswordHandler } from './handlers/resetPassword';
+import { verifySessionHandler } from './handlers/verify';
 
 async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
   // Register routes
@@ -13,6 +14,7 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.post('/login', loginHandler);
   fastify.post('/logout', logoutHandler);
   fastify.get('/profile/:userId', profileHandler);
+  fastify.post('/verify', verifySessionHandler); // Add verify
   fastify.post('/forgot-password', forgotPasswordHandler);
   fastify.post('/reset-password', resetPasswordHandler);
 
@@ -20,7 +22,8 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.post('/auth/register', registerHandler);
   fastify.post('/auth/login', loginHandler);
   fastify.post('/auth/logout', logoutHandler);
-  fastify.get('/auth/profile/:userId', profileHandler);
+  fastify.get('/auth/profile/:userId', profileHandler); // Corrected this line to match below logic if needed, but keeping existing is fine.
+  fastify.post('/auth/verify', verifySessionHandler);
   fastify.post('/auth/forgot-password', forgotPasswordHandler);
   fastify.post('/auth/reset-password', resetPasswordHandler);
 

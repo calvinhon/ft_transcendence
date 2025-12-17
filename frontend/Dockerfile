@@ -5,8 +5,10 @@ WORKDIR /app
 
 # Copy all configuration files
 COPY package*.json ./
-COPY ../tsconfig.json ./tsconfig.json
+COPY tsconfig.json ./tsconfig.json
 COPY vite.config.js ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
 
 # Install dependencies
 RUN npm install
@@ -14,10 +16,11 @@ RUN npm install
 # Copy source code
 COPY src/ ./src/
 COPY css/ ./css/
+COPY assets/ ./assets/
 COPY index.html ./
 
 # Clean any existing build artifacts and build the application
-RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/ || echo "Build failed"
+RUN rm -rf dist node_modules/.vite && npm run build && ls -la dist/assets/
 
 FROM alpine:3.17 AS waf
 ENV NGINX_VERSION=1.29.4

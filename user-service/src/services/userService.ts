@@ -14,14 +14,15 @@ export class UserService {
   }
 
   static async updateProfile(userId: number, updates: UpdateProfileBody): Promise<void> {
-    const { displayName, bio, country, preferredLanguage, themePreference } = updates;
+    const { displayName, avatarUrl, bio, country, preferredLanguage, themePreference } = updates;
     await promisifyDbRun(db, `UPDATE user_profiles SET
        display_name = COALESCE(?, display_name),
+       avatar_url = COALESCE(?, avatar_url),
        bio = COALESCE(?, bio),
        country = COALESCE(?, country),
        preferred_language = COALESCE(?, preferred_language),
        theme_preference = COALESCE(?, theme_preference),
        updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = ?`, [displayName, bio, country, preferredLanguage, themePreference, userId]);
+       WHERE user_id = ?`, [displayName, avatarUrl, bio, country, preferredLanguage, themePreference, userId]);
   }
 }
