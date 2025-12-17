@@ -42,6 +42,54 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
+  // Save game result
+  fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const body = request.body as any;
+      logger.info('Saving game result:', body);
+
+      // Extract data from request - handle various formats
+      // Frontend sends team1: [id, id] (array of numbers) OR team1: [{userId: id}]
+      const getFirstId = (team: any[]) => {
+        if (!team || !team.length) return 0;
+        if (typeof team[0] === 'number') return team[0];
+        return team[0].userId || 0;
+      };
+
+      const p1FirstId = getFirstId(body.team1);
+      const p2FirstId = getFirstId(body.team2);
+
+      const player1Id = body.player1Id || p1FirstId || 0;
+      const player2Id = body.player2Id || p2FirstId || 0;
+
+      const player1Score = body.winnerScore ?? body.score1 ?? 0;
+      const player2Score = body.loserScore ?? body.score2 ?? 0;
+
+      // If winnerId is provided, use it. Otherwise compute from scores.
+      const winnerId = body.winnerId || (player1Score > player2Score ? player1Id : player2Id);
+      const gameMode = body.gameMode || body.mode || 'arcade';
+
+      // Save to database
+      const result = await gameHistoryService.saveGame({
+        player1Id,
+        player2Id,
+        player1Score,
+        player2Score,
+        winnerId,
+        gameMode,
+        team1Players: body.team1 ? JSON.stringify(body.team1) : undefined,
+        team2Players: body.team2 ? JSON.stringify(body.team2) : undefined,
+        tournamentId: body.tournamentId,
+        tournamentMatchId: body.tournamentMatchId,
+      });
+
+      sendSuccess(reply, { saved: true, gameId: result.gameId });
+    } catch (error) {
+      logger.error('Error saving game result:', error);
+      sendError(reply, 'Error saving game result', 500);
+    }
+  });
+
   // Get overall statistics dashboard
   fastify.get('/stats', async (request: FastifyRequest, reply: FastifyReply) => {
     try {

@@ -8,6 +8,7 @@ export interface LocalPlayer {
     token: string;
     team?: number; // 1 or 2 (for Arcade)
     email?: string;
+    avatarUrl?: string;
 }
 
 export class LocalPlayerService {
@@ -51,7 +52,11 @@ export class LocalPlayerService {
     }
 
     public addLocalPlayer(player: LocalPlayer): void {
-        const check = this.isDuplicateLocalPlayer({ ...player, userId: player.userId });
+        const check = this.isDuplicateLocalPlayer({
+            ...player,
+            userId: player.userId,
+            avatarUrl: player.avatarUrl || undefined
+        });
 
         // Note: isDuplicateLocalPlayer checks IDs. If we just created a stub player, it might pass.
         // But usually we pass a real User object.
@@ -67,6 +72,15 @@ export class LocalPlayerService {
         this.saveToLocalStorage();
         this.notifyListeners();
         console.log('Local player added:', player);
+    }
+
+    public updateLocalPlayer(userId: number, updates: Partial<LocalPlayer>): void {
+        const player = this.localPlayers.find(p => p.userId === userId);
+        if (player) {
+            Object.assign(player, updates);
+            this.saveToLocalStorage();
+            this.notifyListeners();
+        }
     }
 
     public assignPlayerToTeam(playerId: string, team: number): void {
@@ -92,15 +106,16 @@ export class LocalPlayerService {
         return [...this.localPlayers];
     }
 
-    public getAllParticipants(): { id: number, username: string, isBot: boolean }[] {
-        const participants: { id: number, username: string, isBot: boolean }[] = [];
+    public getAllParticipants(): { id: number, username: string, isBot: boolean, avatarUrl?: string | null }[] {
+        const participants: { id: number, username: string, isBot: boolean, avatarUrl?: string | null }[] = [];
 
         // Add Host
         if (this.hostUser) {
             participants.push({
                 id: this.hostUser.userId,
                 username: this.hostUser.username,
-                isBot: false
+                isBot: false,
+                avatarUrl: (this.hostUser as any).avatarUrl || (this.hostUser as any).avatar_url || null
             });
         }
 
@@ -109,7 +124,8 @@ export class LocalPlayerService {
             participants.push({
                 id: p.userId,
                 username: p.username,
-                isBot: false
+                isBot: false,
+                avatarUrl: p.avatarUrl
             });
         });
 

@@ -76,10 +76,10 @@ export class GameRenderer {
             this.drawCountdown(gameState.countdownValue, width, height);
         }
 
-        // Draw Game Over if finished
-        if (gameState.gameState === 'finished') {
-            this.drawGameOver(gameState, width, height);
-        }
+        // Game over is now handled by GamePage overlay, not canvas
+        // if (gameState.gameState === 'finished') {
+        //     this.drawGameOver(gameState, width, height);
+        // }
     }
 
     private drawBorder(w: number, h: number): void {
@@ -268,28 +268,29 @@ export class GameRenderer {
         ctx.shadowBlur = 0;
     }
 
-    private drawGameOver(gameState: any, w: number, h: number): void {
-        const ctx = this.ctx;
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 60px "VCR OSD Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        const scores = gameState.scores;
-        let winnerText = "GAME OVER";
-        if (scores.player1 > scores.player2) winnerText = "PLAYER 1 WINS";
-        if (scores.player2 > scores.player1) winnerText = "PLAYER 2 WINS";
-
-        ctx.fillText(winnerText, w / 2, h / 2);
-
-        ctx.font = '20px "PixelCode", monospace';
-        ctx.fillText("PRESS EXIT TO RETURN", w / 2, h / 2 + 60);
-
-        ctx.shadowBlur = 0;
-    }
+    // Game over is now handled by GamePage HTML overlay for better flexibility
+    // private drawGameOver(gameState: any, w: number, h: number): void {
+    //     const ctx = this.ctx;
+    //     ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    //     ctx.fillRect(0, 0, w, h);
+    //
+    //     ctx.shadowColor = '#ffffff';
+    //     ctx.shadowBlur = 20;
+    //     ctx.fillStyle = '#ffffff';
+    //     ctx.font = 'bold 60px "VCR OSD Mono", monospace';
+    //     ctx.textAlign = 'center';
+    //     ctx.textBaseline = 'middle';
+    //
+    //     const scores = gameState.scores;
+    //     let winnerText = "GAME OVER";
+    //     if (scores.player1 > scores.player2) winnerText = "PLAYER 1 WINS";
+    //     if (scores.player2 > scores.player1) winnerText = "PLAYER 2 WINS";
+    //
+    //     ctx.fillText(winnerText, w / 2, h / 2);
+    //
+    //     ctx.font = '20px "PixelCode", monospace';
+    //     ctx.fillText("PRESS EXIT TO RETURN", w / 2, h / 2 + 60);
+    //
+    //     ctx.shadowBlur = 0;
+    // }
 }

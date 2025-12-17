@@ -7,6 +7,10 @@ export class Api {
         return this.request(url, 'POST', body, headers);
     }
 
+    public static async put(url: string, body: any, headers: Record<string, string> = {}): Promise<any> {
+        return this.request(url, 'PUT', body, headers);
+    }
+
     public static async patch(url: string, body: any, headers: Record<string, string> = {}): Promise<any> {
         return this.request(url, 'PATCH', body, headers);
     }

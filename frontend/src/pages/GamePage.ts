@@ -4,7 +4,6 @@ import { GameService } from "../services/GameService";
 import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
-import { TournamentService } from "../services/TournamentService";
 
 export class GamePage extends AbstractComponent {
     private renderer: GameRenderer | null = null;
@@ -18,7 +17,7 @@ export class GamePage extends AbstractComponent {
                 <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative">
                     <!-- Left Player -->
                     <div class="flex items-center w-1/3 border-r border-white">
-                        <div class="w-14 h-full border-r border-white bg-cover bg-center" style="background-color: #333;"></div>
+                        <div id="p1-avatar" class="w-14 h-full border-r border-white bg-cover bg-center" style="background-color: #333;"></div>
                         <span id="p1-name" class="pl-4 font-vcr uppercase truncate">Player 1</span>
                     </div>
 
@@ -30,7 +29,7 @@ export class GamePage extends AbstractComponent {
                     <!-- Right Player -->
                     <div class="flex items-center justify-end w-1/3 border-l border-white">
                         <span id="p2-name" class="pr-4 font-vcr uppercase truncate">Player 2</span>
-                        <div class="w-14 h-full border-l border-white bg-cover bg-center" style="background-color: #333;"></div>
+                        <div id="p2-avatar" class="w-14 h-full border-l border-white bg-cover bg-center" style="background-color: #333;"></div>
                     </div>
                 </div>
 
@@ -93,7 +92,7 @@ export class GamePage extends AbstractComponent {
             scoreToWin: setup.settings.scoreToWin
         } as any, setup.team1, setup.team2);
 
-        // HUD Names
+        // HUD Names and Avatars
         const p1Name = setup.team1.map(p => p.username).join(', ') || 'PLAYER 1';
         const p2Name = setup.team2.map(p => p.username).join(', ') || 'PLAYER 2';
 
@@ -102,19 +101,96 @@ export class GamePage extends AbstractComponent {
         if (p1El) p1El.innerText = p1Name;
         if (p2El) p2El.innerText = p2Name;
 
+        // Set avatars in HUD
+        const p1Avatar = (setup.team1[0] as any)?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p1Name)}&background=0A0A0A&color=29B6F6`;
+        const p2Avatar = (setup.team2[0] as any)?.avatarUrl || ((setup.team2[0] as any)?.isBot ? 'https://ui-avatars.com/api/?name=AI&background=FF0000&color=FFF' : `https://ui-avatars.com/api/?name=${encodeURIComponent(p2Name)}&background=0A0A0A&color=29B6F6`);
+
+        const p1AvatarEl = this.$('#p1-avatar');
+        const p2AvatarEl = this.$('#p2-avatar');
+        if (p1AvatarEl) (p1AvatarEl as HTMLElement).style.backgroundImage = `url('${p1Avatar}')`;
+        if (p2AvatarEl) (p2AvatarEl as HTMLElement).style.backgroundImage = `url('${p2Avatar}')`;
+
         service.onGameState((state) => {
             if (this.renderer) this.renderer.render(state, setup.mode);
 
-            // Update Status Text once
+            // Update Status Text based on game state
+            const status = this.$('#game-status-text');
+
             if (state && state.gameState === 'playing') {
-                const status = this.$('#game-status-text');
                 if (status) status.innerText = "LIVE COMBAT";
             } else if (state && (state.gameState === 'finished' || state.type === 'gameEnd')) {
-                const status = this.$('#game-status-text');
+                // --- Game Over Handling ---
                 if (status) status.innerText = "MISSION COMPLETE";
 
+                // Prevent multiple overlays
+                if (this.$('#game-over-overlay')) return;
+
+                // Save Game Result (ALL modes now)
+
+                // Scores are in state.scores.player1 and state.scores.player2
+                const p1Score = state.scores?.player1 ?? state.player1Score ?? 0;
+                const p2Score = state.scores?.player2 ?? state.player2Score ?? 0;
+
+                // Compute winnerId from scores if not provided
+                let winnerId = state.winnerId;
+                if (!winnerId && p1Score !== p2Score) {
+                    winnerId = p1Score > p2Score ? this.p1Ids[0] : this.p2Ids[0];
+                }
+
+                console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
+
+                GameService.getInstance().recordMatchResult({
+                    mode: setup.mode,
+                    team1: setup.team1.map(p => p.userId),
+                    team2: setup.team2.map(p => p.userId),
+                    score1: p1Score,
+                    score2: p2Score,
+                    winnerId: winnerId,
+                    tournamentId: setup.tournamentId,
+                    tournamentMatchId: setup.tournamentMatchId
+                }).catch(err => console.warn("Match recording failed:", err));
+
+                // Add Auto-Return Timer UI
+                const container = this.$('.game-container');
+                if (container) {
+                    const winnerId = state.winnerId || (state.scores?.player1 > state.scores?.player2 ? this.p1Ids[0] : this.p2Ids[0]);
+                    // Find winner name from setup teams
+                    let winnerName = `PLAYER ${winnerId === this.p1Ids[0] ? '1' : '2'}`;
+                    const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === winnerId);
+                    if (winnerObj) winnerName = winnerObj.username;
+
+                    const overlay = document.createElement('div');
+                    overlay.id = 'game-over-overlay';
+                    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 text-white font-pixel';
+                    overlay.innerHTML = `
+                        <h1 class="text-4xl mb-4 text-neon-blue">GAME OVER</h1>
+                        <p class="text-xl mb-8">WINNER: ${winnerName.toUpperCase()}</p>
+                        <p class="text-sm text-gray-400">Returning to menu in <span id="return-countdown">5</span>...</p>
+                        <button id="return-now-btn" class="mt-4 px-6 py-2 border border-accent hover:bg-accent/20">RETURN NOW</button>
+                    `;
+                    container.appendChild(overlay);
+
+                    let seconds = 5;
+                    const countEl = overlay.querySelector('#return-countdown');
+                    const btn = overlay.querySelector('#return-now-btn');
+
+                    const timer = setInterval(() => {
+                        seconds--;
+                        if (countEl) countEl.textContent = seconds.toString();
+                        if (seconds <= 0) {
+                            clearInterval(timer);
+                            this.exitGame();
+                        }
+                    }, 1000);
+
+                    btn?.addEventListener('click', () => {
+                        clearInterval(timer);
+                        this.exitGame();
+                    });
+                }
+
                 // Campaign Logic
-                if (setup.mode === 'campaign' && state.type === 'gameEnd') {
+                if (setup.mode === 'campaign') {
                     const myId = App.getInstance().currentUser?.userId;
                     if (myId && state.winnerId === myId) {
                         console.log("Campaign Victory! Advancing Level...");
@@ -122,35 +198,7 @@ export class GamePage extends AbstractComponent {
                     }
                 }
 
-                // Tournament Logic
-                if (setup.mode === 'tournament' && (setup as any).tournamentContext && state.type === 'gameEnd') {
-                    const ctx = (setup as any).tournamentContext;
-                    const winnerId = state.winnerId;
-                    // Legacy message might use different keys, assuming standard
-                    const p1Score = state.player1Score !== undefined ? state.player1Score : (state.score1 || 0);
-                    const p2Score = state.player2Score !== undefined ? state.player2Score : (state.score2 || 0);
 
-                    if (winnerId) {
-                        TournamentService.getInstance().recordMatchResult(
-                            ctx.tournamentId,
-                            ctx.matchId,
-                            winnerId,
-                            p1Score,
-                            p2Score
-                        ).then(() => {
-                            // Small delay to ensure user sees "Mission Complete"
-                            setTimeout(() => {
-                                App.getInstance().router.navigateTo('/tournament');
-                            }, 1500);
-                        }).catch(err => {
-                            console.error("Failed to record tournament match", err);
-                            // Return anyway after delay
-                            setTimeout(() => {
-                                App.getInstance().router.navigateTo('/tournament');
-                            }, 2000);
-                        });
-                    }
-                }
             }
         });
     }
@@ -172,7 +220,7 @@ export class GamePage extends AbstractComponent {
         GameService.getInstance().disconnect();
 
         let nextRoute = '/';
-        if (setup && (setup as any).tournamentContext) {
+        if (setup && (setup.mode === 'tournament' || setup.tournamentId)) {
             nextRoute = '/tournament';
         }
 

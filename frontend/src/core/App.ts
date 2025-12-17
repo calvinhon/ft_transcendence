@@ -77,6 +77,11 @@ export class App {
             return new OAuthCallbackPage();
         });
 
+        this.router.addRoute('/settings', async () => {
+            const { SettingsPage } = await import('../pages/SettingsPage');
+            return new SettingsPage();
+        });
+
         // Global Navigation Interceptor
         const originalNavigate = this.router.navigateTo.bind(this.router);
         this.router.navigateTo = (path: string) => {

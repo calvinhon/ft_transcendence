@@ -4,6 +4,7 @@ interface Player {
     id: number;
     username: string;
     alias?: string;
+    avatarUrl?: string | null;
 }
 
 export class TournamentAliasModal extends AbstractComponent {
@@ -52,7 +53,7 @@ export class TournamentAliasModal extends AbstractComponent {
             <div class="flex items-center justify-between gap-4 mb-4">
                 <div class="flex items-center gap-4 w-1/3">
                     <div class="w-8 h-8 bg-gray-800 bg-cover bg-center border border-white/50" 
-                         style="background-image: url('https://ui-avatars.com/api/?name=${p.username}&background=random')"></div>
+                         style="background-image: url('${p.avatarUrl || `https://ui-avatars.com/api/?name=${p.username}&background=random`}')"></div>
                     <span class="font-vcr text-white text-lg truncate">${p.username}</span>
                 </div>
                 

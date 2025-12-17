@@ -15,25 +15,34 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     async onMounted() {
-        // Get tournament ID from router or service
-        // Ideally router param /tournament/:id
-        // But for now maybe we fetch the current one from Service
+        this.container = document.getElementById('app') as HTMLElement;
+
         const current = TournamentService.getInstance().getCurrentTournament();
         if (current) {
             this.tournamentId = current.id;
             this.tournament = current;
         } else {
-            // Try to find from URL if we had params support
-            // fallback
-            this.container!.innerHTML = "<div class='text-white p-8'>No Active Tournament Found</div>";
-            return;
+            // Restore from session
+            const storedId = sessionStorage.getItem('current_tournament_id');
+            if (storedId) {
+                this.tournamentId = storedId;
+                try {
+                    await this.refreshData();
+                } catch (e) {
+                    console.error("Failed to restore tournament:", e);
+                    this.container.innerHTML = "<div class='text-white p-8 text-center'>Failed to load tournament data.</div>";
+                    return;
+                }
+            } else {
+                this.container.innerHTML = "<div class='text-white p-8 text-center'>No Active Tournament Found</div>";
+                return;
+            }
         }
 
-        await this.refreshData();
         this.render();
 
         // Auto Refresh
-        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()), 5000);
+        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()).catch(console.error), 5000);
 
         this.bindEvents();
     }
@@ -71,51 +80,53 @@ export class TournamentBracketPage extends AbstractComponent {
         }
     }
 
-    private playMatch(matchId: string) {
+    private async playMatch(matchId: string) {
         if (!this.tournament) return;
         const match = this.tournament.matches.find(m => m.matchId.toString() === matchId);
         if (!match) return;
 
+        // Show side selection modal (Promise-based)
         const modal = new TournamentMatchModal(
             { id: match.player1Id, name: match.player1Name },
-            { id: match.player2Id, name: match.player2Name },
-            (choice) => {
-                // Determine teams based on choice
-                let p1 = { userId: match.player1Id, username: match.player1Name, paddleIndex: 0 };
-                let p2 = { userId: match.player2Id, username: match.player2Name, paddleIndex: 0 };
-
-                if (choice === 'swap') {
-                    // Swap logic
-                    const temp = p1;
-                    p1 = p2;
-                    p2 = temp;
-                }
-
-                // Setup Game
-                const setup = {
-                    mode: 'tournament',
-                    settings: {
-                        scoreToWin: 3,
-                        ballSpeed: 'medium',
-                        paddleSpeed: 'medium',
-                        powerups: false,
-                        accumulateOnHit: false,
-                        difficulty: 'medium'
-                    },
-                    team1: [p1],
-                    team2: [p2],
-                    tournamentContext: {
-                        tournamentId: this.tournament!.id,
-                        matchId: match.matchId
-                    }
-                };
-
-                GameStateService.getInstance().setSetup(setup as any);
-                App.getInstance().router.navigateTo('/game');
-            },
-            () => { /* Cancelled */ }
+            { id: match.player2Id, name: match.player2Name }
         );
-        modal.render();
+
+        const choice = await modal.show();
+
+        if (choice === null) {
+            // User cancelled
+            return;
+        }
+
+        // Determine teams based on choice
+        let p1 = { userId: match.player1Id, username: match.player1Name, paddleIndex: 0 };
+        let p2 = { userId: match.player2Id, username: match.player2Name, paddleIndex: 0 };
+
+        if (choice === 'swap') {
+            const temp = p1;
+            p1 = p2;
+            p2 = temp;
+        }
+
+        // Setup Game
+        const setup = {
+            mode: 'tournament',
+            settings: {
+                scoreToWin: 3,
+                ballSpeed: 'medium',
+                paddleSpeed: 'medium',
+                powerups: false,
+                accumulateOnHit: false,
+                difficulty: 'medium'
+            },
+            team1: [p1],
+            team2: [p2],
+            tournamentId: parseInt(this.tournament!.id),
+            tournamentMatchId: parseInt(match.matchId.toString())
+        };
+
+        GameStateService.getInstance().setSetup(setup as any);
+        App.getInstance().router.navigateTo('/game');
     }
 
     private async recordBlockchain() {

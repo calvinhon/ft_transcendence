@@ -38,7 +38,7 @@ export class TournamentService {
         return TournamentService.instance;
     }
 
-    public async create(name: string, playerIds: number[]): Promise<Tournament> {
+    public async create(name: string, players: { id: number, alias?: string, avatarUrl?: string | null }[]): Promise<Tournament> {
         const currentUser = App.getInstance().currentUser;
         if (!currentUser) throw new Error("User not logged in");
 
@@ -46,16 +46,26 @@ export class TournamentService {
         const tournamentData = {
             name,
             createdBy: currentUser.userId,
-            participants: playerIds
+            participants: players.map(p => p.id)
         };
         const createRes = await Api.post('/api/tournament/tournaments/create', tournamentData);
         if (!createRes.success) throw new Error(createRes.error || "Failed to create tournament");
 
         const tournamentId = createRes.data.id;
 
+        // Save aliases locally since backend might not support them yet
+        const aliasMap: Record<number, string> = {};
+        const avatarMap: Record<number, string> = {};
+        players.forEach(p => {
+            if (p.alias) aliasMap[p.id] = p.alias;
+            if (p.avatarUrl) avatarMap[p.id] = p.avatarUrl;
+        });
+        sessionStorage.setItem(`tournament_aliases_${tournamentId}`, JSON.stringify(aliasMap));
+        sessionStorage.setItem(`tournament_avatars_${tournamentId}`, JSON.stringify(avatarMap));
+
         // 2. Add Participants
-        for (const uid of playerIds) {
-            await Api.post(`/api/tournament/tournaments/${tournamentId}/join`, { userId: uid });
+        for (const p of players) {
+            await Api.post(`/api/tournament/tournaments/${tournamentId}/join`, { userId: p.id });
         }
 
         // 3. Start
@@ -66,10 +76,18 @@ export class TournamentService {
 
     public async get(id: string): Promise<Tournament> {
         const response = await Api.get(`/api/tournament/tournaments/${id}`);
-        // Legacy returns { tournament, participants, matches } nesting?
-        // Let's assume the API response structure matches usage. 
-        // We might need to map it to our interface if it differs.
         const t = response.tournament || response;
+
+        // Load aliases
+        let aliasMap: Record<number, string> = {};
+        let avatarMap: Record<number, string> = {};
+        try {
+            const storedAliases = sessionStorage.getItem(`tournament_aliases_${t.id}`);
+            if (storedAliases) aliasMap = JSON.parse(storedAliases);
+
+            const storedAvatars = sessionStorage.getItem(`tournament_avatars_${t.id}`);
+            if (storedAvatars) avatarMap = JSON.parse(storedAvatars);
+        } catch (e) { }
 
         // Map backend response to local interface if needed
         const tournament: Tournament = {
@@ -80,16 +98,17 @@ export class TournamentService {
             winnerId: t.winner_id,
             players: response.participants ? response.participants.map((p: any) => ({
                 id: p.user_id,
-                username: p.username || `Player ${p.user_id}`, // Username might need fetching if not provided
-                isBot: false // Legacy default?
+                username: aliasMap[p.user_id] || p.username || `Player ${p.user_id}`,
+                isBot: false,
+                avatarUrl: avatarMap[p.user_id] || p.avatar_url || null
             })) : [],
             matches: response.matches ? response.matches.map((m: any) => ({
                 matchId: m.id,
                 tournamentId: m.tournament_id,
                 player1Id: m.player1_id,
-                player1Name: m.player1_name || 'TBD', // This might need a map lookup
+                player1Name: aliasMap[m.player1_id] || m.player1_name || 'TBD',
                 player2Id: m.player2_id,
-                player2Name: m.player2_name || 'TBD',
+                player2Name: aliasMap[m.player2_id] || m.player2_name || 'TBD',
                 winnerId: m.winner_id,
                 score1: m.player1_score,
                 score2: m.player2_score,
@@ -99,6 +118,11 @@ export class TournamentService {
         };
 
         this.currentTournament = tournament;
+        if (tournament.status !== 'completed') {
+            sessionStorage.setItem('current_tournament_id', tournament.id);
+        } else {
+            sessionStorage.removeItem('current_tournament_id');
+        }
         return tournament;
     }
 

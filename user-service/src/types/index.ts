@@ -58,6 +58,7 @@ export interface OnlineUser {
 
 export interface UpdateProfileBody {
   displayName?: string;
+  avatarUrl?: string; // Add this
   bio?: string;
   country?: string;
   preferredLanguage?: string;

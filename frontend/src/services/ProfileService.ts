@@ -1,4 +1,6 @@
 import { Api } from '../core/Api';
+import { LocalPlayerService } from './LocalPlayerService';
+import { AuthService } from './AuthService';
 
 export interface UserProfile {
     id: number;
@@ -18,6 +20,13 @@ export interface GameStats {
     totalGames: number;
     winRate: number;
     averageGameDuration: number;
+}
+
+export interface AIStats {
+    aiWins: number;
+    aiLosses: number;
+    humanWins: number;
+    humanLosses: number;
 }
 
 export interface RecentGame {
@@ -58,7 +67,23 @@ export class ProfileService {
             return {
                 id: data.id,
                 userId: data.user_id,
-                username: data.display_name || data.username, // Fallback
+                username: data.display_name || data.username || (() => {
+                    // Fallback strategies:
+                    // 1. Check LocalPlayerService
+                    const local = LocalPlayerService.getInstance().getLocalPlayers().find(p => p.userId === data.user_id);
+                    if (local) return local.username;
+
+                    // 2. Check Host User in LocalPlayerService
+                    const host = LocalPlayerService.getInstance().getHostUser();
+                    if (host && host.userId === data.user_id) return host.username;
+
+                    // 3. Check Current Auth User
+                    const current = AuthService.getInstance().getCurrentUser();
+                    if (current && current.userId === data.user_id) return current.username;
+
+                    // 4. Ultimate Fallback
+                    return `User ${data.user_id}`;
+                })(),
                 avatarUrl: data.avatar_url,
                 bio: data.bio,
                 country: data.country,

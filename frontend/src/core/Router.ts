@@ -45,26 +45,34 @@ export class Router {
         // TODO: Add regex support if needed
         let route = this.routes.find(r => r.path === path);
 
-        // Fallback or 404
+        // 404 Fallback - show ErrorPage for unknown routes
         if (!route) {
-            route = this.routes.find(r => r.path === '/') || this.routes[0];
-        }
-
-        if (route) {
             // Cleanup old component
             if (this.currentComponent) {
                 this.currentComponent.onDestroy();
             }
 
-            // Load new component
-            this.currentComponent = await route.handler();
-
-            // Inject HTML
+            // Dynamic import to avoid circular dependencies
+            const { ErrorPage } = await import('../pages/ErrorPage');
+            this.currentComponent = new ErrorPage(404, 'Page Not Found');
             this.appContainer.innerHTML = this.currentComponent.getHtml();
-
-            // Mount lifecycle
             this.currentComponent.onMounted();
+            return;
         }
+
+        // Cleanup old component
+        if (this.currentComponent) {
+            this.currentComponent.onDestroy();
+        }
+
+        // Load new component
+        this.currentComponent = await route.handler();
+
+        // Inject HTML
+        this.appContainer.innerHTML = this.currentComponent.getHtml();
+
+        // Mount lifecycle
+        this.currentComponent.onMounted();
     }
 
     public init(): void {

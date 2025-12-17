@@ -13,6 +13,8 @@ export interface GameSetup {
     team1: User[];
     team2: User[];
     tournamentPlayers?: User[]; // For tournament mode
+    tournamentId?: number;
+    tournamentMatchId?: number;
 }
 
 export class GameStateService {

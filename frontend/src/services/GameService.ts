@@ -208,15 +208,15 @@ export class GameService {
     }
 
     private handleTournamentInputs(): void {
-        // Left
-        const lUp = this.keys['KeyW'] || this.keys['ArrowUp'];
-        const lDown = this.keys['KeyS'] || this.keys['ArrowDown'];
+        // Left Side (Team 1) -> W / S
+        const lUp = this.keys['KeyW'];
+        const lDown = this.keys['KeyS'];
 
         if (lUp || lDown) {
             let dir: 'up' | 'down' | null = null;
             if (lUp && lDown) {
-                const uT = Math.max(this.lastKeyPressTime['KeyW'] || 0, this.lastKeyPressTime['ArrowUp'] || 0);
-                const dT = Math.max(this.lastKeyPressTime['KeyS'] || 0, this.lastKeyPressTime['ArrowDown'] || 0);
+                const uT = this.lastKeyPressTime['KeyW'] || 0;
+                const dT = this.lastKeyPressTime['KeyS'] || 0;
                 dir = dT > uT ? 'down' : 'up';
             } else {
                 dir = lUp ? 'up' : 'down';
@@ -232,15 +232,15 @@ export class GameService {
             }
         }
 
-        // Right
-        const rUp = this.keys['KeyU'];
-        const rDown = this.keys['KeyJ'];
+        // Right Side (Team 2) -> Arrow Keys
+        const rUp = this.keys['ArrowUp'];
+        const rDown = this.keys['ArrowDown'];
 
         if (rUp || rDown) {
             let dir: 'up' | 'down' | null = null;
             if (rUp && rDown) {
-                const uT = this.lastKeyPressTime['KeyU'] || 0;
-                const dT = this.lastKeyPressTime['KeyJ'] || 0;
+                const uT = this.lastKeyPressTime['ArrowUp'] || 0;
+                const dT = this.lastKeyPressTime['ArrowDown'] || 0;
                 dir = dT > uT ? 'down' : 'up';
             } else {
                 dir = rUp ? 'up' : 'down';
@@ -338,6 +338,19 @@ export class GameService {
 
     private notifyState(state: any): void {
         this.gameStateCallbacks.forEach(cb => cb(state));
+    }
+
+    public async recordMatchResult(matchData: any): Promise<any> {
+        try {
+            console.log("Recording match result...", matchData);
+            // Fix: Use static Api class, not App instance property
+            const { Api } = await import('../core/Api');
+            const response = await Api.post('/api/game/save', matchData);
+            return response;
+        } catch (e) {
+            console.error("Failed to record match result", e);
+            throw e;
+        }
     }
 
     public disconnect(): void {

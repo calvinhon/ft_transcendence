@@ -11,6 +11,7 @@ interface Player {
     username: string;
     isBot?: boolean;
     alias?: string;
+    avatarUrl?: string | null;
 }
 
 type GameMode = 'campaign' | 'arcade' | 'tournament';
@@ -48,19 +49,33 @@ export class MainMenuPage extends AbstractComponent {
         super();
         this.setTitle('Main Menu');
 
-        // Initialize Host in LocalPlayerService
+        // Initialize Host in LocalPlayerService with full profile (including avatar)
         const currentUser = AuthService.getInstance().getCurrentUser();
         if (currentUser) {
             import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+                // Set host immediately with what we have
                 LocalPlayerService.getInstance().setHostUser(currentUser);
+
+                // Then fetch full profile to get avatar
+                import('../services/ProfileService').then(({ ProfileService }) => {
+                    ProfileService.getInstance().getUserProfile(currentUser.userId).then(profile => {
+                        if (profile) {
+                            // Update hostUser with avatar
+                            const updatedHost = {
+                                ...currentUser,
+                                avatarUrl: (profile as any).avatar_url || profile.avatarUrl
+                            };
+                            LocalPlayerService.getInstance().setHostUser(updatedHost as any);
+                            this.updateAvailablePlayersList();
+                        }
+                    }).catch(err => console.warn('Failed to fetch host profile:', err));
+                });
             });
         }
 
         this.loadState();
 
         // Subscribe to LocalPlayer changes
-        // We need to import it properly. Since we can't use top-level await or require easily with ES modules if not configured,
-        // we'll assume the imports at top are fine.
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
             LocalPlayerService.getInstance().subscribe(() => {
                 this.updateAvailablePlayersList();
@@ -77,8 +92,19 @@ export class MainMenuPage extends AbstractComponent {
             this.availablePlayers = all.map(p => ({
                 id: p.id,
                 username: p.username,
-                isBot: p.isBot
+                isBot: p.isBot,
+                avatarUrl: p.avatarUrl // CRITICAL: Preserve avatarUrl
             }));
+
+            // Reconcile teams (remove players who logged out)
+            const availableIds = new Set(this.availablePlayers.map(p => p.id));
+            if (this.campaignPlayer && !availableIds.has(this.campaignPlayer.id)) {
+                this.campaignPlayer = null;
+            }
+            this.arcadeTeam1 = this.arcadeTeam1.filter(p => availableIds.has(p.id));
+            this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
+            this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+
             this.renderContent();
         });
     }
@@ -121,7 +147,7 @@ export class MainMenuPage extends AbstractComponent {
 
     getHtml(): string {
         return `
-            <div class="w-full h-full bg-black p-6 flex gap-6 font-vcr text-white overflow-hidden relative select-none">
+            <div id="main-menu-root" class="w-full h-full bg-black p-6 flex gap-6 font-vcr text-white overflow-hidden relative select-none">
                 
                 <!-- LEFT COLUMN: GAME MODES & SETTINGS -->
                 <div class="w-1/4 flex flex-col gap-6">
@@ -189,6 +215,7 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
                     </div>
 
+
                      <button id="play-btn" class="w-full py-5 bg-accent text-black font-bold text-2xl tracking-[0.2em] hover:bg-white hover:shadow-[0_0_15px_rgba(41,182,246,0.5)] transition-all">
                         PLAY
                     </button>
@@ -207,21 +234,26 @@ export class MainMenuPage extends AbstractComponent {
 
                 <!-- RIGHT COLUMN: AVAILABLE PLAYERS -->
                 <div class="flex-1 border border-accent flex flex-col bg-black/50">
-                    <div class="bg-accent text-black p-3 font-bold text-lg mb-2">
+                    <div class="bg-accent text-black p-3 font-bold text-lg">
                         AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
                     </div>
+                    <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
+                        DRAG TO DEPLOY • CLICK FOR INTEL
+                    </div>
 
-                    <div class="flex-1 p-4 overflow-y-auto">
-                        <div class="grid gap-3" id="available-list">
+                    <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
+                        <div class="grid gap-4 grid-cols-2" id="available-list">
                             ${this.renderAvailablePlayers()}
                         </div>
                     </div>
                     
-                    <!-- Add Player Button (Replaces Input) -->
-                    <div class="p-4 border-t border-accent bg-black">
-                         <button id="add-player-btn" class="w-full py-3 bg-gray-900 border border-white/30 text-white font-vcr hover:bg-accent hover:text-black hover:border-accent transition-all flex items-center justify-center gap-2">
-                            <i class="fas fa-plus"></i> ADD PLAYER
-                        </button>
+                    <div class="p-4 border-t border-accent/20 bg-black/40">
+                         <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                 <i class="fas fa-plus text-[10px]"></i>
+                              </div>
+                              ADD PLAYERS
+                         </button>
                     </div>
                 </div>
             </div>
@@ -258,12 +290,12 @@ export class MainMenuPage extends AbstractComponent {
     private renderMiddlePaneContent(): string {
         if (this.activeMode === 'campaign') {
             return `
-                <div class="flex flex-col items-center justify-center h-full gap-8">
+                <div id="campaign-zone" class="flex flex-col items-center justify-center h-full gap-8 border-2 border-transparent transition-all p-4">
                     <div class="text-center w-full">
                         <div class="text-accent text-sm mb-2">PILOT</div>
                         ${this.campaignPlayer
                     ? this.renderPlayerCard(this.campaignPlayer, 'campaign')
-                    : '<div class="border-2 border-dashed border-gray-700 p-8 text-gray-500">No Pilot Assigned</div>'}
+                    : '<div class="border-2 border-dashed border-gray-700 p-8 text-gray-500 bg-black/50 pointer-events-none">DRAG PILOT HERE</div>'}
                     </div>
                     <div class="text-2xl text-accent font-bold">VS</div>
                     <div class="text-center w-full opacity-50">
@@ -280,18 +312,18 @@ export class MainMenuPage extends AbstractComponent {
         if (this.activeMode === 'arcade') {
             return `
                 <div class="h-full flex flex-col gap-4">
-                    <div class="flex-1 border border-blue-500/30 p-2 relative group" id="team-1-zone">
+                    <div class="flex-1 border-2 border-blue-500/30 p-2 relative group transition-all" id="team-1-zone">
                         <div class="absolute top-0 right-0 p-1 text-xs text-blue-500">TEAM 1</div>
                         <div class="space-y-2 mt-4">
                             ${this.arcadeTeam1.map(p => this.renderPlayerCard(p, 'arcade', 1)).join('')}
-                            ${this.arcadeTeam1.length < 2 ? '<div class="text-center text-gray-600 text-xs py-4">Add Player</div>' : ''}
+                            ${this.arcadeTeam1.length < 2 ? '<div class="text-center text-gray-600 text-xs py-4">DRAG PLAYER HERE</div>' : ''}
                         </div>
                     </div>
-                    <div class="flex-1 border border-pink-500/30 p-2 relative group" id="team-2-zone">
+                    <div class="flex-1 border-2 border-pink-500/30 p-2 relative group transition-all" id="team-2-zone">
                         <div class="absolute top-0 right-0 p-1 text-xs text-pink-500">TEAM 2</div>
                          <div class="space-y-2 mt-4">
                             ${this.arcadeTeam2.map(p => this.renderPlayerCard(p, 'arcade', 2)).join('')}
-                             ${this.arcadeTeam2.length < 2 ? '<div class="text-center text-gray-600 text-xs py-4">Add Player</div>' : ''}
+                             ${this.arcadeTeam2.length < 2 ? '<div class="text-center text-gray-600 text-xs py-4">DRAG PLAYER HERE</div>' : ''}
                         </div>
                     </div>
                 </div>
@@ -300,9 +332,11 @@ export class MainMenuPage extends AbstractComponent {
 
         if (this.activeMode === 'tournament') {
             return `
-                <div class="space-y-3">
-                    ${this.tournamentPlayers.map(p => this.renderPlayerCard(p, 'tournament')).join('')}
-                    ${this.tournamentPlayers.length < 8 ? '<div class="text-center text-gray-700 py-8">Add players from Available List</div>' : ''}
+                <div id="tournament-zone" class="h-full space-y-3 border-2 border-transparent transition-all p-2">
+                    <div class="space-y-3">
+                        ${this.tournamentPlayers.map(p => this.renderPlayerCard(p, 'tournament')).join('')}
+                        ${this.tournamentPlayers.length < 8 ? '<div class="text-center text-gray-700 py-8 border-2 border-dashed border-gray-800">DRAG PLAYERS HERE</div>' : ''}
+                    </div>
                 </div>
             `;
         }
@@ -310,10 +344,14 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private renderPlayerCard(p: Player, context: string, team?: number): string {
+        const avatarStyle = p.avatarUrl
+            ? `background-image: url('${p.avatarUrl}')`
+            : `background-image: url('https://ui-avatars.com/api/?name=${encodeURIComponent(p.username)}&background=0A0A0A&color=29B6F6')`;
+
         return `
-            <div class="border border-white bg-black p-3 flex items-center justify-between group hover:border-accent transition-all">
+            <div class="party-player-card border border-white bg-black p-3 flex items-center justify-between group hover:border-accent transition-all cursor-pointer" data-id="${p.id}">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-gray-800 bg-cover bg-center" style="background-image: url('https://ui-avatars.com/api/?name=${p.username}&background=random')"></div>
+                    <div class="w-8 h-8 rounded-full bg-gray-800 bg-cover bg-center" style="${avatarStyle}"></div>
                     <span class="text-lg">${p.username}</span>
                 </div>
                 <button class="remove-from-party-btn text-gray-600 hover:text-red-500" data-id="${p.id}" data-context="${context}" data-team="${team || ''}">
@@ -327,22 +365,22 @@ export class MainMenuPage extends AbstractComponent {
         return this.availablePlayers.map(p => {
             const isAssigned = this.isPlayerAssigned(p.id);
             return `
-            <div class="border border-white/20 p-3 flex items-center justify-between hover:bg-white/5 transition-all group ${isAssigned ? 'opacity-50' : ''}">
-                <div class="flex items-center gap-3">
-                    <i class="far fa-user text-gray-500"></i>
-                    <span class="text-lg text-gray-300 group-hover:text-white">${p.username}</span>
+            <div class="available-player-card relative h-32 border border-white/10 bg-black/40 p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-accent transition-all cursor-pointer group ${isAssigned ? 'opacity-40 grayscale' : ''}" 
+                 draggable="${!isAssigned}" 
+                 data-id="${p.id}">
+                
+                <div class="w-12 h-12 rounded-full border border-white/10 overflow-hidden relative group-hover:border-accent group-hover:shadow-[0_0_10px_rgba(41,182,246,0.3)] transition-all bg-gray-900 flex items-center justify-center">
+                    ${(p as any).avatarUrl
+                    ? `<img src="${(p as any).avatarUrl}" class="w-full h-full object-cover">`
+                    : `<img src="https://ui-avatars.com/api/?name=${p.username}&background=0A0A0A&color=29B6F6&font-size=0.5" class="w-full h-full object-cover">`
+                }
                 </div>
-                ${!isAssigned ? `
-                <div class="relative">
-                    <button class="context-menu-btn text-accent hover:text-white p-2" data-id="${p.id}">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div id="context-menu-${p.id}" class="context-menu hidden absolute right-0 top-full bg-black border border-accent z-50 w-48 shadow-[0_0_15px_rgba(41,182,246,0.5)]">
-                        <button class="w-full text-left px-4 py-2 hover:bg-accent hover:text-black text-xs font-bold context-action" data-action="profile" data-id="${p.id}">VIEW PROFILE</button>
-                        ${this.getAssignmentOptions(p.id)}
-                    </div>
+                
+                <div class="text-xs font-bold text-gray-400 group-hover:text-white truncate w-full text-center tracking-wider font-vcr">
+                    ${p.username}
                 </div>
-                ` : '<span class="text-xs text-accent">ASSIGNED</span>'}
+
+                ${isAssigned ? '<div class="absolute top-2 right-2 text-accent text-[10px]"><i class="fas fa-check"></i></div>' : ''}
             </div>
         `;
         }).join('');
@@ -355,31 +393,119 @@ export class MainMenuPage extends AbstractComponent {
         return false;
     }
 
-    private getAssignmentOptions(playerId: number): string {
-        let options = '';
-        if (this.activeMode === 'campaign') {
-            options += `<button class="w-full text-left px-4 py-2 hover:bg-accent hover:text-black text-xs font-bold context-action" data-action="assign" data-target="campaign" data-id="${playerId}">ASSIGN AS PILOT</button>`;
-        } else if (this.activeMode === 'tournament') {
-            options += `<button class="w-full text-left px-4 py-2 hover:bg-accent hover:text-black text-xs font-bold context-action" data-action="assign" data-target="tournament" data-id="${playerId}">ADD TO TOURNAMENT</button>`;
-        } else if (this.activeMode === 'arcade') {
-            options += `<button class="w-full text-left px-4 py-2 hover:bg-accent hover:text-black text-xs font-bold context-action" data-action="assign" data-target="team1" data-id="${playerId}">ADD TO TEAM 1</button>`;
-            options += `<button class="w-full text-left px-4 py-2 hover:bg-accent hover:text-black text-xs font-bold context-action" data-action="assign" data-target="team2" data-id="${playerId}">ADD TO TEAM 2</button>`;
-        }
-        return options;
-    }
-
-    onMounted(): void {
-        // CRITICAL: Set container to the root element that contains our rendered HTML
-        this.container = document.getElementById('app') || document.body;
+    public onMounted(): void {
+        // Set container to the app element for renderContent compatibility
+        this.container = document.getElementById('app') || undefined;
+        // Bind events on the component root
         this.bindEvents();
     }
 
-    private bindEvents(): void {
-        if (!this.container) return;
+    onDestroy(): void {
+        this.container = undefined;
+    }
 
-        // Mode Switching Delegate
-        this.container.onclick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
+    private bindEvents(): void {
+        const root = document.getElementById('main-menu-root');
+        if (!root) {
+            console.error('❌ [MainMenu] CRITICAL: #main-menu-root NOT FOUND! Events will not work.');
+            return;
+        }
+
+        // Robust Element Getter handling TextNodes and SVGs
+        const getEl = (e: Event): HTMLElement => {
+            const t = e.target as HTMLElement;
+            return (t.nodeType === 3 ? t.parentElement! : t);
+        };
+
+        // --- Drag & Drop Delegation ---
+
+        root.ondragstart = (e: DragEvent) => {
+            const el = getEl(e);
+            const target = el.closest('.available-player-card') as HTMLElement;
+            if (target && target.dataset.id) {
+                e.dataTransfer!.setData('userId', target.dataset.id);
+                e.dataTransfer!.effectAllowed = 'copy';
+                target.classList.add('opacity-50');
+            }
+        };
+
+        root.ondragend = (e: DragEvent) => {
+            const el = getEl(e);
+            const target = el.closest('.available-player-card') as HTMLElement;
+            if (target) {
+                target.classList.remove('opacity-50');
+            }
+            root.querySelectorAll('.drag-over-active').forEach(el => {
+                el.classList.remove('border-accent', 'bg-accent/10', 'drag-over-active');
+                el.classList.add('border-transparent');
+            });
+        };
+
+        root.ondragover = (e: DragEvent) => {
+            e.preventDefault();
+            const el = getEl(e);
+            const zone = el.closest('[id$="-zone"]') as HTMLElement;
+            if (zone) {
+                zone.classList.add('border-accent', 'bg-accent/10', 'drag-over-active');
+                e.dataTransfer!.dropEffect = 'copy';
+            }
+        };
+
+        root.ondragleave = (e: DragEvent) => {
+            const el = getEl(e);
+            const zone = el.closest('[id$="-zone"]') as HTMLElement;
+            if (zone) {
+                zone.classList.remove('border-accent', 'bg-accent/10', 'drag-over-active');
+            }
+        };
+
+        root.ondrop = (e: DragEvent) => {
+            e.preventDefault();
+            const el = getEl(e);
+            const zone = el.closest('[id$="-zone"]') as HTMLElement;
+            if (zone) {
+                zone.classList.remove('border-accent', 'bg-accent/10', 'drag-over-active');
+                const userId = parseInt(e.dataTransfer!.getData('userId'));
+                if (!userId) return;
+
+                let targetType = '';
+                if (zone.id === 'campaign-zone') targetType = 'campaign';
+                if (zone.id === 'tournament-zone') targetType = 'tournament';
+                if (zone.id === 'team-1-zone') targetType = 'team1';
+                if (zone.id === 'team-2-zone') targetType = 'team2';
+
+                if (targetType) {
+                    this.assignPlayer(userId, targetType);
+                }
+            }
+        };
+
+
+        // --- Click Delegation ---
+
+        root.onclick = (e: MouseEvent) => {
+            const target = getEl(e);
+
+            // Remove Buttons (Unassign) - Check FIRST to prevent card click bubbling
+            const removeBtn = target.closest('.remove-from-party-btn') as HTMLElement;
+            if (removeBtn) {
+                const id = parseInt(removeBtn.dataset.id!);
+                const context = removeBtn.dataset.context!;
+                const team = removeBtn.dataset.team ? parseInt(removeBtn.dataset.team) : undefined;
+                this.unassignPlayer(id, context, team);
+                e.stopPropagation();
+                return;
+            }
+
+            // Player Card Click -> Profile (Available OR Party)
+            const playerCard = target.closest('.available-player-card, .party-player-card') as HTMLElement;
+            if (playerCard) {
+                const id = parseInt(playerCard.dataset.id!);
+                if (!isNaN(id)) {
+                    App.getInstance().router.navigateTo(`/profile?id=${id}`);
+                    return;
+                }
+            }
 
             // Mode Tabs
             const modeBtn = target.closest('.mode-btn') as HTMLElement;
@@ -408,77 +534,39 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
 
-            // Context Menu Toggle in Available Players
-            const menuBtn = target.closest('.context-menu-btn') as HTMLElement;
-            if (menuBtn) {
-                const id = menuBtn.dataset.id;
-                const menu = document.getElementById(`context-menu-${id}`);
-
-                // Close all other menus
-                document.querySelectorAll('.context-menu').forEach(m => {
-                    if (m.id !== `context-menu-${id}`) m.classList.add('hidden');
-                });
-
-                if (menu) menu.classList.toggle('hidden');
-                e.stopPropagation(); // Prevent closing immediately
-                return;
-            }
-
-            // Context Menu Action
-            const actionBtn = target.closest('.context-action') as HTMLElement;
-            if (actionBtn) {
-                const action = actionBtn.dataset.action;
-                const id = parseInt(actionBtn.dataset.id!);
-
-                if (action === 'profile') {
-                    App.getInstance().router.navigateTo(`/profile?id=${id}`);
-                } else if (action === 'assign') {
-                    const targetType = actionBtn.dataset.target!;
-                    this.assignPlayer(id, targetType);
-                }
-                return;
-            }
-
-            // Close menus on click outside
-            if (!target.closest('.context-menu') && !target.closest('.context-menu-btn')) {
-                document.querySelectorAll('.context-menu').forEach(m => m.classList.add('hidden'));
-            }
-
-            // Assign Buttons (Legacy or other places?)
-            const assignBtn = target.closest('.assign-btn') as HTMLElement;
-            if (assignBtn) {
-                const id = parseInt(assignBtn.dataset.id!);
-                const targetType = assignBtn.dataset.target!;
-                this.assignPlayer(id, targetType);
-                return;
-            }
-
-            // Remove Buttons
-            const removeBtn = target.closest('.remove-from-party-btn') as HTMLElement;
-            if (removeBtn) {
-                const id = parseInt(removeBtn.dataset.id!);
-                const context = removeBtn.dataset.context!;
-                const team = removeBtn.dataset.team ? parseInt(removeBtn.dataset.team) : undefined;
-                this.unassignPlayer(id, context, team);
-                return;
-            }
-
             // Add Player Button
             const addPlayerBtn = target.closest('#add-player-btn');
             if (addPlayerBtn) {
                 const modal = new LoginModal(
                     async (user) => {
                         const { LocalPlayerService } = await import('../services/LocalPlayerService');
-                        // Add to service
+                        const { ProfileService } = await import('../services/ProfileService');
+
+                        // Fetch full profile to ensure we have the avatar
+                        let avatarUrl: string | undefined = undefined;
+                        try {
+                            const profile = await ProfileService.getInstance().getUserProfile(user.userId);
+                            if (profile && profile.avatarUrl) {
+                                avatarUrl = profile.avatarUrl || undefined; // Coerce null to undefined
+                            }
+                        } catch (err) {
+                            console.warn('Failed to fetch profile for avatar', err);
+                        }
+
                         LocalPlayerService.getInstance().addLocalPlayer({
-                            id: user.userId.toString(), // Ensure string ID for LocalPlayer
+                            id: user.userId.toString(),
                             userId: user.userId,
                             username: user.username,
                             email: user.email,
                             isCurrentUser: false,
-                            token: user.token || ''
+                            token: user.token || '',
+                            avatarUrl: avatarUrl
                         });
-                        // UI update happens via subscription
+
+                        // Force update in case they already existed (to refresh avatar)
+                        if (avatarUrl) {
+                            LocalPlayerService.getInstance().updateLocalPlayer(user.userId, { avatarUrl });
+                        }
                     },
                     () => { }
                 );
@@ -501,7 +589,14 @@ export class MainMenuPage extends AbstractComponent {
                 if (action === 'inc') current = Math.min(21, current + 1);
                 if (action === 'dec') current = Math.max(1, current - 1);
                 this.settings.scoreToWin = current;
-                this.renderContent(); // Re-render to show new score
+                this.renderContent();
+                return;
+            }
+
+            // Settings Button
+            const settingsBtn = target.closest('#settings-btn');
+            if (settingsBtn) {
+                App.getInstance().router.navigateTo('/settings');
                 return;
             }
         };
@@ -511,19 +606,30 @@ export class MainMenuPage extends AbstractComponent {
         const player = this.availablePlayers.find(p => p.id === id);
         if (!player) return;
 
+        // Check if player is already assigned to ANY team in arcade mode
+        const isOnTeam1 = this.arcadeTeam1.some(p => p.id === player.id);
+        const isOnTeam2 = this.arcadeTeam2.some(p => p.id === player.id);
+        const isInTournament = this.tournamentPlayers.some(p => p.id === player.id);
+
         if (target === 'campaign') {
             this.campaignPlayer = player;
         } else if (target === 'tournament') {
-            if (this.tournamentPlayers.length < 8 && !this.tournamentPlayers.find(p => p.id === player.id)) {
+            if (this.tournamentPlayers.length < 8 && !isInTournament) {
                 this.tournamentPlayers.push(player);
             }
         } else if (target === 'team1') {
-            if (this.arcadeTeam1.length < 2 && !this.arcadeTeam1.find(p => p.id === player.id)) {
+            // CRITICAL: Check BOTH teams to prevent duplicate
+            if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
+            } else if (isOnTeam2) {
+                console.warn(`Player ${player.username} is already on Team 2`);
             }
         } else if (target === 'team2') {
-            if (this.arcadeTeam2.length < 2 && !this.arcadeTeam2.find(p => p.id === player.id)) {
+            // CRITICAL: Check BOTH teams to prevent duplicate
+            if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
+            } else if (isOnTeam1) {
+                console.warn(`Player ${player.username} is already on Team 1`);
             }
         }
         this.renderContent();
@@ -573,11 +679,11 @@ export class MainMenuPage extends AbstractComponent {
                 alert("Assign a pilot first");
                 return;
             }
-            // Map single player to team logic
-            // We use 'alias' or construct a User-like object
+            // Map single player to team logic with avatar
             setup.team1 = [{
                 userId: this.campaignPlayer.id,
-                username: this.campaignPlayer.username
+                username: this.campaignPlayer.username,
+                avatarUrl: this.campaignPlayer.avatarUrl
             } as any];
 
             // AI Opponent
@@ -602,13 +708,15 @@ export class MainMenuPage extends AbstractComponent {
             setup.team1 = this.arcadeTeam1.map(p => ({
                 userId: p.id,
                 username: p.username,
-                isBot: p.isBot
+                isBot: p.isBot,
+                avatarUrl: p.avatarUrl
             })) as any;
 
             setup.team2 = this.arcadeTeam2.map(p => ({
                 userId: p.id,
                 username: p.username,
-                isBot: p.isBot
+                isBot: p.isBot,
+                avatarUrl: p.avatarUrl
             })) as any;
 
             GameStateService.getInstance().setSetup(setup as any);
@@ -625,11 +733,15 @@ export class MainMenuPage extends AbstractComponent {
                 async (playersWithAliases) => {
                     try {
                         const { TournamentService } = await import('../services/TournamentService');
-                        const playerIds = playersWithAliases.map(p => p.id);
-                        // Use a generic name or prompt for one?
+                        const mappedPlayers = playersWithAliases.map(p => ({
+                            id: p.id,
+                            alias: p.alias,
+                            avatarUrl: p.avatarUrl // Pass avatarUrl to service
+                        }));
+
                         const name = "Tournament " + new Date().toLocaleTimeString();
 
-                        await TournamentService.getInstance().create(name, playerIds);
+                        await TournamentService.getInstance().create(name, mappedPlayers);
 
                         App.getInstance().router.navigateTo('/tournament');
                     } catch (e) {

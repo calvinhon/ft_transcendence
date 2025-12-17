@@ -1,6 +1,7 @@
 import { Api } from '../core/Api';
 import { App } from '../core/App';
 import { User } from '../types';
+import { LocalPlayerService } from './LocalPlayerService';
 
 export class AuthService {
     private static instance: AuthService;
@@ -75,8 +76,15 @@ export class AuthService {
         }
     }
 
+
+
     public logout(): void {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
+
+        // Clear local players state
+        LocalPlayerService.getInstance().clearAllPlayers();
+
         App.getInstance().currentUser = null;
         Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
         App.getInstance().router.navigateTo('/login');
@@ -89,40 +97,51 @@ export class AuthService {
     }
 
     public async checkSession(): Promise<boolean> {
-        // Check with server using credentials: 'include' (for HTTP-only cookies)
+        console.log("AuthService: Checking Session...");
+
+        // FIRST: Try to restore user from localStorage - this is the PRIMARY mechanism
+        this.restoreUserFromStorage();
+
+        if (App.getInstance().currentUser) {
+            console.log("AuthService: User restored from localStorage:", App.getInstance().currentUser?.username);
+
+            // Optionally verify with backend, but don't fail if backend doesn't return user
+            try {
+                const response = await Api.post('/api/auth/verify', {});
+                console.log("AuthService: Backend verify response:", response);
+                // Backend verification passed - session is valid
+            } catch (e: any) {
+                console.warn("AuthService: Backend verify call failed, but localStorage user exists:", e.message);
+                // Continue with localStorage user - don't logout
+            }
+
+            return true;
+        }
+
+        // No user in localStorage - try backend verification as fallback
         try {
             const response = await Api.post('/api/auth/verify', {});
+            console.log("AuthService: Verify response:", response);
 
-            // Check for nested structure: { success: true, data: { valid: true, user: {...} } }
             const data = response.data || response;
 
-            if (response.success && data.valid && data.user) {
+            // If backend returns a user, use it
+            if (data.user) {
+                console.log("AuthService: Session valid for user", data.user.username);
                 App.getInstance().currentUser = data.user;
-                // Update token if returned (refresh)
+                localStorage.setItem('user', JSON.stringify(data.user));
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                 }
                 return true;
-            } else {
-                // Not valid
-                this.logout();
-                return false;
             }
-        } catch (e: any) {
-            // IF the endpoint is 404, but we have a token, assume we are good for now to unblock UI
-            if (e.message && (e.message.includes('404') || e.message.includes('not found'))) {
-                console.warn('Verify endpoint 404, assuming local session is valid if token exists');
-                // Attempt to restore user from local storage since backend verification is unavailable
-                this.restoreUserFromStorage();
 
-                const token = localStorage.getItem('token');
-                if (token || App.getInstance().currentUser) {
-                    // Consider valid if we have a token OR a restored user session
-                    return true;
-                }
-            }
-            // Token likely invalid
-            this.logout();
+            // Backend didn't return user but said valid - no user data available
+            console.warn("AuthService: Backend says valid but no user data");
+            return false;
+        } catch (e: any) {
+            console.error("AuthService: Verify failed error:", e);
+            // No localStorage user and backend failed - need to login
             return false;
         }
     }
@@ -169,11 +188,16 @@ export class AuthService {
     public async registerUserOnly(username: string, email: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
             const response = await Api.post('/api/auth/register', { username, email, password });
-            if (response.success && response.data?.token) {
+
+            const data = response.data || response;
+            const user = data.user || response.user;
+            const token = data.token;
+
+            if (response.success) {
                 return {
                     success: true,
-                    user: response.data.user,
-                    token: response.data.token
+                    user: user,
+                    token: token
                 };
             }
             return { success: false, error: response.error || 'Registration failed' };
