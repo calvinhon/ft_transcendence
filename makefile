@@ -216,6 +216,10 @@ health:
 	@echo "📊 Running containers:"
 	@docker compose ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null | head -15 || echo "  No containers running"
 
+
 test:
 	@echo "🧪 Running tests..."
 	@echo "Test infrastructure available - see documentation/readme/EVALUATION_GUIDE.md for details"
+	cd tester && ./run-containerized-tests.sh
+	cd tester && ./run-all-tests.sh
+	@echo "✅ Tests completed"

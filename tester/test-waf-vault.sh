@@ -110,8 +110,8 @@ test_csrf_token_validation() {
 test_secrets_management() {
     echo -e "${YELLOW}Running Test 6: Secrets Management${NC}"
     
-    # Check if Vault is running
-    local response=$(curl -s http://localhost:8200/v1/sys/seal-status 2>/dev/null)
+    # Check if Vault is running (using HTTPS with certificate verification disabled for dev)
+    local response=$(curl -k -s https://localhost:8200/v1/sys/seal-status 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Secrets Management" "PASS"
