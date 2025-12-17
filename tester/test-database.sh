@@ -224,8 +224,22 @@ test_database_backup() {
         local backup_dir="$PROJECT_ROOT/auth-service/database/backups"
         
         if mkdir -p "$backup_dir" 2>/dev/null; then
-            log_result 9 "Database Backup" "PASS"
-            return 0
+            # Perform actual backup using SQLite .backup command
+            local backup_file="$backup_dir/backup_test_$(date +%s).db"
+            if sqlite3 "$auth_db" ".backup '$backup_file'" 2>/dev/null; then
+                # Verify backup was created and has content
+                if [ -f "$backup_file" ] && [ -s "$backup_file" ]; then
+                    # Optional: Test restoration to a temp DB
+                    local temp_db="$backup_dir/temp_restore.db"
+                    if sqlite3 "$temp_db" ".restore '$backup_file'" 2>/dev/null && [ -s "$temp_db" ]; then
+                        rm -f "$temp_db"  # Clean up temp DB
+                        log_result 9 "Database Backup" "PASS"
+                        return 0
+                    fi
+                fi
+            fi
+            # Clean up failed backup if created
+            rm -f "$backup_file"
         fi
     fi
     
