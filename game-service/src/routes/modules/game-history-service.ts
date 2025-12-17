@@ -38,9 +38,10 @@ export class GameHistoryService {
     team2Players?: string;
     tournamentId?: number;
     tournamentMatchId?: number;
+    skipTournamentNotification?: boolean;
   }): Promise<{ gameId: number }> {
     return new Promise((resolve, reject) => {
-      const { player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId } = params;
+      const { player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId, skipTournamentNotification } = params;
 
       db.run(
         `INSERT INTO games (player1_id, player2_id, player1_score, player2_score, winner_id, game_mode, status, finished_at, team1_players, team2_players, tournament_id, tournament_match_id)
@@ -53,8 +54,8 @@ export class GameHistoryService {
           } else {
             logger.info(`Game saved with ID: ${this.lastID}`);
 
-            // Notify Tournament Service if applicable
-            if (tournamentId && tournamentMatchId) {
+            // Notify Tournament Service if applicable and NOT skipped
+            if (tournamentId && tournamentMatchId && !skipTournamentNotification) {
               const http = require('http');
               const postData = JSON.stringify({
                 matchId: tournamentMatchId,

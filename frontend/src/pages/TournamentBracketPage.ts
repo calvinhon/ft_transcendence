@@ -8,6 +8,7 @@ export class TournamentBracketPage extends AbstractComponent {
     private tournamentId: string | null = null;
     private tournament: Tournament | null = null;
     private autoRefreshInterval: any = null;
+    private clickHandler: ((e: Event) => void) | null = null; // Store handler for cleanup
 
     constructor() {
         super();
@@ -48,7 +49,15 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     onDestroy() {
-        if (this.autoRefreshInterval) clearInterval(this.autoRefreshInterval);
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+        // CRITICAL: Remove the click handler to prevent accumulation
+        if (this.clickHandler && this.container) {
+            this.container.removeEventListener('click', this.clickHandler);
+            this.clickHandler = null;
+        }
     }
 
     private async refreshData() {
@@ -57,7 +66,10 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     private bindEvents() {
-        this.container?.addEventListener('click', (e) => {
+        // Only bind if not already bound
+        if (this.clickHandler) return;
+
+        this.clickHandler = (e: Event) => {
             const target = e.target as HTMLElement;
             const playBtn = target.closest('.match-play-btn') as HTMLElement;
 
@@ -70,13 +82,16 @@ export class TournamentBracketPage extends AbstractComponent {
             if (blockchainBtn) {
                 this.recordBlockchain();
             }
-        });
+        };
+
+        this.container?.addEventListener('click', this.clickHandler);
     }
 
     public render(): void {
         if (this.container) {
             this.container.innerHTML = this.getHtml();
-            this.bindEvents();
+            // Note: bindEvents() is called ONCE in onMounted(), not here.
+            // Event delegation handles dynamically rendered content.
         }
     }
 
@@ -122,7 +137,8 @@ export class TournamentBracketPage extends AbstractComponent {
             team1: [p1],
             team2: [p2],
             tournamentId: parseInt(this.tournament!.id),
-            tournamentMatchId: parseInt(match.matchId.toString())
+            tournamentMatchId: parseInt(match.matchId.toString()),
+            tournamentPlayer1Id: match.player1Id // Pass original P1 ID
         };
 
         GameStateService.getInstance().setSetup(setup as any);

@@ -4,7 +4,7 @@ import { AuthService } from './AuthService';
 export class CampaignService {
     private static instance: CampaignService;
     private currentLevel: number = 1;
-    private readonly MAX_LEVEL = 21;
+    private readonly MAX_LEVEL = 3;
 
     private constructor() {
         this.loadLocalLevel();
@@ -27,8 +27,8 @@ export class CampaignService {
     }
 
     public getDifficultyForLevel(level: number): 'easy' | 'medium' | 'hard' {
-        if (level <= 5) return 'easy';
-        if (level <= 15) return 'medium';
+        if (level === 1) return 'easy';
+        if (level === 2) return 'medium';
         return 'hard';
     }
 

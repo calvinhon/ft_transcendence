@@ -75,7 +75,8 @@ export class TournamentService {
     }
 
     public async get(id: string): Promise<Tournament> {
-        const response = await Api.get(`/api/tournament/tournaments/${id}`);
+        // Add cache buster to ensure fresh data
+        const response = await Api.get(`/api/tournament/tournaments/${id}?t=${Date.now()}`);
         const t = response.tournament || response;
 
         // Load aliases
@@ -138,6 +139,10 @@ export class TournamentService {
             player1Score: score1,
             player2Score: score2
         });
+
+        // Wait a moment for backend to process next round creation (Legacy compatibility)
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         // Refresh local state
         await this.get(tournamentId);
     }

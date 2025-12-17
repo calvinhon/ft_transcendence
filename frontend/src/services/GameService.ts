@@ -159,13 +159,13 @@ export class GameService {
     }
 
     public handleKeyDown(key: string): void {
-        console.log(`[${this.uuid}] Key Down:`, key);
+
         this.keys[key] = true;
         this.lastKeyPressTime[key] = Date.now();
     }
 
     public handleKeyUp(key: string): void {
-        console.log(`[${this.uuid}] Key Up:`, key);
+
         this.keys[key] = false;
     }
 
@@ -342,7 +342,7 @@ export class GameService {
 
     public async recordMatchResult(matchData: any): Promise<any> {
         try {
-            console.log("Recording match result...", matchData);
+
             // Fix: Use static Api class, not App instance property
             const { Api } = await import('../core/Api');
             const response = await Api.post('/api/game/save', matchData);

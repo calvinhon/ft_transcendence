@@ -130,7 +130,7 @@ export class TournamentMatchModal {
                     }
                 };
                 window.addEventListener('keydown', this.keyHandler);
-            }, 0);
+            }, 50);
         });
     }
 }

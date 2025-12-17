@@ -81,6 +81,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
         team2Players: body.team2 ? JSON.stringify(body.team2) : undefined,
         tournamentId: body.tournamentId,
         tournamentMatchId: body.tournamentMatchId,
+        skipTournamentNotification: body.skipTournamentNotification, // Pass flag to prevent duplicate updates
       });
 
       sendSuccess(reply, { saved: true, gameId: result.gameId });

@@ -15,6 +15,7 @@ export interface GameSetup {
     tournamentPlayers?: User[]; // For tournament mode
     tournamentId?: number;
     tournamentMatchId?: number;
+    tournamentPlayer1Id?: number; // ORIGINAL player 1 ID from tournament match (for sway detection)
 }
 
 export class GameStateService {

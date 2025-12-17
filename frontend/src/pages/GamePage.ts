@@ -9,6 +9,8 @@ export class GamePage extends AbstractComponent {
     private renderer: GameRenderer | null = null;
     private p1Ids: number[] = [];
     private p2Ids: number[] = [];
+    private returnTimer: ReturnType<typeof setInterval> | null = null; // For game over countdown
+    private isRecording: boolean = false; // Lock to prevent double recording
 
     getHtml(): string {
         return `
@@ -110,7 +112,7 @@ export class GamePage extends AbstractComponent {
         if (p1AvatarEl) (p1AvatarEl as HTMLElement).style.backgroundImage = `url('${p1Avatar}')`;
         if (p2AvatarEl) (p2AvatarEl as HTMLElement).style.backgroundImage = `url('${p2Avatar}')`;
 
-        service.onGameState((state) => {
+        service.onGameState(async (state) => {
             if (this.renderer) this.renderer.render(state, setup.mode);
 
             // Update Status Text based on game state
@@ -122,8 +124,9 @@ export class GamePage extends AbstractComponent {
                 // --- Game Over Handling ---
                 if (status) status.innerText = "MISSION COMPLETE";
 
-                // Prevent multiple overlays
-                if (this.$('#game-over-overlay')) return;
+                // Prevent multiple recordings/overlays
+                if (this.isRecording) return;
+                this.isRecording = true;
 
                 // Save Game Result (ALL modes now)
 
@@ -139,6 +142,30 @@ export class GamePage extends AbstractComponent {
 
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
 
+                // --- TOURNAMENT LOGIC ---
+                if (setup.mode === 'tournament' && setup.tournamentId && setup.tournamentMatchId) {
+                    let finalScore1 = p1Score;
+                    let finalScore2 = p2Score;
+
+                    // If Team 1 user isn't the original Player 1, they swapped sides!
+                    if (setup.tournamentPlayer1Id && setup.team1[0].userId !== setup.tournamentPlayer1Id) {
+                        console.log("Detecting players swapped, swapping scores for tournament record");
+                        finalScore1 = p2Score;
+                        finalScore2 = p1Score;
+                    }
+
+                    // Manually record to tournament service with CORRECT scores
+                    // Note: This relies on TournamentService being imported
+                    const { TournamentService } = await import('../services/TournamentService');
+                    TournamentService.getInstance().recordMatchResult(
+                        setup.tournamentId.toString(),
+                        setup.tournamentMatchId.toString(),
+                        winnerId,
+                        finalScore1,
+                        finalScore2
+                    ).catch(err => console.error("Frontend tournament record failed:", err));
+                }
+
                 GameService.getInstance().recordMatchResult({
                     mode: setup.mode,
                     team1: setup.team1.map(p => p.userId),
@@ -147,12 +174,14 @@ export class GamePage extends AbstractComponent {
                     score2: p2Score,
                     winnerId: winnerId,
                     tournamentId: setup.tournamentId,
-                    tournamentMatchId: setup.tournamentMatchId
+                    tournamentMatchId: setup.tournamentMatchId,
+                    skipTournamentNotification: true // Let frontend handle tournament update to handle swaps correctly
                 }).catch(err => console.warn("Match recording failed:", err));
 
                 // Add Auto-Return Timer UI
+                // Add Auto-Return Timer UI
                 const container = this.$('.game-container');
-                if (container) {
+                if (container && !this.$('#game-over-overlay')) {
                     const winnerId = state.winnerId || (state.scores?.player1 > state.scores?.player2 ? this.p1Ids[0] : this.p2Ids[0]);
                     // Find winner name from setup teams
                     let winnerName = `PLAYER ${winnerId === this.p1Ids[0] ? '1' : '2'}`;
@@ -174,17 +203,17 @@ export class GamePage extends AbstractComponent {
                     const countEl = overlay.querySelector('#return-countdown');
                     const btn = overlay.querySelector('#return-now-btn');
 
-                    const timer = setInterval(() => {
+                    this.returnTimer = setInterval(() => {
                         seconds--;
                         if (countEl) countEl.textContent = seconds.toString();
                         if (seconds <= 0) {
-                            clearInterval(timer);
+                            if (this.returnTimer) clearInterval(this.returnTimer);
                             this.exitGame();
                         }
                     }, 1000);
 
                     btn?.addEventListener('click', () => {
-                        clearInterval(timer);
+                        if (this.returnTimer) clearInterval(this.returnTimer);
                         this.exitGame();
                     });
                 }
@@ -229,6 +258,10 @@ export class GamePage extends AbstractComponent {
     }
 
     onDestroy(): void {
+        if (this.returnTimer) {
+            clearInterval(this.returnTimer);
+            this.returnTimer = null;
+        }
         window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('keyup', this.handleKeyUp);
         GameService.getInstance().disconnect();
