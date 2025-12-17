@@ -147,8 +147,9 @@ export class TournamentService {
     }
 
     const participants = await this.getTournamentParticipants(id);
-    if (![4, 8].includes(participants.length)) {
-      throw new Error('Tournament needs either 4 or 8 participants to start');
+    // Hoach modified to require at least 2 participants to start not 4 or 8
+    if (participants.length < 2) {
+      throw new Error('Tournament needs at least 2 participants to start');
     }
 
     // Generate bracket and matches
