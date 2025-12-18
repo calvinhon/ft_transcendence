@@ -6,36 +6,6 @@ import { ResponseUtil } from '../../utils/responses';
 import { logger } from '../../utils/logger';
 
 export default async function tournamentCrudRoutes(fastify: FastifyInstance): Promise<void> {
-  // Create tournament
-  fastify.post<{
-    Body: CreateTournamentBody;
-  }>('/tournaments', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
-    try {
-      const tournament = await TournamentService.createTournament(request.body);
-      logger.info('Tournament created via API', { id: tournament.id, name: tournament.name });
-      return ResponseUtil.success(reply, tournament, 'Tournament created successfully', 201);
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to create tournament', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Failed to create tournament', 500);
-    }
-  });
-
-  // Legacy create tournament route (for backward compatibility)
-  fastify.post<{
-    Body: CreateTournamentBody;
-  }>('/create', async (request: FastifyRequest<{ Body: CreateTournamentBody }>, reply: FastifyReply) => {
-    try {
-      const tournament = await TournamentService.createTournament(request.body);
-      logger.info('Tournament created via legacy API', { id: tournament.id, name: tournament.name });
-      return ResponseUtil.success(reply, { id: tournament.id }, 'Tournament created successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to create tournament via legacy API', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Failed to create tournament', 500);
-    }
-  });
-
   // Get all tournaments
   fastify.get<{
     Querystring: TournamentQuery;
@@ -76,93 +46,6 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const err = error as Error;
       logger.error('Failed to get tournament', { error: err.message, id: request.params.id });
       return ResponseUtil.error(reply, 'Failed to retrieve tournament', 500);
-    }
-  });
-
-  // Update tournament
-  fastify.put<{
-    Params: { id: string };
-    Body: Partial<CreateTournamentBody>;
-  }>('/tournaments/:id', async (request: FastifyRequest<{
-    Params: { id: string };
-    Body: Partial<CreateTournamentBody>;
-  }>, reply: FastifyReply) => {
-    try {
-      const id = parseInt(request.params.id);
-      if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-      }
-
-      const tournament = await TournamentService.updateTournament(id, request.body);
-      if (!tournament) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
-      }
-
-      return ResponseUtil.success(reply, tournament, 'Tournament updated successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to update tournament', { error: err.message, id: request.params.id, body: request.body });
-      return ResponseUtil.error(reply, err.message || 'Failed to update tournament', 500);
-    }
-  });
-
-  // Delete tournament
-  fastify.delete<{
-    Params: { id: string };
-  }>('/tournaments/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    try {
-      const id = parseInt(request.params.id);
-      if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-      }
-
-      const deleted = await TournamentService.deleteTournament(id);
-      if (!deleted) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
-      }
-
-      return ResponseUtil.success(reply, null, 'Tournament deleted successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to delete tournament', { error: err.message, id: request.params.id });
-      return ResponseUtil.error(reply, err.message || 'Failed to delete tournament', 500);
-    }
-  });
-
-  // Update tournament status (start)
-  fastify.put<{
-    Params: { id: string };
-    Body: { action: 'start'; startedBy: number };
-  }>('/tournaments/:id/status', async (request: FastifyRequest<{
-    Params: { id: string };
-    Body: { action: 'start'; startedBy: number };
-  }>, reply: FastifyReply) => {
-    try {
-      const id = parseInt(request.params.id);
-      const { action, startedBy } = request.body;
-
-      if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-      }
-
-      if (action === 'start') {
-        const tournament = await TournamentService.startTournament(id, startedBy);
-        if (!tournament) {
-          return ResponseUtil.error(reply, 'Tournament not found or cannot be started', 404);
-        }
-        logger.info('Tournament started', { id });
-        return ResponseUtil.success(reply, tournament, 'Tournament started successfully');
-      } else {
-        return ResponseUtil.error(reply, 'Invalid action. Use "start"', 400);
-      }
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to update tournament status', {
-        error: err.message,
-        id: request.params.id,
-        action: request.body.action
-      });
-      return ResponseUtil.error(reply, err.message || 'Failed to update tournament status', 500);
     }
   });
 
@@ -217,7 +100,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       }));
 
       // Import blockchain functions
-      const { recordTournamentOnBlockchain, isBlockchainAvailable } = await import('../../blockchain');
+      const { recordRank, isBlockchainAvailable } = await import('../../blockchain');
 
       // Check if blockchain is available
       const blockchainAvailable = await isBlockchainAvailable();
@@ -226,7 +109,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       }
 
       // Record on blockchain
-      const txHash = await recordTournamentOnBlockchain(tournamentId, rankingsForBlockchain);
+      const txHash = await recordRank(tournamentId, rankingsForBlockchain[0].userId, rankingsForBlockchain[0].rank);
 
       logger.info('Tournament recorded on blockchain', { tournamentId, winnerId, txHash });
       return ResponseUtil.success(reply, {

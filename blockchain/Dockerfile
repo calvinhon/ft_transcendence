@@ -1,29 +1,20 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
-
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies
 RUN npm install
 
-# Copy blockchain development files
+RUN apk add --no-cache curl bash
+
 COPY hardhat.config.cjs ./
 COPY contracts ./contracts
-# COPY scripts ./scripts
+COPY scripts ./scripts
 # COPY test ./test
 
-# Compile contracts on build
-RUN npx hardhat compile
-
-# Create data directory for blockchain state
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/deployments
 
 EXPOSE 8545
 
-# Start Hardhat node
-CMD ["npx", "hardhat", "node", "--hostname", "0.0.0.0"]
+CMD ["tail", "-f", "/dev/null"]

@@ -4,36 +4,12 @@
   "type": "module",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
-    "test:gas": "hardhat test --gas",
-    "test:coverage": "hardhat coverage",
-    "deploy": "hardhat run scripts/deploy.js",
-    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
-    "node": "hardhat node",
-    "clean": "hardhat clean",
-    "lint": "hardhat check",
-    "typechain": "hardhat typechain"
+    "test": "hardhat test"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "dotenv": "^16.4.5",
     "hardhat": "^2.22.17",
     "ethers": "^6.9.0"
-  },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-ethers": "^3.0.0",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
-    "@typechain/ethers-v6": "^0.5.0",
-    "@typechain/hardhat": "^9.0.0",
-    "@types/chai": "^4.2.0",
-    "@types/mocha": "^9.1.0",
-    "@types/node": "^20.0.0",
-    "chai": "^4.2.0",
-    "hardhat-gas-reporter": "^1.0.8",
-    "solidity-coverage": "^0.8.0",
-    "ts-node": "^10.9.0",
-    "typechain": "^8.3.0",
-    "typescript": "^5.0.0"
   }
 }

@@ -8,9 +8,6 @@ import { MatchService } from './matchService';
 import { logger } from '../utils/logger';
 
 export class TournamentService {
-  /**
-   * Create a new tournament
-   */
   static async createTournament(data: CreateTournamentBody): Promise<Tournament> {
     logger.info('Creating tournament', { name: data.name, createdBy: data.createdBy });
 
@@ -28,9 +25,6 @@ export class TournamentService {
     return tournament;
   }
 
-  /**
-   * Get tournament by ID
-   */
   static async getTournamentById(id: number): Promise<Tournament | null> {
     const tournament = await dbGet<Tournament>(
       'SELECT * FROM tournaments WHERE id = ?',
@@ -39,9 +33,6 @@ export class TournamentService {
     return tournament || null;
   }
 
-  /**
-   * Get all tournaments with pagination
-   */
   static async getTournaments(page: number = 1, limit: number = 10, status?: string): Promise<{
     tournaments: Tournament[];
     total: number;
@@ -138,18 +129,17 @@ export class TournamentService {
       throw new Error('Tournament not found');
     }
 
-    if (tournament.status !== 'open') {
-      throw new Error('Tournament is not in open status');
-    }
+    // if (tournament.status !== 'open') {
+    //   throw new Error('Tournament is not in open status');
+    // }
 
     if (startedBy !== undefined && tournament.created_by !== startedBy) {
       throw new Error('Only tournament creator can start the tournament');
     }
 
     const participants = await this.getTournamentParticipants(id);
-    // Hoach modified to require at least 2 participants to start not 4 or 8
-    if (participants.length < 2) {
-      throw new Error('Tournament needs at least 2 participants to start');
+    if (![4, 8].includes(participants.length)) {
+      throw new Error('Tournament needs either 4 or 8 participants to start');
     }
 
     // Generate bracket and matches
@@ -214,30 +204,6 @@ export class TournamentService {
       'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
       [tournamentId]
     );
-  }
-
-  /**
-   * Get tournament statistics
-   */
-  static async getTournamentStats(): Promise<{
-    totalTournaments: number;
-    activeTournaments: number;
-    completedTournaments: number;
-    totalParticipants: number;
-  }> {
-    const [totalResult, activeResult, completedResult, participantsResult] = await Promise.all([
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments WHERE status = "active"'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments WHERE status = "finished"'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournament_participants')
-    ]);
-
-    return {
-      totalTournaments: totalResult?.count || 0,
-      activeTournaments: activeResult?.count || 0,
-      completedTournaments: completedResult?.count || 0,
-      totalParticipants: participantsResult?.count || 0
-    };
   }
 
   /**

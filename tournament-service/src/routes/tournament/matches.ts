@@ -61,56 +61,56 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
   });
 
   // Submit match result
-  fastify.post<{
-    Body: MatchResultBody;
-  }>('/matches/result', async (request: FastifyRequest<{
-    Body: MatchResultBody;
-  }>, reply: FastifyReply) => {
-    try {
-      const { matchId, winnerId, player1Score, player2Score } = request.body;
+  // fastify.post<{
+  //   Body: MatchResultBody;
+  // }>('/matches/result', async (request: FastifyRequest<{
+  //   Body: MatchResultBody;
+  // }>, reply: FastifyReply) => {
+  //   try {
+  //     const { matchId, winnerId, player1Score, player2Score } = request.body;
 
-      const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
-      logger.info('Match result submitted', { matchId, winnerId });
-      return ResponseUtil.success(reply, result, 'Match result submitted successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to submit match result', {
-        error: err.message,
-        body: request.body
-      });
-      return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
-    }
-  });
+  //     const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
+  //     logger.info('Match result submitted', { matchId, winnerId });
+  //     return ResponseUtil.success(reply, result, 'Match result submitted successfully');
+  //   } catch (error) {
+  //     const err = error as Error;
+  //     logger.error('Failed to submit match result', {
+  //       error: err.message,
+  //       body: request.body
+  //     });
+  //     return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
+  //   }
+  // });
 
   // Legacy match result route (for backward compatibility)
-  fastify.put<{
-    Params: { matchId: string };
-    Body: { winnerId: number; player1Score: number; player2Score: number };
-  }>('/matches/:matchId/result', async (request: FastifyRequest<{
-    Params: { matchId: string };
-    Body: { winnerId: number; player1Score: number; player2Score: number };
-  }>, reply: FastifyReply) => {
-    try {
-      const matchId = parseInt(request.params.matchId);
-      const { winnerId, player1Score, player2Score } = request.body;
+  // fastify.put<{
+  //   Params: { matchId: string };
+  //   Body: { winnerId: number; player1Score: number; player2Score: number };
+  // }>('/matches/:matchId/result', async (request: FastifyRequest<{
+  //   Params: { matchId: string };
+  //   Body: { winnerId: number; player1Score: number; player2Score: number };
+  // }>, reply: FastifyReply) => {
+  //   try {
+  //     const matchId = parseInt(request.params.matchId);
+  //     const { winnerId, player1Score, player2Score } = request.body;
 
-      if (isNaN(matchId)) {
-        return ResponseUtil.error(reply, 'Invalid match ID', 400);
-      }
+  //     if (isNaN(matchId)) {
+  //       return ResponseUtil.error(reply, 'Invalid match ID', 400);
+  //     }
 
-      const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
-      logger.info('Match result submitted via legacy API', { matchId, winnerId });
-      return ResponseUtil.success(reply, result, 'Match result submitted successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to submit match result via legacy API', {
-        error: err.message,
-        matchId: request.params.matchId,
-        body: request.body
-      });
-      return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
-    }
-  });
+  //     const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
+  //     logger.info('Match result submitted via legacy API', { matchId, winnerId });
+  //     return ResponseUtil.success(reply, result, 'Match result submitted successfully');
+  //   } catch (error) {
+  //     const err = error as Error;
+  //     logger.error('Failed to submit match result via legacy API', {
+  //       error: err.message,
+  //       matchId: request.params.matchId,
+  //       body: request.body
+  //     });
+  //     return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
+  //   }
+  // });
 
   // Submit match result (tournament-specific route)
   fastify.post<{
