@@ -2,33 +2,33 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {2.1}{\ignorespaces Project Gantt Chart: Phases, milestones, and timeline}}{10}{figure.caption.5}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}}{19}{figure.caption.8}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Available Game Modes: Campaign, Arcade, Tournament}}{20}{figure.caption.9}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces Login User Interface: Email/Password Authentication with Remember Me Option}}{21}{figure.caption.11}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces Account Registration UI: New Account Creation with Email Verification}}{22}{figure.caption.13}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces 2FA Verification: OAuth 2-Step Verification and TOTP Setup}}{22}{figure.caption.15}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{23}{figure.caption.16}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{24}{figure.caption.17}%
-\contentsline {figure}{\numberline {3.8}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{25}{figure.caption.18}%
-\contentsline {figure}{\numberline {3.9}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{26}{figure.caption.19}%
-\contentsline {figure}{\numberline {3.10}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{27}{figure.caption.20}%
-\contentsline {figure}{\numberline {3.11}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{27}{figure.caption.21}%
-\contentsline {figure}{\numberline {3.12}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{28}{figure.caption.22}%
-\contentsline {figure}{\numberline {3.13}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{29}{figure.caption.23}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}}{20}{figure.caption.8}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Available Game Modes: Campaign, Arcade, Tournament}}{21}{figure.caption.9}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Login User Interface: Email/Password Authentication}}{22}{figure.caption.11}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Account Registration UI: New Account Creation with Email Verification}}{23}{figure.caption.13}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces 2FA Verification: OAuth 2-Step Verification and TOTP Setup}}{23}{figure.caption.15}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{24}{figure.caption.16}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{25}{figure.caption.17}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{26}{figure.caption.18}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{27}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{28}{figure.caption.20}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{28}{figure.caption.21}%
+\contentsline {figure}{\numberline {3.12}{\ignorespaces 60 FPS Server-Authoritative Game Loop with Client State Synchronization}}{29}{figure.caption.22}%
+\contentsline {figure}{\numberline {3.13}{\ignorespaces User Registration and Authentication Flow with Optional 2FA}}{30}{figure.caption.23}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Observability Stack}}{30}{figure.caption.24}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{31}{figure.caption.25}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{33}{figure.caption.26}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{33}{figure.caption.27}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{34}{figure.caption.28}%
-\addvspace {10\p@ }
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{39}{figure.caption.33}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Observability Stack}}{31}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{32}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Seven Protective Layers}}{34}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{34}{figure.caption.27}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{35}{figure.caption.28}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Testing Pyramid: Unit, Integration, and End-to-End Test Distribution (180 Total Tests)}}{41}{figure.caption.33}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{45}{figure.caption.34}%
-\contentsline {figure}{\numberline {A.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{46}{figure.caption.35}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{47}{figure.caption.34}%
+\contentsline {figure}{\numberline {A.2}{\ignorespaces GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}}{48}{figure.caption.35}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

@@ -15,34 +15,26 @@ from textwrap import wrap
 # Set up matplotlib for high-quality output
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
-plt.rcParams['font.size'] = 14  # Increased from 12 for larger fonts
+plt.rcParams['font.size'] = 12.5  # Set to 12.5 pt for all text
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['lines.linewidth'] = 2.5
 
-def wrap_text(text, width=25):  # Increased from 20 for better wrapping
-    """Wrap text to specified width for better fitting in boxes"""
-    lines = []
-    for paragraph in text.split('\n'):
-        if len(paragraph) <= width:
-            lines.append(paragraph)
-        else:
-            wrapped = wrap(paragraph, width=width)
-            lines.extend(wrapped)
-    return '\n'.join(lines)
-
-def create_box_with_text(ax, x, y, width, height, text, color='lightblue', 
-                         edgecolor='blue', fontsize=12, fontweight='normal'):  # Increased from 10
-    """Create a box with centered, wrapped text that fits inside"""
-    rect = FancyBboxPatch((x - width/2, y - height/2), width, height, 
-                          boxstyle="round,pad=0.08", 
-                          edgecolor=edgecolor, facecolor=color, linewidth=2.5)
+def create_box_with_text(ax, x, y, text, color='lightblue', 
+                         edgecolor='blue', fontsize=13, fontweight='normal'):
+    """Create a box with centered text using fixed dimensions"""
+    
+    # Fixed box dimensions for consistency
+    box_width = 2.8
+    box_height = 1.2
+    
+    # Create the box
+    rect = FancyBboxPatch((x - box_width/2, y - box_height/2), box_width, box_height, 
+                          boxstyle="round,pad=0.05", 
+                          edgecolor=edgecolor, facecolor=color, linewidth=1.5)
     ax.add_patch(rect)
     
-    # Wrap text to fit within box
-    wrapped_text = wrap_text(text, width=int(width * 4))  # Increased multiplier for better wrapping
-    
     # Add text with proper centering
-    ax.text(x, y, wrapped_text, fontsize=fontsize, ha='center', va='center', 
+    ax.text(x, y, text, fontsize=fontsize, ha='center', va='center', 
             fontweight=fontweight, multialignment='center')
 
 def create_architecture_diagram():
@@ -54,11 +46,11 @@ def create_architecture_diagram():
     
     # Title
     ax.text(7, 11.5, 'ft_transcendence System Architecture', 
-            fontsize=14, fontweight='bold', ha='center')
+            fontsize=13, fontweight='bold', ha='center')
     
     # CLIENT LAYER
-    client_y = 10
-    ax.text(7, client_y + 0.8, 'Client Layer', fontsize=12, fontweight='bold', ha='center',
+    client_y = 11.0
+    ax.text(7, client_y + 0.8, 'Client Layer', fontsize=13, fontweight='bold', ha='center',
             bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     clients = [
@@ -67,12 +59,12 @@ def create_architecture_diagram():
     ]
     
     for x, text, edge, face in clients:
-        create_box_with_text(ax, x, client_y, 2.2, 0.8, text, color=face, 
-                            edgecolor=edge, fontsize=9, fontweight='bold')
+        create_box_with_text(ax, x, client_y, text, color=face, 
+                            edgecolor=edge, fontsize=13, fontweight='bold')
     
     # GATEWAY LAYER
-    gateway_y = 8.3
-    ax.text(7, gateway_y + 0.8, 'API Gateway & WAF', fontsize=12, fontweight='bold', ha='center',
+    gateway_y = 8.8
+    ax.text(7, gateway_y + 0.8, 'API Gateway & WAF', fontsize=13, fontweight='bold', ha='center',
             bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     # Arrow from clients to gateway
@@ -80,13 +72,13 @@ def create_architecture_diagram():
         ax.annotate('', xy=(x, gateway_y + 0.4), xytext=(x, client_y - 0.4),
                    arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
     
-    create_box_with_text(ax, 7, gateway_y, 10.5, 0.7, 
+    create_box_with_text(ax, 7, gateway_y, 
                         'Nginx + ModSecurity + Rate Limiting', 
-                        color='lightyellow', edgecolor='red', fontsize=10, fontweight='bold')
+                        color='lightyellow', edgecolor='red', fontsize=13, fontweight='bold')
     
     # MICROSERVICES LAYER
     services_y = 6.2
-    ax.text(7, services_y + 1.2, 'Microservices (Docker Containers)', fontsize=12, fontweight='bold', 
+    ax.text(7, services_y + 1.2, 'Microservices (Docker Containers)', fontsize=13, fontweight='bold', 
             ha='center', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     # Arrow from gateway to services
@@ -101,12 +93,12 @@ def create_architecture_diagram():
     ]
     
     for x, text in services:
-        create_box_with_text(ax, x, services_y, 2.2, 1.0, text, 
-                            color='lightgreen', edgecolor='darkgreen', fontsize=9)
+        create_box_with_text(ax, x, services_y, text, 
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13)
     
     # DATA & SECRETS LAYER
-    data_y = 4.0
-    ax.text(7, data_y + 1.2, 'Data & Secrets Management', fontsize=12, fontweight='bold',
+    data_y = 3.2
+    ax.text(7, data_y + 1.2, 'Data & Secrets Management', fontsize=13, fontweight='bold',
             ha='center', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     # Arrow from services to data
@@ -121,17 +113,17 @@ def create_architecture_diagram():
     ]
     
     for x, text in databases:
-        create_box_with_text(ax, x, data_y, 1.8, 0.7, text,
-                            color='plum', edgecolor='purple', fontsize=9)
+        create_box_with_text(ax, x, data_y, text,
+                            color='plum', edgecolor='purple', fontsize=13)
     
     # Side systems
-    create_box_with_text(ax, 0.7, data_y, 1.2, 0.7, 'Vault\nSecrets',
-                        color='moccasin', edgecolor='orange', fontsize=9)
+    create_box_with_text(ax, 0.7, data_y, 'Vault\nSecrets',
+                        color='moccasin', edgecolor='orange', fontsize=13)
     ax.annotate('', xy=(1.5, data_y), xytext=(1.3, data_y),
                arrowprops=dict(arrowstyle='<->', lw=2, color='orange'))
     
-    create_box_with_text(ax, 13.3, data_y, 1.2, 0.7, 'Hardhat\nBlockchain',
-                        color='moccasin', edgecolor='orange', fontsize=9)
+    create_box_with_text(ax, 13.3, data_y, 'Hardhat\nBlockchain',
+                        color='moccasin', edgecolor='orange', fontsize=13)
     ax.annotate('', xy=(12.7, data_y), xytext=(12.5, data_y),
                arrowprops=dict(arrowstyle='<->', lw=2, color='orange'))
     
@@ -152,7 +144,7 @@ def create_game_loop_diagram():
             fontsize=13, fontweight='bold', ha='center')
     
     # SERVER SIDE
-    ax.text(3.5, 9.8, 'SERVER (60 FPS)', fontsize=12, fontweight='bold', ha='center',
+    ax.text(3.5, 9.8, 'SERVER (60 FPS)', fontsize=13, fontweight='bold', ha='center',
             bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
     
     server_steps = [
@@ -166,15 +158,15 @@ def create_game_loop_diagram():
     y_start = 9.0
     for idx, (y_pos, label) in enumerate(server_steps):
         y = y_pos
-        create_box_with_text(ax, 3.5, y, 2.5, 0.7, label,
-                            color='lightblue', edgecolor='darkblue', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, 3.5, y, label,
+                            color='lightblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
         
         if idx < len(server_steps) - 1:
             ax.annotate('', xy=(3.5, y - 0.35), xytext=(3.5, y_start - (idx+1)*1.2 + 0.35),
                        arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
     
     # CLIENT SIDE
-    ax.text(10.5, 9.8, 'CLIENT (Web)', fontsize=12, fontweight='bold', ha='center',
+    ax.text(10.5, 9.8, 'CLIENT (Web)', fontsize=13, fontweight='bold', ha='center',
             bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
     
     client_steps = [
@@ -187,8 +179,8 @@ def create_game_loop_diagram():
     
     for idx, (y_pos, label) in enumerate(client_steps):
         y = y_pos
-        create_box_with_text(ax, 10.5, y, 2.5, 0.7, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, 10.5, y, label,
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
         
         if idx < len(client_steps) - 1:
             ax.annotate('', xy=(10.5, y - 0.35), xytext=(10.5, y_start - (idx+1)*1.2 + 0.35),
@@ -198,18 +190,18 @@ def create_game_loop_diagram():
     # State broadcast
     ax.annotate('', xy=(5.5, 9.2), xytext=(8.5, 9.2),
                arrowprops=dict(arrowstyle='->', lw=3, color='red'))
-    ax.text(7, 9.6, 'WebSocket State', fontsize=12, ha='center', fontweight='bold',
+    ax.text(7, 9.6, 'WebSocket State', fontsize=13, ha='center', fontweight='bold',
             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9))
     
     # Input message
     ax.annotate('', xy=(8.5, 4.4), xytext=(5.5, 4.4),
                arrowprops=dict(arrowstyle='->', lw=3, color='darkred'))
-    ax.text(7, 4.0, 'Input Message', fontsize=10, ha='center', fontweight='bold',
+    ax.text(7, 4.0, 'Input Message', fontsize=13, ha='center', fontweight='bold',
             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9))
     
     # TIMING INFO BOX
     timing_text = '60 FPS Server Loop (16.67ms/frame) → 50ms WebSocket Throttle → Low Latency\nServer Authoritative (no cheating) | Fair state broadcasting'
-    ax.text(7, 2.3, timing_text, fontsize=10, ha='center', va='center',
+    ax.text(7, 2.3, timing_text, fontsize=13, ha='center', va='center',
            bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='orange', linewidth=2))
     
     plt.tight_layout()
@@ -244,14 +236,14 @@ def create_security_layers_diagram():
         ax.add_patch(rect)
         
         # Title on the left
-        ax.text(1.2, y + 0.2, title, fontsize=9, fontweight='bold', va='center')
+        ax.text(1.2, y + 0.2, title, fontsize=13, fontweight='bold', va='center')
         
         # Description on the right
-        ax.text(6.5, y, description, fontsize=8, va='center', style='italic')
+        ax.text(6.5, y, description, fontsize=13, va='center', style='italic')
     
     # Attack prevention box
     prevention_text = 'Prevents: SQLi | XSS | CSRF | DDoS | Brute Force | Unauthorized Access | Data Breaches'
-    ax.text(6, 1.2, prevention_text, fontsize=8, ha='center', va='center',
+    ax.text(6, 1.2, prevention_text, fontsize=13, ha='center', va='center',
            bbox=dict(boxstyle='round', facecolor='lightyellow', edgecolor='darkred', linewidth=2.5),
            fontweight='bold')
     
@@ -282,8 +274,8 @@ def create_user_authentication_flow():
     ]
     
     for y, label in reg_steps:
-        create_box_with_text(ax, 3.5, y, 2.8, 0.9, label,
-                            color='lightblue', edgecolor='darkblue', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, 3.5, y, label,
+                            color='lightblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
     
     for i in range(len(reg_steps) - 1):
         y1 = reg_steps[i][0]
@@ -302,8 +294,8 @@ def create_user_authentication_flow():
     ]
     
     for y, label in login_steps:
-        create_box_with_text(ax, 10.5, y, 2.8, 0.9, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, 10.5, y, label,
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
     
     for i in range(len(login_steps) - 1):
         y1 = login_steps[i][0]
@@ -312,11 +304,11 @@ def create_user_authentication_flow():
                    arrowprops=dict(arrowstyle='->', lw=2.5, color='darkgreen'))
     
     # SESSION MANAGEMENT (Center)
-    ax.text(7, 5.5, 'SESSION MANAGEMENT', fontsize=10, fontweight='bold', ha='center',
+    ax.text(7, 5.5, 'SESSION MANAGEMENT', fontsize=13, fontweight='bold', ha='center',
             bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.6))
     
-    create_box_with_text(ax, 7, 4.5, 4.0, 0.8, 'HttpOnly Cookie (Secure, SameSite=Strict)',
-                        color='lightyellow', edgecolor='orange', fontsize=8, fontweight='bold')
+    create_box_with_text(ax, 7, 4.5, 'HttpOnly Cookie (Secure, SameSite=Strict)',
+                        color='lightyellow', edgecolor='orange', fontsize=13, fontweight='bold')
     
     # Arrows from both paths to session
     ax.annotate('', xy=(5.5, 5.0), xytext=(4.5, 6.6),
@@ -329,12 +321,12 @@ def create_user_authentication_flow():
             ha='center', bbox=dict(boxstyle='round', facecolor='lightsalmon', alpha=0.6))
     
     twofa_text = 'User scans QR code with authenticator app (TOTP)\nVerification code required on each login\nEnhanced security for sensitive operations'
-    ax.text(7, 2.2, twofa_text, fontsize=9, ha='center', va='center',
+    ax.text(7, 2.2, twofa_text, fontsize=13, ha='center', va='center',
            bbox=dict(boxstyle='round', facecolor='white', edgecolor='red', linewidth=2))
     
     # OAuth Path
     ax.text(7, 0.8, 'Alternative: OAuth Login (42 School intranet)',
-            fontsize=8, ha='center', style='italic', fontweight='bold')
+            fontsize=13, ha='center', style='italic', fontweight='bold')
     
     plt.tight_layout()
     plt.savefig('authentication_flow.png', dpi=300, bbox_inches='tight')
@@ -353,11 +345,11 @@ def create_data_flow_diagram():
             fontsize=14, fontweight='bold', ha='center')
     
     # Players input
-    create_box_with_text(ax, 2, 10, 2.5, 0.8, 'Player 1\nInput\n(WASD/Arrow Keys)', 
-                        color='lightblue', edgecolor='darkblue', fontsize=10)
+    create_box_with_text(ax, 2, 10, 'Player 1\nInput\n(WASD/Arrow Keys)', 
+                        color='lightblue', edgecolor='darkblue', fontsize=13)
     
-    create_box_with_text(ax, 12, 10, 2.5, 0.8, 'Player 2\nInput\n(WASD/Arrow Keys)', 
-                        color='lightcyan', edgecolor='darkcyan', fontsize=10)
+    create_box_with_text(ax, 12, 10, 'Player 2\nInput\n(WASD/Arrow Keys)', 
+                        color='lightcyan', edgecolor='darkcyan', fontsize=13)
     
     # Input arrows to server
     ax.annotate('', xy=(4.5, 10), xytext=(3.5, 10),
@@ -378,8 +370,8 @@ def create_data_flow_diagram():
     ]
     
     for y, label in server_steps:
-        create_box_with_text(ax, 7, y, 4.0, 0.9, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=10, fontweight='bold')
+        create_box_with_text(ax, 7, y, label,
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
     
     # Vertical arrows between server steps
     for i in range(len(server_steps) - 1):
@@ -399,22 +391,22 @@ def create_data_flow_diagram():
     
     ax.annotate('', xy=(9.5, 3.3), xytext=(10.5, 3.3),
                arrowprops=dict(arrowstyle='->', lw=3, color='red'))
-    ax.text(10.0, 3.6, 'Game State', fontsize=10, ha='center', fontweight='bold')
+    ax.text(10.0, 3.6, 'Game State', fontsize=13, ha='center', fontweight='bold')
     
     # Client rendering
-    create_box_with_text(ax, 2, 2.0, 2.5, 1.0, 'Player 1\nRender Game\n(Ball, Paddles,\nScore Display)', 
-                        color='lightyellow', edgecolor='orange', fontsize=9)
+    create_box_with_text(ax, 2, 2.0, 'Player 1\nRender Game\n(Ball, Paddles,\nScore Display)', 
+                        color='lightyellow', edgecolor='orange', fontsize=13)
     
-    create_box_with_text(ax, 12, 2.0, 2.5, 1.0, 'Player 2\nRender Game\n(Ball, Paddles,\nScore Display)', 
-                        color='lightyellow', edgecolor='orange', fontsize=9)
+    create_box_with_text(ax, 12, 2.0, 'Player 2\nRender Game\n(Ball, Paddles,\nScore Display)', 
+                        color='lightyellow', edgecolor='orange', fontsize=13)
     
     # Match end flow
-    create_box_with_text(ax, 7, 1.0, 3.5, 0.8, 'Match Complete?\n→ Store in games.db\n→ Update Tournament\n→ Record to Blockchain',
-                        color='lightsalmon', edgecolor='darkorange', fontsize=9, fontweight='bold')
+    create_box_with_text(ax, 7, 1.0, 'Match Complete?\n→ Store in games.db\n→ Update Tournament\n→ Record to Blockchain',
+                        color='lightsalmon', edgecolor='darkorange', fontsize=13, fontweight='bold')
     
     # Flow explanation
     explanation = 'FLOW: Input → Server Processing → State Broadcast → Client Render → Repeat 60x/second'
-    ax.text(7, 0.3, explanation, fontsize=10, ha='center', va='center',
+    ax.text(7, 0.3, explanation, fontsize=13, ha='center', va='center',
            bbox=dict(boxstyle='round', facecolor='lightgray', edgecolor='black', linewidth=2),
            fontweight='bold')
     
@@ -438,20 +430,20 @@ def create_deployment_topology():
     rect = FancyBboxPatch((0.3, 0.5), 13.4, 9.5, boxstyle="round,pad=0.1", 
                          edgecolor='purple', facecolor='white', linewidth=2.5, linestyle='dashed')
     ax.add_patch(rect)
-    ax.text(0.8, 9.8, 'Docker Network: transcendence-network', fontsize=9, fontweight='bold', 
+    ax.text(0.8, 9.8, 'Docker Network: transcendence-network', fontsize=13, fontweight='bold', 
             color='purple', bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
     
     # Client access
-    create_box_with_text(ax, 7, 9.2, 3.0, 0.6, 'Client Access\n(Browser)',
-                        color='lightblue', edgecolor='darkblue', fontsize=8, fontweight='bold')
+    create_box_with_text(ax, 7, 9.2, 'Client Access\n(Browser)',
+                        color='lightblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
     
     # Arrow to Nginx
     ax.annotate('', xy=(7, 8.7), xytext=(7, 8.4),
                arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
     
     # Nginx
-    create_box_with_text(ax, 7, 8.0, 3.5, 0.8, 'Nginx (80, 443)\nTLS + WAF',
-                        color='lightyellow', edgecolor='red', fontsize=8, fontweight='bold')
+    create_box_with_text(ax, 7, 8.0, 'Nginx (80, 443)\nTLS + WAF',
+                        color='lightyellow', edgecolor='red', fontsize=12, fontweight='bold')
     
     # Arrow to services
     ax.annotate('', xy=(7, 7.6), xytext=(7, 7.2),
@@ -466,24 +458,23 @@ def create_deployment_topology():
     ]
     
     for x, label in services_row1:
-        create_box_with_text(ax, x, 6.4, 1.8, 1.0, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, x, 6.4, label,
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
     
     # SERVICES ROW 2 (Support Services)
     services_row2 = [
         (1.8, 'SSR\nService\n:3005'),
         (4.3, 'Vault\nServer\n:8200'),
         (6.8, 'Hardhat\nNode\n:8545'),
-        (9.3, 'Prometheus\n:9090'),
     ]
     
     for x, label in services_row2:
-        create_box_with_text(ax, x, 4.6, 1.8, 1.0, label,
-                            color='moccasin', edgecolor='darkorange', fontsize=9, fontweight='bold')
+        create_box_with_text(ax, x, 4.6, label,
+                            color='moccasin', edgecolor='darkorange', fontsize=13, fontweight='bold')
     
     # Persistent Volumes (right side)
-    create_box_with_text(ax, 12.2, 4.6, 1.6, 3.6, 'Persistent\nVolumes:\nauth.db\nusers.db\ngames.db\ntournaments.db',
-                        color='lightsteelblue', edgecolor='darkblue', fontsize=9, fontweight='bold')
+    create_box_with_text(ax, 12.2, 4.6, 'Persistent\nVolumes:\nauth.db\nusers.db\ngames.db\ntournaments.db',
+                        color='lightsteelblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
     
     # Connections to databases
     for x, _ in services_row1:
@@ -514,25 +505,25 @@ def create_testing_pyramid():
     unit_poly = Polygon(unit_points, facecolor='lightgreen', edgecolor='darkgreen', linewidth=2)
     ax.add_patch(unit_poly)
     ax.text(5, 2, 'Unit Tests\n(Low-level functions)\n~60 tests', 
-            fontsize=9, ha='center', va='center', fontweight='bold')
+            fontsize=13, ha='center', va='center', fontweight='bold')
     
     # Integration tests (middle)
     int_points = np.array([[2.5, 3.5], [7.5, 3.5], [6.5, 5.5], [3.5, 5.5]])
     int_poly = Polygon(int_points, facecolor='lightyellow', edgecolor='orange', linewidth=2)
     ax.add_patch(int_poly)
     ax.text(5, 4.5, 'Integration Tests\n(Service interactions)\n~80 tests', 
-            fontsize=9, ha='center', va='center', fontweight='bold')
+            fontsize=13, ha='center', va='center', fontweight='bold')
     
     # E2E tests (top)
     e2e_points = np.array([[4, 6], [6, 6], [5.5, 8], [4.5, 8]])
     e2e_poly = Polygon(e2e_points, facecolor='lightblue', edgecolor='darkblue', linewidth=2)
     ax.add_patch(e2e_poly)
     ax.text(5, 7, 'End-to-End Tests\n(Full workflows)\n~40 tests', 
-            fontsize=9, ha='center', va='center', fontweight='bold')
+            fontsize=13, ha='center', va='center', fontweight='bold')
     
     # Total info
     ax.text(5, 0.5, 'Total: 180/180 Tests Passing (100%) | Test Duration: ~18 minutes', 
-            fontsize=9, ha='center', bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9),
+            fontsize=13, ha='center', bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9),
             fontweight='bold')
     
     plt.tight_layout()
@@ -552,12 +543,12 @@ def create_gdpr_compliance_flow():
             fontsize=12, fontweight='bold', ha='center')
     
     # User request
-    ax.text(6.5, 8.8, 'User Initiates GDPR Request', fontsize=10, fontweight='bold', ha='center')
+    ax.text(6.5, 8.8, 'User Initiates GDPR Request', fontsize=13, fontweight='bold', ha='center')
     
     # Three main paths
     # Path 1: Data Export
-    create_box_with_text(ax, 2, 7.8, 2.2, 0.7, 'Path 1:\nData Export',
-                        color='lightblue', edgecolor='darkblue', fontsize=8, fontweight='bold')
+    create_box_with_text(ax, 2, 7.8, 'Path 1:\nData Export',
+                        color='lightblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
     
     export_steps = [
         (7.2, 'Request'),
@@ -568,15 +559,15 @@ def create_gdpr_compliance_flow():
     ]
     
     for idx, (y, label) in enumerate(export_steps):
-        create_box_with_text(ax, 2, y, 1.8, 0.6, label,
-                            color='lightblue', edgecolor='darkblue', fontsize=9)
+        create_box_with_text(ax, 2, y, label,
+                            color='lightblue', edgecolor='darkblue', fontsize=13)
         if idx < len(export_steps) - 1:
             ax.annotate('', xy=(2, y - 0.3), xytext=(2, y - 0.3 - 0.4),
                        arrowprops=dict(arrowstyle='->', lw=2, color='darkblue'))
     
     # Path 2: Account Deletion
-    create_box_with_text(ax, 6.5, 7.8, 2.2, 0.7, 'Path 2:\nAccount Deletion',
-                        color='lightyellow', edgecolor='orange', fontsize=8, fontweight='bold')
+    create_box_with_text(ax, 6.5, 7.8, 'Path 2:\nAccount Deletion',
+                        color='lightyellow', edgecolor='orange', fontsize=13, fontweight='bold')
     
     delete_steps = [
         (7.2, 'Request'),
@@ -587,15 +578,15 @@ def create_gdpr_compliance_flow():
     ]
     
     for idx, (y, label) in enumerate(delete_steps):
-        create_box_with_text(ax, 6.5, y, 1.8, 0.6, label,
-                            color='lightyellow', edgecolor='orange', fontsize=9)
+        create_box_with_text(ax, 6.5, y, label,
+                            color='lightyellow', edgecolor='orange', fontsize=13)
         if idx < len(delete_steps) - 1:
             ax.annotate('', xy=(6.5, y - 0.3), xytext=(6.5, y - 0.3 - 0.4),
                        arrowprops=dict(arrowstyle='->', lw=2, color='orange'))
     
     # Path 3: Consent Management
-    create_box_with_text(ax, 11, 7.8, 2.2, 0.7, 'Path 3:\nConsent Mgmt',
-                        color='lightgreen', edgecolor='darkgreen', fontsize=10, fontweight='bold')
+    create_box_with_text(ax, 11, 7.8, 'Path 3:\nConsent Mgmt',
+                        color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
     
     consent_steps = [
         (7.2, 'Request'),
@@ -606,19 +597,19 @@ def create_gdpr_compliance_flow():
     ]
     
     for idx, (y, label) in enumerate(consent_steps):
-        create_box_with_text(ax, 11, y, 1.8, 0.6, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=9)
+        create_box_with_text(ax, 11, y, label,
+                            color='lightgreen', edgecolor='darkgreen', fontsize=13)
         if idx < len(consent_steps) - 1:
             ax.annotate('', xy=(11, y - 0.3), xytext=(11, y - 0.3 - 0.4),
                        arrowprops=dict(arrowstyle='->', lw=2, color='darkgreen'))
     
     # Database changes
-    create_box_with_text(ax, 6.5, 2.8, 5.0, 1.2, 'Database Changes:\ndeleted_at flag | username anonymized\nemail NULL | profile anonymized',
-                        color='plum', edgecolor='purple', fontsize=9, fontweight='bold')
+    create_box_with_text(ax, 6.5, 2.8, 'Database Changes:\ndeleted_at flag | username anonymized\nemail NULL | profile anonymized',
+                        color='plum', edgecolor='purple', fontsize=13, fontweight='bold')
     
     # Compliance note
-    create_box_with_text(ax, 6.5, 0.9, 6.0, 1.2, 'GDPR Compliance:\nArticles 15-22 (Access, Rectify, Erase,\nRestrict, Port, Objection)',
-                        color='lightsalmon', edgecolor='darkorange', fontsize=9, fontweight='bold')
+    create_box_with_text(ax, 6.5, 0.9, 'GDPR Compliance:\nArticles 15-22 (Access, Rectify, Erase,\nRestrict, Port, Objection)',
+                        color='lightsalmon', edgecolor='darkorange', fontsize=13, fontweight='bold')
     
     plt.tight_layout()
     plt.savefig('gdpr_flow.png', dpi=300, bbox_inches='tight')

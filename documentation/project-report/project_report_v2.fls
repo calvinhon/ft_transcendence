@@ -206,6 +206,10 @@ INPUT /usr/share/texmf/tex/latex/lm/ts1lmr.fd
 INPUT /usr/share/texmf/tex/latex/lm/ts1lmr.fd
 INPUT /usr/share/texmf/fonts/tfm/public/lm/ts1-lmr10.tfm
 INPUT /usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc
+INPUT ./figures/gantt.png
+INPUT ./figures/gantt.png
+INPUT ./figures/gantt.png
+INPUT ./figures/gantt.png
 INPUT ./risk_register.tex
 INPUT ./risk_register.tex
 INPUT risk_register.tex
@@ -291,10 +295,6 @@ INPUT ./figures/testing_pyramid.png
 INPUT ./figures/testing_pyramid.png
 INPUT ./figures/testing_pyramid.png
 INPUT ./figures/testing_pyramid.png
-INPUT ./figures/gantt.png
-INPUT ./figures/gantt.png
-INPUT ./figures/gantt.png
-INPUT ./figures/gantt.png
 INPUT ./figures/data_flow_diagram.png
 INPUT ./figures/data_flow_diagram.png
 INPUT ./figures/data_flow_diagram.png

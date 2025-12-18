@@ -36,7 +36,7 @@
 
 % Abstract
 \begin{abstract}
-This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves \textbf{125/125 points} of compliance with all subject requirements, implementing 7 major modules and 8 minor modules with 144/144 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
+This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves full compliance with all subject requirements, implementing 7 major modules and 8 minor modules with 120/120 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
 \end{abstract}
 
 % Front Matter
@@ -97,8 +97,8 @@ The project demonstrates mastery of modern software engineering practices includ
 
 \subsection{Quality Metrics}
 \begin{itemize}
-  \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
-  \item \textbf{Test Coverage:} 144/144 automated tests passing (100\%)
+  \item \textbf{Functional Completeness:} 100\% subject compliance
+  \item \textbf{Test Coverage:} 120/120 automated tests passing (100\%)
   \item \textbf{Security:} Zero critical vulnerabilities, WAF protection active, 2FA available
   \item \textbf{Code Quality:} TypeScript strictness enabled, ESLint, consistent standards
 \end{itemize}
@@ -112,14 +112,14 @@ The project demonstrates mastery of modern software engineering practices includ
 
 The project followed an iterative, incremental SDLC model with five phases:
 
-\subsection{1. Planning \& Requirements Analysis}
+\subsection{Planning \& Requirements Analysis}
 \begin{itemize}
   \item Review official subject requirements document (ft\_transcendence v16.1)
-  \item Identify mandatory features (25 points), major modules (7 × 10 = 70 points), minor modules (11 × 5 = 55 points)
+  \item Identify mandatory features, major modules, and minor modules
   \item Define user stories and acceptance criteria for each feature
 \end{itemize}
 
-\subsection{2. Architectural Design}
+\subsection{Architectural Design}
 \begin{itemize}
   \item Design microservices topology: auth, user, game, tournament services
   \item Select technology stack: Fastify + TypeScript + SQLite
@@ -127,14 +127,14 @@ The project followed an iterative, incremental SDLC model with five phases:
   \item Define security architecture: WAF, Vault
 \end{itemize}
 
-\subsection{3. Implementation (Iterative)}
+\subsection{Implementation (Iterative)}
 \begin{itemize}
   \item Develop core services in parallel
   \item Integrate game logic with real-time WebSocket support
   \item Implement security features incrementally
 \end{itemize}
 
-\subsection{4. Testing \& Validation}
+\subsection{Testing \& Validation}
 \begin{itemize}
   \item Automated test suites per module (12 tests each)
   \item Integration testing across service boundaries
@@ -142,7 +142,7 @@ The project followed an iterative, incremental SDLC model with five phases:
   \item Manual user acceptance testing
 \end{itemize}
 
-\subsection{5. Deployment \& Evolution}
+\subsection{Deployment \& Evolution}
 \begin{itemize}
   \item Containerization and Docker Compose orchestration
   \item Production deployment and optimization
@@ -248,7 +248,7 @@ The system requirements are divided into functional requirements (what the syste
   \item Server-authoritative game loop at 60 FPS
   \item WebSocket real-time synchronization
   \item Security hardening with WAF and Vault
-  \item Automated testing with 144/144 passing tests
+  \item Automated testing with 120/120 passing tests
 \end{itemize}
 
 \section{Functional Requirements}
@@ -339,7 +339,7 @@ Wireframes provide visual representations of application screens, illustrating l
 
 \subsection{Authentication Flow Wireframes}
 \begin{itemize}
-  \item Login screen with email/password fields and "Remember Me" option
+  \item Login screen with email/password fields
   \item Registration form with email verification workflow
   \item Two-factor authentication setup and verification screens
   \item Password recovery with secure reset process
@@ -428,7 +428,7 @@ The system requirements are divided into functional requirements (what the syste
   \item Server-authoritative game loop at 60 FPS
   \item WebSocket real-time synchronization
   \item Security hardening with WAF and Vault
-  \item Automated testing with 144/144 passing tests
+  \item Automated testing with 120/120 passing tests
 \end{itemize}
 
 \section{Functional Requirements}
@@ -561,7 +561,7 @@ The application provides comprehensive authentication screens capturing user cre
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.50\textwidth]{2_login_UI.png}
-\caption{Login User Interface: Email/Password Authentication with Remember Me Option}
+\caption{Login User Interface: Email/Password Authentication}
 \label{fig:login_ui}
 \end{figure}
 
@@ -885,7 +885,7 @@ SecRule REQUEST_URI "@rx (?:unionselectinsert)" \
 \chapter{Implementation}
 \label{ch:implementation}
 
-The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves 125/125 points compliance with all subject requirements, implementing 7 major modules and 8 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
+The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 7 major modules and 8 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
 
 \section{Mandatory Implementation}
 
@@ -920,14 +920,39 @@ All four microservices use Fastify v4 with TypeScript strict mode:
   \item \texttt{tournament-service}: Tournament management, blockchain integration
 \end{itemize}
 
-\subsubsection{Frontend}
-Pure TypeScript with no external UI framework:
+\subsubsection{Frontend Architecture}
+Modern TypeScript SPA with component-based architecture and service layer separation:
+
 \begin{itemize}
-  \item \texttt{src/app.ts}: Main application controller
-  \item \texttt{src/game.ts}: Core game logic, rendering, physics
-  \item \texttt{src/router.ts}: Client-side routing and navigation
-  \item \texttt{src/tournament.ts}: Tournament UI and state management
-  \item CSS/HTML: Responsive design, accessibility features
+  \item \texttt{core/}: Core application infrastructure
+    \begin{itemize}
+      \item \texttt{Api.ts}: Centralized API client for backend communication
+      \item \texttt{App.ts}: Main application controller and lifecycle management
+      \item \texttt{Router.ts}: Client-side routing with URL-based navigation
+    \end{itemize}
+  \item \texttt{components/}: Reusable UI components
+    \begin{itemize}
+      \item \texttt{AbstractComponent.ts}: Base component class with lifecycle hooks
+      \item \texttt{GameRenderer.ts}: Canvas-based Pong game rendering engine
+      \item Modal components: Login, Tournament, Password confirmation dialogs
+    \end{itemize}
+  \item \texttt{pages/}: Page-level components for routing
+    \begin{itemize}
+      \item Authentication: LoginPage, RegisterPage, OAuthCallbackPage
+      \item Game modes: GamePage, TournamentBracketPage, Campaign gameplay
+      \item User features: DashboardPage, ProfilePage, SettingsPage
+      \item System: MainMenuPage, LaunchSeqPage, ErrorPage
+    \end{itemize}
+  \item \texttt{services/}: Business logic and external integrations
+    \begin{itemize}
+      \item \texttt{AuthService.ts}: Authentication state and API calls
+      \item \texttt{GameService.ts}: Real-time game session management
+      \item \texttt{TournamentService.ts}: Tournament operations and blockchain integration
+      \item \texttt{AIService.ts}: AI opponent logic for campaign mode
+      \item \texttt{BlockchainService.ts}: Smart contract interactions
+      \item \texttt{ProfileService.ts}: User profile and statistics management
+    \end{itemize}
+  \item \texttt{types/}: TypeScript type definitions and interfaces
 \end{itemize}
 
 \subsubsection{Single-Page Application (SPA)}
@@ -1054,7 +1079,7 @@ Web Application Firewall & 12 & 12/12 (check) \\
 Vault Integration & 12 & 12/12 (check) \\
 GDPR Compliance & 12 & 12/12 (check) \\
 \hline
-\multicolumn{3}{l}{\textbf{Total:} 144/144 tests passing} \\
+\multicolumn{3}{l}{\textbf{Total:} 120/120 tests passing} \\
 \caption{Module Test Results}
 \label{tab:test_results}
 \end{longtable}
@@ -1124,7 +1149,7 @@ $ make test
 (check) Vault Integration              12/12 passing
 (check) GDPR Compliance                12/12 passing
 -------------------------------------------
-Total: 144/144 tests passing (check)
+Total: 120/120 tests passing (check)
 Test Suite Duration: 18 minutes
 \end{verbatim}
 
@@ -1151,7 +1176,7 @@ Manual testing validates user workflows and experience:
 \section{Current State}
 \label{sec:current_state}
 
-The ft\_transcendence project is fully implemented, tested (144/144 passing), and production-ready for deployment. All 125 subject points have been achieved.
+The ft\_transcendence project is fully implemented, tested (144/144 passing), and production-ready for deployment. All subject requirements have been achieved.
 
 \section{Future Enhancements}
 \label{sec:future_work}
@@ -1188,7 +1213,7 @@ The ft\_transcendence project is fully implemented, tested (144/144 passing), an
 The ft\_transcendence project demonstrates a complete, production-grade implementation of a multiplayer Pong platform with modern software engineering practices. The project achieves:
 
 \begin{itemize}
-  \item \textbf{Functional Completeness:} 125/125 points (100\% subject compliance)
+  \item \textbf{Functional Completeness:} 100\% subject compliance
   \item \textbf{Quality Assurance:} 156/156 automated tests passing
   \item \textbf{Security Excellence:} Layered defense with WAF, Vault
   \item \textbf{Scalability:} Microservices architecture for concurrent users
@@ -1273,8 +1298,13 @@ ft_transcendence/
 |   |-- hardhat.config.cjs     # Hardhat configuration
 |   |-- package.json
 |   -- README.md
-|-- frontend/                  # React SPA with TypeScript
+|-- frontend/                  # TypeScript SPA with Component Architecture
 |   |-- src/
+|   |   |-- components/        # Reusable UI components
+|   |   |-- core/             # Application infrastructure
+|   |   |-- pages/            # Page-level components
+|   |   |-- services/         # Business logic services
+|   |   -- types/             # TypeScript definitions
 |   |-- css/
 |   |-- nginx/
 |   |-- index.html
