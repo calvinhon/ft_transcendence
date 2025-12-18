@@ -26,27 +26,39 @@ def create_box_with_text(ax, x, y, text, color='lightblue',
     # Fixed box dimensions for consistency
     box_width = 2.8
     box_height = 1.2
-    
+
+    # Wrap text for better box fit
+    max_line_length = 22
+    wrapped_lines = []
+    for line in text.split('\n'):
+        wrapped_lines.extend(wrap(line, max_line_length))
+    wrapped_text = '\n'.join(wrapped_lines)
+
+    # Adjust box height for number of lines
+    n_lines = len(wrapped_lines)
+    box_height = max(box_height, 0.5 + 0.45 * n_lines)
+
     # Create the box
-    rect = FancyBboxPatch((x - box_width/2, y - box_height/2), box_width, box_height, 
-                          boxstyle="round,pad=0.05", 
+    rect = FancyBboxPatch((x - box_width/2, y - box_height/2), box_width, box_height,
+                          boxstyle="round,pad=0.05",
                           edgecolor=edgecolor, facecolor=color, linewidth=1.5)
     ax.add_patch(rect)
-    
+
     # Add text with proper centering
-    ax.text(x, y, text, fontsize=fontsize, ha='center', va='center', 
+    ax.text(x, y, wrapped_text, fontsize=fontsize, ha='center', va='center',
             fontweight=fontweight, multialignment='center')
 
 def create_architecture_diagram():
     """Create high-level system architecture diagram"""
     fig, ax = plt.subplots(figsize=(14, 10))
     ax.set_xlim(0, 14)
-    ax.set_ylim(0, 12)
+    ax.set_ylim(0, 13.5)  # Increase y-limit to make more space for the title
     ax.axis('off')
-    
-    # Title
-    ax.text(7, 11.5, 'ft_transcendence System Architecture', 
-            fontsize=13, fontweight='bold', ha='center')
+
+    # Title (move higher, above all drawing, in a separate area)
+        # Place the title at the bottom, below all drawing
+    ax.text(7, 0.3, 'ft_transcendence System Architecture', 
+            fontsize=16, fontweight='bold', ha='center', bbox=dict(boxstyle='round', facecolor='white', alpha=0.95, edgecolor='black'))
     
     # CLIENT LAYER
     client_y = 11.0
@@ -72,9 +84,19 @@ def create_architecture_diagram():
         ax.annotate('', xy=(x, gateway_y + 0.4), xytext=(x, client_y - 0.4),
                    arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
     
-    create_box_with_text(ax, 7, gateway_y, 
-                        'Nginx + ModSecurity + Rate Limiting', 
-                        color='lightyellow', edgecolor='red', fontsize=13, fontweight='bold')
+    # Enlarge the width of the 'Nginx + ModSecurity + Rate Limiting' box
+    def create_wide_box_with_text(ax, x, y, text, color='lightblue', 
+                                  edgecolor='blue', fontsize=13, fontweight='normal', box_width=4.2, box_height=1.2):
+        rect = FancyBboxPatch((x - box_width/2, y - box_height/2), box_width, box_height, 
+                              boxstyle="round,pad=0.05", 
+                              edgecolor=edgecolor, facecolor=color, linewidth=1.5)
+        ax.add_patch(rect)
+        ax.text(x, y, text, fontsize=fontsize, ha='center', va='center', 
+                fontweight=fontweight, multialignment='center')
+
+    create_wide_box_with_text(ax, 7, gateway_y, 
+                             'Nginx + ModSecurity + Rate Limiting', 
+                             color='lightyellow', edgecolor='red', fontsize=13, fontweight='bold', box_width=6.2)
     
     # MICROSERVICES LAYER
     services_y = 6.2
@@ -102,7 +124,7 @@ def create_architecture_diagram():
             ha='center', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     # Arrow from services to data
-    ax.annotate('', xy=(7, data_y + 0.35), xytext=(7, services_y - 0.35),
+    ax.annotate('', xy=(5, data_y + 0.35), xytext=(5, services_y - 0.35),
                arrowprops=dict(arrowstyle='<->', lw=2.5, color='darkred'))
     
     databases = [
@@ -239,7 +261,7 @@ def create_security_layers_diagram():
         ax.text(1.2, y + 0.2, title, fontsize=13, fontweight='bold', va='center')
         
         # Description on the right
-        ax.text(6.5, y, description, fontsize=13, va='center', style='italic')
+        ax.text(4.5, y, description, fontsize=13, va='center', style='italic')
     
     # Attack prevention box
     prevention_text = 'Prevents: SQLi | XSS | CSRF | DDoS | Brute Force | Unauthorized Access | Data Breaches'
@@ -478,7 +500,7 @@ def create_deployment_topology():
     
     # Connections to databases
     for x, _ in services_row1:
-        ax.annotate('', xy=(11.4, 6.4), xytext=(x + 0.9, 6.4),
+        ax.annotate('', xy=(11.4, 6.0), xytext=(x + 0.9, 6.0),
                    arrowprops=dict(arrowstyle='->', lw=1.5, color='blue', linestyle='dashed', alpha=0.5))
     
     plt.tight_layout()
@@ -504,25 +526,25 @@ def create_testing_pyramid():
     unit_points = np.array([[1, 1], [9, 1], [8, 3], [2, 3]])
     unit_poly = Polygon(unit_points, facecolor='lightgreen', edgecolor='darkgreen', linewidth=2)
     ax.add_patch(unit_poly)
-    ax.text(5, 2, 'Unit Tests\n(Low-level functions)\n~60 tests', 
+    ax.text(5, 2, 'Unit Tests\n(Low-level functions)\n~62 tests', 
             fontsize=13, ha='center', va='center', fontweight='bold')
     
     # Integration tests (middle)
     int_points = np.array([[2.5, 3.5], [7.5, 3.5], [6.5, 5.5], [3.5, 5.5]])
     int_poly = Polygon(int_points, facecolor='lightyellow', edgecolor='orange', linewidth=2)
     ax.add_patch(int_poly)
-    ax.text(5, 4.5, 'Integration Tests\n(Service interactions)\n~80 tests', 
+    ax.text(5, 4.5, 'Integration Tests\n(Service interactions)\n~78 tests', 
             fontsize=13, ha='center', va='center', fontweight='bold')
     
-    # E2E tests (top)
-    e2e_points = np.array([[4, 6], [6, 6], [5.5, 8], [4.5, 8]])
+        # E2E tests (top, widened for better text wrapping)
+    e2e_points = np.array([[3.5, 6], [6.5, 6], [6, 8], [4, 8]])
     e2e_poly = Polygon(e2e_points, facecolor='lightblue', edgecolor='darkblue', linewidth=2)
     ax.add_patch(e2e_poly)
-    ax.text(5, 7, 'End-to-End Tests\n(Full workflows)\n~40 tests', 
-            fontsize=13, ha='center', va='center', fontweight='bold')
+    ax.text(5, 7, 'End-to-End Tests\n(Full workflows)\n~44 tests', 
+                fontsize=13, ha='center', va='center', fontweight='bold')
     
     # Total info
-    ax.text(5, 0.5, 'Total: 180/180 Tests Passing (100%) | Test Duration: ~18 minutes', 
+    ax.text(5, 0.5, 'Total: 184/184 Tests Passing (100%) | Test Duration: ~18 minutes', 
             fontsize=13, ha='center', bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9),
             fontweight='bold')
     

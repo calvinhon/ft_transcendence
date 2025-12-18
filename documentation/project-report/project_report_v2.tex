@@ -36,7 +36,7 @@
 
 % Abstract
 \begin{abstract}
-This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves full compliance with all subject requirements, implementing 7 major modules and 8 minor modules with 120/120 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
+This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves full compliance with all subject requirements, implementing 10 major modules and 6 minor modules with 120/120 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
 \end{abstract}
 
 % Front Matter
@@ -162,6 +162,8 @@ The project was executed according to the following timeline:
   \item \textbf{Phase 5 (Deployment \& Monitoring):} 1 week
 \end{itemize}
 
+The Gantt Chart includes project milestones, tasks, sub-tasks, owner, duration, dependencies, and the overall project timeline.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{gantt.png}
@@ -179,7 +181,7 @@ Project executed in 5 major phases over 13 weeks:
   \item \textbf{Phase 5 (Week 13):} Deployment, monitoring setup, production readiness
 \end{itemize}
 
-\section{Risk Register and Risk Matrix}
+\section{Risk Register}
 \label{sec:risk_sdlc}
 
 The project identified and managed significant risks throughout the SDLC.
@@ -193,250 +195,48 @@ The project identified and managed significant risks throughout the SDLC.
 \end{itemize}
 
 \subsection{Risk Mitigation Integration in SDLC}
-Risk mitigation was integrated throughout all SDLC phases:
-\begin{itemize}
-  \item \textbf{Planning:} Risk identification and assessment
-  \item \textbf{Design:} Security architecture and fallback strategies
-  \item \textbf{Implementation:} Code reviews and automated testing
-  \item \textbf{Testing:} Comprehensive validation and security scanning
-  \item \textbf{Deployment:} Gradual rollout and monitoring
-\end{itemize}
-
-\subsection{Risk Register Table}
-
-\input{risk_register.tex}
-
-\subsection{Risk Matrix Table}
 
 \begin{table}[h!]
 \centering
-\caption{Risk Matrix}
-\begin{tabular}{c c c c c c}
+\caption{Risk Register}
+\begin{tabular}{p{0.8cm} p{3.5cm} c c c p{3.5cm} p{4cm}}
 \toprule
-\multirow{2}{*}{Likelihood $\to$} & \multicolumn{5}{c}{Impact $\downarrow$} \\
-\cmidrule{2-6}
- & 1 (Low) & 2 (Low-Mod) & 3 (Moderate) & 4 (High) & 5 (Critical) \\
+ID & Description & Likelihood & Impact & Severity & Owner & Mitigation \\
 \midrule
-5 (Very High) & 5 & 10 & 15 & 20 & 25 \\
-4 (High) & 4 & 8 & 12 & 16 & 20 \\
-3 (Moderate) & 3 & 6 & 9 & 12 & 15 \\
-2 (Low) & 2 & 4 & 6 & 8 & 10 \\
-1 (Very Low) & 1 & 2 & 3 & 4 & 5 \\
+1 & Server downtime during peak testing & 2 & 4 & \cellcolor{yellow!30}8 & DevOps (Mahad \& Hoach) & Monitoring, alerts, automated restarts \\
+2 & SQL injection attempt in legacy code & 1 & 5 & \cellcolor{green!30}5 & Security Team (Danish \& Calvin) & Parameterized queries + WAF rules \\
+3 & Data leak via misconfigured logs & 2 & 4 & \cellcolor{yellow!30}8 & Development Team (Hoach \& Calvin) & Redact PII in logs, access control \\
+4 & OAuth provider downtime & 3 & 3 & \cellcolor{yellow!30}9 & QA Team (Calvin \& Danish) & Alternative login methods (email) \\
+5 & Blockchain hardhat node failure & 1 & 4 & \cellcolor{green!30}4 & Project Manager (Danish \& Calvin) & Automated backup and local fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Risk scoring: Low (1-5), Moderate (6-12), High (13-20), Critical (21-25)
-
-\section{High-Level Overview of Functional and Technical Requirements}
-\label{sec:req_overview_sdlc}
-
-The system requirements are divided into functional requirements (what the system must do) and technical requirements (how it achieves those goals). Functional requirements focus on user interactions, gameplay, and features, while technical requirements specify the underlying architecture, technologies, and performance criteria.
-
-\subsection{Functional Requirements Overview}
-\begin{itemize}
-  \item User authentication and profile management
-  \item Real-time multiplayer Pong gameplay with various modes
-  \item Tournament system with blockchain recording
-  \item Social features (friends, leaderboards, achievements)
-  \item GDPR compliance for data protection
-\end{itemize}
-
-\subsection{Technical Requirements Overview}
-\begin{itemize}
-  \item Microservices architecture with independent databases
-  \item Server-authoritative game loop at 60 FPS
-  \item WebSocket real-time synchronization
-  \item Security hardening with WAF and Vault
-  \item Automated testing with 120/120 passing tests
-\end{itemize}
-
-\section{Functional Requirements}
-\label{sec:func_req_sdlc}
-
-Functional requirements define what the system must accomplish from the user's perspective, focusing on user interactions, gameplay mechanics, and feature functionality.
-
-\subsection{User Authentication and Account Management}
-\begin{itemize}
-  \item User registration with email verification
-  \item Secure login with password hashing (bcrypt)
-  \item Optional two-factor authentication (TOTP)
-  \item Password recovery with secure reset flow
-  \item Account profile management and settings
-\end{itemize}
-
-\subsection{Gameplay and Real-Time Interaction}
-\begin{itemize}
-  \item Real-time multiplayer Pong with WebSocket synchronization
-  \item Multiple game modes: Campaign, Arcade, Tournament
-  \item Server-authoritative game loop at 60 FPS
-  \item Fair play enforcement and cheat prevention
-  \item Live score updates and game state broadcasting
-\end{itemize}
-
-\subsection{Social Features and Community}
-\begin{itemize}
-  \item Friend system for player connections
-  \item Leaderboards and ranking system
-  \item Tournament bracket management
-  \item Achievement and progression tracking
-  \item Player statistics and match history
-\end{itemize}
-
-\subsection{Administrative and Compliance}
-\begin{itemize}
-  \item GDPR-compliant data handling and user rights
-  \item Tournament result recording on blockchain
-  \item Automated testing and quality assurance
-  \item System monitoring and performance tracking
-\end{itemize}
-
-\section{Technical Requirements}
-\label{sec:tech_req_sdlc}
-
-Technical requirements specify the underlying architecture, technologies, and performance criteria necessary to achieve the functional requirements.
-
-\subsection{Architecture and Infrastructure}
-\begin{itemize}
-  \item Microservices architecture with independent services
-  \item Containerized deployment using Docker
-  \item Reverse proxy and load balancing with Nginx
-  \item Database isolation per service (SQLite)
-  \item Service orchestration with Docker Compose
-\end{itemize}
-
-\subsection{Performance and Scalability}
-\begin{itemize}
-  \item 60 FPS server-authoritative game loop
-  \item Sub-50ms WebSocket latency for real-time gameplay
-  \item Concurrent user support for multiplayer matches
-  \item Efficient resource utilization and memory management
-  \item Horizontal scaling capabilities for future growth
-\end{itemize}
-
-\subsection{Security and Compliance}
-\begin{itemize}
-  \item HTTPS/TLS encryption for all communications
-  \item Web Application Firewall (ModSecurity) protection
-  \item Secrets management with HashiCorp Vault
-  \item GDPR compliance for data protection and privacy
-  \item SQL injection and XSS prevention measures
-\end{itemize}
-
-\subsection{Integration and Interoperability}
-\begin{itemize}
-  \item RESTful API communication between services
-  \item WebSocket protocol for real-time data exchange
-  \item Blockchain integration for tournament records
-  \item OAuth support for external authentication
-  \item Email service integration for notifications
-\end{itemize}
-
-\section{Wireframes and User Interface Design}
-\label{sec:wireframes_sdlc}
-
-Wireframes provide visual representations of application screens, illustrating layout, functionality, and user navigation flow. The design follows human-computer interaction principles with intuitive navigation and clear visual hierarchy.
-
-\subsection{Authentication Flow Wireframes}
-\begin{itemize}
-  \item Login screen with email/password fields
-  \item Registration form with email verification workflow
-  \item Two-factor authentication setup and verification screens
-  \item Password recovery with secure reset process
-\end{itemize}
-
-\subsection{Game Interface Wireframes}
-\begin{itemize}
-  \item Main menu with game mode selection (Campaign, Arcade, Tournament)
-  \item Game settings customization (difficulty, ball speed, paddle size)
-  \item Real-time gameplay interface with score display and controls
-  \item Tournament bracket visualization and match scheduling
-\end{itemize}
-
-\subsection{Social and Profile Features}
-\begin{itemize}
-  \item User profile management and statistics display
-  \item Friend system interface for player connections
-  \item Leaderboard rankings and achievement showcase
-  \item Tournament history and result tracking
-\end{itemize}
-
-See Chapter 3 for detailed wireframe screenshots with annotations.
-
-\section{Flowcharts and System Processes}
-\label{sec:flowcharts_sdlc}
-
-Flowcharts illustrate primary user interactions, system processes, and data flow across key components, providing a comprehensive overview of the project's functional workflow.
-
-\subsection{User Authentication Flow}
-The authentication process follows a secure multi-step verification:
-\begin{enumerate}
-  \item User submits login credentials
-  \item System validates email format and password strength
-  \item Database lookup for user account verification
-  \item Optional two-factor authentication challenge
-  \item JWT token generation and session establishment
-  \item Access granted to authenticated user
-\end{enumerate}
-
-\subsection{Game Session Flow}
-\begin{enumerate}
-  \item Player selects game mode and settings
-  \item System matches players or initializes AI opponent
-  \item WebSocket connection established for real-time communication
-  \item Server initializes game state and starts 60 FPS loop
-  \item Player inputs processed and physics calculations performed
-  \item Game state broadcast to all connected clients
-  \item Score updates and win conditions checked
-  \item Match completion and results recording
-\end{enumerate}
-
-\subsection{Tournament Management Flow}
-\begin{enumerate}
-  \item Tournament creation with bracket configuration
-  \item Player registration and participant management
-  \item Automated match scheduling and pairing
-  \item Real-time match execution and result tracking
-  \item Bracket advancement and elimination logic
-  \item Tournament completion and winner determination
-  \item Blockchain recording of final results
-\end{enumerate}
-
-See Appendix B for detailed system flow diagrams.
+Risk mitigation was integrated throughout all SDLC phases:
 
 % ============================================================================
 \chapter{Requirement Analysis}
 \label{ch:requirements}
 
-\section{High-Level Overview of Functional and Technical Requirements}
+
+\section{High-Level Overview of Requirements}
 \label{sec:req_overview}
 
-The system requirements are divided into functional requirements (what the system must do) and technical requirements (how it achieves those goals). Functional requirements focus on user interactions, gameplay, and features, while technical requirements specify the underlying architecture, technologies, and performance criteria.
+The system requirements are divided into functional and technical requirements. This chapter provides only a high-level summary; all detailed UI, wireframes, and architecture figures are presented in the Design chapter.
 
-\subsection{Functional Requirements Overview}
-\begin{itemize}
-  \item User authentication and profile management
-  \item Real-time multiplayer Pong gameplay with various modes
-  \item Tournament system with blockchain recording
-  \item Social features (friends, leaderboards, achievements)
-  \item GDPR compliance for data protection
-\end{itemize}
+\section{Requirements}
+\label{sec:req}
 
-\subsection{Technical Requirements Overview}
-\begin{itemize}
-  \item Microservices architecture with independent databases
-  \item Server-authoritative game loop at 60 FPS
-  \item WebSocket real-time synchronization
-  \item Security hardening with WAF and Vault
-  \item Automated testing with 120/120 passing tests
-\end{itemize}
 
-\section{Functional Requirements}
+Requirements specify what the system must do and how it achieves those goals. Detailed implementation, UI/UX, and architecture are described in the Design chapter.
+
+\subsection{Functional Requirements}
 \label{sec:func_req}
 
-Functional requirements specify \textit{what} the system must do from the user's perspective.
 
-\subsection{User Management \& Authentication}
+Functional requirements specify \textit{what} the system must do from the user's perspective. (See Design chapter for detailed UI, wireframes, and flows.)
+
+\subsubsection{User Management \& Authentication}
 \begin{itemize}
   \item FR-1: Users shall register with email and password
   \item FR-2: Users shall authenticate via local credentials
@@ -444,7 +244,7 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-5: System shall support password reset via email
 \end{itemize}
 
-\subsection{Gameplay \& Real-Time Features}
+\subsubsection{Gameplay \& Real-Time Features}
 \begin{itemize}
   \item FR-6: Pong game shall render at 60 FPS with server-authoritative game loop
   \item FR-7: Players shall control paddles via keyboard input
@@ -453,7 +253,7 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-10: Players shall access multiple game modes: campaign, arcade, tournament
 \end{itemize}
 
-\subsection{Social \& Leaderboard Features}
+\subsubsection{Social \& Leaderboard Features}
 \begin{itemize}
   \item FR-11: Users shall add, accept, and remove friends
   \item FR-12: Users shall view global leaderboards (wins, win rate, rank)
@@ -461,7 +261,7 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-14: System shall display player profiles with achievements
 \end{itemize}
 
-\subsection{Tournament Management}
+\subsubsection{Tournament Management}
 \begin{itemize}
   \item FR-15: Users shall create and configure tournaments
   \item FR-16: System shall manage tournament bracket progression
@@ -469,19 +269,20 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-18: Users shall view tournament standings and schedules
 \end{itemize}
 
-\subsection{GDPR Compliance}
+\subsubsection{GDPR Compliance}
 \begin{itemize}
   \item FR-22: Users shall export personal data (JSON format)
   \item FR-23: Users shall request account deletion with data anonymization
   \item FR-24: System shall maintain consent logs for data processing
 \end{itemize}
 
-\section{Technical Requirements}
+\subsection{Technical Requirements}
 \label{sec:tech_req}
 
-Technical requirements specify \textit{how} the system shall achieve functional goals.
 
-\subsection{Architecture \& Infrastructure}
+Technical requirements specify \textit{how} the system shall achieve functional goals. (See Design chapter for architecture diagrams and implementation details.)
+
+\subsubsection{Architecture \& Infrastructure}
 \begin{itemize}
   \item TR-1: Backend shall implement microservices architecture (4 services: auth, user, game, tournament)
   \item TR-2: Each microservice shall operate independently with own database (SQLite)
@@ -490,16 +291,18 @@ Technical requirements specify \textit{how} the system shall achieve functional 
   \item TR-5: System shall be deployable via Docker Compose
 \end{itemize}
 
-\subsection{Technology Stack}
+\subsubsection{Technology Stack}
 \begin{itemize}
   \item TR-6: Backend: Node.js 18+ with Fastify v4 framework
   \item TR-7: Language: TypeScript with strict mode enabled
   \item TR-8: Frontend: Vite + TypeScript with vanilla DOM APIs
   \item TR-9: Database: SQLite 3 (optimized with prepared statements)
   \item TR-10: Real-time communication: WebSocket protocol
+  \item TR-11: Blockchain: Solidity with Hardhat framework
+  \item TR-12: 3D Graphics: Babylon.js for game rendering
 \end{itemize}
 
-\subsection{Security Requirements}
+\subsubsection{Security Requirements}
 \begin{itemize}
   \item TR-11: All HTTP traffic shall enforce HTTPS with TLS 1.2+
   \item TR-13: Sensitive headers shall include Secure and HttpOnly flags
@@ -510,205 +313,13 @@ Technical requirements specify \textit{how} the system shall achieve functional 
   \item TR-18: Input validation shall enforce type and length constraints
 \end{itemize}
 
-\subsection{Performance Requirements}
+\subsubsection{Performance Requirements}
 \begin{itemize}
   \item TR-21: Game loop shall execute at 60 FPS
   \item TR-22: WebSocket messages shall be sent at 50 ms intervals
   \item TR-23: API response time shall be < 200 ms for 95th percentile
   \item TR-24: System shall support 100+ concurrent WebSocket connections per instance
 \end{itemize}
-
-\section{Wireframes}
-\label{sec:wireframes}
-
-\subsection{Main Menu Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{3_Main_Menu.png}
-\caption{Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}
-\label{fig:main_menu}
-\end{figure}
-
-The main menu interface was tested for:
-\begin{itemize}
-  \item Responsive layout across different screen sizes
-  \item Navigation to all game modes
-  \item Visual consistency with design specifications
-  \item Accessibility compliance (WCAG 2.1)
-\end{itemize}
-
-\subsection{Game Mode Selection}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{game_modes.png}
-\caption{Available Game Modes: Campaign, Arcade, Tournament}
-\label{fig:game_modes}
-\end{figure}
-
-Game mode selection functionality was validated through:
-\begin{itemize}
-  \item End-to-end user workflow testing
-  \item Integration with backend game services
-  \item Error handling for invalid selections
-  \item Performance under concurrent user load
-\end{itemize}
-
-\subsection{Authentication UI Implementation}
-
-The application provides comprehensive authentication screens capturing user credentials securely:
-
-\subsubsection{Login Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.50\textwidth]{2_login_UI.png}
-\caption{Login User Interface: Email/Password Authentication}
-\label{fig:login_ui}
-\end{figure}
-
-\subsubsection{Registration Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.50\textwidth]{3_create_new_account_UI.png}
-\caption{Account Registration UI: New Account Creation with Email Verification}
-\label{fig:register_ui}
-\end{figure}
-
-\subsubsection{Two-Factor Authentication (2FA)}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.50\textwidth]{2_Oauth_2Step_verification.png}
-\caption{2FA Verification: OAuth 2-Step Verification and TOTP Setup}
-\label{fig:2fa_ui}
-\end{figure}
-
-%%\subsubsection{Password Recovery}
-%%\begin{figure}[H]
-%%\centering
-%%\includegraphics[width=0.50\textwidth]{3_Forget_Password.png}
-%%\caption{Password Recovery: Secure Password Reset Flow with Email Verification}
-%%\label{fig:password_reset_ui}
-%%\end{figure}
-
-\subsection{Gameplay Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{multiplayer_arcade.png}
-\caption{Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}
-\label{fig:arcade_gameplay}
-\end{figure}
-
-Real-time gameplay interfaces were tested for:
-\begin{itemize}
-  \item WebSocket connection stability
-  \item Real-time score updates
-  \item Input responsiveness (keyboard/mouse)
-  \item Visual feedback during gameplay
-\end{itemize}
-
-\subsection{Game Settings}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{4_playemode_game_settings.png}
-\caption{Game Settings: Difficulty, Ball Speed, Paddle Size Customization}
-\label{fig:game_settings}
-\end{figure}
-
-Game customization settings were validated for:
-\begin{itemize}
-  \item Parameter validation and bounds checking
-  \item Real-time application of settings
-  \item Persistence across game sessions
-  \item Impact on game physics and AI behavior
-\end{itemize}
-
-\subsection{Campaign Mode}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{Campaign_game_running.png}
-\caption{Campaign Mode: Single-Player Progression Against AI Opponent}
-\label{fig:campaign_gameplay}
-\end{figure}
-
-Campaign progression system was tested for:
-\begin{itemize}
-  \item Level advancement logic
-  \item AI difficulty scaling
-  \item Progress persistence and recovery
-  \item Achievement system integration
-\end{itemize}
-
-\subsection{Tournament System}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{gamemode_tournament.png}
-\caption{Tournament Mode: Bracket-Based Competition with Multiple Players}
-\label{fig:tournament_mode}
-\end{figure}
-
-Tournament functionality was validated through:
-\begin{itemize}
-  \item Bracket generation algorithms
-  \item Multi-player synchronization
-  \item Match scheduling and results tracking
-  \item Blockchain integration for result verification
-\end{itemize}
-
-\subsection{User Profile and Statistics}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{13_dashboard_profile.png}
-\caption{User Dashboard: Profile Information, Statistics Overview, Recent Activity}
-\label{fig:user_dashboard}
-\end{figure}
-
-User profile features were tested for:
-\begin{itemize}
-  \item Data privacy and GDPR compliance
-  \item Statistics calculation accuracy
-  \item Profile update functionality
-  \item Social features integration
-\end{itemize}
-
-\subsection{Blockchain Integration}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{12_blockchain_record.png}
-\caption{Blockchain Record: Tournament Result Verification on Immutable Ledger}
-\label{fig:blockchain_record}
-\end{figure}
-
-Blockchain integration was validated for:
-\begin{itemize}
-  \item Smart contract deployment
-  \item Transaction security and immutability
-  \item Integration with tournament results
-  \item Gas optimization and cost efficiency
-\end{itemize}
-
-\section{Flowcharts}
-\label{sec:flowcharts}
-
-Flowcharts illustrate the primary user interactions, system processes, and data flow across key components.
-
-\subsection{Game Loop Synchronization}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{game_loop_diagram.png}
-\caption{60 FPS Server-Authoritative Game Loop with Client State Synchronization}
-\label{fig:game_loop}
-\end{figure}
-
-The game operates on a server-authoritative model at 60 FPS (16.67 milliseconds per frame). This ensures fair gameplay and prevents client-side cheating.
-
-\subsection{User Authentication Flow}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{authentication_flow.png}
-\caption{User Registration and Authentication Flow with Optional 2FA}
-\label{fig:auth_flow}
-\end{figure}
-
-The authentication flow supports multiple pathways including standard email/password authentication, optional two-factor authentication, and password recovery mechanisms.
 
 % ============================================================================
 \chapter{Design}
@@ -881,11 +492,196 @@ SecRule REQUEST_URI "@rx (?:unionselectinsert)" \
   "id:1001,phase:2,deny,status:403"
 \end{verbatim}
 
+\section{Wireframes and User Interface Design}
+\label{sec:wireframes_design}
+
+Wireframes provide visual representations of application screens, illustrating layout, functionality, and user navigation flow. The design follows human-computer interaction principles with intuitive navigation and clear visual hierarchy.
+
+\subsection{Authentication Flow Wireframes}
+\begin{itemize}
+  \item Login screen with email/password fields
+  \item Registration form with email verification workflow
+  \item Two-factor authentication setup and verification screens
+  \item Password recovery with secure reset process
+\end{itemize}
+
+\subsection{Game Interface Wireframes}
+\begin{itemize}
+  \item Main menu with game mode selection (Campaign, Arcade, Tournament)
+  \item Game settings customization (difficulty, ball speed, paddle size)
+  \item Real-time gameplay interface with score display and controls
+  \item Tournament bracket visualization and match scheduling
+\end{itemize}
+
+\subsection{Social and Profile Features}
+\begin{itemize}
+  \item User profile management and statistics display
+  \item Friend system interface for player connections
+  \item Leaderboard rankings and achievement showcase
+  \item Tournament history and result tracking
+\end{itemize}
+
+\subsection{Blockchain Integration}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{12_blockchain_record.png}
+\caption{Blockchain Record: Tournament Result Verification on Immutable Ledger}
+\label{fig:blockchain_record}
+\end{figure}
+
+Blockchain integration was validated for:
+\begin{itemize}
+  \item Smart contract deployment
+  \item Transaction security and immutability
+  \item Integration with tournament results
+  \item Gas optimization and cost efficiency
+\end{itemize}
+
+\subsection{Main Menu Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{3_Main_Menu.png}
+\caption{Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}
+\label{fig:main_menu}
+\end{figure}
+
+The main menu interface was tested for:
+\begin{itemize}
+  \item Responsive layout across different screen sizes
+  \item Navigation to all game modes
+  \item Visual consistency with design specifications
+  \item Accessibility compliance (WCAG 2.1)
+\end{itemize}
+
+\subsection{Game Mode Selection}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{game_modes.png}
+\caption{Available Game Modes: Campaign, Arcade, Tournament}
+\label{fig:game_modes}
+\end{figure}
+
+Game mode selection functionality was validated through:
+\begin{itemize}
+  \item End-to-end user workflow testing
+  \item Integration with backend game services
+  \item Error handling for invalid selections
+  \item Performance under concurrent user load
+\end{itemize}
+
+\subsection{Authentication UI Implementation}
+
+The application provides comprehensive authentication screens capturing user credentials securely:
+
+\subsubsection{Login Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{2_login_UI.png}
+\caption{Login User Interface: Email/Password Authentication}
+\label{fig:login_ui}
+\end{figure}
+
+\subsubsection{Registration Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{3_create_new_account_UI.png}
+\caption{Account Registration UI: New Account Creation with Email Verification}
+\label{fig:register_ui}
+\end{figure}
+
+\subsubsection{Two-Factor Authentication (2FA)}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.50\textwidth]{2_Oauth_2Step_verification.png}
+\caption{2FA Verification: OAuth 2-Step Verification and TOTP Setup}
+\label{fig:2fa_ui}
+\end{figure}
+
+\subsection{Gameplay Interface}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{multiplayer_arcade.png}
+\caption{Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}
+\label{fig:arcade_gameplay}
+\end{figure}
+
+Real-time gameplay interfaces were tested for:
+\begin{itemize}
+  \item WebSocket connection stability
+  \item Real-time score updates
+  \item Input responsiveness (keyboard/mouse)
+  \item Visual feedback during gameplay
+\end{itemize}
+
+\subsection{Game Settings}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{4_playemode_game_settings.png}
+\caption{Game Settings: Difficulty, Ball Speed, Paddle Size Customization}
+\label{fig:game_settings}
+\end{figure}
+
+Game customization settings were validated for:
+\begin{itemize}
+  \item Parameter validation and bounds checking
+  \item Real-time application of settings
+  \item Persistence across game sessions
+  \item Impact on game physics and AI behavior
+\end{itemize}
+
+\subsection{Campaign Mode}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{Campaign_game_running.png}
+\caption{Campaign Mode: Single-Player Progression Against AI Opponent}
+\label{fig:campaign_gameplay}
+\end{figure}
+
+Campaign progression system was tested for:
+\begin{itemize}
+  \item Level advancement logic
+  \item AI difficulty scaling
+  \item Progress persistence and recovery
+  \item Achievement system integration
+\end{itemize}
+
+\subsection{Tournament System}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{gamemode_tournament.png}
+\caption{Tournament Mode: Bracket-Based Competition with Multiple Players}
+\label{fig:tournament_mode}
+\end{figure}
+
+Tournament functionality was validated through:
+\begin{itemize}
+  \item Bracket generation algorithms
+  \item Multi-player synchronization
+  \item Match scheduling and results tracking
+  \item Blockchain integration for result verification
+\end{itemize}
+
+\subsection{User Profile and Statistics}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{13_dashboard_profile.png}
+\caption{User Dashboard: Profile Information, Statistics Overview, Recent Activity}
+\label{fig:user_dashboard}
+\end{figure}
+
+User profile features were tested for:
+\begin{itemize}
+  \item Data privacy and GDPR compliance
+  \item Statistics calculation accuracy
+  \item Profile update functionality
+  \item Social features integration
+\end{itemize}
+
 % ============================================================================
 \chapter{Implementation}
 \label{ch:implementation}
 
-The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 7 major modules and 8 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
+The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 10 major modules and 6 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
 
 \section{Mandatory Implementation}
 
@@ -963,65 +759,69 @@ Browser back/forward navigation via client-side routing:
   \item Progressive enhancement for accessibility
 \end{itemize}
 
-\section{Major Modules Implementation}
+\section{Web Implementation}
 
 \subsection{Backend Framework}
 Fastify v4 with Node.js and TypeScript for all microservices, providing REST APIs and WebSocket support.
 
-\subsection{Database}
-SQLite 3 with connection pooling and parameterized queries for data persistence across all services.
-
-\subsection{User Management}
-Standard user management with registration, authentication, profiles, friendships, and remote Google OAuth integration.
-
-\subsection{Gameplay and User Experience}
-\begin{itemize}
-  \item AI opponent with adaptive difficulty algorithms
-  \item Multiplayer support for tournaments with more than 2 players
-  \item Campaign mode with progression system and achievements
-  \item Game customization options (difficulty, ball speed, paddle size)
-  \item User and game statistics dashboards
-\end{itemize}
-
-\subsection{Cybersecurity}
-\begin{itemize}
-  \item Web Application Firewall with ModSecurity and OWASP CRS rules
-  \item HashiCorp Vault for secrets management
-  \item Two-Factor Authentication with JWT tokens
-\end{itemize}
-
-\subsection{DevOps}
-\begin{itemize}
-  \item ELK stack for centralized logging and monitoring
-  \item Prometheus metrics collection
-  \item Microservices architecture with independent deployment
-\end{itemize}
-
 \subsection{Blockchain Integration}
 Avalanche blockchain with Solidity smart contracts for immutable tournament result recording.
-
-\subsection{Server-Side Pong}
-API-based Pong implementation with CLI support for remote players.
-
-\section{Minor Modules Implementation}
 
 \subsection{Frontend Framework}
 Tailwind CSS for responsive UI components and styling.
 
-\subsection{3D Graphics}
-Advanced three-dimensional rendering techniques for enhanced visual experience.
+\subsection{Database}
+SQLite 3 with connection pooling and parameterized queries for data persistence across all services.
 
-\subsection{Accessibility Features}
-WCAG 2.1 compliance with screen reader support and keyboard navigation.
+\section{User Management Implementation}
+
+\subsection{Standard User Management}
+Standard user management with registration, authentication, profiles, friendships, match history, and stats.
+
+\subsection{Remote Authentication}
+Google OAuth integration for secure remote authentication.
+
+\section{Gameplay and User Experience Implementation}
+
+\subsection{Remote Players}
+WebSocket-based real-time multiplayer support for players on separate computers.
+
+\subsection{Multiplayer (>2 Players)}
+Tournament system supporting more than 2 players with live controls.
+
+\section{AI-Algo Implementation}
+
+\subsection{AI Opponent}
+AI opponent with keyboard input simulation and adaptive difficulty.
+
+\subsection{User and Game Stats Dashboards}
+Comprehensive statistics dashboards for user profiles and game sessions.
+
+\section{Cybersecurity Implementation}
+
+\subsection{WAF/ModSecurity with Vault}
+Web Application Firewall with ModSecurity and OWASP CRS rules, integrated with HashiCorp Vault for secrets management.
+
+\subsection{GDPR Compliance}
+GDPR compliance with user data anonymization, local data management, and account deletion.
+
+\section{Devops Implementation}
+
+\subsection{Microservices Architecture}
+Backend designed as independent microservices with REST API communication.
+
+\section{Server-Side Pong Implementation}
+
+\subsection{Server-Side Pong and API}
+Server-side Pong implementation with API for game state management and CLI integration.
+
+\section{Accessibility Implementation}
 
 \subsection{Server-Side Rendering}
 Dynamic HTML generation for improved SEO and initial page load performance.
 
-\subsection{Multi-Language Support}
-Internationalization with support for multiple languages.
-
-\subsection{Advanced Monitoring}
-Real-time performance monitoring and alerting systems.
+\subsection{Support on All Devices}
+Responsive design supporting desktops, tablets, and smartphones.
 
 % ============================================================================
 \chapter{Testing}
@@ -1062,25 +862,22 @@ The project employs a multi-layered testing approach following the testing pyram
 
 \begin{longtable}[h]{p{3.5cm}p{2cm}p{1.5cm}}
 \hline
-\textbf{Module} & \textbf{Tests} & \textbf{Result} \\
+\textbf{Subject Category} & \textbf{Tests} & \textbf{Result} \\
 \hline
 \endhead
 \hline
 \endfoot
-Backend Framework & 12 & 12/12 (check) \\
-Database Connection & 12 & 12/12 (check) \\
-Backend Gameplay & 12 & 12/12 (check) \\
-Real-Time Sync & 12 & 12/12 (check) \\
-Account Handling & 12 & 12/12 (check) \\
-Blockchain & 12 & 12/12 (check) \\
-Server-Side Rendering & 12 & 12/12 (check) \\
-Artificial Intelligence & 12 & 12/12 (check) \\
-Web Application Firewall & 12 & 12/12 (check) \\
-Vault Integration & 12 & 12/12 (check) \\
-GDPR Compliance & 12 & 12/12 (check) \\
+Web & 36 & 36/36 (check) \\
+User Management & 0 & 0/0 \\
+Gameplay and User Experience & 0 & 0/0 \\
+AI-Algo & 24 & 24/24 (check) \\
+Cybersecurity & 24 & 24/24 (check) \\
+Devops & 12 & 12/12 (check) \\
+Server-Side Pong & 12 & 12/12 (check) \\
+Accessibility & 12 & 12/12 (check) \\
 \hline
 \multicolumn{3}{l}{\textbf{Total:} 120/120 tests passing} \\
-\caption{Module Test Results}
+\caption{Module Test Results by Subject Category}
 \label{tab:test_results}
 \end{longtable}
 
@@ -1365,7 +1162,7 @@ make full-clean        # Remove containers and volumes
   \item[WebSocket] Full-duplex communication protocol
 \end{description}
 
-\chapter{References}
+
 \label{app:references}
 
 \begin{enumerate}

@@ -2,15 +2,15 @@
 \begin{table}[h!]
 \centering
 \caption{Risk Register}
-\begin{tabular}{p{0.8cm} p{5cm} c c c p{2cm} p{3.5cm}}
+\begin{tabular}{p{0.6m} p{3.5cm} c c c p{3.5cm} p{3.5cm}}
 \toprule
 ID & Description & Likelihood & Impact & Severity & Owner & Mitigation \\
 \midrule
-1 & Server downtime during peak testing & 2 & 4 & 8 & DevOps & Monitoring, alerts, automated restarts \\
-2 & SQL injection attempt in legacy code & 1 & 5 & 5 & Backend & Parameterized queries + WAF rules \\
-3 & Data leak via misconfigured logs & 2 & 4 & 8 & Security & Redact PII in logs, access control \\
-4 & OAuth provider downtime & 3 & 3 & 9 & Auth Team & Alternative login methods (email) \\
-5 & Blockchain hardhat node failure & 1 & 4 & 4 & Blockchain Team & Automated backup and local fallback \\
+1 & Server downtime during peak testing & 2 & 4 & \cellcolor{yellow!30}8 & DevOps (Mahad \& Hoach) & Monitoring, alerts, automated restarts \\
+2 & SQL injection attempt in legacy code & 1 & 5 & \cellcolor{green!30}5 & Security Team (Danish \& Calvin) & Parameterized queries + WAF rules \\
+3 & Data leak via misconfigured logs & 2 & 4 & \cellcolor{yellow!30}8 & Development Team (Hoach \& Calvin) & Redact PII in logs, access control \\
+4 & OAuth provider downtime & 3 & 3 & \cellcolor{yellow!30}9 & QA Team (Calvin \& Danish) & Alternative login methods (email) \\
+5 & Blockchain hardhat node failure & 1 & 4 & \cellcolor{green!30}4 & Project Manager (Danish \& Calvin) & Automated backup and local fallback \\
 \bottomrule
 \end{tabular}
 \end{table}
