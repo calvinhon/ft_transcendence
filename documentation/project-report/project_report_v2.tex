@@ -1,8 +1,7 @@
   % ft_transcendence Project Report - LaTeX
 \documentclass[11pt,a4paper]{report}
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
+\usepackage{helvet}
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \usepackage{graphicx}
 \usepackage{longtable}
@@ -12,31 +11,55 @@
 \usepackage{array}
 \usepackage{caption}
 \usepackage{fancybox}
+\usepackage{framed}
 \usepackage[table]{xcolor}
 \usepackage{float}
 \usepackage{multirow}
 \geometry{left=25mm,right=25mm,top=25mm,bottom=25mm}
 
+\renewcommand{\familydefault}{\sfdefault}
+
+% \setmainfont{Latin Modern Roman} % Not compatible with pdflatex
+
 % Set up graphics path for figures directory
 \graphicspath{{figures/}}
 
-\title{\textbf{ft\_transcendence}\\Multiplayer Pong Platform\\Project Report}
-\author{
-  Calvin Hon (chon) \\
-  Muhammad Ali Danish (mdanish) \\
-  Mahad Abdullah (maabdull) \\
-  Nguyen The Hoach (honguyen)
-}
-\date{December 18, 2025}
-
 \begin{document}
 
-% Title Page
-\maketitle
+
+% Custom Cover Page (Updated)
+\begin{titlepage}
+\setlength{\FrameRule}{2pt}
+\begin{framed}
+  \centering
+  % 42 logo at the top
+  {\fboxrule=1pt \fbox{\includegraphics[width=0.8\textwidth]{figures/42_logo.png}}}\\[4 cm]
+
+  {\large Capstone Project: Ft\_Transcendence}\\[2.5cm]
+
+  % Group Members' Full Names
+  Group Members' Full Names:\\[0.5cm]
+  Calvin Hon\\
+  Muhammad Ali Danish\\
+  Mahad Abdullah\\
+  Nguyen The Hoach\\[1cm]
+
+  % Group Members' Intra Logins
+  Group Members' Intra Logins:\\[0.5cm]
+  chon\\
+  mdanish\\
+  maabdull\\
+  honguyen\\[4cm]
+
+
+  Date of Submission: December 18, 2025\\[1cm]
+\end{framed}
+\end{titlepage}
+
 
 % Abstract
 \begin{abstract}
-This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves full compliance with all subject requirements, implementing 10 major modules and 6 minor modules with 120/120 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, GDPR compliance, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
+This document presents the comprehensive project report for \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform built with microservices architecture. The project achieves full compliance with all subject requirements, implementing 8 major modules and 5 minor modules with 96/96 automated tests passing. The system features real-time WebSocket gameplay, blockchain-integrated tournaments, comprehensive security hardening (WAF + Vault), basic authentication, and production-ready deployment. This report details the software development lifecycle, requirements analysis, design decisions, implementation specifics, comprehensive testing methodology, and evolution roadmap.
 \end{abstract}
 
 % Front Matter
@@ -80,7 +103,7 @@ This document presents the comprehensive project report for \textbf{ft\_transcen
 
 \textbf{ft\_transcendence} is a production-ready, full-stack multiplayer Pong platform designed to deliver real-time competitive gameplay, social features, tournaments with immutable blockchain recording, and comprehensive system observability. The platform accommodates players across web browsers, with extensible architecture supporting AI opponents, campaign progression, achievement systems, and global leaderboards.
 
-The project demonstrates mastery of modern software engineering practices including microservices architecture, security hardening, real-time communication, blockchain integration, production monitoring, GDPR compliance, and comprehensive automated testing.
+The project demonstrates mastery of modern software engineering practices including microservices architecture, security hardening, real-time communication, blockchain integration, production monitoring, and comprehensive automated testing.
 
 \section{Project Objectives}
 \label{sec:objectives}
@@ -92,13 +115,12 @@ The project demonstrates mastery of modern software engineering practices includ
   \item Provide tournament management with blockchain-based result recording for immutability
   \item Ensure production-grade security with WAF, secrets management, and layered defense
   \item Support multiple access patterns (web SPA)
-  \item Demonstrate full GDPR compliance with data handling, consent, and retention policies
 \end{enumerate}
 
 \subsection{Quality Metrics}
 \begin{itemize}
   \item \textbf{Functional Completeness:} 100\% subject compliance
-  \item \textbf{Test Coverage:} 120/120 automated tests passing (100\%)
+  \item \textbf{Test Coverage:} 96/96 automated tests passing (100\%)
   \item \textbf{Security:} Zero critical vulnerabilities, WAF protection active, 2FA available
   \item \textbf{Code Quality:} TypeScript strictness enabled, ESLint, consistent standards
 \end{itemize}
@@ -199,7 +221,7 @@ The project identified and managed significant risks throughout the SDLC.
 \begin{table}[h!]
 \centering
 \caption{Risk Register}
-\begin{tabular}{p{0.8cm} p{3.5cm} c c c p{3.5cm} p{4cm}}
+\begin{tabular}{p{0.8cm} p{3.5cm} c c c p{3.0cm} p{3.5cm}}
 \toprule
 ID & Description & Likelihood & Impact & Severity & Owner & Mitigation \\
 \midrule
@@ -267,13 +289,6 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-16: System shall manage tournament bracket progression
   \item FR-17: Tournament results shall be recorded immutably to blockchain
   \item FR-18: Users shall view tournament standings and schedules
-\end{itemize}
-
-\subsubsection{GDPR Compliance}
-\begin{itemize}
-  \item FR-22: Users shall export personal data (JSON format)
-  \item FR-23: Users shall request account deletion with data anonymization
-  \item FR-24: System shall maintain consent logs for data processing
 \end{itemize}
 
 \subsection{Technical Requirements}
@@ -361,7 +376,7 @@ The complete deployment consists of 21 Docker containers orchestrated via Docker
 \endfoot
 \textbf{Auth Service} & Registration, login, password reset & 3001 \\
 \hline
-\textbf{User Service} & Profiles, friends, achievements, leaderboards, GDPR & 3002 \\
+\textbf{User Service} & Profiles, friends, achievements, leaderboards & 3002 \\
 \hline
 \textbf{Game Service} & Real-time Pong, WebSocket, game state, match recording & 3003 \\
 \hline
@@ -671,7 +686,7 @@ Tournament functionality was validated through:
 
 User profile features were tested for:
 \begin{itemize}
-  \item Data privacy and GDPR compliance
+  \item Data privacy and compliance
   \item Statistics calculation accuracy
   \item Profile update functionality
   \item Social features integration
@@ -681,7 +696,7 @@ User profile features were tested for:
 \chapter{Implementation}
 \label{ch:implementation}
 
-The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 10 major modules and 6 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
+The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 8 major modules and 5 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
 
 \section{Mandatory Implementation}
 
@@ -711,7 +726,7 @@ The implementation follows a microservices architecture with four independent se
 All four microservices use Fastify v4 with TypeScript strict mode:
 \begin{itemize}
   \item \texttt{auth-service}: User registration, login, password reset
-  \item \texttt{user-service}: Profiles, friendships, achievements, leaderboards, GDPR endpoints
+  \item \texttt{user-service}: Profiles, friendships, achievements, leaderboards
   \item \texttt{game-service}: Server-authoritative Pong game logic, WebSocket real-time sync
   \item \texttt{tournament-service}: Tournament management, blockchain integration
 \end{itemize}
@@ -802,26 +817,15 @@ Comprehensive statistics dashboards for user profiles and game sessions.
 \subsection{WAF/ModSecurity with Vault}
 Web Application Firewall with ModSecurity and OWASP CRS rules, integrated with HashiCorp Vault for secrets management.
 
-\subsection{GDPR Compliance}
-GDPR compliance with user data anonymization, local data management, and account deletion.
-
 \section{Devops Implementation}
 
 \subsection{Microservices Architecture}
 Backend designed as independent microservices with REST API communication.
 
-\section{Server-Side Pong Implementation}
-
-\subsection{Server-Side Pong and API}
-Server-side Pong implementation with API for game state management and CLI integration.
-
 \section{Accessibility Implementation}
 
 \subsection{Server-Side Rendering}
 Dynamic HTML generation for improved SEO and initial page load performance.
-
-\subsection{Support on All Devices}
-Responsive design supporting desktops, tablets, and smartphones.
 
 % ============================================================================
 \chapter{Testing}
@@ -852,8 +856,8 @@ The project employs a multi-layered testing approach following the testing pyram
 
 \subsection{Overall Test Metrics}
 \begin{itemize}
-  \item \textbf{Total Tests:} 156 automated tests
-  \item \textbf{Pass Rate:} 156/156 (100\%)
+  \item \textbf{Total Tests:} 132 automated tests
+  \item \textbf{Pass Rate:} 132/132 (100\%)
   \item \textbf{Duration:} 15-20 minutes (full suite)
   \item \textbf{Coverage:} All mandatory and module requirements
 \end{itemize}
@@ -871,12 +875,11 @@ Web & 36 & 36/36 (check) \\
 User Management & 0 & 0/0 \\
 Gameplay and User Experience & 0 & 0/0 \\
 AI-Algo & 24 & 24/24 (check) \\
-Cybersecurity & 24 & 24/24 (check) \\
+Cybersecurity & 12 & 12/12 (check) \\
 Devops & 12 & 12/12 (check) \\
-Server-Side Pong & 12 & 12/12 (check) \\
 Accessibility & 12 & 12/12 (check) \\
 \hline
-\multicolumn{3}{l}{\textbf{Total:} 120/120 tests passing} \\
+\multicolumn{3}{l}{\textbf{Total:} 96/96 tests passing} \\
 \caption{Module Test Results by Subject Category}
 \label{tab:test_results}
 \end{longtable}
@@ -928,7 +931,6 @@ cd tester/
 ./test-ai-opponent.sh            # AI Opponent (12 tests)
 ./test-waf-security.sh           # Web App Firewall (12 tests)
 ./test-vault.sh                  # Vault Integration (12 tests)
-./test-gdpr-compliance.sh        # GDPR Compliance (12 tests)
 \end{verbatim}
 
 \subsection{Terminal Output Example}
@@ -944,9 +946,8 @@ $ make test
 (check) Artificial Intelligence        12/12 passing
 (check) Web App Firewall               12/12 passing
 (check) Vault Integration              12/12 passing
-(check) GDPR Compliance                12/12 passing
 -------------------------------------------
-Total: 120/120 tests passing (check)
+Total: 96/96 tests passing (check)
 Test Suite Duration: 18 minutes
 \end{verbatim}
 
@@ -962,7 +963,6 @@ Manual testing validates user workflows and experience:
   \item \textbf{Gameplay:} Play quick match, verify real-time sync, check scoring
   \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
   \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
-  \item \textbf{GDPR:} Export data, request deletion, verify anonymization
   \item \textbf{Responsive Design:} Test on desktop, tablet, mobile
 \end{enumerate}
 
@@ -973,7 +973,7 @@ Manual testing validates user workflows and experience:
 \section{Current State}
 \label{sec:current_state}
 
-The ft\_transcendence project is fully implemented, tested (144/144 passing), and production-ready for deployment. All subject requirements have been achieved.
+The ft\_transcendence project is fully implemented, tested (96/96 passing), and production-ready for deployment. All subject requirements have been achieved.
 
 \section{Future Enhancements}
 \label{sec:future_work}
@@ -1014,7 +1014,7 @@ The ft\_transcendence project demonstrates a complete, production-grade implemen
   \item \textbf{Quality Assurance:} 156/156 automated tests passing
   \item \textbf{Security Excellence:} Layered defense with WAF, Vault
   \item \textbf{Scalability:} Microservices architecture for concurrent users
-  \item \textbf{Regulatory Compliance:} Full GDPR support
+  \item \textbf{Regulatory Compliance:} Full compliance support
   \item \textbf{Developer Experience:} Clean code, type safety, documentation
 \end{itemize}
 
@@ -1036,15 +1036,6 @@ The system is ready for production deployment with clear roadmaps for future enh
 \label{fig:data_flow}
 \end{figure}
 
-\section{GDPR Compliance Data Flow}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{gdpr_flow.png}
-\caption{GDPR Compliance: Data Export, Account Deletion, and Consent Management Flows}
-\label{fig:gdpr_flow}
-\end{figure}
-
 \chapter{Code Repository Structure}
 \label{app:codebase}
 
@@ -1061,7 +1052,7 @@ ft_transcendence/
 |   |-- Dockerfile             # Container configuration
 |   |-- package.json           # Node.js dependencies
 |   -- tsconfig.json           # TypeScript configuration
-|-- user-service/              # User profiles, friends, GDPR compliance
+|-- user-service/              # User profiles, friends
 |   |-- src/
 |   |-- database/
 |   |-- Dockerfile
