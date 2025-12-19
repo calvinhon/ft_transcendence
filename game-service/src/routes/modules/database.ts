@@ -23,7 +23,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         finished_at DATETIME,
         winner_id INTEGER,
-        game_mode TEXT DEFAULT 'coop',
+        game_mode TEXT DEFAULT 'campaign',
         team1_players TEXT,
         team2_players TEXT,
         tournament_id INTEGER,
@@ -39,7 +39,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         // Add game_mode column if it doesn't exist
         if (!columnNames.includes('game_mode')) {
           logger.db('Adding game_mode column...');
-          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'coop'", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'campaign'", (err) => {
             if (err) logger.error('Failed to add game_mode column:', err);
             else logger.db('game_mode column added');
           });

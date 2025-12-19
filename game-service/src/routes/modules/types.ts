@@ -51,7 +51,7 @@ export interface WebSocketMessage {
 }
 
 export interface GameSettings {
-  gameMode: 'coop' | 'arcade' | 'tournament';
+  gameMode: 'campaign' | 'arcade' | 'tournament';
   aiDifficulty: 'easy' | 'medium' | 'hard';
   ballSpeed: 'slow' | 'medium' | 'fast';
   paddleSpeed: 'slow' | 'medium' | 'fast';
@@ -80,7 +80,7 @@ export interface JoinGameMessage extends WebSocketMessage {
 export interface MovePaddleMessage extends WebSocketMessage {
   type: 'movePaddle';
   direction: 'up' | 'down';
-  playerId?: number; // For coop mode - actual database player ID
+  playerId?: number; // For campaign mode - actual database player ID
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
   side?: 'left' | 'right'; // For tournament/arcade - position-based control
 }

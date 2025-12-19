@@ -184,11 +184,11 @@ export class GamePhysics {
       paddle = teamPaddles[0];
       logger.gameDebug(gameId, 'Tournament paddle selected for', team, 'at position:', paddle.y);
     } else {
-      // Handle coop mode with single paddle
-      // For coop mode, the human player always controls the left paddle (player1)
+      // Handle campaign mode with single paddle
+      // For campaign mode, the human player always controls the left paddle (player1)
       // We need to get the actual player IDs from the game context, but since we don't have access to it here,
-      // we'll assume player1 is the human player (left paddle) for coop mode
-      const paddleKey = 'player1'; // Human player always controls left paddle in coop mode
+      // we'll assume player1 is the human player (left paddle) for campaign mode
+      const paddleKey = 'player1'; // Human player always controls left paddle in campaign mode
       paddle = paddles[paddleKey as keyof Paddles] as Paddle;
 
       if (!paddle) {

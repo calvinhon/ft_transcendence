@@ -41,7 +41,7 @@ export class GameRenderer {
         return (val / GAME_HEIGHT) * this.canvas.height;
     }
 
-    public render(gameState: any, gameMode: string = 'coop'): void {
+    public render(gameState: any, gameMode: string = 'campaign'): void {
         if (!this.ctx || !this.canvas) return;
         const width = this.canvas.width;
         const height = this.canvas.height;

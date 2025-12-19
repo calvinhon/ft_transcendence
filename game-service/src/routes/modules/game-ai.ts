@@ -85,7 +85,7 @@ export class GameAI {
 
 
     // Handle arcade/tournament/campaign mode with multiple paddles
-    if (this.gameMode === 'arcade' || this.gameMode === 'tournament' || this.gameMode === 'campaign') {
+    if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
       if (paddles.team2 && paddles.team2.length > 0) {
         if (team2Players && team2Players.length > 0) {
           team2Players.forEach((player, index) => {
@@ -101,7 +101,7 @@ export class GameAI {
         }
       }
     } else {
-      // Handle coop mode
+      // Handle campaign mode
       if (paddles.player2) {
         processPaddle(paddles.player2);
       }

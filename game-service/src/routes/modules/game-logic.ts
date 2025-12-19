@@ -144,8 +144,8 @@ export class PongGame {
       // Check if AI control is needed based on game mode
       let shouldActivateAI = false;
 
-      if (this.gameSettings.gameMode === 'coop') {
-        // In coop mode, check if player2 is a bot
+      if (this.gameSettings.gameMode === 'campaign') {
+        // In campaign mode, check if player2 is a bot
         shouldActivateAI = this.player2.userId === 0;
       } else if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
         // In team modes, check if there are any bot players in team2
@@ -211,9 +211,9 @@ export class PongGame {
     const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
     const team = side === 'left' ? 'team1' : 'team2';
     const index = paddleIndex ?? 0;
-    
+
     logger.gameDebug(this.gameId, `Moving ${side} paddle (${team}[${index}]) ${direction}`);
-    
+
     const teamPaddles = this.paddles[team as keyof Paddles] as any[];
     if (!teamPaddles || !teamPaddles[index]) {
       logger.gameDebug(this.gameId, `No paddle found at ${team}[${index}]`);
