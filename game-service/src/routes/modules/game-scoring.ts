@@ -27,6 +27,13 @@ export class GameScoring {
 
     logger.game(this.gameId, `Point scored! Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
 
+    // Log detailed event for Dashboard
+    this.logEvent('goal', {
+      scorer: scorer,
+      newScore: { ...this.scores },
+      timestamp: Date.now()
+    });
+
     // Check if game is finished
     return this.isGameFinished();
   }
@@ -93,5 +100,17 @@ export class GameScoring {
 
   resetScores(): void {
     this.scores = { player1: 0, player2: 0 };
+  }
+
+  private logEvent(type: string, data: any): void {
+    db.run(
+      'INSERT INTO game_events (game_id, event_type, event_data) VALUES (?, ?, ?)',
+      [this.gameId, type, JSON.stringify(data)],
+      (err: Error | null) => {
+        if (err) {
+          logger.error(`Failed to log event ${type}:`, err);
+        }
+      }
+    );
   }
 }

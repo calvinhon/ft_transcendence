@@ -103,6 +103,7 @@ export interface GameRecord {
   winner_id?: number;
   player1_name?: string;
   player2_name?: string;
+  winner_name?: string;
   game_mode?: string;
   team1_players?: string;
   team2_players?: string;

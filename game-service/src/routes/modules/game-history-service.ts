@@ -103,12 +103,12 @@ export class GameHistoryService {
 
       try {
         // Fetch player1 name
-        if (game.player1_id) {
+        if (game.player1_id !== undefined && game.player1_id !== null) {
           enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
         }
 
         // Fetch player2 name
-        if (game.player2_id) {
+        if (game.player2_id !== undefined && game.player2_id !== null) {
           enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
         }
       } catch (fetchError) {
@@ -125,12 +125,13 @@ export class GameHistoryService {
 
   // Fetch player name from user service or auth service
   private async fetchPlayerName(userId: number): Promise<string> {
+    if (userId === 0) return 'AI';
     try {
       // Try User Service for Display Name
       const userResponse = await fetch(`http://user-service:3000/profile/${userId}`);
       if (userResponse.ok) {
         const userData = await userResponse.json() as any;
-        if (userData.display_name) {
+        if (userData.display_name && userData.display_name !== 'undefined') {
           return userData.display_name;
         }
       }
@@ -148,6 +149,65 @@ export class GameHistoryService {
       logger.warn(`Failed to fetch name for user ${userId}:`, error);
       return `User ${userId}`;
     }
+  }
+
+  // Fetch a single game by ID (used for Match Details Dashboard)
+  async getGameDetails(gameId: number): Promise<GameRecord | null> {
+    return new Promise<GameRecord | null>((resolve, reject) => {
+      db.get(
+        `SELECT g.*
+         FROM games g
+         WHERE g.id = ?`,
+        [gameId],
+        (err: Error | null, game: GameRecord) => {
+          if (err) {
+            logger.error(`Database error fetching game ${gameId}:`, err);
+            reject(err);
+          } else if (!game) {
+            resolve(null);
+          } else {
+            resolve(game);
+          }
+        }
+      );
+    });
+  }
+
+  // Enrich single game with player names
+  async enrichGameWithPlayerNames(game: GameRecord): Promise<GameRecord> {
+    const enrichedGame = { ...game };
+    try {
+      if (game.player1_id !== undefined && game.player1_id !== null) enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
+      if (game.player2_id !== undefined && game.player2_id !== null) enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
+      if (game.winner_id !== undefined && game.winner_id !== null) enrichedGame.winner_name = await this.fetchPlayerName(game.winner_id);
+    } catch (fetchError) {
+      logger.warn('Could not fetch player names:', fetchError);
+      enrichedGame.player1_name = `User${game.player1_id}`;
+      enrichedGame.player2_name = `User${game.player2_id}`;
+      enrichedGame.winner_name = `User${game.winner_id}`;
+    }
+    return enrichedGame;
+  }
+
+  // Fetch game events
+  async getGameEvents(gameId: number): Promise<any[]> {
+    return new Promise<any[]>((resolve, reject) => {
+      db.all(
+        `SELECT * FROM game_events WHERE game_id = ? ORDER BY timestamp ASC`,
+        [gameId],
+        (err: Error | null, rows: any[]) => {
+          if (err) {
+            logger.error(`Error fetching events for game ${gameId}:`, err);
+            reject(err);
+          } else {
+            resolve(rows.map(row => ({
+              ...row,
+              event_data: JSON.parse(row.event_data)
+            })));
+          }
+        }
+      );
+    });
   }
 }
 

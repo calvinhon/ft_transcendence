@@ -5,6 +5,7 @@ import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, Tournament
 import { Api } from "../core/Api";
 import { PasswordConfirmationModal } from "../components/PasswordConfirmationModal";
 import { LocalPlayerService } from "../services/LocalPlayerService";
+import Chart from 'chart.js/auto';
 
 export class ProfilePage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -16,6 +17,7 @@ export class ProfilePage extends AbstractComponent {
     private loading: boolean = true;
     private error: string | null = null;
     private isEditing: boolean = false; // State for inline editing
+    private charts: Chart[] = [];
 
     getHtml(): string {
         return `
@@ -183,6 +185,25 @@ export class ProfilePage extends AbstractComponent {
                         </div>
                     </div>
 
+                    <!-- Stats Visualizations -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Win Rate Trend -->
+                        <div class="border border-white/20 bg-black/50 p-4">
+                            <h3 class="text-xs text-gray-400 font-bold mb-2 uppercase">Performance Trend</h3>
+                             <div class="relative h-48 w-full">
+                                <canvas id="winRateChart"></canvas>
+                             </div>
+                        </div>
+                        
+                        <!-- Outcome Distribution -->
+                         <div class="border border-white/20 bg-black/50 p-4">
+                             <h3 class="text-xs text-gray-400 font-bold mb-2 uppercase">Match Outcomes</h3>
+                             <div class="relative h-48 w-full flex items-center justify-center">
+                                <canvas id="outcomeChart"></canvas>
+                             </div>
+                        </div>
+                    </div>
+
                     <!-- AI vs Human Stats -->
                     <div class="border border-cyan-500/30 p-4 bg-cyan-900/5">
                         <h3 class="text-cyan-400 font-bold mb-4 flex items-center gap-2">
@@ -238,14 +259,22 @@ export class ProfilePage extends AbstractComponent {
         const colorClass = g.result === 'win' ? 'text-green-400' : (g.result === 'draw' ? 'text-gray-400' : 'text-red-400');
         const bgHover = g.result === 'win' ? 'hover:bg-green-900/10' : 'hover:bg-red-900/10';
 
+        // Add onclick handler to navigate to detailed view (Step 2)
+        // For now, we'll just add the clickable class and ID
         return `
-            <div class="p-3 flex items-center justify-between ${bgHover} transition-colors">
+            <div 
+                class="p-3 flex items-center justify-between ${bgHover} transition-colors cursor-pointer group"
+                onclick="window.history.pushState({}, '', '/match-details?id=${g.id}'); window.dispatchEvent(new Event('popstate'));"
+            >
                 <div class="flex flex-col">
                     <span class="text-sm font-bold ${colorClass}">${g.result.toUpperCase()}</span>
                     <span class="text-[10px] text-gray-500">${g.gameMode.toUpperCase()} • ${date}</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm text-gray-300">vs ${g.opponent}</span>
+                    <div class="text-right">
+                         <span class="text-sm text-gray-300 block">vs ${g.opponent}</span>
+                         <span class="text-[10px] text-accent opacity-0 group-hover:opacity-100 transition-opacity">VIEW DETAILS ></span>
+                    </div>
                     <span class="text-lg font-bold font-mono ${colorClass}">${g.score}</span>
                 </div>
             </div>
@@ -293,7 +322,118 @@ export class ProfilePage extends AbstractComponent {
             }
         }
 
-        this.loadProfile(userId);
+        await this.loadProfile(userId);
+        this.initCharts();
+    }
+
+    private initCharts(): void {
+        if (!this.stats) return;
+
+        // Cleanup old charts
+        this.charts.forEach(c => c.destroy());
+        this.charts = [];
+
+        // 1. Win Rate Trend Chart
+        const winRateCanvas = document.getElementById('winRateChart') as HTMLCanvasElement;
+        if (winRateCanvas) {
+            const dataMetadata = this.calculateWinRateTrend();
+
+            this.charts.push(new Chart(winRateCanvas, {
+                type: 'line',
+                data: {
+                    labels: dataMetadata.labels,
+                    datasets: [{
+                        label: 'Win Rate %',
+                        data: dataMetadata.data,
+                        borderColor: '#29b6f6', // Accent color
+                        backgroundColor: 'rgba(41, 182, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointBackgroundColor: '#000',
+                        pointBorderColor: '#29b6f6',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#888' }
+                        },
+                        x: {
+                            display: false // Hide x-axis labels to keep it clean
+                        }
+                    }
+                }
+            }));
+        }
+
+        // 2. Outcome Distribution Chart
+        const outcomeCanvas = document.getElementById('outcomeChart') as HTMLCanvasElement;
+        if (outcomeCanvas) {
+            this.charts.push(new Chart(outcomeCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wins', 'Losses'],
+                    datasets: [{
+                        data: [this.stats.wins, this.stats.losses],
+                        backgroundColor: [
+                            'rgba(74, 222, 128, 0.8)', // Green-400
+                            'rgba(248, 113, 113, 0.8)', // Red-400
+                        ],
+                        borderColor: '#000',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#fff', font: { family: 'PixelCode' } }
+                        }
+                    }
+                }
+            }));
+        }
+    }
+
+    private calculateWinRateTrend(): { labels: string[], data: number[] } {
+        // Need to process history in chronological order (oldest -> newest)
+        // History is typically Newest -> Oldest, so reverse it
+        const chronoGames = [...this.history].reverse();
+
+        let wins = 0;
+        let total = 0;
+        const labels: string[] = [];
+        const data: number[] = [];
+
+        // If we want a "start state", maybe assume 0% or extend previous?
+        // Let's just plot points per game
+        chronoGames.forEach((game, index) => {
+            total++;
+            if (game.result === 'win') wins++;
+
+            const rate = (wins / total) * 100;
+            labels.push(`Game ${index + 1}`);
+            data.push(rate);
+        });
+
+        // If no games, just show flat 0
+        if (data.length === 0) {
+            return { labels: ['Start'], data: [0] };
+        }
+
+        return { labels, data };
     }
 
     private async loadProfile(userId: number): Promise<void> {
@@ -457,7 +597,14 @@ export class ProfilePage extends AbstractComponent {
         const container = this.container;
         if (container) {
             container.innerHTML = this.getHtml();
-            this.bindEvents();
+            this.bindEvents(); // Re-bind events
+            this.initCharts(); // Re-init charts
         }
+    }
+
+    // Cleanup to destroy chart instances when parsing out
+    disconnect(): void {
+        this.charts.forEach(c => c.destroy());
+        this.charts = [];
     }
 }

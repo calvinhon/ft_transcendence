@@ -62,6 +62,11 @@ export class App {
             return new RegisterPage();
         });
 
+        this.router.addRoute('/match-details', async () => {
+            const { MatchDetailsPage } = await import('../pages/MatchDetailsPage');
+            return new MatchDetailsPage();
+        });
+
         this.router.addRoute('/game', async () => {
             const { GamePage } = await import('../pages/GamePage');
             return new GamePage();

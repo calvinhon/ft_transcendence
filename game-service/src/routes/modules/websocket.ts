@@ -52,7 +52,7 @@ function handleUserConnect(socket: any, data: any): void {
   // Track user as online when they connect with authentication
   addOnlineUser(data.userId, data.username, socket);
 
-  // Check if this is a game mode request (arcade or coop)
+  // Check if this is a game mode request (arcade or campaign)
   if (data.gameMode) {
     logger.info('Game mode detected:', data.gameMode);
 

@@ -166,17 +166,9 @@ export class GamePage extends AbstractComponent {
                     ).catch(err => console.error("Frontend tournament record failed:", err));
                 }
 
-                GameService.getInstance().recordMatchResult({
-                    mode: setup.mode,
-                    team1: setup.team1.map(p => p.userId),
-                    team2: setup.team2.map(p => p.userId),
-                    score1: p1Score,
-                    score2: p2Score,
-                    winnerId: winnerId,
-                    tournamentId: setup.tournamentId,
-                    tournamentMatchId: setup.tournamentMatchId,
-                    skipTournamentNotification: true // Let frontend handle tournament update to handle swaps correctly
-                }).catch(err => console.warn("Match recording failed:", err));
+                // Frontend does NOT record match result anymore, backend handles it.
+                // We only handle tournament specific logic if needed, but even that might be redundant if backend handles it.
+                // Keeping tournament logic as is for now if it hits a different service, but removing general game save.
 
                 // Add Auto-Return Timer UI
                 // Add Auto-Return Timer UI

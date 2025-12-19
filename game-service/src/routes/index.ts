@@ -42,6 +42,40 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
+  // Get single game details
+  fastify.get<{
+    Params: { gameId: string };
+  }>('/:gameId', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+    try {
+      const { gameId } = request.params;
+      const game = await gameHistoryService.getGameDetails(parseInt(gameId));
+
+      if (!game) {
+        return sendError(reply, 'Game not found', 404);
+      }
+
+      const enrichedGame = await gameHistoryService.enrichGameWithPlayerNames(game);
+      sendSuccess(reply, enrichedGame);
+    } catch (error) {
+      logger.error('Error fetching game details:', error);
+      sendError(reply, 'Error fetching game details', 500);
+    }
+  });
+
+  // Get game events
+  fastify.get<{
+    Params: { gameId: string };
+  }>('/:gameId/events', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+    try {
+      const { gameId } = request.params;
+      const events = await gameHistoryService.getGameEvents(parseInt(gameId));
+      sendSuccess(reply, events);
+    } catch (error) {
+      logger.error('Error fetching game events:', error);
+      sendError(reply, 'Error fetching game events', 500);
+    }
+  });
+
   // Save game result
   fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
     try {

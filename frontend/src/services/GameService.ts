@@ -42,6 +42,17 @@ export class GameService {
         if (settings.mode === 'campaign') {
             this.pendingJoinPayload = {
                 type: 'joinBotGame',
+                gameSettings: {
+                    gameMode: 'campaign',
+                    aiDifficulty: settings.difficulty || 'medium',
+                    scoreToWin: settings.scoreToWin || 5,
+                    ballSpeed: settings.ballSpeed || 'medium',
+                    paddleSpeed: settings.paddleSpeed || 'medium',
+                    powerupsEnabled: settings.powerups || false,
+                    accelerateOnHit: settings.accumulateOnHit || false,
+                    team1PlayerCount: 1,
+                    team2PlayerCount: 1
+                },
                 userId: user.userId,
                 username: user.username,
                 aiDifficulty: settings.difficulty || 'medium',
