@@ -43,11 +43,19 @@ export class MatchmakingService {
 
     let player2: GamePlayer;
 
-    // Check if this is a tournament match with two real players
-    if (data.gameSettings?.gameMode === 'tournament' && data.player2Id && data.player2Id !== 0) {
-      // Tournament match: player2 is also a real player (local)
-      logger.matchmaking('Creating tournament match with player2 ID:', data.player2Id);
-      player2 = gameCreator.createDummyPlayer(data.player2Id, data.player2Name || `Player ${data.player2Id}`);
+    // Check if this is a tournament or arcade match with two real players (local)
+    const isLocalMultiplayer = (data.gameSettings?.gameMode === 'tournament' || data.gameSettings?.gameMode === 'arcade');
+    let secondPlayerId = data.player2Id;
+
+    // If player2Id not explicitly set but we have team2Players, try to get it from there
+    if (!secondPlayerId && data.team2Players && data.team2Players.length > 0) {
+      secondPlayerId = data.team2Players[0].userId;
+    }
+
+    if (isLocalMultiplayer && secondPlayerId && secondPlayerId !== 0) {
+      // Local match: player2 is also a real player
+      logger.matchmaking('Creating local match with player2 ID:', secondPlayerId);
+      player2 = gameCreator.createDummyPlayer(secondPlayerId, data.player2Name || `Player ${secondPlayerId}`);
     } else {
       // Regular bot match
       player2 = gameCreator.createBotPlayer();

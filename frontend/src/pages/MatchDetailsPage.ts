@@ -107,21 +107,17 @@ export class MatchDetailsPage extends AbstractComponent {
     private renderEventRow(e: any): string {
         const time = new Date(e.timestamp).toLocaleTimeString();
         let content = '';
-        let icon = '';
 
         if (e.event_type === 'goal') {
-            icon = '⚽';
             const scorer = e.event_data.scorer === 'player1' ? this.gameData.player1_name : this.gameData.player2_name;
             content = `<span class="text-accent">${scorer}</span> SCORED! Score is now ${e.event_data.newScore.player1}-${e.event_data.newScore.player2}`;
         } else {
-            icon = 'ℹ️';
             content = JSON.stringify(e.event_data);
         }
 
         return `
             <div class="p-3 flex items-center gap-3 hover:bg-white/5 transition-colors">
                 <span class="text-gray-500 text-xs font-pixel">${time}</span>
-                <span class="text-lg">${icon}</span>
                 <div class="text-sm text-gray-300">
                     ${content}
                 </div>
@@ -265,7 +261,7 @@ export class MatchDetailsPage extends AbstractComponent {
                     }
                 },
                 plugins: {
-                    legend: { labels: { color: '#fff' } },
+                    legend: { labels: { color: '#fff', usePointStyle: true, pointStyle: 'line' } },
                     tooltip: {
                         callbacks: {
                             title: (items) => {

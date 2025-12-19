@@ -119,10 +119,10 @@ export class GamePage extends AbstractComponent {
             const status = this.$('#game-status-text');
 
             if (state && state.gameState === 'playing') {
-                if (status) status.innerText = "LIVE COMBAT";
+                if (status) status.innerText = "PLAYING";
             } else if (state && (state.gameState === 'finished' || state.type === 'gameEnd')) {
                 // --- Game Over Handling ---
-                if (status) status.innerText = "MISSION COMPLETE";
+                if (status) status.innerText = "FINISHED";
 
                 // Prevent multiple recordings/overlays
                 if (this.isRecording) return;

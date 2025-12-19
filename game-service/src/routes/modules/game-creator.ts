@@ -20,8 +20,13 @@ export class GameCreator {
     } = {}
   ): Promise<{ gameId: number; game: PongGame }> {
     const gameMode = gameSettings?.gameMode || 'campaign';
-    const team1Players = options.team1Players ? JSON.stringify(options.team1Players) : null;
-    const team2Players = options.team2Players ? JSON.stringify(options.team2Players) : null;
+    const getPlayerIds = (players: any[] | undefined) => {
+      if (!players) return null;
+      return JSON.stringify(players.map(p => typeof p === 'number' ? p : p.userId));
+    };
+
+    const team1Players = getPlayerIds(options.team1Players);
+    const team2Players = getPlayerIds(options.team2Players);
     const tournamentId = options.tournamentId || null;
     const tournamentMatchId = options.tournamentMatchId || null;
 
@@ -33,7 +38,7 @@ export class GameCreator {
       paddleSpeed: gameSettings?.paddleSpeed || 'medium',
       powerupsEnabled: gameSettings?.powerupsEnabled || false,
       accelerateOnHit: gameSettings?.accelerateOnHit || false,
-      scoreToWin: gameSettings?.scoreToWin || 5,
+      scoreToWin: typeof gameSettings?.scoreToWin !== 'undefined' ? Number(gameSettings.scoreToWin) : 5,
       team1PlayerCount: gameSettings?.team1PlayerCount,
       team2PlayerCount: gameSettings?.team2PlayerCount,
       team1Players: options.team1Players,
@@ -52,6 +57,7 @@ export class GameCreator {
           }
 
           const gameId = this.lastID!;
+          logger.matchmaking('Game settings scoreToWin:', fullGameSettings.scoreToWin);
           const game = new PongGame(player1, player2, gameId, fullGameSettings);
           activeGames.set(gameId, game);
 

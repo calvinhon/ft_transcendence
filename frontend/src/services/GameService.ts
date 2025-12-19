@@ -77,7 +77,7 @@ export class GameService {
             this.team2 = t2;
 
             this.pendingJoinPayload = {
-                type: 'joinGame',
+                type: 'joinBotGame', // Use direct game creation for local modes
                 userId: user.userId,
                 username: user.username,
                 gameSettings: {

@@ -16,6 +16,7 @@ export class GameScoring {
     this.player2 = player2;
     this.maxScore = maxScore;
     this.scores = { player1: 0, player2: 0 };
+    logger.game(gameId, `GameScoring initialized with maxScore: ${this.maxScore}`);
   }
 
   scorePoint(scorer: 'player1' | 'player2'): boolean {

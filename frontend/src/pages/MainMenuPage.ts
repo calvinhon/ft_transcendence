@@ -667,7 +667,7 @@ export class MainMenuPage extends AbstractComponent {
                 powerups: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
                 difficulty: 'medium', // TODO: Add difficulty selector if needed
-                scoreToWin: 5
+                scoreToWin: this.settings.scoreToWin || 5
             },
             team1: [],
             team2: [],
