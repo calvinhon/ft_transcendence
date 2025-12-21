@@ -3,8 +3,75 @@ import { MovePaddleMessage } from './types';
 import { activeGames } from './game-logic';
 import { logger } from './logger';
 
+// Anti-cheat validation state
+interface PlayerInputState {
+  lastTimestamp: number;
+  lastPosition: number;
+  inputCount: number;
+  rateLimitWindow: number;
+}
+
+const playerInputStates = new Map<number, PlayerInputState>();
+
 // Handles game-specific WebSocket messages
 export class GameHandlers {
+  // Anti-cheat validation for paddle movements
+  private static validatePaddleInput(playerId: number, data: MovePaddleMessage): boolean {
+    const now = Date.now();
+    const currentState = playerInputStates.get(playerId) || {
+      lastTimestamp: 0,
+      lastPosition: 200, // Default center position
+      inputCount: 0,
+      rateLimitWindow: now
+    };
+
+    // Rate limiting: max 10 inputs per second
+    if (now - currentState.rateLimitWindow > 1000) {
+      currentState.inputCount = 0;
+      currentState.rateLimitWindow = now;
+    }
+    
+    if (currentState.inputCount >= 10) {
+      logger.gameDebug(-1, `Rate limit exceeded for player ${playerId}`);
+      return false;
+    }
+
+    // Timestamp validation: prevent time-travel (old timestamps)
+    if (data.timestamp && data.timestamp < currentState.lastTimestamp) {
+      logger.gameDebug(-1, `Time-travel detected for player ${playerId}: ${data.timestamp} < ${currentState.lastTimestamp}`);
+      return false;
+    }
+
+    // Position validation: check for impossible jumps
+    if (data.position !== undefined) {
+      const positionDelta = Math.abs(data.position - currentState.lastPosition);
+      const timeDelta = data.timestamp ? (data.timestamp - currentState.lastTimestamp) : 100; // Default 100ms
+      const velocity = positionDelta / timeDelta; // pixels per ms
+      
+      // Max reasonable velocity: 1 pixel per ms (very fast but possible)
+      if (velocity > 1) {
+        logger.gameDebug(-1, `Suspicious velocity for player ${playerId}: ${velocity} pixels/ms`);
+        return false;
+      }
+
+      // Position bounds: paddle should stay within game area (allowing some margin)
+      if (data.position < -50 || data.position > 450) { // Game height is 400, paddle height is 50
+        logger.gameDebug(-1, `Invalid position for player ${playerId}: ${data.position}`);
+        return false;
+      }
+    }
+
+    // Update state
+    currentState.lastTimestamp = data.timestamp || now;
+    if (data.position !== undefined) {
+      currentState.lastPosition = data.position;
+    }
+    currentState.inputCount++;
+
+    playerInputStates.set(playerId, currentState);
+    return true;
+  }
+
   static handleMovePaddle(socket: any, data: MovePaddleMessage): void {
     logger.gameDebug(-1, 'handleMovePaddle called with:', data);
     logger.gameDebug(-1, 'Active games count:', activeGames.size);
@@ -19,6 +86,13 @@ export class GameHandlers {
         // Determine which player this socket belongs to
         const socketPlayerId = game.player1.socket === socket ?
           game.player1.userId : game.player2.userId;
+        
+        // Anti-cheat validation
+        if (!this.validatePaddleInput(socketPlayerId, data)) {
+          logger.gameDebug(gameId, `Invalid input rejected for player ${socketPlayerId}`);
+          return; // Reject suspicious input
+        }
+
         logger.gameDebug(gameId, 'Found game', gameId, 'for socket player', socketPlayerId, 'direction:', data.direction);
 
         // Position-based control for tournament/arcade modes

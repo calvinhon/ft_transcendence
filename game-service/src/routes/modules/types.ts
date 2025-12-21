@@ -77,6 +77,8 @@ export interface MovePaddleMessage extends WebSocketMessage {
   playerId?: number; // For coop mode - actual database player ID
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
   side?: 'left' | 'right'; // For tournament/arcade - position-based control
+  timestamp?: number; // Client timestamp for anti-cheat validation
+  position?: number; // Current paddle Y position for validation
 }
 
 export interface InputMessage extends WebSocketMessage {
