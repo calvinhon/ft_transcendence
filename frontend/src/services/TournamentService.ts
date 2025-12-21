@@ -147,11 +147,19 @@ export class TournamentService {
         await this.get(tournamentId);
     }
 
-    public async recordOnBlockchain(tournamentId: string, winnerId: number): Promise<any> {
-        return Api.post('/api/tournament/blockchain/record', {
-            tournamentId,
-            winnerId
-        });
+    public async recordOnBlockchain(tournamentId: string): Promise<any> {
+        try {
+            const res = await Api.post('/api/tournament/blockchain/record', { tournamentId });
+            window.dispatchEvent(new CustomEvent('tournament:blockchain', {
+                detail: { success: true, message: 'Rankings recorded on blockchain', response: res }
+            }));
+            return res;
+        } catch (err) {
+            window.dispatchEvent(new CustomEvent('tournament:blockchain', {
+                detail: { success: false, message: 'Blockchain recording failed', error: err }
+            }));
+            throw err;
+        }
     }
 
     public async list(): Promise<Tournament[]> {

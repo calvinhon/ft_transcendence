@@ -111,12 +111,12 @@ export class TournamentService {
   /**
    * Delete tournament
    */
-  static async deleteTournament(id: number): Promise<boolean> {
-    logger.info('Deleting tournament', { id });
+//   static async deleteTournament(id: number): Promise<boolean> {
+//     logger.info('Deleting tournament', { id });
 
-    const result = await dbRun('DELETE FROM tournaments WHERE id = ?', [id]);
-    return result.changes > 0;
-  }
+//     const result = await dbRun('DELETE FROM tournaments WHERE id = ?', [id]);
+//     return result.changes > 0;
+//   }
 
   /**
    * Start tournament
@@ -128,10 +128,6 @@ export class TournamentService {
     if (!tournament) {
       throw new Error('Tournament not found');
     }
-
-    // if (tournament.status !== 'open') {
-    //   throw new Error('Tournament is not in open status');
-    // }
 
     if (startedBy !== undefined && tournament.created_by !== startedBy) {
       throw new Error('Only tournament creator can start the tournament');
@@ -154,24 +150,8 @@ export class TournamentService {
       );
     }
 
-    // Auto-complete matches that contain a bye (player id 0)
-    // For non-power-of-two participant counts some first-round matches will have a bye
-    // Mark those matches as completed and set the winner to the non-bye player so the
-    // tournament can advance correctly (e.g., 3 participants -> one bye should auto-advance).
-    const insertedMatches = await this.getTournamentMatches(id);
-    for (const m of insertedMatches) {
-      if (m.round === 1 && (m.player1_id === 0 || m.player2_id === 0)) {
-        const winnerId = m.player1_id === 0 ? m.player2_id : m.player1_id;
-        await dbRun(
-          'UPDATE tournament_matches SET winner_id = ?, status = ?, played_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [winnerId, 'completed', m.id]
-        );
-      }
-    }
-
-    // After auto-completing bye matches, evaluate the round completion so next-round matches are created
     try {
-      await MatchService.evaluateRoundCompletion(id, 1);
+      await MatchService.checkRoundCompletion(id, 1);
     } catch (err) {
       logger.error('Failed to evaluate round completion after inserting matches', { tournamentId: id, error: err });
     }
@@ -209,33 +189,33 @@ export class TournamentService {
   /**
    * Get user's tournament count
    */
-  static async getUserTournamentCount(userId: number): Promise<number> {
-    const result = await dbGet<{ count: number }>(
-      'SELECT COUNT(DISTINCT t.id) as count FROM tournaments t JOIN tournament_participants tp ON t.id = tp.tournament_id WHERE tp.user_id = ?',
-      [userId]
-    );
-    return result?.count || 0;
-  }
+//   static async getUserTournamentCount(userId: number): Promise<number> {
+//     const result = await dbGet<{ count: number }>(
+//       'SELECT COUNT(DISTINCT t.id) as count FROM tournaments t JOIN tournament_participants tp ON t.id = tp.tournament_id WHERE tp.user_id = ?',
+//       [userId]
+//     );
+//     return result?.count || 0;
+//   }
 
-  /**
-   * Get user's tournament rankings
-   */
-  static async getUserTournamentRankings(userId: number): Promise<any[]> {
-    const rankings = await dbAll<any>(
-      `SELECT 
-        t.id as tournamentId,
-        t.name as tournamentName,
-        t.created_at as date,
-        tp.final_rank as rank,
-        (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as totalParticipants,
-        t.status,
-        CASE WHEN t.winner_id = tp.user_id THEN 1 ELSE 0 END as isWinner
-      FROM tournaments t 
-      JOIN tournament_participants tp ON t.id = tp.tournament_id 
-      WHERE tp.user_id = ? AND tp.final_rank IS NOT NULL
-      ORDER BY t.created_at DESC`,
-      [userId]
-    );
-    return rankings;
-  }
+//   /**
+//    * Get user's tournament rankings
+//    */
+//   static async getUserTournamentRankings(userId: number): Promise<any[]> {
+//     const rankings = await dbAll<any>(
+//       `SELECT 
+//         t.id as tournamentId,
+//         t.name as tournamentName,
+//         t.created_at as date,
+//         tp.final_rank as rank,
+//         (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as totalParticipants,
+//         t.status,
+//         CASE WHEN t.winner_id = tp.user_id THEN 1 ELSE 0 END as isWinner
+//       FROM tournaments t 
+//       JOIN tournament_participants tp ON t.id = tp.tournament_id 
+//       WHERE tp.user_id = ? AND tp.final_rank IS NOT NULL
+//       ORDER BY t.created_at DESC`,
+//       [userId]
+//     );
+//     return rankings;
+//   }
 }

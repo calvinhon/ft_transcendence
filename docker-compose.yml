@@ -85,6 +85,7 @@ services:
 
   blockchain:
     build: ./blockchain
+    container_name: blockchain
     ports:
       - "8545:8545"
     command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
@@ -119,7 +120,7 @@ services:
 
   blockchain-service:
     build: ./blockchain-service
-    container_name: blockchain
+    container_name: blockchain-service
     ports:
       - "3005:3000"
     environment:
@@ -159,6 +160,7 @@ services:
       - user-service
       - game-service
       - tournament-service
+      - blockchain-service
     mem_limit: 128m
     networks:
       - transcendence-network

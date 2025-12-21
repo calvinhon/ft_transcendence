@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 const BLOCKCHAIN_URL = process.env.BLOCKCHAIN_URL || 'http://blockchain-service:3000';
-const RPC_URL = process.env.BLOCKCHAIN_URL || 'http://hardhat-node:8545';
+const RPC_URL = process.env.BLOCKCHAIN_URL || 'http://blockchain:8545';
 
 type RecordRankResponse = { ok: boolean; txHash?: string };
 

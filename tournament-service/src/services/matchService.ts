@@ -58,7 +58,7 @@ export class MatchService {
   /**
    * Check if a tournament round is complete and advance winners
    */
-  private static async checkRoundCompletion(tournamentId: number, round: number): Promise<void> {
+  static async checkRoundCompletion(tournamentId: number, round: number): Promise<void> {
     // Get all matches in this round
     const roundMatches = await dbAll<TournamentMatch>(
       'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ?',
@@ -105,7 +105,7 @@ export class MatchService {
     let matchNumber = 1;
     for (let i = 0; i < winners.length; i += 2) {
       const player1 = winners[i];
-      const player2 = winners[i + 1] || 0; // Bye if odd number
+      const player2 = winners[i + 1];
 
       logger.info('Inserting next round match', { tournamentId, nextRound, matchNumber, player1, player2 });
       await dbRun(
@@ -130,13 +130,28 @@ export class MatchService {
     // Update participant final ranks
     const participants = await TournamentService.getTournamentParticipants(tournamentId);
 
-    // Simple ranking: winner gets rank 1, others get rank 2 (could be more sophisticated)
+    const totalRounds = Math.round(Math.log2(participants.length));
+
+	await dbRun(
+		'UPDATE tournament_participants SET final_rank = ? WHERE tournament_id = ? AND user_id = ?',
+		[1, tournamentId, winnerId]
+	);
+
     for (const participant of participants) {
-      const rank = participant.user_id === winnerId ? 1 : 2;
-      await dbRun(
-        'UPDATE tournament_participants SET final_rank = ? WHERE id = ?',
-        [rank, participant.id]
+      const lastMatch = await dbGet<{ round: number; winner_id: number }>(
+        'SELECT round, winner_id FROM tournament_matches WHERE tournament_id = ? AND (player1_id = ? OR player2_id = ?) ORDER BY round DESC LIMIT 1',
+        [tournamentId, participant.user_id, participant.user_id]
       );
+
+      if (!lastMatch) {
+        const fallbackRank = totalRounds + 1;
+        await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [fallbackRank, participant.id]);
+        continue;
+      }
+
+      const eliminationRound = lastMatch.round;
+      const rank = totalRounds - eliminationRound + 2;
+      await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [rank, participant.id]);
     }
 
     logger.info('Tournament completed successfully', { tournamentId, winnerId });
@@ -167,12 +182,5 @@ export class MatchService {
       'SELECT * FROM tournament_matches WHERE tournament_id = ? AND status = ? ORDER BY round, match_number',
       [tournamentId, 'pending']
     );
-  }
-
-  /**
-   * Public wrapper to trigger round completion check (used after auto-completing bye matches)
-   */
-  static async evaluateRoundCompletion(tournamentId: number, round: number): Promise<void> {
-    return this.checkRoundCompletion(tournamentId, round);
   }
 }

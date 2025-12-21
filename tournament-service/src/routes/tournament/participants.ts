@@ -38,29 +38,29 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   });
 
   // Get tournament participants
-  fastify.get<{
-    Params: { tournamentId: string };
-  }>('/tournaments/:tournamentId/participants', async (request: FastifyRequest<{
-    Params: { tournamentId: string };
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
+//   fastify.get<{
+//     Params: { tournamentId: string };
+//   }>('/tournaments/:tournamentId/participants', async (request: FastifyRequest<{
+//     Params: { tournamentId: string };
+//   }>, reply: FastifyReply) => {
+//     try {
+//       const tournamentId = parseInt(request.params.tournamentId);
 
-      if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-      }
+//       if (isNaN(tournamentId)) {
+//         return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+//       }
 
-      const participants = await TournamentService.getTournamentParticipants(tournamentId);
-      return ResponseUtil.success(reply, participants, 'Participants retrieved successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to get tournament participants', {
-        error: err.message,
-        tournamentId: request.params.tournamentId
-      });
-      return ResponseUtil.error(reply, 'Failed to retrieve participants', 500);
-    }
-  });
+//       const participants = await TournamentService.getTournamentParticipants(tournamentId);
+//       return ResponseUtil.success(reply, participants, 'Participants retrieved successfully');
+//     } catch (error) {
+//       const err = error as Error;
+//       logger.error('Failed to get tournament participants', {
+//         error: err.message,
+//         tournamentId: request.params.tournamentId
+//       });
+//       return ResponseUtil.error(reply, 'Failed to retrieve participants', 500);
+//     }
+//   });
 
   // Get user's tournament rankings
   fastify.get<{
@@ -88,29 +88,29 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   });
 
   // Get tournament leaderboard
-  fastify.get<{
-    Params: { tournamentId: string };
-  }>('/tournaments/:tournamentId/leaderboard', async (request: FastifyRequest<{
-    Params: { tournamentId: string };
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
+//   fastify.get<{
+//     Params: { tournamentId: string };
+//   }>('/tournaments/:tournamentId/leaderboard', async (request: FastifyRequest<{
+//     Params: { tournamentId: string };
+//   }>, reply: FastifyReply) => {
+//     try {
+//       const tournamentId = parseInt(request.params.tournamentId);
 
-      if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-      }
+//       if (isNaN(tournamentId)) {
+//         return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+//       }
 
-      const leaderboard = await ParticipantService.getTournamentLeaderboard(tournamentId);
-      return ResponseUtil.success(reply, leaderboard, 'Leaderboard retrieved successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to get tournament leaderboard', {
-        error: err.message,
-        tournamentId: request.params.tournamentId
-      });
-      return ResponseUtil.error(reply, 'Failed to retrieve leaderboard', 500);
-    }
-  });
+//       const leaderboard = await ParticipantService.getTournamentLeaderboard(tournamentId);
+//       return ResponseUtil.success(reply, leaderboard, 'Leaderboard retrieved successfully');
+//     } catch (error) {
+//       const err = error as Error;
+//       logger.error('Failed to get tournament leaderboard', {
+//         error: err.message,
+//         tournamentId: request.params.tournamentId
+//       });
+//       return ResponseUtil.error(reply, 'Failed to retrieve leaderboard', 500);
+//     }
+//   });
 
   // Get user tournaments
   fastify.get<{
