@@ -1,5 +1,5 @@
 // game-service/src/routes/modules/websocket.ts
-import { WebSocketMessage, JoinGameMessage, MovePaddleMessage, InputMessage } from './types';
+import { WebSocketMessage, JoinGameMessage, MovePaddleMessage } from './types';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
@@ -26,6 +26,7 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         logger.ws('Processing movePaddle');
         GameHandlers.handleMovePaddle(socket, data as MovePaddleMessage);
         break;
+      /*
       case 'input':
         logger.ws('Processing input');
         GameHandlers.handleInput(socket, data as InputMessage);
@@ -34,6 +35,7 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         logger.ws('Processing pause');
         GameHandlers.handlePauseGame(socket, data);
         break;
+      */
       case 'disconnect':
         logger.ws('Processing disconnect');
         matchmakingService.handleDisconnect(socket);

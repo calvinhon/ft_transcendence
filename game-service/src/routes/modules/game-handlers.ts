@@ -1,5 +1,5 @@
 // game-service/src/routes/modules/game-handlers.ts
-import { MovePaddleMessage, InputMessage } from './types';
+import { MovePaddleMessage } from './types';
 import { activeGames } from './game-logic';
 import { logger } from './logger';
 
@@ -46,6 +46,7 @@ export class GameHandlers {
     logger.gameDebug(-1, 'No game found for this socket');
   }
 
+  /*
   static handleInput(socket: any, data: InputMessage): void {
     logger.gameDebug(-1, 'handleInput called with:', data);
     logger.gameDebug(-1, 'Active games count:', activeGames.size);
@@ -91,7 +92,9 @@ export class GameHandlers {
 
     logger.gameDebug(-1, 'No game found for this socket');
   }
+  */
 
+  /*
   static handlePauseGame(socket: any, data: any): void {
     logger.gameDebug(-1, 'handlePauseGame called with:', data);
     logger.gameDebug(-1, 'Active games count:', activeGames.size);
@@ -125,4 +128,5 @@ export class GameHandlers {
 
     logger.gameDebug(-1, 'No game found for this socket');
   }
+  */
 }
