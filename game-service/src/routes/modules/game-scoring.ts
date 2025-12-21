@@ -90,8 +90,4 @@ export class GameScoring {
   getScores(): Scores {
     return { ...this.scores };
   }
-
-  resetScores(): void {
-    this.scores = { player1: 0, player2: 0 };
-  }
 }
