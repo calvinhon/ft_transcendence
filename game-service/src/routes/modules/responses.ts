@@ -40,12 +40,3 @@ export function sendError(
   logger.error(`Sending error response:`, { statusCode, error });
   reply.status(statusCode).send(response);
 }
-
-export function validateRequiredFields(body: any, requiredFields: string[]): string | null {
-  for (const field of requiredFields) {
-    if (!body || body[field] === undefined || body[field] === null || body[field] === '') {
-      return `Missing required field: ${field}`;
-    }
-  }
-  return null;
-}

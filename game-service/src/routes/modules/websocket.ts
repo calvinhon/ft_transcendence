@@ -1,6 +1,5 @@
 // game-service/src/routes/modules/websocket.ts
 import { WebSocketMessage, JoinGameMessage, MovePaddleMessage, InputMessage } from './types';
-import { addOnlineUser } from './online-users';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
@@ -49,8 +48,6 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
 
 function handleUserConnect(socket: any, data: any): void {
   logger.ws('Processing userConnect');
-  // Track user as online when they connect with authentication
-  addOnlineUser(data.userId, data.username, socket);
 
   // Check if this is a game mode request (arcade or coop)
   if (data.gameMode) {
@@ -86,7 +83,7 @@ function handleUserConnect(socket: any, data: any): void {
     // Just acknowledge connection
     socket.send(JSON.stringify({
       type: 'connectionAck',
-      message: 'You are now tracked as online'
+      message: 'WebSocket connection established'
     }));
   }
 }

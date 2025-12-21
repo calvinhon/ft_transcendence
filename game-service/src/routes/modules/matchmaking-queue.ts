@@ -22,11 +22,6 @@ export class MatchmakingQueue {
     logger.matchmaking('Player added to queue:', player.username, 'Queue size:', this.waitingPlayers.length);
   }
 
-  // Get the current queue size
-  getQueueSize(): number {
-    return this.waitingPlayers.length;
-  }
-
   // Check if we have enough players for a match
   hasEnoughPlayers(): boolean {
     return this.waitingPlayers.length >= 2;

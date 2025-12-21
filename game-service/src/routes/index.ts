@@ -2,7 +2,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
-import { getOnlineUsers } from './modules/online-users';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
 import { sendSuccess, sendError } from './modules/responses';
@@ -91,22 +90,6 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Get overall statistics dashboard
-  fastify.get('/stats', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const onlineUsers = getOnlineUsers();
-      const stats = {
-        onlineUsers: onlineUsers.length,
-        timestamp: new Date().toISOString(),
-        service: 'game-service'
-      };
-      sendSuccess(reply, stats);
-    } catch (error) {
-      logger.error('Error fetching stats:', error);
-      sendError(reply, 'Error fetching statistics', 500);
-    }
-  });
-
   // Get game statistics
   fastify.get<{
     Params: { userId: string };
@@ -121,24 +104,13 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Get currently online users
-  fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const onlineUsers = getOnlineUsers();
-      sendSuccess(reply, onlineUsers);
-    } catch (error) {
-      logger.error('Error getting online users:', error);
-      sendError(reply, 'Error fetching online users', 500);
-    }
-  });
-
   // Health check
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
     sendSuccess(reply, {
       status: 'healthy',
       service: 'game-service',
       timestamp: new Date().toISOString(),
-      modules: ['websocket', 'game-history', 'game-stats', 'online-users']
+      modules: ['websocket', 'game-history', 'game-stats']
     });
   });
 }

@@ -1,10 +1,4 @@
 // game-service/src/routes/modules/types.ts
-export interface OnlineUserData {
-  username: string;
-  sockets: Set<any>; // WebSocket
-  lastSeen: Date;
-}
-
 export interface GamePlayer {
   userId: number;
   username: string;
@@ -115,13 +109,4 @@ export interface GameStats {
   wins: number;
   losses: number;
   winRate: number;
-}
-
-export interface OnlineUser {
-  user_id: number | string;
-  username: string;
-  display_name: string;
-  status: 'online';
-  last_seen: string;
-  is_bot: boolean;
 }
