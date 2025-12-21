@@ -46,23 +46,6 @@ export class GameScoring {
     return { winnerId, winnerName };
   }
 
-  saveGameResult(): void {
-    const winner = this.getWinner();
-    const winnerId = winner ? winner.winnerId : null;
-
-    db.run(
-      'UPDATE games SET player1_score = ?, player2_score = ?, status = ?, finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
-      [this.scores.player1, this.scores.player2, 'finished', winnerId, this.gameId],
-      (err: Error | null) => {
-        if (err) {
-          logger.error(`Database update error:`, err);
-        } else {
-          logger.game(this.gameId, 'Game recorded in database');
-        }
-      }
-    );
-  }
-
   broadcastGameEnd(): void {
     const winner = this.getWinner();
     if (!winner) return;
