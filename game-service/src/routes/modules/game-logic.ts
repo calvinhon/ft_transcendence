@@ -264,7 +264,6 @@ export class PongGame {
     this.stateManager.endGame();
     activeGames.delete(this.gameId);
 
-    this.scoring.saveGameResult();
     this.scoring.broadcastGameEnd();
 
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
