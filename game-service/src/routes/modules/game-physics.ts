@@ -132,19 +132,12 @@ export class GamePhysics {
     ball.dy = newSpeed * Math.sin(angle);
   }
 
-  resetBall(ball: Ball, direction?: 'left' | 'right'): void {
+  resetBall(ball: Ball): void {
     ball.x = 400;
     ball.y = 300;
     ball.frozen = true;
 
-    if (direction === 'left') {
-      ball.dx = -this.ballSpeed;
-    } else if (direction === 'right') {
-      ball.dx = this.ballSpeed;
-    } else {
-      ball.dx = (Math.random() > 0.5 ? 1 : -1) * this.ballSpeed;
-    }
-
+    ball.dx = (Math.random() > 0.5 ? 1 : -1) * this.ballSpeed;
     ball.dy = (Math.random() - 0.5) * this.ballSpeed;
   }
 
