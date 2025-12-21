@@ -132,8 +132,4 @@ export class GameStateManager {
   isGamePaused(): boolean {
     return this.isPaused;
   }
-
-  isGameFinished(): boolean {
-    return this.gameState === 'finished';
-  }
 }
