@@ -108,6 +108,7 @@ export class GameAI {
     }
   }
 
+  /*
   private moveSingleBotPaddle(botPaddle: any, errorMargin: number, moveSpeed: number): void {
     // Deprecated in favor of inline logic above
   }
@@ -121,4 +122,5 @@ export class GameAI {
     // In tournament mode, use the same logic but potentially with different difficulty
     this.moveBotPaddle(paddles, gameId);
   }
+  */
 }
