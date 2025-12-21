@@ -275,10 +275,6 @@ export class PongGame {
     return this.stateManager.isGamePaused();
   }
 
-  get gameState(): 'countdown' | 'playing' | 'finished' {
-    return this.stateManager.getGameState();
-  }
-
   // Compatibility method for matchmaking
   broadcastGameState(): void {
     this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue());
