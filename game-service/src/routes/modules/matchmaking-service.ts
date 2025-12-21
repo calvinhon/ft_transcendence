@@ -3,6 +3,7 @@ import { GamePlayer, JoinGameMessage } from './types';
 import { matchmakingQueue } from './matchmaking-queue';
 import { gameCreator } from './game-creator';
 import { logger } from './logger';
+import { createBotPlayer, createDummyPlayer } from './utils';
 
 // Main matchmaking service that orchestrates the matchmaking process
 export class MatchmakingService {
@@ -47,10 +48,10 @@ export class MatchmakingService {
     if (data.gameSettings?.gameMode === 'tournament' && data.player2Id && data.player2Id !== 0) {
       // Tournament match: player2 is also a real player (local)
       logger.matchmaking('Creating tournament match with player2 ID:', data.player2Id);
-      player2 = gameCreator.createDummyPlayer(data.player2Id, data.player2Name || `Player ${data.player2Id}`);
+      player2 = createDummyPlayer(data.player2Id, data.player2Name || `Player ${data.player2Id}`);
     } else {
       // Regular bot match
-      player2 = gameCreator.createBotPlayer();
+      player2 = createBotPlayer();
     }
 
     await this.createAndStartGame(player1, player2, data.gameSettings, {
@@ -96,7 +97,7 @@ export class MatchmakingService {
 
   // Helper method to create a bot game for timeout scenarios
   private async createBotGame(player: GamePlayer, data: JoinGameMessage): Promise<void> {
-    const player2 = gameCreator.createBotPlayer();
+    const player2 = createBotPlayer();
 
     await this.createAndStartGame(player, player2, data.gameSettings, {
       team1Players: data.team1Players,

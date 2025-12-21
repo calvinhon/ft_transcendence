@@ -3,7 +3,7 @@ import { GamePlayer, GameSettings } from './types';
 import { db } from './database';
 import { PongGame, activeGames } from './game-logic';
 import { logger } from './logger';
-import { createBotPlayer, createDummyPlayer, isSocketOpen } from './utils';
+import { isSocketOpen } from './utils';
 
 // Handles game creation in database and active games management
 export class GameCreator {
@@ -95,6 +95,7 @@ export class GameCreator {
     }, 100);
   }
 
+  /*
   // Create a dummy bot player
   createBotPlayer(): GamePlayer {
     return createBotPlayer();
@@ -104,6 +105,7 @@ export class GameCreator {
   createDummyPlayer(userId: number, username: string): GamePlayer {
     return createDummyPlayer(userId, username);
   }
+  */
 }
 
 // Global instance
