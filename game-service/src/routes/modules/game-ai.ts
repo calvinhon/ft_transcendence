@@ -24,41 +24,31 @@ export class GameAI {
     // Smoother AI Logic
     // No random "skipping" frames (causes jitter). Instead, limit speed and tracking accuracy.
 
-    const paddleHeight = 100;
-    const paddleHalfHeight = paddleHeight / 2;
     const paddleCenterOffset = 50;
 
     // Difficulty Configuration
     let maxSpeed = this.paddleSpeed;
-    let targetError = 0;
     let lazyFactor = 0; // 0 = Instant reaction, 1 = Very lazy
 
     switch (this.aiDifficulty) {
       case 'easy':
         maxSpeed = this.paddleSpeed * 0.5; // 50% Speed
-        targetError = 40; // Aim +/- 40px from ball
         lazyFactor = 0.2; // Smoothly lag behind
         break;
       case 'medium':
         maxSpeed = this.paddleSpeed * 0.8; // 80% Speed
-        targetError = 15; // Aim +/- 15px
         lazyFactor = 0.1;
         break;
       case 'hard':
         maxSpeed = this.paddleSpeed * 1.1; // 110% Speed (Slightly faster than base)
-        targetError = 0; // Aim perfectly
         lazyFactor = 0.05; // Very sharp reaction
         break;
     }
 
     let targetY = this.ballY;
 
-    // Add error only if we don't have a stable target yet (optional, or just use constant offset per volley)
-    // For simplicity, we'll aim for the ballY but clamp the movement speed.
-
-    // Level 3 "Hard but not perfect": maybe add a sine wave error or just use the targetError
-    // Actually, "Hard but not always perfect" -> mostly hits, sometimes misses corner cases?
-    // High speed but slight tracking delay is usually enough to make it beatable.
+    // AI aims directly for the ball with speed limiting for different difficulty levels
+    // High speed with slight tracking delay makes hard mode challenging but beatable
 
     // Apply movement
     const processPaddle = (paddle: any) => {
