@@ -25,17 +25,13 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         notification_settings TEXT DEFAULT '{}',
         privacy_settings TEXT DEFAULT '{}',
         campaign_level INTEGER DEFAULT 1,
-        wins INTEGER DEFAULT 0,
-        total_games INTEGER DEFAULT 0,
         games_played INTEGER DEFAULT 0,
         games_won INTEGER DEFAULT 0,
-        games_lost INTEGER DEFAULT 0,
         win_streak INTEGER DEFAULT 0,
         tournaments_won INTEGER DEFAULT 0,
         friends_count INTEGER DEFAULT 0,
         xp INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
-        winRate REAL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -61,17 +57,13 @@ export const db = new sqlite3.Database(dbPath, (err) => {
 
         // Add game statistics columns if they don't exist
         const gameStatsColumns = [
-          'wins INTEGER DEFAULT 0',
-          'total_games INTEGER DEFAULT 0',
           'games_played INTEGER DEFAULT 0',
           'games_won INTEGER DEFAULT 0',
-          'games_lost INTEGER DEFAULT 0',
           'win_streak INTEGER DEFAULT 0',
           'tournaments_won INTEGER DEFAULT 0',
           'friends_count INTEGER DEFAULT 0',
           'xp INTEGER DEFAULT 0',
-          'level INTEGER DEFAULT 1',
-          'winRate REAL DEFAULT 0'
+          'level INTEGER DEFAULT 1'
         ];
 
         gameStatsColumns.forEach(columnDef => {

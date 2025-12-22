@@ -16,13 +16,6 @@ export interface DatabaseUser {
   last_login?: string;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
 export interface RegisterRequestBody {
   username: string;
   email: string;

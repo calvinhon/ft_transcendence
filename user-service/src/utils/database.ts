@@ -1,15 +1,5 @@
 // user-service/src/utils/database.ts
-import { FastifyReply } from 'fastify';
 import sqlite3 from 'sqlite3';
-
-export function handleDatabaseError(reply: FastifyReply, err: Error | null, reject: (reason?: any) => void): boolean {
-  if (err) {
-    reply.status(500).send({ error: 'Database error' });
-    reject(err);
-    return true;
-  }
-  return false;
-}
 
 export function promisifyDbRun(db: sqlite3.Database, sql: string, params: any[] = []): Promise<sqlite3.RunResult> {
   return new Promise((resolve, reject) => {

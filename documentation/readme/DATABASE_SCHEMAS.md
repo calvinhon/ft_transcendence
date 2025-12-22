@@ -66,20 +66,6 @@ Records completed game sessions with scores and metadata.
 | `tournament_id` | INTEGER | - | Associated tournament ID |
 | `tournament_match_id` | INTEGER | - | Tournament match identifier |
 
-#### `game_events`
-Logs real-time events during game sessions for analytics.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT | Event identifier |
-| `game_id` | INTEGER | NOT NULL | Reference to games.id |
-| `event_type` | TEXT | NOT NULL | Type of game event |
-| `event_data` | TEXT | - | JSON event data |
-| `timestamp` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Event timestamp |
-
-**Foreign Keys:**
-- `game_id` REFERENCES `games(id)`
-
 ## User Service Database (`users.db`)
 
 ### Tables
@@ -203,7 +189,6 @@ Auth Service (auth.db)
 
 Game Service (games.db)
 ├── games (game sessions)
-└── game_events → games
 
 User Service (users.db)
 ├── user_profiles (extended profiles)

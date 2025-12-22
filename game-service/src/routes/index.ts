@@ -4,7 +4,7 @@ import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
-import { sendSuccess, sendError } from './modules/responses';
+import { sendSuccess, sendError } from '../../../shared/responses';
 import { logger } from './modules/logger';
 
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
