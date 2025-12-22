@@ -65,17 +65,6 @@ fastify.post('/record', async (request: FastifyRequest, reply: FastifyReply) => 
   }
 });
 
-fastify.get('/rank/:tid/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const { tid, userId } = request.params as { tid: string; userId: number };
-    const r = await contract.getRank(Number(tid), userId);
-    return reply.send({ rank: Number(r) });
-  } catch (e: any) {
-    fastify.log.error({ err: e }, '[blockchain-service] /rank error');
-    return reply.status(500).send({ ok: false, error: e.message });
-  }
-});
-
 // Bootstrap without top-level await
 async function start() {
   try {

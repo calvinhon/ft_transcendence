@@ -40,32 +40,6 @@ export class ResponseUtil {
   }
 
   /**
-   * Send paginated response
-   */
-  static paginated<T>(
-    reply: FastifyReply,
-    data: T[],
-    page: number,
-    limit: number,
-    total: number,
-    message: string = 'Success'
-  ): void {
-    const totalPages = Math.ceil(total / limit);
-    const response: PaginatedResponse<T> = {
-      success: true,
-      data,
-      message,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages
-      }
-    };
-    reply.send(response);
-  }
-
-  /**
    * Send created response
    */
   static created<T = any>(
@@ -74,40 +48,5 @@ export class ResponseUtil {
     message: string = 'Resource created successfully'
   ): void {
     this.success(reply, data, message, 201);
-  }
-
-  /**
-   * Send not found response
-   */
-  static notFound(reply: FastifyReply, message: string = 'Resource not found'): void {
-    this.error(reply, message, 404);
-  }
-
-  /**
-   * Send bad request response
-   */
-  static badRequest(reply: FastifyReply, message: string = 'Bad request'): void {
-    this.error(reply, message, 400);
-  }
-
-  /**
-   * Send unauthorized response
-   */
-  static unauthorized(reply: FastifyReply, message: string = 'Unauthorized'): void {
-    this.error(reply, message, 401);
-  }
-
-  /**
-   * Send forbidden response
-   */
-  static forbidden(reply: FastifyReply, message: string = 'Forbidden'): void {
-    this.error(reply, message, 403);
-  }
-
-  /**
-   * Send conflict response
-   */
-  static conflict(reply: FastifyReply, message: string = 'Conflict'): void {
-    this.error(reply, message, 409);
   }
 }

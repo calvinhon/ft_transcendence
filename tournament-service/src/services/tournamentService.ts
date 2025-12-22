@@ -109,16 +109,6 @@ export class TournamentService {
   }
 
   /**
-   * Delete tournament
-   */
-//   static async deleteTournament(id: number): Promise<boolean> {
-//     logger.info('Deleting tournament', { id });
-
-//     const result = await dbRun('DELETE FROM tournaments WHERE id = ?', [id]);
-//     return result.changes > 0;
-//   }
-
-  /**
    * Start tournament
    */
   static async startTournament(id: number, startedBy?: number): Promise<Tournament | null> {
@@ -185,37 +175,4 @@ export class TournamentService {
       [tournamentId]
     );
   }
-
-  /**
-   * Get user's tournament count
-   */
-//   static async getUserTournamentCount(userId: number): Promise<number> {
-//     const result = await dbGet<{ count: number }>(
-//       'SELECT COUNT(DISTINCT t.id) as count FROM tournaments t JOIN tournament_participants tp ON t.id = tp.tournament_id WHERE tp.user_id = ?',
-//       [userId]
-//     );
-//     return result?.count || 0;
-//   }
-
-//   /**
-//    * Get user's tournament rankings
-//    */
-//   static async getUserTournamentRankings(userId: number): Promise<any[]> {
-//     const rankings = await dbAll<any>(
-//       `SELECT 
-//         t.id as tournamentId,
-//         t.name as tournamentName,
-//         t.created_at as date,
-//         tp.final_rank as rank,
-//         (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as totalParticipants,
-//         t.status,
-//         CASE WHEN t.winner_id = tp.user_id THEN 1 ELSE 0 END as isWinner
-//       FROM tournaments t 
-//       JOIN tournament_participants tp ON t.id = tp.tournament_id 
-//       WHERE tp.user_id = ? AND tp.final_rank IS NOT NULL
-//       ORDER BY t.created_at DESC`,
-//       [userId]
-//     );
-//     return rankings;
-//   }
 }

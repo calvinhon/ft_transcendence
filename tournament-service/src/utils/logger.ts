@@ -25,30 +25,12 @@ export class Logger {
     }
   }
 
-  debug(message: string, data?: any): void {
-    this.log(LogLevel.DEBUG, message, data);
-  }
-
   info(message: string, data?: any): void {
     this.log(LogLevel.INFO, message, data);
   }
 
-  warn(message: string, data?: any): void {
-    this.log(LogLevel.WARN, message, data);
-  }
-
   error(message: string, error?: any): void {
     this.log(LogLevel.ERROR, message, error);
-  }
-
-  request(method: string, url: string, body?: any): void {
-    const message = `← ${method} ${url}`;
-    this.info(message, body);
-  }
-
-  response(method: string, url: string, statusCode: number, data?: any): void {
-    const message = `→ ${method} ${url} - Status: ${statusCode}`;
-    this.info(message, data);
   }
 }
 

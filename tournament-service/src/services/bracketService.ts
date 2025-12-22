@@ -38,49 +38,6 @@ export class BracketService {
   }
 
   /**
-   * Calculate total rounds needed for a tournament
-   */
-  static calculateTotalRounds(participantCount: number): number {
-    if (participantCount < 2) return 0;
-    return Math.ceil(Math.log2(participantCount));
-  }
-
-  /**
-   * Validate bracket structure
-   */
-//   static validateBracket(matches: MatchToCreate[]): { isValid: boolean; errors: string[] } {
-//     const errors: string[] = [];
-//     const rounds = new Set(matches.map(m => m.round));
-//     const maxRound = Math.max(...rounds);
-
-//     // Check round progression
-//     for (let round = 1; round <= maxRound; round++) {
-//       const roundMatches = matches.filter(m => m.round === round);
-//       if (roundMatches.length === 0) {
-//         errors.push(`Missing matches for round ${round}`);
-//       }
-//     }
-
-//     // Check match numbering
-//     for (let round = 1; round <= maxRound; round++) {
-//       const roundMatches = matches.filter(m => m.round === round);
-//       const matchNumbers = roundMatches.map(m => m.matchNumber).sort((a, b) => a - b);
-
-//       for (let i = 0; i < matchNumbers.length; i++) {
-//         if (matchNumbers[i] !== i + 1) {
-//           errors.push(`Invalid match numbering in round ${round}`);
-//           break;
-//         }
-//       }
-//     }
-
-//     return {
-//       isValid: errors.length === 0,
-//       errors
-//     };
-//   }
-
-  /**
    * Build bracket structure for API response
    */
   static buildBracketStructure(matches: any[], participants: any[]): BracketStructure {

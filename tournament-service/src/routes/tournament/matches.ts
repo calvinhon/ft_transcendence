@@ -6,60 +6,6 @@ import { ResponseUtil } from '../../utils/responses';
 import { logger } from '../../utils/logger';
 
 export default async function tournamentMatchRoutes(fastify: FastifyInstance): Promise<void> {
-  // Get tournament matches
-//   fastify.get<{
-//     Params: { tournamentId: string };
-//   }>('/tournaments/:tournamentId/matches', async (request: FastifyRequest<{
-//     Params: { tournamentId: string };
-//   }>, reply: FastifyReply) => {
-//     try {
-//       const tournamentId = parseInt(request.params.tournamentId);
-
-//       if (isNaN(tournamentId)) {
-//         return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
-//       }
-
-//       const matches = await MatchService.getMatchesByRound(tournamentId);
-//       return ResponseUtil.success(reply, matches, 'Matches retrieved successfully');
-//     } catch (error) {
-//       const err = error as Error;
-//       logger.error('Failed to get tournament matches', {
-//         error: err.message,
-//         tournamentId: request.params.tournamentId
-//       });
-//       return ResponseUtil.error(reply, 'Failed to retrieve matches', 500);
-//     }
-//   });
-
-  // Get match by ID
-//   fastify.get<{
-//     Params: { matchId: string };
-//   }>('/matches/:matchId', async (request: FastifyRequest<{
-//     Params: { matchId: string };
-//   }>, reply: FastifyReply) => {
-//     try {
-//       const matchId = parseInt(request.params.matchId);
-
-//       if (isNaN(matchId)) {
-//         return ResponseUtil.error(reply, 'Invalid match ID', 400);
-//       }
-
-//       const match = await MatchService.getMatchById(matchId);
-//       if (!match) {
-//         return ResponseUtil.error(reply, 'Match not found', 404);
-//       }
-
-//       return ResponseUtil.success(reply, match, 'Match retrieved successfully');
-//     } catch (error) {
-//       const err = error as Error;
-//       logger.error('Failed to get match', {
-//         error: err.message,
-//         matchId: request.params.matchId
-//       });
-//       return ResponseUtil.error(reply, 'Failed to retrieve match', 500);
-//     }
-//   });
-
   // Submit match result (game-service route)
   fastify.post<{
     Body: MatchResultBody;

@@ -59,15 +59,12 @@ export class MatchService {
    * Check if a tournament round is complete and advance winners
    */
   static async checkRoundCompletion(tournamentId: number, round: number): Promise<void> {
-    // Get all matches in this round
     const roundMatches = await dbAll<TournamentMatch>(
       'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ?',
       [tournamentId, round]
     );
 
-    // Check if all matches are completed
     const completedMatches = roundMatches.filter(m => m.status === 'completed');
-    // Diagnostic logging
     logger.info('Checking round completion', {
       tournamentId,
       round,
@@ -78,19 +75,16 @@ export class MatchService {
 
     if (completedMatches.length !== roundMatches.length) {
       logger.info('Round not complete yet - awaiting more results', { tournamentId, round });
-      return; // Round not complete yet
+      return;
     }
 
     logger.info('Tournament round completed', { tournamentId, round, matchCount: completedMatches.length });
 
-    // Get winners for next round
     const winners = completedMatches.map(m => m.winner_id).filter(id => id !== null);
 
     if (winners.length === 1) {
-      // Tournament finished!
       await this.completeTournament(tournamentId, winners[0]!);
     } else if (winners.length > 1) {
-      // Create next round matches
       logger.info('Winners ready to advance', { tournamentId, nextRound: round + 1, winners });
       await this.createNextRoundMatches(tournamentId, round + 1, winners);
     }
@@ -116,7 +110,7 @@ export class MatchService {
   }
 
   /**
-   * Complete tournament with winner
+   * Complete tournament with update for rankings
    */
   private static async completeTournament(tournamentId: number, winnerId: number): Promise<void> {
     logger.info('Completing tournament', { tournamentId, winnerId });
@@ -132,25 +126,21 @@ export class MatchService {
 
     const totalRounds = Math.round(Math.log2(participants.length));
 
-	await dbRun(
-		'UPDATE tournament_participants SET final_rank = ? WHERE tournament_id = ? AND user_id = ?',
-		[1, tournamentId, winnerId]
-	);
-
     for (const participant of participants) {
-      const lastMatch = await dbGet<{ round: number; winner_id: number }>(
-        'SELECT round, winner_id FROM tournament_matches WHERE tournament_id = ? AND (player1_id = ? OR player2_id = ?) ORDER BY round DESC LIMIT 1',
+      const lastMatch = await dbGet<{ round: number }>(
+        'SELECT round FROM tournament_matches WHERE tournament_id = ? AND (player1_id = ? OR player2_id = ?) ORDER BY round DESC LIMIT 1',
         [tournamentId, participant.user_id, participant.user_id]
       );
 
       if (!lastMatch) {
-        const fallbackRank = totalRounds + 1;
-        await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [fallbackRank, participant.id]);
+        await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [999, participant.id]);
         continue;
       }
 
+	  let rank = 1;
       const eliminationRound = lastMatch.round;
-      const rank = totalRounds - eliminationRound + 2;
+      if (participant.user_id !== winnerId)
+      	rank = totalRounds - eliminationRound + 2;
       await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [rank, participant.id]);
     }
 

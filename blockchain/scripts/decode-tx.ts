@@ -68,16 +68,17 @@ async function main() {
 			myLogs.forEach((log, index) => {
 				try {
 					const parsedLog = iface.parseLog({
-					topics: log.topics,
+					topics: [...log.topics],
 					data: log.data
 					});
 					
 					if (parsedLog) {
 						console.log(`\n  Event #${index + 1}: ${parsedLog.name}`);
 						
-						parsedLog.args.forEach((arg, argIndex) => {
-							const eventParam = parsedLog.eventFragment.inputs[argIndex];
-							console.log(`    ${eventParam.name}: ${arg.toString()}`);
+						parsedLog.fragment.inputs.forEach((input, i) => {
+							const value = parsedLog.args[i];
+							const displayValue = typeof value === 'bigint' ? value.toString() : value;
+							console.log(`    ${input.name}: ${displayValue}`);
 						});
 					}
 				} catch (e) {
