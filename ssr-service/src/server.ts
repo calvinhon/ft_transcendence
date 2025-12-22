@@ -19,7 +19,12 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'healthy',
     service: 'ssr-service',
     timestamp: new Date().toISOString(),
-    modules: ['ssr']
+    modules: ['ssr', 'accessibility'],
+    version: '1.0.0',
+    accessibility: {
+      compliant: true,
+      features: ['semantic-html', 'aria-support', 'skip-links', 'keyboard-nav', 'screen-reader']
+    }
   });
 });
 
@@ -77,7 +82,25 @@ app.get('/ssr/status', (req: Request, res: Response) => {
   res.json({
     enabled: true,
     routes: ['/ssr', '/ssr/game', '/ssr/profile/:userId', '/ssr/leaderboard'],
-    features: ['SEO', 'OpenGraph', 'Pre-rendering', 'Hydration']
+    features: [
+      'SEO',
+      'OpenGraph',
+      'Pre-rendering',
+      'Hydration',
+      'Accessibility',
+      'Screen Reader Support',
+      'Reduced Motion Support',
+      'High Contrast Support'
+    ],
+    accessibility: {
+      semanticHtml: true,
+      ariaLabels: true,
+      skipLinks: true,
+      keyboardNavigation: true,
+      screenReaderFriendly: true,
+      prefersReducedMotion: true,
+      prefersContrast: true
+    }
   });
 });
 
