@@ -1,7 +1,7 @@
 // auth-service/src/routes/handlers/forgotPassword.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
-import { validateEmail, sendError, sendSuccess } from '../../utils/responses';
+import { validateEmail, sendError, sendSuccess } from '../../../../shared/responses';
 
 export async function forgotPasswordHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();

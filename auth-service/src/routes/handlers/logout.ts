@@ -1,6 +1,6 @@
 // auth-service/src/routes/handlers/logout.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { sendSuccess } from '../../utils/responses';
+import { sendSuccess } from '../../../../shared/responses';
 
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {

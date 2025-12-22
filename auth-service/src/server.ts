@@ -20,10 +20,9 @@ export async function buildServer(): Promise<FastifyInstance> {
   // Health check
   fastify.get('/health', async () => {
     return {
-      status: 'healthy',
+      status: 'ok',
       service: 'auth-service',
-      timestamp: new Date().toISOString(),
-      modules: ['auth']
+      timestamp: new Date().toISOString()
     };
   });
 

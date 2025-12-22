@@ -1,7 +1,7 @@
 // auth-service/src/routes/handlers/resetPassword.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
-import { sendError, sendSuccess } from '../../utils/responses';
+import { sendError, sendSuccess } from '../../../../shared/responses';
 
 export async function resetPasswordHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();

@@ -2,7 +2,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
 import { RegisterRequestBody } from '../../types';
-import { validateRequiredFields, validateEmail, sendError, sendSuccess } from '../../utils/responses';
+import { validateRequiredFields, validateEmail, sendError, sendSuccess } from '../../../../shared/responses';
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();

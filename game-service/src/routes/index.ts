@@ -106,11 +106,10 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Health check
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    sendSuccess(reply, {
-      status: 'healthy',
+    reply.send({
+      status: 'ok',
       service: 'game-service',
-      timestamp: new Date().toISOString(),
-      modules: ['websocket', 'game-history', 'game-stats']
+      timestamp: new Date().toISOString()
     });
   });
 }

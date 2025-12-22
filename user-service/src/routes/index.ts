@@ -15,10 +15,9 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   // Health check
   fastify.get('/health', async (request, reply) => {
     reply.send({
-      status: 'healthy',
+      status: 'ok',
       service: 'user-service',
-      timestamp: new Date().toISOString(),
-      modules: ['profile', 'achievements', 'search', 'gdpr']
+      timestamp: new Date().toISOString()
     });
   });
 }

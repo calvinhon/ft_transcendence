@@ -18,15 +18,6 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   fastify.post('/forgot-password', forgotPasswordHandler);
   fastify.post('/reset-password', resetPasswordHandler);
 
-  // Also register with /auth prefix for direct access (e.g., from Vite proxy)
-  fastify.post('/auth/register', registerHandler);
-  fastify.post('/auth/login', loginHandler);
-  fastify.post('/auth/logout', logoutHandler);
-  fastify.get('/auth/profile/:userId', profileHandler); // Corrected this line to match below logic if needed, but keeping existing is fine.
-  fastify.post('/auth/verify', verifySessionHandler);
-  fastify.post('/auth/forgot-password', forgotPasswordHandler);
-  fastify.post('/auth/reset-password', resetPasswordHandler);
-
   return Promise.resolve();
 }
 

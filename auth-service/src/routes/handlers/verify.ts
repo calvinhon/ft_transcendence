@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { sendSuccess, sendError } from '../../utils/responses';
+import { sendSuccess, sendError } from '../../../../shared/responses';
 
 export async function verifySessionHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     // Simple session check - if user has a token in Authorization header, consider them valid

@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev up open stop restart rebuild ensure-database-folders help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev open stop restart rebuild ensure-database-folders help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -125,11 +125,9 @@ clean:
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
-up: ensure-database-folders
-	@echo "🚀 Running docker compose up with build cache..."
-	docker compose up -d --build
-
-ensure-database-folders:
+	@echo "📁 Ensuring database folders exist for all services..."
+	@mkdir -p auth-service/database
+	@mkdir -p game-service/database
 	@echo "📁 Ensuring database folders exist for all services..."
 	@mkdir -p auth-service/database
 	@mkdir -p game-service/database

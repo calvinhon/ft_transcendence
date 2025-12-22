@@ -1,20 +1,7 @@
 // auth-service/src/types/index.ts
-export interface User {
-  userId: number;
-  username: string;
-  email: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { User, DatabaseUser } from '../../../shared/types';
 
-export interface DatabaseUser {
-  id: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  created_at: string;
-  last_login?: string;
-}
+export { User, DatabaseUser };
 
 export interface RegisterRequestBody {
   username: string;

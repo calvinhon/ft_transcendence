@@ -1,7 +1,7 @@
 // auth-service/src/routes/handlers/login.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
-import { validateRequiredFields, sendError, sendSuccess } from '../../utils/responses';
+import { validateRequiredFields, sendError, sendSuccess } from '../../../../shared/responses';
 
 export async function loginHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();
