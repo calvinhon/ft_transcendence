@@ -25,9 +25,7 @@ RUN npm prune --production
 # Create and set permissions for database directory
 RUN mkdir -p /app/database && chown -R node:node /app/database
 
-# Copy database directory
-COPY ./auth-service/database/ ./database/
-RUN chown -R node:node ./database
+# Database files will be created by the application if they don't exist
 
 EXPOSE 3000
 

@@ -25,8 +25,7 @@ RUN npm prune --production
 # Ensure database directory exists
 RUN mkdir -p /app/database
 
-# Copy database directory
-COPY ./tournament-service/database/ ./database/
+# Database files will be created by the application if they don't exist
 
 EXPOSE 3000
 

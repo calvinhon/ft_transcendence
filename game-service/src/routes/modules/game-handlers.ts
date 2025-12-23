@@ -9,8 +9,6 @@ const logger = createLogger('GAME-SERVICE');
 interface PlayerInputState {
   lastTimestamp: number;
   lastPosition: number;
-  inputCount: number;
-  rateLimitWindow: number;
 }
 
 const playerInputStates = new Map<number, PlayerInputState>();
@@ -23,18 +21,12 @@ export class GameHandlers {
     const currentState = playerInputStates.get(playerId) || {
       lastTimestamp: 0,
       lastPosition: 200, // Default center position
-      inputCount: 0,
-      rateLimitWindow: now
     };
 
-    // Rate limiting: max 10 inputs per second
-    if (now - currentState.rateLimitWindow > 1000) {
-      currentState.inputCount = 0;
-      currentState.rateLimitWindow = now;
-    }
-    
-    if (currentState.inputCount >= 10) {
-      logger.debug(`Rate limit exceeded for player ${playerId}`);
+    // Rate limiting: allow 1 input every ~16.67ms (60 FPS)
+    const timeSinceLastInput = now - currentState.lastTimestamp;
+    if (timeSinceLastInput < 15) { // Allow slightly faster than 60 FPS to be safe
+      logger.debug(`Rate limit exceeded for player ${playerId}: ${timeSinceLastInput}ms since last input`);
       return false;
     }
 
@@ -50,8 +42,8 @@ export class GameHandlers {
       const timeDelta = data.timestamp ? (data.timestamp - currentState.lastTimestamp) : 100; // Default 100ms
       const velocity = positionDelta / timeDelta; // pixels per ms
       
-      // Max reasonable velocity: 1 pixel per ms (very fast but possible)
-      if (velocity > 1) {
+      // Max reasonable velocity: 2 pixels per ms (allows for fast paddle speeds at 60 FPS)
+      if (velocity > 2) {
         logger.debug(`Suspicious velocity for player ${playerId}: ${velocity} pixels/ms`);
         return false;
       }
@@ -68,7 +60,7 @@ export class GameHandlers {
     if (data.position !== undefined) {
       currentState.lastPosition = data.position;
     }
-    currentState.inputCount++;
+    // Removed inputCount increment since we use time-based rate limiting now
 
     playerInputStates.set(playerId, currentState);
     return true;
