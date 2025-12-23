@@ -7,11 +7,7 @@
     <title>Spiritual Ascension</title>
   </head>
   <body>
-    <div
-      id="app"
-      class="fixed inset-0 flex flex-col overflow-hidden"
-      style="width: 1920px; height: 1080px; transform-origin: 0 0"
-    >
+    <div id="app" class="fixed inset-0 flex flex-col overflow-hidden">
       <!-- Routing will inject fragments here -->
       <div
         id="loading"
@@ -29,23 +25,30 @@
     ></canvas>
 
     <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent !important; /* Ensure background doesn't block z-index < 0 */
+      }
       #app {
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 0;
-        background: transparent;
+        z-index: 0; /* Keep it baseline, HtmlMeshRenderer will manage its own containers */
+        /* Width and height are handled in style.css to avoid duplication */
       }
       #renderCanvas {
+        position: fixed;
         width: 100vw;
         height: 100vh;
-        position: fixed;
         top: 0;
         left: 0;
-        z-index: 1;
+        z-index: 1; /* Keep canvas on top of standard elements if needed */
         background: transparent;
       }
     </style>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" crossorigin src="/src/main.ts"></script>
   </body>
 </html>

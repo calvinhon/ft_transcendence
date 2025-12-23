@@ -7,14 +7,21 @@ export class BabylonWrapper {
     private static instance: BabylonWrapper;
     private engine: Engine;
     private scene: Scene;
+    private camera: ArcRotateCamera;
     private htmlMesh: HtmlMesh | null = null;
 
     private constructor() {
         const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
         this.engine = new Engine(canvas, true);
         this.scene = new Scene(this.engine);
-        this.scene.clearColor = new Color4(0.1, 0.1, 0.1, 0);
-
+        this.scene.clearColor = new Color4(0.05, 0.1, 0.15, 0);
+        const camera = new ArcRotateCamera("camera", -Math.PI * 1.2, Math.PI / 2.75, 5, Vector3.Zero(), this.scene);
+        camera.fov = 0.1;
+        camera.attachControl(document.getElementById("renderCanvas"), true);
+        camera.lowerRadiusLimit = 0.5;
+        camera.upperRadiusLimit = 20;
+        camera.wheelPrecision = 100;
+        this.camera = camera;
         // Register loaders dynamically (recommended approach)
         registerBuiltInLoaders();
 
@@ -29,12 +36,6 @@ export class BabylonWrapper {
     }
 
     private setupScene(): void {
-        const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, Vector3.Zero(), this.scene);
-        camera.attachControl(document.getElementById("renderCanvas"), true);
-        camera.lowerRadiusLimit = 0.5;
-        camera.upperRadiusLimit = 20;
-        camera.wheelPrecision = 100;
-
         const light = new HemisphericLight("light1", new Vector3(0, 1, 0.2), this.scene);
         light.intensity = 0.8;
 
@@ -56,34 +57,19 @@ export class BabylonWrapper {
 
     private async loadModel(): Promise<void> {
         try {
-            console.log("Loading model using AppendSceneAsync...");
+            console.log("Loading model low_poly_90s_office_cubicle.glb...");
             await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
-            console.log("Model loaded. Meshes found:", this.scene.meshes.length);
-            this.scene.meshes.forEach(m => console.log("Mesh:", m.name));
 
-            // Find the monitor screen mesh - checking both keys
-            const screenKeywords = ["glowing screen", "monitor_screen"];
-            let screenMesh = this.scene.meshes.find(m => screenKeywords.some(k => m.name.toLowerCase().includes(k)));
+            // Find the glowing screen mesh
+            const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("glowing screen"));
 
             if (!screenMesh) {
-                console.warn("Monitor screen mesh not found, using fallback plane.");
+                console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
             } else {
-                console.log("Found screen mesh:", screenMesh.name);
-
-                // Hide original and make unpickable
-                screenMesh.isVisible = false;
-                screenMesh.isPickable = false;
-
+                console.log("Found glowing screen mesh:", screenMesh.name);
                 this.createHtmlMesh(screenMesh);
-
-                const camera = this.scene.activeCamera as ArcRotateCamera;
-                if (camera) {
-                    camera.setTarget(screenMesh.getAbsolutePosition());
-                    camera.radius = 2.5;
-                }
             }
-
         } catch (error) {
             console.error("Failed to load model:", error);
             this.createHtmlMesh(null);
@@ -95,33 +81,41 @@ export class BabylonWrapper {
         if (!appElement) return;
 
         this.htmlMesh = new HtmlMesh(this.scene, "appHtmlMesh", {
-            isCanvasOverlay: true,
+            isCanvasOverlay: false,
             fitStrategy: FitStrategy.STRETCH
         });
 
-        // Set content size (World Units)
-        this.htmlMesh.setContent(appElement, 4, 3);
-
         if (parentMesh) {
+            // Units for glowing screen in cubicle model
+            this.htmlMesh.setContent(appElement, 3, 2);
             this.htmlMesh.parent = parentMesh;
 
             // Reset local transforms
             this.htmlMesh.position = Vector3.Zero();
             this.htmlMesh.rotation = Vector3.Zero();
 
-            // Rotate 180 degrees because default plane faces +Z (inside the monitor)
-            this.htmlMesh.rotation.y = Math.PI;
+            // Face forward
+            // this.htmlMesh.rotation.y = Math.PI;
 
-            // Pull it slightly forward
-            this.htmlMesh.position.z += 0.01;
+            // Offset to avoid clipping/z-fighting
+            this.htmlMesh.position.z = -0.02;
 
-            // Hide the original mesh to avoid z-fighting
+            // Hide the original glowing part
             parentMesh.isVisible = false;
         } else {
+            // Fallback: floating in front of camera
+            this.htmlMesh.setContent(appElement, 4, 3);
             this.htmlMesh.position = new Vector3(0, 1.5, 0);
         }
 
-        // Hide the 3D plane part of the HtmlMesh
-        this.htmlMesh.visibility = 0;
+        // this.htmlMesh.visibility = 1;
+
+        if (!parentMesh) {
+            this.camera.setTarget(this.htmlMesh.position);
+        } else {
+            // Target the monitor
+            this.camera.setTarget(parentMesh.absolutePosition);
+            this.camera.radius = 50.5; // Closer look at the monitor
+        }
     }
 }
