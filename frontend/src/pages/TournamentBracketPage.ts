@@ -3,6 +3,7 @@ import { App } from "../core/App";
 import { TournamentService, Tournament } from "../services/TournamentService";
 import { GameStateService } from "../services/GameStateService";
 import { TournamentMatchModal } from "../components/TournamentMatchModal";
+import { BlockchainService } from "../services/BlockchainService";
 
 export class TournamentBracketPage extends AbstractComponent {
     private tournamentId: string | null = null;
@@ -71,8 +72,9 @@ export class TournamentBracketPage extends AbstractComponent {
         if (!this.tournamentId) return;
 		const updated = await TournamentService.getInstance().get(this.tournamentId);
 		this.tournament = updated;
+        const participants = updated.get
         if (this.tournament?.winnerId != null) {
-          TournamentService.getInstance().recordOnBlockchain(this.tournament.id)
+          BlockchainService.getInstance().recordOnBlockchain(this.tournament.id)
             .catch(err => console.error('Blockchain record failed', err));
         }
     }

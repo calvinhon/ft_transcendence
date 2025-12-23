@@ -6,16 +6,37 @@ const plugin: FastifyPluginAsync<{ blockchainService: BlockchainService }> = asy
 
   fastify.post('/record', async (request, reply) => {
     try {
-      const body = request.body as { tournamentId?: number | string; userId?: number | string; rank?: number | string };
-      if (body.tournamentId == null || body.userId == null || body.rank == null) {
-        return reply.status(400).send({ ok: false, error: 'tournamentId, userId, rank are required' });
+      const body = request.body as any;
+
+      // Normalize body to an array of participants
+      let participants: Array<{ tournamentId: number; userId: number; rank: number }> = [];
+
+      if (Array.isArray(body?.participants)) {
+        participants = body.participants.map((p: any) => ({
+          tournamentId: Number(p.tournamentId),
+          userId: Number(p.userId),
+          rank: Number(p.rank),
+        }));
+      } else {
+        return reply.status(400).send({ ok: false, error: 'Array of tournamentId, userId, rank and participants is required' });
       }
 
-      const txHash = await svc.recordRank(body.tournamentId, body.userId, body.rank);
-      return reply.send({ ok: true, txHash });
+      // Validate participants
+      for (const p of participants) {
+        if (
+          Number.isNaN(p.tournamentId) ||
+          Number.isNaN(p.userId) ||
+          Number.isNaN(p.rank)
+        ) {
+          return reply.status(400).send({ ok: false, error: 'All participants must include numeric tournamentId, userId and rank' });
+        }
+      }
+
+      const txHashes = await svc.recordRanks(participants);
+      return reply.send({ ok: true, txHashes });
     } catch (e: any) {
       fastify.log.error({ err: e }, '[blockchain-service] /record error');
-      return reply.status(500).send({ ok: false, error: e.message });
+      return reply.status(500).send({ ok: false, error: e?.message ?? String(e) });
     }
   });
 };

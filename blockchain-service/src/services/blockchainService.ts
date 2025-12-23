@@ -30,16 +30,21 @@ export class BlockchainService {
    * Enqueue a recordRank transaction and wait for the receipt hash.
    * Serializes sends to avoid nonce concurrency issues in automining environments.
    */
-  recordRank(tournamentId: number | bigint | string, userId: number | bigint | string, rank: number | bigint | string): Promise<string> {
+  recordRanks(participants: Array<{ tournamentId: number, userId: number, rank: number }>): Promise<Array<string | null>> {
     return new Promise((resolve, reject) => {
       this.queue.push(async () => {
-        try {
-          const tx = await this.contract.recordRank(BigInt(tournamentId as any), BigInt(userId as any), BigInt(rank as any));
-          const receipt = await tx.wait();
-          resolve(receipt.hash);
-        } catch (e: any) {
-          reject(e);
+        const results: Array<string | null> = [];
+        for (const p of participants) {
+          try {
+            const tx = await this.contract.recordRank(BigInt(p.tournamentId as any), BigInt(p.userId as any), BigInt(p.rank as any));
+            const receipt = await tx.wait();
+            results.push(receipt.hash);
+          } catch (e) {
+            console.error('[blockchain-service] recordRank failed for participant', { participant: p, err: e });
+            results.push(null);
+          }
         }
+        resolve(results);
       });
 
       if (!this.processing) {

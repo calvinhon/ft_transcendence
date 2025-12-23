@@ -149,7 +149,14 @@ export class TournamentService {
 
     public async recordOnBlockchain(tournamentId: string): Promise<any> {
         try {
-            const res = await Api.post('/api/tournament/blockchain/record', { tournamentId });
+            const tournament = await this.get(tournamentId);
+            const participants = tournament.players.map(p => ({
+                id: p.id,
+                username: p.username,
+                isBot:p.isBot
+            }));
+
+            const res = await Api.post('/api/blockchain-service/blockchain/record', { participants });
             window.dispatchEvent(new CustomEvent('tournament:blockchain', {
                 detail: { success: true, message: 'Rankings recorded on blockchain', response: res }
             }));
@@ -168,5 +175,11 @@ export class TournamentService {
 
     public getCurrentTournament(): Tournament | null {
         return this.currentTournament;
+    }
+
+    public async getParticipants(tournamentId: string): <participants[]> {
+        const tournament = await this.get(tournamentId);
+        const res = await Api.get('/api/tournament/tournaments/');
+        return res;
     }
 }

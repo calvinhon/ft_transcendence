@@ -36,7 +36,6 @@ if (!CONTRACT) {
 
 const abiPath = '/app/artifacts/contracts/TournamentRankings.sol/TournamentRankings.json';
 
-// Bootstrap without top-level await
 async function start() {
   try {
     if (!fs.existsSync(abiPath)) {

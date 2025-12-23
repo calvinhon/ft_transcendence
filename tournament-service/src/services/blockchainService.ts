@@ -4,7 +4,7 @@ const RPC_URL = process.env.BLOCKCHAIN_URL || 'http://blockchain:8545';
 
 type RecordRankResponse = { ok: boolean; txHash?: string };
 
-export async function recordRank(tournamentId: number, userId: number, rank: number) {
+export async function recordRanks(tournamentId: number, userId: number, rank: number) {
   const res = await fetch(`${BLOCKCHAIN_URL}/record`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
