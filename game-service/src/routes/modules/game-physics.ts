@@ -8,6 +8,7 @@ export class GamePhysics {
   private ballSpeed: number;
   private accelerateOnHit: boolean;
   private gameMode: string;
+  private lastUpdateTime: number = Date.now();
 
   constructor(ballSpeed: number, accelerateOnHit: boolean, gameMode: string) {
     this.ballSpeed = ballSpeed;
@@ -18,13 +19,17 @@ export class GamePhysics {
   updateBall(ball: Ball, paddles: Paddles, gameId: number): { scored: boolean; scorer?: 'player1' | 'player2' } {
     if (ball.frozen) return { scored: false };
 
+    const currentTime = Date.now();
+    const deltaTime = Math.min((currentTime - this.lastUpdateTime) / 16.67, 2); // Cap at 2x normal speed
+    this.lastUpdateTime = currentTime;
+
     // Store previous position for swept collision detection
     const prevX = ball.x;
     const prevY = ball.y;
 
-    // Update ball position
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    // Update ball position with delta time for smooth movement
+    ball.x += ball.dx * deltaTime;
+    ball.y += ball.dy * deltaTime;
 
     // Ball collision with top/bottom walls
     if (ball.y <= 0 || ball.y >= 600) {
@@ -199,11 +204,11 @@ export class GamePhysics {
 
     if (direction === 'up' && paddle.y > 0) {
       paddle.y = Math.max(0, paddle.y - moveSpeed);
-      logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y);
+      logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y, 'speed:', moveSpeed);
       return true;
     } else if (direction === 'down' && paddle.y < 500) {
       paddle.y = Math.min(500, paddle.y + moveSpeed);
-      logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
+      logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y, 'speed:', moveSpeed);
       return true;
     } else {
       logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 500]');

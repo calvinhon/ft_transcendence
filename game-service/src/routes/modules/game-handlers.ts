@@ -9,6 +9,8 @@ const logger = createLogger('GAME-SERVICE');
 interface PlayerInputState {
   lastTimestamp: number;
   lastPosition: number;
+  inputBuffer: Array<{direction: 'up' | 'down', timestamp: number}>;
+  lastProcessedDirection?: 'up' | 'down';
 }
 
 const playerInputStates = new Map<number, PlayerInputState>();
@@ -21,13 +23,18 @@ export class GameHandlers {
     const currentState = playerInputStates.get(playerId) || {
       lastTimestamp: 0,
       lastPosition: 200, // Default center position
+      inputBuffer: []
     };
 
-    // Rate limiting: allow 1 input every ~16.67ms (60 FPS)
+    // Rate limiting: allow 1 input every ~16.67ms (60 FPS) for smooth control
     const timeSinceLastInput = now - currentState.lastTimestamp;
-    if (timeSinceLastInput < 15) { // Allow slightly faster than 60 FPS to be safe
-      logger.debug(`Rate limit exceeded for player ${playerId}: ${timeSinceLastInput}ms since last input`);
-      return false;
+    if (timeSinceLastInput < 16) { // Allow 60 FPS input rate
+      // Buffer the input for later processing instead of rejecting
+      if (currentState.inputBuffer.length < 3) { // Limit buffer size
+        currentState.inputBuffer.push({direction: data.direction, timestamp: now});
+      }
+      logger.debug(`Input buffered for player ${playerId}: ${data.direction}`);
+      return false; // Still reject immediate processing but buffer for later
     }
 
     // Timestamp validation: prevent time-travel (old timestamps)
@@ -39,11 +46,11 @@ export class GameHandlers {
     // Position validation: check for impossible jumps
     if (data.position !== undefined) {
       const positionDelta = Math.abs(data.position - currentState.lastPosition);
-      const timeDelta = data.timestamp ? (data.timestamp - currentState.lastTimestamp) : 100; // Default 100ms
+      const timeDelta = data.timestamp ? (data.timestamp - currentState.lastTimestamp) : timeSinceLastInput || 16; // Default to 16ms
       const velocity = positionDelta / timeDelta; // pixels per ms
       
-      // Max reasonable velocity: 2 pixels per ms (allows for fast paddle speeds at 60 FPS)
-      if (velocity > 2) {
+      // Max reasonable velocity: 5 pixels per ms (allows for very fast paddle speeds at 60 FPS)
+      if (velocity > 5) {
         logger.debug(`Suspicious velocity for player ${playerId}: ${velocity} pixels/ms`);
         return false;
       }
@@ -64,6 +71,20 @@ export class GameHandlers {
 
     playerInputStates.set(playerId, currentState);
     return true;
+  }
+
+  // Process buffered inputs for smoother movement
+  private static processBufferedInputs(playerId: number, game: any): void {
+    const currentState = playerInputStates.get(playerId);
+    if (!currentState || currentState.inputBuffer.length === 0) return;
+
+    // Process the most recent buffered input
+    const bufferedInput = currentState.inputBuffer.shift();
+    if (bufferedInput) {
+      logger.debug(`Processing buffered input for player ${playerId}: ${bufferedInput.direction}`);
+      // Try to move the paddle with the buffered input
+      game.movePaddle(playerId, bufferedInput.direction);
+    }
   }
 
   static handleMovePaddle(socket: any, data: MovePaddleMessage): void {
@@ -107,6 +128,10 @@ export class GameHandlers {
         }
 
         logger.gameDebug(gameId, 'Paddle movement executed');
+        
+        // Process any buffered inputs for smoother movement
+        this.processBufferedInputs(socketPlayerId, game);
+        
         return; // Found the game, no need to continue
       }
     }
