@@ -1,8 +1,0 @@
-{
-  "name": "learn",
-  "version": "1.0.0",
-  "main": "learn.js",
-  "dependencies": {
-    "sqlite3": "^5.1.6"
-  }
-}
