@@ -126,8 +126,6 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=blockchain-service
-      - BLOCKCHAIN_RPC_URL=http://blockchain:8545
-      - PRIVATE_KEY=${PRIVATE_KEY}
     volumes:
       - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments

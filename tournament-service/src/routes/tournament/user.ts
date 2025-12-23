@@ -1,7 +1,6 @@
 // tournament-service/src/routes/tournament/user.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { TournamentService } from '../../services/tournamentService';
-import { ParticipantService } from '../../services/participantService';
 import { ResponseUtil } from '../../utils/responses';
 import { logger } from '../../utils/logger';
 

@@ -1,10 +1,10 @@
-import 'dotenv/config';
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
-import process from 'node:process';
+
+import recordRoute from './routes/record.js';
+import { BlockchainService } from './services/blockchainService.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -34,43 +34,24 @@ if (!CONTRACT) {
   process.exit(1);
 }
 
-const provider = new ethers.JsonRpcProvider(RPC);
-const signer = new ethers.Wallet(PK, provider);
-
 const abiPath = '/app/artifacts/contracts/TournamentRankings.sol/TournamentRankings.json';
-if (!fs.existsSync(abiPath)) {
-  fastify.log.error('[blockchain-service] ABI not found at ' + abiPath);
-  process.exit(1);
-}
-const abi = JSON.parse(fs.readFileSync(abiPath, 'utf8')).abi;
-const contract = new ethers.Contract(CONTRACT, abi, signer);
-
-fastify.post('/record', async (request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const body = request.body as { tournamentId?: number | string; userId?: number | string; rank?: number | string };
-    if (body.tournamentId == null || body.userId == null || body.rank == null) {
-      return reply.status(400).send({ ok: false, error: 'tournamentId, userId, rank are required' });
-    }
-
-    const tx = await contract.recordRank(
-      BigInt(body.tournamentId as any),
-      BigInt(body.userId as any),
-      BigInt(body.rank as any)
-    );
-    const receipt = await tx.wait();
-    return reply.send({ ok: true, txHash: receipt.hash });
-  } catch (e: any) {
-    fastify.log.error({ err: e }, '[blockchain-service] /record error');
-    return reply.status(500).send({ ok: false, error: e.message });
-  }
-});
 
 // Bootstrap without top-level await
 async function start() {
   try {
+    if (!fs.existsSync(abiPath)) {
+      fastify.log.error('[blockchain-service] ABI not found at ' + abiPath);
+      process.exit(1);
+    }
+
+    const bs = new BlockchainService(RPC, PK, CONTRACT as string, abiPath);
+    await bs.init();
+
     await fastify.register(cors, { origin: true });
-    await fastify.listen({ port: Number(process.env.PORT || 3000), host: '0.0.0.0' });
-    fastify.log.info(`[blockchain-service] Listening on ${Number(process.env.PORT || 3000)}, RPC=${RPC}, contract=${CONTRACT}`);
+    await fastify.register(recordRoute as any, { blockchainService: bs });
+
+    await fastify.listen({ port: 3000, host: '0.0.0.0' });
+    console.log(`Blockchain service running on port 3000, RPC=${RPC}, contract=${CONTRACT}`);
   } catch (err) {
     fastify.log.error({ err }, 'Failed to start blockchain-service');
     process.exit(1);

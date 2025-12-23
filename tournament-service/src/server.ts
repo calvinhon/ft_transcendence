@@ -1,5 +1,5 @@
 // tournament-service/src/server.ts
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
+import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import routes from './routes';
 
@@ -24,7 +24,7 @@ async function init(): Promise<void> {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     console.log('Tournament service running on port 3000');
   } catch (err) {
-    fastify.log.error(err);
+    fastify.log.error({ err }, 'Failed to start tournament-service');
     process.exit(1);
   }
 }
