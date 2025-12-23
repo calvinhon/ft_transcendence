@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-stats-service.ts
 import { db } from './database';
 import { GameStats } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameStatsService {
   // Get game statistics for a user

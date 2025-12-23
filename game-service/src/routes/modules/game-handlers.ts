@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-handlers.ts
 import { MovePaddleMessage } from './types';
 import { activeGames } from './game-logic';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 // Anti-cheat validation state
 interface PlayerInputState {
@@ -32,13 +34,13 @@ export class GameHandlers {
     }
     
     if (currentState.inputCount >= 10) {
-      logger.gameDebug(-1, `Rate limit exceeded for player ${playerId}`);
+      logger.debug(`Rate limit exceeded for player ${playerId}`);
       return false;
     }
 
     // Timestamp validation: prevent time-travel (old timestamps)
     if (data.timestamp && data.timestamp < currentState.lastTimestamp) {
-      logger.gameDebug(-1, `Time-travel detected for player ${playerId}: ${data.timestamp} < ${currentState.lastTimestamp}`);
+      logger.debug(`Time-travel detected for player ${playerId}: ${data.timestamp} < ${currentState.lastTimestamp}`);
       return false;
     }
 
@@ -50,13 +52,13 @@ export class GameHandlers {
       
       // Max reasonable velocity: 1 pixel per ms (very fast but possible)
       if (velocity > 1) {
-        logger.gameDebug(-1, `Suspicious velocity for player ${playerId}: ${velocity} pixels/ms`);
+        logger.debug(`Suspicious velocity for player ${playerId}: ${velocity} pixels/ms`);
         return false;
       }
 
       // Position bounds: paddle should stay within game area (allowing some margin)
       if (data.position < -50 || data.position > 450) { // Game height is 400, paddle height is 50
-        logger.gameDebug(-1, `Invalid position for player ${playerId}: ${data.position}`);
+        logger.debug(`Invalid position for player ${playerId}: ${data.position}`);
         return false;
       }
     }
@@ -73,8 +75,8 @@ export class GameHandlers {
   }
 
   static handleMovePaddle(socket: any, data: MovePaddleMessage): void {
-    logger.gameDebug(-1, 'handleMovePaddle called with:', data);
-    logger.gameDebug(-1, 'Active games count:', activeGames.size);
+    logger.debug('handleMovePaddle called with:', data);
+    logger.debug('Active games count:', activeGames.size);
 
     // Find the game this player is in
     for (let [gameId, game] of activeGames) {
@@ -117,13 +119,13 @@ export class GameHandlers {
       }
     }
 
-    logger.gameDebug(-1, 'No game found for this socket');
+    logger.debug('No game found for this socket');
   }
 
   /*
   static handleInput(socket: any, data: InputMessage): void {
-    logger.gameDebug(-1, 'handleInput called with:', data);
-    logger.gameDebug(-1, 'Active games count:', activeGames.size);
+    logger.debug('handleInput called with:', data);
+    logger.debug('Active games count:', activeGames.size);
 
     // Find the game this player is in
     for (let [gameId, game] of activeGames) {
@@ -164,14 +166,14 @@ export class GameHandlers {
       }
     }
 
-    logger.gameDebug(-1, 'No game found for this socket');
+    logger.debug('No game found for this socket');
   }
   */
 
   /*
   static handlePauseGame(socket: any, data: any): void {
-    logger.gameDebug(-1, 'handlePauseGame called with:', data);
-    logger.gameDebug(-1, 'Active games count:', activeGames.size);
+    logger.debug(-1, 'handlePauseGame called with:', data);
+    logger.debug('Active games count:', activeGames.size);
 
     // Find the game this player is in
     for (let [gameId, game] of activeGames) {
@@ -200,7 +202,7 @@ export class GameHandlers {
       }
     }
 
-    logger.gameDebug(-1, 'No game found for this socket');
+    logger.debug('No game found for this socket');
   }
   */
 }

@@ -1,5 +1,8 @@
 // ssr-service/src/renderers/leaderboardRenderer.ts
 import { generateHTML } from '../utils/template.js';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('SSR-SERVICE');
 
 async function fetchGlobalLeaderboard(): Promise<any[]> {
   try {
@@ -20,7 +23,7 @@ async function fetchGlobalLeaderboard(): Promise<any[]> {
     const leaderboard = await leaderboardResponse.json();
     return leaderboard.data || [];
   } catch (error) {
-    console.error('Failed to fetch global leaderboard:', error);
+    logger.error('Failed to fetch global leaderboard:', error);
     return [];
   }
 }

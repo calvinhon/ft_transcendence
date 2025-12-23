@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-state.ts
 import { GamePlayer } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameStateManager {
   private gameId: number;

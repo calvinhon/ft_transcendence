@@ -1,7 +1,9 @@
 // auth-service/src/routes/handlers/profile.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
-import { sendError, sendSuccess } from '../../../../shared/responses';
+import { sendError, sendSuccess, createLogger, ERROR_MESSAGES } from '@ft-transcendence/common';
+
+const logger = createLogger('AUTH-SERVICE');
 
 export async function profileHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();
@@ -20,8 +22,8 @@ export async function profileHandler(request: FastifyRequest, reply: FastifyRepl
     if (error.message === 'User not found') {
       sendError(reply, 'User not found', 404);
     } else {
-      console.error('Profile fetch error:', error);
-      sendError(reply, 'Internal server error', 500);
+      logger.error('Profile fetch error:', error);
+      sendError(reply, ERROR_MESSAGES.INTERNAL_SERVER_ERROR, 500);
     }
   }
 }

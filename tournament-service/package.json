@@ -17,10 +17,12 @@
   "dependencies": {
     "fastify": "^4.24.3",
     "@fastify/cors": "^8.4.0",
+    "@ft-transcendence/common": "^1.0.0",
     "sqlite3": "^5.1.6",
     "ethers": "^6.9.0"
   },
   "devDependencies": {
+    "@types/sqlite3": "^3.1.11",
     "typescript": "^5.0.0",
     "ts-node-dev": "^2.0.0",
     "@types/node": "^20.0.0",

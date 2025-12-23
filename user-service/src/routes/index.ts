@@ -4,6 +4,7 @@ import { setupProfileRoutes } from './profile';
 import { setupAchievementRoutes } from './achievements';
 import { setupSearchRoutes } from './search';
 import gdprRoutes from './gdpr';
+import { sendHealthCheck } from '@ft-transcendence/common';
 
 export default async function routes(fastify: FastifyInstance): Promise<void> {
   // Setup all route modules
@@ -12,12 +13,4 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   await setupSearchRoutes(fastify);
   await gdprRoutes(fastify);
 
-  // Health check
-  fastify.get('/health', async (request, reply) => {
-    reply.send({
-      status: 'ok',
-      service: 'user-service',
-      timestamp: new Date().toISOString()
-    });
-  });
 }

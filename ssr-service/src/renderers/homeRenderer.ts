@@ -1,5 +1,8 @@
 // ssr-service/src/renderers/homeRenderer.ts
 import { generateHTML } from '../utils/template.js';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('SSR-SERVICE');
 
 async function fetchSystemStats(): Promise<any> {
   try {
@@ -17,7 +20,7 @@ async function fetchSystemStats(): Promise<any> {
         stats.totalUsers = -1; // Placeholder - would need a user count endpoint
       }
     } catch (e) {
-      console.error('Failed to fetch user stats:', e);
+      logger.error('Failed to fetch user stats:', e);
     }
 
     // Try to get tournament count
@@ -28,12 +31,12 @@ async function fetchSystemStats(): Promise<any> {
         stats.activeTournaments = tournaments.data?.length || 0;
       }
     } catch (e) {
-      console.error('Failed to fetch tournament stats:', e);
+      logger.error('Failed to fetch tournament stats:', e);
     }
 
     return stats;
   } catch (error) {
-    console.error('Failed to fetch system stats:', error);
+    logger.error('Failed to fetch system stats:', error);
     return {
       totalUsers: 0,
       activeGames: 0,

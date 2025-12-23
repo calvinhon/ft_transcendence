@@ -1,46 +1,26 @@
 // auth-service/src/server.ts
-import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import authRoutes from './routes/auth';
-import { config } from './utils/config';
+import { createServer, createServiceConfig } from '@ft-transcendence/common';
 
-const fastify: FastifyInstance = Fastify({
-  logger: true
-});
+const serverConfig = createServiceConfig('AUTH-SERVICE', 3000);
 
-export async function buildServer(): Promise<FastifyInstance> {
-  // Register plugins
-  await fastify.register(cors, config.cors);
-  await fastify.register(cookie);
+const serverOptions = {
+  healthCheckModules: ['authentication', 'users', 'sessions'],
+  corsPlugin: cors
+};
 
-  // Register routes
-  await fastify.register(authRoutes);
+async function start(): Promise<void> {
+  const server = await createServer(serverConfig, async (fastify) => {
+    // Register additional plugins
+    await fastify.register(cookie);
 
-  // Health check
-  fastify.get('/health', async () => {
-    return {
-      status: 'ok',
-      service: 'auth-service',
-      timestamp: new Date().toISOString()
-    };
-  });
+    // Register routes
+    await fastify.register(authRoutes);
+  }, serverOptions);
 
-  return fastify;
-}
-
-export async function start(): Promise<void> {
-  try {
-    const server = await buildServer();
-    await server.listen({
-      port: config.port,
-      host: config.host
-    });
-    console.log(`Auth service running on port ${config.port}`);
-  } catch (err) {
-    console.error('Error starting server:', err);
-    process.exit(1);
-  }
+  await server.start();
 }
 
 // Start the server if this file is run directly

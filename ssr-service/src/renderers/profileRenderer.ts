@@ -1,5 +1,8 @@
 // ssr-service/src/renderers/profileRenderer.ts
 import { generateHTML } from '../utils/template.js';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('SSR-SERVICE');
 
 interface UserProfile {
   id: number;
@@ -43,7 +46,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
     if (!response.ok) return null;
     return await response.json();
   } catch (error) {
-    console.error('Failed to fetch user profile:', error);
+    logger.error('Failed to fetch user profile:', error);
     return null;
   }
 }
@@ -55,7 +58,7 @@ async function fetchGameStats(userId: string): Promise<GameStats | null> {
     const data = await response.json();
     return data.data || data; // handle nested response
   } catch (error) {
-    console.error('Failed to fetch game stats:', error);
+    logger.error('Failed to fetch game stats:', error);
     return null;
   }
 }
@@ -67,7 +70,7 @@ async function fetchRecentGames(userId: string): Promise<RecentGame[]> {
     const data = await response.json();
     return data.data || data || [];
   } catch (error) {
-    console.error('Failed to fetch recent games:', error);
+    logger.error('Failed to fetch recent games:', error);
     return [];
   }
 }

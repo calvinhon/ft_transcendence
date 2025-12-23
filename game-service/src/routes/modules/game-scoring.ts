@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-scoring.ts
 import { GamePlayer, Scores } from './types';
 import { db } from './database';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameScoring {
   private gameId: number;

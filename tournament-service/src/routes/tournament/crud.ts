@@ -2,8 +2,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { TournamentService } from '../../services/tournamentService';
 import { CreateTournamentBody, TournamentQuery } from '../../types';
-import { ResponseUtil } from '../../utils/responses';
-import { logger } from '../../utils/logger';
+import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export default async function tournamentCrudRoutes(fastify: FastifyInstance): Promise<void> {
   // Create tournament
@@ -13,11 +14,11 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const tournament = await TournamentService.createTournament(request.body);
       logger.info('Tournament created via API', { id: tournament.id, name: tournament.name });
-      return ResponseUtil.success(reply, tournament, 'Tournament created successfully', 201);
+      return sendSuccess(reply, tournament, 'Tournament created successfully', 201);
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to create tournament', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Failed to create tournament', 500);
+      return sendError(reply, 'Failed to create tournament', 500);
     }
   });
 
@@ -28,11 +29,11 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const tournament = await TournamentService.createTournament(request.body);
       logger.info('Tournament created via legacy API', { id: tournament.id, name: tournament.name });
-      return ResponseUtil.success(reply, { id: tournament.id }, 'Tournament created successfully');
+      return sendSuccess(reply, { id: tournament.id }, 'Tournament created successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to create tournament via legacy API', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Failed to create tournament', 500);
+      return sendError(reply, 'Failed to create tournament', 500);
     }
   });
 
@@ -51,7 +52,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournaments', { error: err.message, query: request.query });
-      return ResponseUtil.error(reply, 'Failed to retrieve tournaments', 500);
+      return sendError(reply, 'Failed to retrieve tournaments', 500);
     }
   });
 
@@ -62,12 +63,12 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const id = parseInt(request.params.id);
       if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const details = await TournamentService.getTournamentDetails(id);
       if (!details) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
+        return sendError(reply, 'Tournament not found', 404);
       }
 
       // Return details directly for frontend compatibility
@@ -75,7 +76,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament', { error: err.message, id: request.params.id });
-      return ResponseUtil.error(reply, 'Failed to retrieve tournament', 500);
+      return sendError(reply, 'Failed to retrieve tournament', 500);
     }
   });
 
@@ -90,19 +91,19 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const id = parseInt(request.params.id);
       if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const tournament = await TournamentService.updateTournament(id, request.body);
       if (!tournament) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
+        return sendError(reply, 'Tournament not found', 404);
       }
 
-      return ResponseUtil.success(reply, tournament, 'Tournament updated successfully');
+      return sendSuccess(reply, tournament, 'Tournament updated successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to update tournament', { error: err.message, id: request.params.id, body: request.body });
-      return ResponseUtil.error(reply, err.message || 'Failed to update tournament', 500);
+      return sendError(reply, err.message || 'Failed to update tournament', 500);
     }
   });
 
@@ -113,19 +114,19 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     try {
       const id = parseInt(request.params.id);
       if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const deleted = await TournamentService.deleteTournament(id);
       if (!deleted) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
+        return sendError(reply, 'Tournament not found', 404);
       }
 
-      return ResponseUtil.success(reply, null, 'Tournament deleted successfully');
+      return sendSuccess(reply, null, 'Tournament deleted successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to delete tournament', { error: err.message, id: request.params.id });
-      return ResponseUtil.error(reply, err.message || 'Failed to delete tournament', 500);
+      return sendError(reply, err.message || 'Failed to delete tournament', 500);
     }
   });
 
@@ -142,18 +143,18 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const { action, startedBy } = request.body;
 
       if (isNaN(id)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       if (action === 'start') {
         const tournament = await TournamentService.startTournament(id, startedBy);
         if (!tournament) {
-          return ResponseUtil.error(reply, 'Tournament not found or cannot be started', 404);
+          return sendError(reply, 'Tournament not found or cannot be started', 404);
         }
         logger.info('Tournament started', { id });
-        return ResponseUtil.success(reply, tournament, 'Tournament started successfully');
+        return sendSuccess(reply, tournament, 'Tournament started successfully');
       } else {
-        return ResponseUtil.error(reply, 'Invalid action. Use "start"', 400);
+        return sendError(reply, 'Invalid action. Use "start"', 400);
       }
     } catch (error) {
       const err = error as Error;
@@ -162,7 +163,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         id: request.params.id,
         action: request.body.action
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to update tournament status', 500);
+      return sendError(reply, err.message || 'Failed to update tournament status', 500);
     }
   });
 
@@ -176,19 +177,19 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const tournament = await TournamentService.startTournament(tournamentId);
       logger.info('Tournament started via specific route', { tournamentId });
-      return ResponseUtil.success(reply, tournament, 'Tournament started successfully');
+      return sendSuccess(reply, tournament, 'Tournament started successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to start tournament', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to start tournament', 500);
+      return sendError(reply, err.message || 'Failed to start tournament', 500);
     }
   });
 
@@ -200,13 +201,13 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const { tournamentId, winnerId } = request.body;
 
       if (!tournamentId || !winnerId) {
-        return ResponseUtil.error(reply, 'Tournament ID and winner ID required', 400);
+        return sendError(reply, 'Tournament ID and winner ID required', 400);
       }
 
       // Get tournament details
       const tournament = await TournamentService.getTournamentById(tournamentId);
       if (!tournament || tournament.status !== 'finished') {
-        return ResponseUtil.error(reply, 'Finished tournament not found', 404);
+        return sendError(reply, 'Finished tournament not found', 404);
       }
 
       // Get all participants with their final rankings
@@ -222,14 +223,14 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       // Check if blockchain is available
       const blockchainAvailable = await isBlockchainAvailable();
       if (!blockchainAvailable) {
-        return ResponseUtil.error(reply, 'Blockchain service unavailable', 503);
+        return sendError(reply, 'Blockchain service unavailable', 503);
       }
 
       // Record on blockchain
       const txHash = await recordTournamentOnBlockchain(tournamentId, rankingsForBlockchain);
 
       logger.info('Tournament recorded on blockchain', { tournamentId, winnerId, txHash });
-      return ResponseUtil.success(reply, {
+      return sendSuccess(reply, {
         message: 'Tournament recorded on blockchain successfully',
         transactionHash: txHash,
         participants: participants.length,
@@ -238,7 +239,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
     } catch (error) {
       const err = error as Error;
       logger.error('Blockchain recording failed', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Blockchain recording failed', 500);
+      return sendError(reply, 'Blockchain recording failed', 500);
     }
   });
 
@@ -252,19 +253,19 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const tournament = await TournamentService.startTournament(tournamentId);
       logger.info('Tournament started via legacy route', { tournamentId });
-      return ResponseUtil.success(reply, tournament, 'Tournament started successfully');
+      return sendSuccess(reply, tournament, 'Tournament started successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to start tournament via legacy route', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to start tournament', 500);
+      return sendError(reply, err.message || 'Failed to start tournament', 500);
     }
   });
 
@@ -278,32 +279,23 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const details = await TournamentService.getTournamentDetails(tournamentId);
       if (!details) {
-        return ResponseUtil.error(reply, 'Tournament not found', 404);
+        return sendError(reply, 'Tournament not found', 404);
       }
 
-      return ResponseUtil.success(reply, details, 'Tournament details retrieved successfully');
+      return sendSuccess(reply, details, 'Tournament details retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament details via legacy route', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve tournament details', 500);
+      return sendError(reply, 'Failed to retrieve tournament details', 500);
     }
   });
 
-  // Health check
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    return ResponseUtil.success(reply, {
-      status: 'healthy',
-      service: 'tournament-service',
-      timestamp: new Date().toISOString(),
-      modules: ['tournaments', 'matches', 'participants', 'bracket']
-    }, 'Service is healthy');
-  });
 }

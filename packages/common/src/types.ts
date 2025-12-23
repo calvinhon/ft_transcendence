@@ -1,4 +1,4 @@
-// shared/types.ts
+// packages/common/src/types.ts
 export interface User {
   userId: number;
   username: string;

@@ -3,7 +3,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from '../services/userService';
 import { UpdateProfileBody } from '../types';
 import { db } from '../database';
-import { promisifyDbRun } from '../utils/database';
+import { promisifyDbRun } from '@ft-transcendence/common';
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // Get user profile

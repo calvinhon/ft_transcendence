@@ -2,7 +2,9 @@
 import { GamePlayer, GameSettings } from './types';
 import { db } from './database';
 import { PongGame, activeGames } from './game-logic';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 import { isSocketOpen } from './utils';
 
 // Handles game creation in database and active games management
@@ -55,7 +57,7 @@ export class GameCreator {
           const game = new PongGame(player1, player2, gameId, fullGameSettings);
           activeGames.set(gameId, game);
 
-          logger.matchmaking('Created game:', gameId, 'for players:', player1.username, 'vs', player2.username);
+          logger.game('Created game:', gameId, 'for players:', player1.username, 'vs', player2.username);
           resolve({ gameId, game });
         }
       );
@@ -77,13 +79,13 @@ export class GameCreator {
     // Send to player1
     if (isSocketOpen(player1.socket)) {
       player1.socket.send(JSON.stringify(startMessage));
-      logger.matchmaking('Sent gameStart to:', player1.username);
+      logger.game('Sent gameStart to:', player1.username);
     }
 
     // Send to player2 (only if not a bot)
     if (player2.userId !== 0 && isSocketOpen(player2.socket)) {
       player2.socket.send(JSON.stringify(startMessage));
-      logger.matchmaking('Sent gameStart to:', player2.username);
+      logger.game('Sent gameStart to:', player2.username);
     }
 
     // Send initial game state after a short delay

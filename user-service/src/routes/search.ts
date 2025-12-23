@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../database';
 import { SearchQuery, OnlineUser } from '../types';
-import { promisifyDbAll } from '../utils/database';
+import { promisifyDbAll, clampLimit } from '@ft-transcendence/common';
 
 export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void> {
   // Search users by display name or username
@@ -15,7 +15,7 @@ export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void>
       return reply.status(400).send({ error: 'Search query must be at least 2 characters' });
     }
 
-    const searchLimit = Math.min(parseInt(limit) || 10, 50); // Max 50 results
+    const searchLimit = clampLimit(limit, 10, 50); // Max 50 results
 
     try {
       const searchPattern = `%${query.trim()}%`;
@@ -61,7 +61,7 @@ export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void>
     Querystring: { type?: 'wins' | 'games' | 'winrate'; limit?: string };
   }>('/leaderboard', async (request: FastifyRequest<{ Querystring: { type?: 'wins' | 'games' | 'winrate'; limit?: string } }>, reply: FastifyReply) => {
     const { type = 'wins', limit = '50' } = request.query;
-    const queryLimit = Math.min(parseInt(limit) || 50, 100); // Max 100 results
+    const queryLimit = clampLimit(limit, 50, 100); // Max 100 results
 
     let orderBy: string;
     switch (type) {

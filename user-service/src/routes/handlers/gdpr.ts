@@ -1,8 +1,11 @@
 // user-service/src/routes/handlers/gdpr.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../../database';
-import { promisifyDbGet, promisifyDbRun, promisifyDbAll } from '../../utils/database';
+import { promisifyDbGet, promisifyDbRun, promisifyDbAll } from '@ft-transcendence/common';
 import sqlite3 from 'sqlite3';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('USER-SERVICE');
 
 interface User {
   id: string;
@@ -86,7 +89,7 @@ export async function exportUserDataHandler(
     reply.header('Content-Disposition', `attachment; filename="user_data_${userId}.json"`);
     reply.send(exportData);
   } catch (err) {
-    console.error('Export user data error:', err);
+    logger.error('Export user data error:', err);
     reply.status(500).send({ error: 'Failed to export user data' });
   }
 }
@@ -149,7 +152,7 @@ export async function anonymizeUserHandler(
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.error('Anonymize user error:', err);
+    logger.error('Anonymize user error:', err);
     reply.status(500).send({ error: 'Failed to anonymize user account' });
   }
 }
@@ -217,7 +220,7 @@ export async function deleteUserHandler(
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.error('Delete user error:', err);
+    logger.error('Delete user error:', err);
     reply.status(500).send({ error: 'Failed to delete user account' });
   }
 }
@@ -289,7 +292,7 @@ export async function getGdprStatusHandler(
       }
     });
   } catch (err) {
-    console.error('Get GDPR status error:', err);
+    logger.error('Get GDPR status error:', err);
     reply.status(500).send({ error: 'Failed to get GDPR status' });
   }
 }

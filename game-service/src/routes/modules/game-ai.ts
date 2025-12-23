@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-ai.ts
 import { Paddles } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameAI {
   private aiDifficulty: 'easy' | 'medium' | 'hard';

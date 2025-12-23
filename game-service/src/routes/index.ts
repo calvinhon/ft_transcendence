@@ -4,8 +4,9 @@ import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
-import { sendSuccess, sendError } from '../../../shared/responses';
-import { logger } from './modules/logger';
+import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Chat routes were removed/disabled from this service. If chat is
@@ -102,15 +103,6 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       logger.error('Error fetching game stats:', error);
       sendError(reply, 'Error fetching game statistics', 500);
     }
-  });
-
-  // Health check
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    reply.send({
-      status: 'ok',
-      service: 'game-service',
-      timestamp: new Date().toISOString()
-    });
   });
 }
 

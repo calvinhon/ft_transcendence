@@ -3,8 +3,9 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ParticipantService } from '../../services/participantService';
 import { TournamentService } from '../../services/tournamentService';
 import { JoinTournamentBody } from '../../types';
-import { ResponseUtil } from '../../utils/responses';
-import { logger } from '../../utils/logger';
+import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export default async function tournamentParticipantRoutes(fastify: FastifyInstance): Promise<void> {
   // Join tournament
@@ -20,12 +21,12 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const { userId } = request.body;
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const participant = await ParticipantService.joinTournament(tournamentId, userId);
       logger.info('User joined tournament', { tournamentId, userId });
-      return ResponseUtil.success(reply, participant, 'Successfully joined tournament');
+      return sendSuccess(reply, participant, 'Successfully joined tournament');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to join tournament', {
@@ -33,7 +34,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         tournamentId: request.params.tournamentId,
         userId: request.body.userId
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to join tournament', 500);
+      return sendError(reply, err.message || 'Failed to join tournament', 500);
     }
   });
 
@@ -50,12 +51,12 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const { userId } = request.body;
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const participant = await ParticipantService.joinTournament(tournamentId, userId);
       logger.info('User joined tournament via legacy API', { tournamentId, userId });
-      return ResponseUtil.success(reply, participant, 'Successfully joined tournament');
+      return sendSuccess(reply, participant, 'Successfully joined tournament');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to join tournament via legacy API', {
@@ -63,7 +64,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         tournamentId: request.params.tournamentId,
         userId: request.body.userId
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to join tournament', 500);
+      return sendError(reply, err.message || 'Failed to join tournament', 500);
     }
   });
 
@@ -77,18 +78,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const participants = await TournamentService.getTournamentParticipants(tournamentId);
-      return ResponseUtil.success(reply, participants, 'Participants retrieved successfully');
+      return sendSuccess(reply, participants, 'Participants retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament participants', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve participants', 500);
+      return sendError(reply, 'Failed to retrieve participants', 500);
     }
   });
 
@@ -103,16 +104,16 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const userId = parseInt(request.params.userId);
 
       if (isNaN(tournamentId) || isNaN(userId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID or user ID', 400);
+        return sendError(reply, 'Invalid tournament ID or user ID', 400);
       }
 
       const success = await ParticipantService.leaveTournament(tournamentId, userId);
       if (!success) {
-        return ResponseUtil.error(reply, 'Participant not found or cannot leave tournament', 404);
+        return sendError(reply, 'Participant not found or cannot leave tournament', 404);
       }
 
       logger.info('User left tournament', { tournamentId, userId });
-      return ResponseUtil.success(reply, null, 'Successfully left tournament');
+      return sendSuccess(reply, null, 'Successfully left tournament');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to leave tournament', {
@@ -120,7 +121,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         tournamentId: request.params.tournamentId,
         userId: request.params.userId
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to leave tournament', 500);
+      return sendError(reply, err.message || 'Failed to leave tournament', 500);
     }
   });
 
@@ -134,18 +135,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const userId = parseInt(request.params.userId);
 
       if (isNaN(userId)) {
-        return ResponseUtil.error(reply, 'Invalid user ID', 400);
+        return sendError(reply, 'Invalid user ID', 400);
       }
 
       const rankings = await ParticipantService.getUserRankings(userId);
-      return ResponseUtil.success(reply, rankings, 'User rankings retrieved successfully');
+      return sendSuccess(reply, rankings, 'User rankings retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get user rankings', {
         error: err.message,
         userId: request.params.userId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve user rankings', 500);
+      return sendError(reply, 'Failed to retrieve user rankings', 500);
     }
   });
 
@@ -159,18 +160,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const leaderboard = await ParticipantService.getTournamentLeaderboard(tournamentId);
-      return ResponseUtil.success(reply, leaderboard, 'Leaderboard retrieved successfully');
+      return sendSuccess(reply, leaderboard, 'Leaderboard retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament leaderboard', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve leaderboard', 500);
+      return sendError(reply, 'Failed to retrieve leaderboard', 500);
     }
   });
 
@@ -184,18 +185,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       const userId = parseInt(request.params.userId);
 
       if (isNaN(userId)) {
-        return ResponseUtil.error(reply, 'Invalid user ID', 400);
+        return sendError(reply, 'Invalid user ID', 400);
       }
 
       const tournaments = await ParticipantService.getUserTournaments(userId);
-      return ResponseUtil.success(reply, tournaments, 'User tournaments retrieved successfully');
+      return sendSuccess(reply, tournaments, 'User tournaments retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get user tournaments', {
         error: err.message,
         userId: request.params.userId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve user tournaments', 500);
+      return sendError(reply, 'Failed to retrieve user tournaments', 500);
     }
   });
 }

@@ -2,15 +2,19 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm install
+# Copy shared common package tarball
+COPY ./packages/common/ft-transcendence-common-1.0.0.tgz ./
+
+# Copy package files
+COPY ./auth-service/package*.json ./
+COPY ./auth-service/tsconfig.json ./
+
+# Install dependencies and common package from tarball
+RUN npm install ft-transcendence-common-1.0.0.tgz && npm install
 
 # Copy source code
-COPY src/ ./src/
+COPY ./auth-service/src/ ./src/
 
 # Build TypeScript
 RUN npm run build
@@ -22,7 +26,7 @@ RUN npm prune --production
 RUN mkdir -p /app/database && chown -R node:node /app/database
 
 # Copy database directory
-COPY database/ ./database/
+COPY ./auth-service/database/ ./database/
 RUN chown -R node:node ./database
 
 EXPOSE 3000

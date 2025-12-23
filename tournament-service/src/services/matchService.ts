@@ -4,7 +4,9 @@
 import { dbRun, dbGet, dbAll } from '../database';
 import { TournamentMatch, MatchResultBody } from '../types';
 import { TournamentService } from './tournamentService';
-import { logger } from '../utils/logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export class MatchService {
   /**

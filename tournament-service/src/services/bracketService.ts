@@ -2,7 +2,9 @@
 // Bracket generation and management service
 
 import { MatchToCreate, BracketStructure, BracketRound, BracketMatch, BracketPlayer } from '../types';
-import { logger } from '../utils/logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export class BracketService {
   /**

@@ -122,6 +122,18 @@ The platform consists of 8 independent microservices, each handling specific bus
 - **WebSocket Proxy**: Real-time communication handling
 - **Docker Compose**: Container orchestration and service management
 
+### Shared Utilities Package (`/packages/common`)
+- **Package**: `@ft-transcendence/common`
+- **Technology**: TypeScript, Jest (testing)
+- **Features**:
+  - Consolidated response utilities (`sendSuccess`, `sendError`)
+  - Standardized health check responses
+  - Unified database access patterns with SQLite
+  - Shared server bootstrap and configuration
+  - Consistent logging across all services
+  - Common middleware and validation functions
+  - Comprehensive test coverage (22 tests passing)
+
 ## 🚀 Getting Started
 
 ### Prerequisites

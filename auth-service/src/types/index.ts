@@ -1,5 +1,5 @@
 // auth-service/src/types/index.ts
-import { User, DatabaseUser } from '../../../shared/types';
+import { User, DatabaseUser } from '@ft-transcendence/common';
 
 export { User, DatabaseUser };
 

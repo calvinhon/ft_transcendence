@@ -2,6 +2,9 @@
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 // TournamentRankings contract ABI
 const CONTRACT_ABI = [
@@ -31,7 +34,7 @@ function getContractAddress(): string {
       return CONTRACT_ADDRESS;
     }
   } catch (error) {
-    console.error('[Blockchain] Error reading contract artifacts:', error);
+    logger.error('[Blockchain] Error reading contract artifacts:', error);
   }
   return CONTRACT_ADDRESS;
 }
@@ -55,7 +58,7 @@ export async function recordTournamentOnBlockchain(
     const contractAddress = getContractAddress();
     const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, wallet);
 
-    console.log('[Blockchain] Recording tournament', tournamentId, 'with', rankings.length, 'players');
+    logger.info('[Blockchain] Recording tournament', tournamentId, 'with', rankings.length, 'players');
 
     // For demonstration: record only the winner (rank 1)
     // In production, you might want to record all participants or use batch operations
@@ -70,15 +73,15 @@ export async function recordTournamentOnBlockchain(
 
     // Record rank on blockchain
     const tx = await contract.recordRank(tournamentId, playerAddress, winner.rank);
-    console.log('[Blockchain] Transaction sent:', tx.hash);
+    logger.info('[Blockchain] Transaction sent:', tx.hash);
 
     // Wait for confirmation
     const receipt = await tx.wait();
-    console.log('[Blockchain] Transaction confirmed in block:', receipt.blockNumber);
+    logger.info('[Blockchain] Transaction confirmed in block:', receipt.blockNumber);
 
     return tx.hash;
   } catch (error) {
-    console.error('[Blockchain] Error recording tournament:', error);
+    logger.error('[Blockchain] Error recording tournament:', error);
     throw error;
   }
 }
@@ -112,7 +115,7 @@ export async function getTournamentRankFromBlockchain(
     const rank = await contract.getRank(tournamentId, userAddress);
     return Number(rank);
   } catch (error) {
-    console.error('[Blockchain] Error getting rank:', error);
+    logger.error('[Blockchain] Error getting rank:', error);
     return 0;
   }
 }
@@ -126,7 +129,7 @@ export async function isBlockchainAvailable(): Promise<boolean> {
     await provider.getNetwork();
     return true;
   } catch (error) {
-    console.error('[Blockchain] Service not available:', error);
+    logger.error('[Blockchain] Service not available:', error);
     return false;
   }
 }

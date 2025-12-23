@@ -44,7 +44,7 @@ dev: check-docker check-compose ensure-database-folders
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
 clean-start: check-docker check-compose clean-dev clean ensure-database-folders
 	@echo "� Clean start with fresh build (after removing images & volumes)..."
-	docker compose build
+	docker compose build --no-cache
 	docker compose up -d --force-recreate
 	@$(MAKE) open
 	@echo "✅ Services started! Visit http://localhost"
@@ -197,13 +197,13 @@ health:
 	@echo ""
 	@echo "🔍 Microservices (HTTP):"
 	@echo "  Auth Service (3001):"
-	@curl -s http://localhost:3001/health 2>/dev/null | grep -q "healthy" && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -s http://localhost:3001/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Game Service (3002):"
-	@curl -s http://localhost:3002/health 2>/dev/null | grep -q "healthy" && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -s http://localhost:3002/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  User Service (3004):"
-	@curl -s http://localhost:3004/health 2>/dev/null | grep -q "healthy" && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -s http://localhost:3004/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Tournament Service (3003):"
-	@curl -s http://localhost:3003/health 2>/dev/null | grep -q "healthy" && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -s http://localhost:3003/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo ""
 	@echo "📦 Database Check:"
 	@echo "  Auth DB: $(shell [ -f auth-service/database/auth.db ] && echo '✅ Exists' || echo '❌ Missing')"

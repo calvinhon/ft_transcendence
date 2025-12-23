@@ -13,10 +13,15 @@
     "sourceMap": true,
     "types": ["node"],
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../../shared/*"]
+    }
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "../../shared/**/*.ts"
   ],
   "exclude": [
     "node_modules",

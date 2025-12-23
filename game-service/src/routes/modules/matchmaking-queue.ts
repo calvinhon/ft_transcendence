@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/matchmaking-queue.ts
 import { GamePlayer } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 // Manages the queue of waiting players and match timers
 export class MatchmakingQueue {
@@ -19,7 +21,7 @@ export class MatchmakingQueue {
     }
 
     this.waitingPlayers.push(player);
-    logger.matchmaking('Player added to queue:', player.username, 'Queue size:', this.waitingPlayers.length);
+    logger.game('Player added to queue:', player.username, 'Queue size:', this.waitingPlayers.length);
   }
 
   // Check if we have enough players for a match
@@ -40,7 +42,7 @@ export class MatchmakingQueue {
     this.clearTimer(player1.socket);
     this.clearTimer(player2.socket);
 
-    logger.matchmaking('Matched players:', player1.username, 'vs', player2.username);
+    logger.game('Matched players:', player1.username, 'vs', player2.username);
     return { player1, player2 };
   }
 
@@ -53,13 +55,13 @@ export class MatchmakingQueue {
     }));
 
     const timer = setTimeout(() => {
-      logger.matchmaking('Bot match timer triggered. Queue size:', this.waitingPlayers.length);
+      logger.info('Bot match timer triggered. Queue size:', this.waitingPlayers.length);
 
       // Check if player is still waiting
       const playerIndex = this.waitingPlayers.findIndex(p => p.socket === socket);
       if (playerIndex >= 0 && this.waitingPlayers.length === 1) {
         const player = this.waitingPlayers[playerIndex];
-        logger.matchmaking('Starting bot match for player:', player.username);
+        logger.game('Starting bot match for player:', player.username);
         this.waitingPlayers.splice(playerIndex, 1);
         this.clearTimer(socket);
         onTimeout();
@@ -74,7 +76,7 @@ export class MatchmakingQueue {
     const index = this.waitingPlayers.findIndex(p => p.socket === socket);
     if (index > -1) {
       const removedPlayer = this.waitingPlayers.splice(index, 1)[0];
-      logger.matchmaking('Removed player from queue:', removedPlayer.username);
+      logger.game('Removed player from queue:', removedPlayer.username);
     }
     this.clearTimer(socket);
   }

@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-history-service.ts
 import { db } from './database';
 import { GameRecord } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameHistoryService {
   // Fetch raw game history from database

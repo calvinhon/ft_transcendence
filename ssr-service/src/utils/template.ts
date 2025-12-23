@@ -1,5 +1,8 @@
 // ssr-service/src/utils/template.ts
 import { generateMetaHTML, getMetaTags } from './metaTags.js';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('SSR-SERVICE');
 
 export function generateHTML(route: string, content: string, data?: any): string {
   const meta = getMetaTags(route);

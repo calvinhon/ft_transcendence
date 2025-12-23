@@ -23,7 +23,9 @@ services:
       - transcendence-network
 
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
     container_name: auth
     ports:
       - "3001:3000"
@@ -42,7 +44,9 @@ services:
       - transcendence-network
 
   game-service:
-    build: ./game-service
+    build:
+      context: .
+      dockerfile: ./game-service/Dockerfile
     container_name: game
     ports:
       - "3002:3000"
@@ -56,7 +60,9 @@ services:
       - transcendence-network
 
   tournament-service:
-    build: ./tournament-service
+    build:
+      context: .
+      dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
     ports:
       - "3003:3000"
@@ -70,7 +76,9 @@ services:
       - transcendence-network
 
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
     container_name: user
     ports:
       - "3004:3000"
@@ -129,7 +137,9 @@ services:
       - transcendence-network
 
   ssr-service:
-    build: ./ssr-service
+    build:
+      context: .
+      dockerfile: ./ssr-service/Dockerfile
     container_name: ssr
     ports:
       - "3005:3005"

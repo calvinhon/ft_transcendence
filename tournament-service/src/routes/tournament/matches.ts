@@ -2,8 +2,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MatchService } from '../../services/matchService';
 import { MatchResultBody } from '../../types';
-import { ResponseUtil } from '../../utils/responses';
-import { logger } from '../../utils/logger';
+import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export default async function tournamentMatchRoutes(fastify: FastifyInstance): Promise<void> {
   // Get tournament matches
@@ -16,18 +17,18 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
       const tournamentId = parseInt(request.params.tournamentId);
 
       if (isNaN(tournamentId)) {
-        return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+        return sendError(reply, 'Invalid tournament ID', 400);
       }
 
       const matches = await MatchService.getMatchesByRound(tournamentId);
-      return ResponseUtil.success(reply, matches, 'Matches retrieved successfully');
+      return sendSuccess(reply, matches, 'Matches retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get tournament matches', {
         error: err.message,
         tournamentId: request.params.tournamentId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve matches', 500);
+      return sendError(reply, 'Failed to retrieve matches', 500);
     }
   });
 
@@ -41,22 +42,22 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
       const matchId = parseInt(request.params.matchId);
 
       if (isNaN(matchId)) {
-        return ResponseUtil.error(reply, 'Invalid match ID', 400);
+        return sendError(reply, 'Invalid match ID', 400);
       }
 
       const match = await MatchService.getMatchById(matchId);
       if (!match) {
-        return ResponseUtil.error(reply, 'Match not found', 404);
+        return sendError(reply, 'Match not found', 404);
       }
 
-      return ResponseUtil.success(reply, match, 'Match retrieved successfully');
+      return sendSuccess(reply, match, 'Match retrieved successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to get match', {
         error: err.message,
         matchId: request.params.matchId
       });
-      return ResponseUtil.error(reply, 'Failed to retrieve match', 500);
+      return sendError(reply, 'Failed to retrieve match', 500);
     }
   });
 
@@ -71,14 +72,14 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
 
       const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
       logger.info('Match result submitted', { matchId, winnerId });
-      return ResponseUtil.success(reply, result, 'Match result submitted successfully');
+      return sendSuccess(reply, result, 'Match result submitted successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to submit match result', {
         error: err.message,
         body: request.body
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
+      return sendError(reply, err.message || 'Failed to submit match result', 500);
     }
   });
 
@@ -95,12 +96,12 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
       const { winnerId, player1Score, player2Score } = request.body;
 
       if (isNaN(matchId)) {
-        return ResponseUtil.error(reply, 'Invalid match ID', 400);
+        return sendError(reply, 'Invalid match ID', 400);
       }
 
       const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
       logger.info('Match result submitted via legacy API', { matchId, winnerId });
-      return ResponseUtil.success(reply, result, 'Match result submitted successfully');
+      return sendSuccess(reply, result, 'Match result submitted successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to submit match result via legacy API', {
@@ -108,7 +109,7 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
         matchId: request.params.matchId,
         body: request.body
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
+      return sendError(reply, err.message || 'Failed to submit match result', 500);
     }
   });
 
@@ -125,12 +126,12 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
       const { winnerId, player1Score, player2Score } = request.body;
 
       if (isNaN(matchId)) {
-        return ResponseUtil.error(reply, 'Invalid match ID', 400);
+        return sendError(reply, 'Invalid match ID', 400);
       }
 
       const result = await MatchService.submitMatchResult(matchId, { matchId, winnerId, player1Score, player2Score });
       logger.info('Match result submitted via tournament route', { matchId, winnerId });
-      return ResponseUtil.success(reply, result, 'Match result submitted successfully');
+      return sendSuccess(reply, result, 'Match result submitted successfully');
     } catch (error) {
       const err = error as Error;
       logger.error('Failed to submit match result via tournament route', {
@@ -139,7 +140,7 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
         matchId: request.params.matchId,
         body: request.body
       });
-      return ResponseUtil.error(reply, err.message || 'Failed to submit match result', 500);
+      return sendError(reply, err.message || 'Failed to submit match result', 500);
     }
   });
 }

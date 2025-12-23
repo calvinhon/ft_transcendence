@@ -1,0 +1,39 @@
+{
+  "name": "@ft-transcendence/common",
+  "version": "1.0.0",
+  "description": "Shared utilities for FT Transcendence microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "ft-transcendence",
+    "shared",
+    "utilities",
+    "microservices"
+  ],
+  "author": "FT Transcendence Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.0.0",
+    "@types/sqlite3": "^3.1.11",
+    "@types/supertest": "^2.0.12",
+    "axios": "^1.6.0",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "fastify": "^4.0.0",
+    "sqlite3": "^5.1.6"
+  },
+  "peerDependencies": {
+  }
+}

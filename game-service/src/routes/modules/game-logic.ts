@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-logic.ts
 import { GamePlayer, Ball, Paddle, Paddles, Scores, GameState, GameSettings } from './types';
 import { db } from './database';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 import { GamePhysics } from './game-physics';
 import { GameAI } from './game-ai';
 import { GameStateManager } from './game-state';

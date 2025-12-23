@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-physics.ts
 import { Ball, Paddle, Paddles } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GamePhysics {
   private ballSpeed: number;

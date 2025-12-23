@@ -2,7 +2,9 @@
 import { WebSocketMessage, JoinGameMessage, MovePaddleMessage } from './types';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export function handleWebSocketMessage(socket: any, message: Buffer | string): void {
   try {

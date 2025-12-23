@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-broadcast.ts
 import { GamePlayer, Ball, Paddles, Scores, GameState } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameBroadcaster {
   private gameId: number;

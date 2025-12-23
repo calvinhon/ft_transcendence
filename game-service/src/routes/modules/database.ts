@@ -1,18 +1,17 @@
 // game-service/src/routes/modules/database.ts
-import * as sqlite3 from 'sqlite3';
-import * as path from 'path';
-import { logger } from './logger';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun } from '@ft-transcendence/common';
 
-const dbPath = path.join(__dirname, '../../../database/games.db');
+const dbConfig = createDatabaseConfig('game-service', 'games');
+const connection = createDatabaseConnection(dbConfig);
 
-// Initialize database
-export const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    logger.error('Error opening database:', err);
-  } else {
-    logger.db('Connected to Games SQLite database');
+// For backward compatibility, export the db directly
+export const db = connection.getDb();
+
+// Initialize database tables
+async function initializeDatabase(): Promise<void> {
+  try {
     // Create games table with support for arcade mode and tournament tracking
-    db.run(`
+    await promisifyDbRun(db, `
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         player1_id INTEGER NOT NULL,
@@ -30,5 +29,11 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         tournament_match_id INTEGER
       )
     `);
+  } catch (error) {
+    console.error('Error initializing game-service database:', error);
+    throw error;
   }
-});
+}
+
+// Initialize the database
+initializeDatabase().catch(console.error);
