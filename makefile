@@ -106,6 +106,7 @@ clean-dev:
 
 clean:
 	@echo "🧹 Completely deleting and resetting containers, images, and volumes for this project..."
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@if [ -f docker-compose.yml ]; then \
 		if docker compose version >/dev/null 2>&1; then \
 			docker compose down --rmi all --volumes --remove-orphans; \
@@ -176,6 +177,7 @@ open:
 stop:
 	@echo "🛑 Stopping running containers..."
 	docker compose down --remove-orphans
+	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 
 logs:
 	@echo "📋 Showing service logs (Ctrl+C to exit)..."
