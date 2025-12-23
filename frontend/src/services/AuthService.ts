@@ -120,8 +120,14 @@ export class AuthService {
 
         // No user in localStorage - try backend verification as fallback
         try {
-            const response = await Api.post('/api/auth/verify', {});
-            console.log("AuthService: Verify response:", response);
+            const verifyPromise = Api.post('/api/auth/verify', {});
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Session verify timeout")), 5000)
+            );
+
+            console.log("AuthService: Waiting for verify response...");
+            const response = await Promise.race([verifyPromise, timeoutPromise]) as any;
+            console.log("AuthService: Verify response received:", response);
 
             const data = response.data || response;
 
@@ -140,7 +146,7 @@ export class AuthService {
             console.warn("AuthService: Backend says valid but no user data");
             return false;
         } catch (e: any) {
-            console.error("AuthService: Verify failed error:", e);
+            console.error("AuthService: Verify failed or timed out:", e.message || e);
             // No localStorage user and backend failed - need to login
             return false;
         }

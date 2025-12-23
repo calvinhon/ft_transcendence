@@ -34,6 +34,10 @@ export class TournamentAliasModal extends AbstractComponent {
                     <div class="p-8 space-y-4 max-h-[400px] overflow-y-auto">
                         <div class="w-full h-[2px] bg-accent mb-6"></div>
                         
+                        <div id="alias-error" class="hidden mb-4 p-3 border border-red-500 bg-red-500/10 text-red-500 font-vcr text-sm">
+                            <!-- Error message will be injected here -->
+                        </div>
+
                         ${this.renderInputs()}
                     </div>
 
@@ -62,6 +66,7 @@ export class TournamentAliasModal extends AbstractComponent {
                     id="alias-input-${i}" 
                     value="${p.alias || ''}"
                     placeholder="Alias"
+                    maxlength="10"
                     class="flex-1 bg-black border border-white/50 p-3 text-white font-vcr text-sm focus:border-accent focus:shadow-[0_0_10px_rgba(41,182,246,0.3)] outline-none transition-all placeholder:text-gray-700"
                 >
             </div>
@@ -70,20 +75,48 @@ export class TournamentAliasModal extends AbstractComponent {
 
     onMounted(): void {
         this.$('#modal-confirm-btn')?.addEventListener('click', () => {
-            // Collect aliases
-            this.players.forEach((p, i) => {
-                const input = this.$(`#alias-input-${i}`) as HTMLInputElement;
-                if (input) {
-                    p.alias = input.value.trim() || p.username; // Fallback to username
-                }
-            });
-            this.onConfirm(this.players);
-            this.destroy();
-        });
+            const errorEl = this.$('#alias-error');
+            if (errorEl) errorEl.classList.add('hidden');
 
-        // Close on background click? check design. Design looks modal-exclusive. 
-        // Keeping it strictly required to click BEGIN or maybe add a close if needed, 
-        // but design doesn't show close "X". We'll rely on onCancel if we add a back button later.
+            const newPlayers = JSON.parse(JSON.stringify(this.players));
+            const aliases = new Set<string>();
+            let hasError = false;
+
+            // Collect and validate aliases
+            for (let i = 0; i < newPlayers.length; i++) {
+                const input = this.$(`#alias-input-${i}`) as HTMLInputElement;
+                let alias = input?.value.trim() || newPlayers[i].username;
+
+                if (alias.length > 10) {
+                    this.showError(`Alias for ${newPlayers[i].username} is too long (max 10 chars)`);
+                    hasError = true;
+                    break;
+                }
+
+                if (aliases.has(alias.toLowerCase())) {
+                    this.showError(`Duplicate alias detected: ${alias}`);
+                    hasError = true;
+                    break;
+                }
+
+                aliases.add(alias.toLowerCase());
+                newPlayers[i].alias = alias;
+            }
+
+            if (!hasError) {
+                this.onConfirm(newPlayers);
+                this.destroy();
+            }
+        });
+    }
+
+    private showError(message: string): void {
+        const errorEl = this.$('#alias-error');
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            errorEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     public destroy(): void {
@@ -93,7 +126,6 @@ export class TournamentAliasModal extends AbstractComponent {
         this.container = undefined;
     }
 
-    // Override render to append to body instead of replacing
     public render(_containerId: string = ''): void {
         const container = document.createElement('div');
         this.container = container;

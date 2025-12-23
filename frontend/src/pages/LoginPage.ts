@@ -9,8 +9,8 @@ export class LoginPage extends AbstractComponent {
 
     getHtml(): string {
         return `
-            <div class="w-full h-full flex items-center justify-center relative bg-bg-primary">
-                <div class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative">
+            <div class="w-full h-full flex items-center justify-center relative">
+                <div class="w-full max-w-[400px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative pointer-events-auto">
                     <div class="text-center mb-8">
                         <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
                             LOGIN

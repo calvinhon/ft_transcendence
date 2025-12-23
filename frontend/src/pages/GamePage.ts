@@ -157,13 +157,17 @@ export class GamePage extends AbstractComponent {
                     // Manually record to tournament service with CORRECT scores
                     // Note: This relies on TournamentService being imported
                     const { TournamentService } = await import('../services/TournamentService');
-                    TournamentService.getInstance().recordMatchResult(
-                        setup.tournamentId.toString(),
-                        setup.tournamentMatchId.toString(),
-                        winnerId,
-                        finalScore1,
-                        finalScore2
-                    ).catch(err => console.error("Frontend tournament record failed:", err));
+                    try {
+                        await TournamentService.getInstance().recordMatchResult(
+                            setup.tournamentId.toString(),
+                            setup.tournamentMatchId.toString(),
+                            winnerId,
+                            finalScore1,
+                            finalScore2
+                        );
+                    } catch (err) {
+                        console.error("Frontend tournament record failed:", err);
+                    }
                 }
 
                 // Frontend does NOT record match result anymore, backend handles it.

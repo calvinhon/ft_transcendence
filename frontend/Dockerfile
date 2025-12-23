@@ -16,7 +16,7 @@ RUN npm install
 # Copy source code
 COPY src/ ./src/
 COPY css/ ./css/
-COPY assets/ ./assets/
+COPY public/ ./public/
 COPY index.html ./
 
 # Clean any existing build artifacts and build the application

@@ -8,7 +8,8 @@ export class TournamentBracketPage extends AbstractComponent {
     private tournamentId: string | null = null;
     private tournament: Tournament | null = null;
     private autoRefreshInterval: any = null;
-    private clickHandler: ((e: Event) => void) | null = null; // Store handler for cleanup
+    private clickHandler: ((e: Event) => void) | null = null;
+    private isLoading: boolean = true; // Show loading on mount
 
     constructor() {
         super();
@@ -40,10 +41,15 @@ export class TournamentBracketPage extends AbstractComponent {
             }
         }
 
+        // Force immediate refresh to get latest data
+        this.isLoading = true;
+        this.render();
+        await this.refreshData();
+        this.isLoading = false;
         this.render();
 
-        // Auto Refresh
-        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()).catch(console.error), 5000);
+        // Auto Refresh (reduced to 2s for faster updates)
+        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()).catch(console.error), 2000);
 
         this.bindEvents();
     }
@@ -156,7 +162,14 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     getHtml(): string {
-        if (!this.tournament) return `<div class="text-white text-center mt-20">LOADING TOURNAMENT DATA...</div>`;
+        if (this.isLoading || !this.tournament) {
+            return `
+                <div class="w-full h-full bg-black flex flex-col items-center justify-center gap-4">
+                    <div class="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+                    <div class="text-accent font-vcr tracking-widest">PROCESSING TOURNAMENT...</div>
+                </div>
+            `;
+        }
 
         return `
             <div class="w-full h-full bg-black p-4 overflow-y-auto">

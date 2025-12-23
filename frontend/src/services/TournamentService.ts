@@ -140,8 +140,8 @@ export class TournamentService {
             player2Score: score2
         });
 
-        // Wait a moment for backend to process next round creation (Legacy compatibility)
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Wait for backend to process next round creation
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // Refresh local state
         await this.get(tournamentId);
