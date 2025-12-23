@@ -15,7 +15,7 @@
   "dependencies": {
     "@fastify/cors": "^8.4.0",
     "@fastify/websocket": "^8.3.1",
-    "@ft-transcendence/common": "^1.0.0",
+    "@ft-transcendence/common": "file:../packages/common",
     "fastify": "^4.24.3",
     "sqlite3": "^5.1.6"
   },

@@ -39,7 +39,8 @@ export class GameCreator {
       team1PlayerCount: gameSettings?.team1PlayerCount,
       team2PlayerCount: gameSettings?.team2PlayerCount,
       team1Players: options.team1Players,
-      team2Players: options.team2Players
+      team2Players: options.team2Players,
+      campaignLevel: gameSettings?.campaignLevel
     };
 
     return new Promise((resolve, reject) => {

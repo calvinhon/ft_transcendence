@@ -47,7 +47,7 @@ export class PongGame {
 
     // Convert string settings to numeric values
     const ballSpeed = this.getBallSpeedValue(this.gameSettings.ballSpeed);
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
 
     // Initialize game components
     this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode);
@@ -111,20 +111,29 @@ export class PongGame {
 
   private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 6;     // Slow and easy to track
-      case 'medium': return 8;   // Standard speed
-      case 'fast': return 12;    // Very fast and intense!
-      default: return 8;
+      case 'slow': return 8;     // Slow and easy to track
+      case 'medium': return 12;   // Standard speed
+      case 'fast': return 16;    // Very fast and intense!
+      default: return 10;
     }
   }
 
-  private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
+  private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast', campaignLevel?: number): number {
+    let baseSpeed: number;
     switch (speed) {
-      case 'slow': return 8;      // Slower response
-      case 'medium': return 13;   // Standard response
-      case 'fast': return 18;     // Super responsive and intense!
-      default: return 10;
+      case 'slow': baseSpeed = 8; break;      // Slower response
+      case 'medium': baseSpeed = 13; break;   // Standard response
+      case 'fast': baseSpeed = 18; break;     // Super responsive and intense!
+      default: baseSpeed = 10;
     }
+
+    // For campaign mode, increase paddle speed with level
+    if (campaignLevel && campaignLevel > 1) {
+      const levelBonus = Math.floor((campaignLevel - 1) * 2); // +2 speed per level
+      baseSpeed += levelBonus;
+    }
+
+    return baseSpeed;
   }
 
   private getInitialBallDirection(): number {
@@ -182,7 +191,7 @@ export class PongGame {
   }
 
   movePaddle(playerId: number, direction: 'up' | 'down', paddleIndex?: number): void {
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
     const moved = this.physics.movePaddle(
       this.paddles,
       playerId,
@@ -210,7 +219,7 @@ export class PongGame {
   }
 
   movePaddleBySide(side: 'left' | 'right', direction: 'up' | 'down', paddleIndex?: number): void {
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
     const team = side === 'left' ? 'team1' : 'team2';
     const index = paddleIndex ?? 0;
     

@@ -16,6 +16,7 @@ export interface GameSetup {
     tournamentId?: number;
     tournamentMatchId?: number;
     tournamentPlayer1Id?: number; // ORIGINAL player 1 ID from tournament match (for sway detection)
+    campaignLevel?: number; // Current campaign level
 }
 
 export class GameStateService {

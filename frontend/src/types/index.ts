@@ -13,4 +13,5 @@ export interface GameSettings {
     paddleSpeed?: 'slow' | 'medium' | 'fast';
     powerups?: boolean;
     accumulateOnHit?: boolean;
+    campaignLevel?: number;
 }

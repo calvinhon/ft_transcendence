@@ -694,6 +694,7 @@ export class MainMenuPage extends AbstractComponent {
 
             const level = CampaignService.getInstance().getCurrentLevel();
             setup.settings.difficulty = CampaignService.getInstance().getDifficultyForLevel(level);
+            setup.campaignLevel = level;
 
             GameStateService.getInstance().setSetup(setup as any);
             App.getInstance().router.navigateTo('/game');

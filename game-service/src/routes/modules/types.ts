@@ -56,6 +56,7 @@ export interface GameSettings {
   team2PlayerCount?: number; // Number of players on team 2
   team1Players?: any[]; // Player data for team 1
   team2Players?: any[]; // Player data for team 2
+  campaignLevel?: number; // Current campaign level for paddle speed scaling
 }
 
 export interface JoinGameMessage extends WebSocketMessage {
