@@ -1,8 +1,9 @@
 // game-service/src/routes/modules/database.ts
-import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun } from '@ft-transcendence/common';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, createLogger } from '@ft-transcendence/common';
 
 const dbConfig = createDatabaseConfig('game-service', 'games');
 const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('GAME-SERVICE-DB');
 
 // For backward compatibility, export the db directly
 export const db = connection.getDb();
@@ -30,10 +31,13 @@ async function initializeDatabase(): Promise<void> {
       )
     `);
   } catch (error) {
-    console.error('Error initializing game-service database:', error);
+    logger.error('Error initializing game-service database:', error);
     throw error;
   }
 }
 
 // Initialize the database
-initializeDatabase().catch(console.error);
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
+});

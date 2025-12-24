@@ -1,8 +1,9 @@
 // user-service/src/database/index.ts
-import { createDatabaseConfig, createDatabaseConnection, ensureColumnExists, promisifyDbRun, promisifyDbGet } from '@ft-transcendence/common';
+import { createDatabaseConfig, createDatabaseConnection, ensureColumnExists, promisifyDbRun, promisifyDbGet, createLogger } from '@ft-transcendence/common';
 
 const dbConfig = createDatabaseConfig('user-service', 'users');
 const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('USER-SERVICE-DB');
 
 // For backward compatibility, export the db directly
 export const db = connection.getDb();
@@ -100,10 +101,13 @@ async function initializeDatabase(): Promise<void> {
     `);
 
   } catch (error) {
-    console.error('Error initializing user-service database:', error);
+    logger.error('Error initializing user-service database:', error);
     throw error;
   }
 }
 
 // Initialize the database
-initializeDatabase().catch(console.error);
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
+});

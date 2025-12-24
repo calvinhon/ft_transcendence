@@ -90,6 +90,7 @@ export class ServerBootstrap {
     await routes(this.fastify);
     this.logger.info('Routes registered');
   }
+  
 }
 
 // Utility function for quick server setup

@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev open stop restart rebuild ensure-database-folders help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild ensure-database-folders help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -23,6 +23,8 @@ help:
 	@echo "🔧 Maintenance:"
 	@echo "  make clean              - Remove containers, images, volumes"
 	@echo "  make clean-dev          - Clean node_modules and build artifacts"
+	@echo "  make purge              - 🔥 PURGE: Stop/remove ALL project containers + images"
+	@echo "  make nuke               - 🔥 NUKE: Stop all containers + prune + delete ALL images"
 	@echo "  make ps                 - Show container status"
 	@echo "  make test               - Show test documentation"
 	@echo ""
@@ -126,14 +128,57 @@ clean:
 		echo "⚠️  No docker-compose.yml found in this directory."; \
 	fi
 
-	@echo "📁 Ensuring database folders exist for all services..."
-	@mkdir -p auth-service/database
-	@mkdir -p game-service/database
+# Purge - completely stop and remove ALL containers and images for this project only
+purge: check-docker check-compose
+	@echo "🔥 PURGING all containers and images for this project..."
+	@if [ -f docker-compose.yml ]; then \
+		echo "🛑 Stopping and removing project containers..."; \
+		docker compose down --remove-orphans 2>/dev/null || true; \
+		echo "🗑️  Removing project containers..."; \
+		docker compose rm -f 2>/dev/null || true; \
+		echo "🖼️  Removing project images..."; \
+		docker compose down --rmi all 2>/dev/null || true; \
+		PROJECT=$$(basename "$$(pwd)"); \
+		echo "🔍 Finding any remaining project containers..."; \
+		CONTAINERS=$$(docker ps -a --filter "label=com.docker.compose.project=$$PROJECT" -q 2>/dev/null || true); \
+		if [ -n "$$CONTAINERS" ]; then \
+			echo "🗑️  Force removing remaining containers: $$CONTAINERS"; \
+			docker rm -f $$CONTAINERS >/dev/null 2>&1 || true; \
+		fi; \
+		echo "🔍 Finding project images..."; \
+		IMAGES=$$(docker images --filter "label=com.docker.compose.project=$$PROJECT" -q 2>/dev/null || true); \
+		if [ -n "$$IMAGES" ]; then \
+			echo "🗑️  Removing project images: $$IMAGES"; \
+			docker rmi $$IMAGES >/dev/null 2>&1 || true; \
+		fi; \
+		echo "✅ Project purge completed for: $$PROJECT"; \
+	else \
+		echo "⚠️  No docker-compose.yml found in this directory."; \
+	fi
+
+# Nuke - aggressive cleanup: stop all containers, prune system, delete ALL images
+nuke: check-docker
+	@echo "🔥 NUKING Docker environment - this will stop ALL containers and delete ALL images!"
+	@echo "⚠️  This is destructive and will affect ALL Docker containers/images on your system."
+	@read -p "Are you sure? Type 'yes' to continue: " confirm && [ "$$confirm" = "yes" ] || (echo "❌ Operation cancelled." && exit 1)
+	@echo "🛑 Stopping ALL running containers..."
+	@docker stop $$(docker ps -q) 2>/dev/null || true
+	@echo "🧹 Pruning Docker system (containers, networks, volumes)..."
+	@docker system prune -f --volumes
+	@echo "🗑️  Deleting ALL Docker images..."
+	@docker rmi $$(docker images -q) 2>/dev/null || true
+	@echo "💥 Docker environment completely nuked!"
+	@echo "💡 To rebuild: make clean-start"
+	@$(MAKE) ensure-database-folders
+
+# Ensure database folders and required files exist
+ensure-database-folders:
 	@echo "📁 Ensuring database folders exist for all services..."
 	@mkdir -p auth-service/database
 	@mkdir -p game-service/database
 	@mkdir -p tournament-service/database
 	@mkdir -p user-service/database
+	@mkdir -p vault/data
 	@touch auth-service/database/.gitkeep
 	@touch game-service/database/.gitkeep
 	@touch tournament-service/database/.gitkeep
@@ -143,7 +188,52 @@ clean:
 		touch .env; \
 		echo "✅ .env file created"; \
 	fi
-	@echo "✅ Database folders and .env file ensured"
+	@echo "🔐 Setting vault permissions..."
+	@if [ -d vault/data ]; then \
+		if [ -f vault/data/vault.db ] || [ -d vault/data/raft ]; then \
+			if ! find vault/data -type f -o -type d >/dev/null 2>&1; then \
+				echo "🔑 Vault data exists but has wrong permissions (cannot access files)"; \
+				echo "🔑 Need sudo access to fix vault permissions..."; \
+				if sudo -n true 2>/dev/null; then \
+					echo "✅ Sudo access available, fixing permissions..."; \
+					sudo chown -R $$(whoami):$$(whoami) vault/data; \
+					echo "✅ Vault permissions fixed"; \
+				else \
+					echo "🔑 Please enter your sudo password to fix vault permissions:"; \
+					sudo chown -R $$(whoami):$$(whoami) vault/data && \
+					echo "✅ Vault permissions fixed" || \
+					(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
+				fi; \
+			else \
+				CURRENT_OWNER=$$(find vault/data -type f -o -type d | head -1 | xargs stat -c '%U' 2>/dev/null || find vault/data -type f -o -type d | head -1 | xargs stat -f '%Su' 2>/dev/null || echo "unknown"); \
+				if [ "$$CURRENT_OWNER" != "$$(whoami)" ] && [ "$$CURRENT_OWNER" != "unknown" ]; then \
+					echo "🔑 Vault data exists but has wrong permissions (owned by $$CURRENT_OWNER)"; \
+					echo "🔑 Need sudo access to fix vault permissions..."; \
+					if sudo -n true 2>/dev/null; then \
+						echo "✅ Sudo access available, fixing permissions..."; \
+						sudo chown -R $$(whoami):$$(whoami) vault/data; \
+						echo "✅ Vault permissions fixed"; \
+					else \
+						echo "🔑 Please enter your sudo password to fix vault permissions:"; \
+						sudo chown -R $$(whoami):$$(whoami) vault/data && \
+						echo "✅ Vault permissions fixed" || \
+						(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
+					fi; \
+				else \
+					echo "✅ Vault permissions are correct"; \
+				fi; \
+			fi; \
+		else \
+			if command -v chown >/dev/null 2>&1; then \
+				sudo chown -R 100:1000 vault/data 2>/dev/null || \
+				chown -R 100:1000 vault/data 2>/dev/null || \
+				echo "⚠️  Could not change vault permissions (may need sudo)"; \
+			else \
+				echo "⚠️  chown command not available"; \
+			fi; \
+		fi; \
+	fi
+	@echo "✅ Database folders, .env file, and vault permissions ensured"
 
 open:
 	@echo "🌐 Opening browser at http://localhost:80 ..."

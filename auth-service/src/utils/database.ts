@@ -1,8 +1,9 @@
 // auth-service/src/utils/database.ts
-import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, ensureColumnExists } from '@ft-transcendence/common';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, ensureColumnExists, createLogger } from '@ft-transcendence/common';
 
 const dbConfig = createDatabaseConfig('auth-service', 'auth', { lazyLoad: true });
 const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('AUTH-SERVICE-DB');
 
 // For backward compatibility, create a getter that matches the original getDatabase pattern
 let db: any = null;
@@ -15,6 +16,9 @@ function getDatabase(): any {
 
 async function initializeDatabase(): Promise<void> {
   try {
+    // Initialize database connection
+    db = connection.getDb();
+
     // Create users table
     await promisifyDbRun(db, `
       CREATE TABLE IF NOT EXISTS users (
@@ -43,13 +47,16 @@ async function initializeDatabase(): Promise<void> {
       )
     `);
   } catch (error) {
-    console.error('Error initializing auth-service database:', error);
+    logger.error('Error initializing auth-service database:', error);
     throw error;
   }
 }
 
 // Initialize the database
-initializeDatabase().catch(console.error);
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
+});
 
 export function runQuery<T = any>(query: string, params: any[] = []): Promise<T> {
   return promisifyDbRun(getDatabase(), query, params) as Promise<T>;

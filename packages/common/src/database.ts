@@ -21,6 +21,7 @@ export interface DatabaseConnection {
  */
 export function promisifyDbRun(db: sqlite3.Database, sql: string, params: any[] = []): Promise<sqlite3.RunResult> {
   return new Promise((resolve, reject) => {
+	
     db.run(sql, params, function(this: sqlite3.RunResult, err: Error | null) {
       if (err) reject(err);
       else resolve(this);

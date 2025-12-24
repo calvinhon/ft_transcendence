@@ -1,8 +1,9 @@
 // tournament-service/src/database/index.ts
-import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, promisifyDbAll, ensureColumnExists } from '@ft-transcendence/common';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, promisifyDbAll, ensureColumnExists, createLogger } from '@ft-transcendence/common';
 
 const dbConfig = createDatabaseConfig('tournament-service', 'tournaments', { enableTestMode: true });
 const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('TOURNAMENT-SERVICE-DB');
 
 // For backward compatibility, export the db directly
 export const db = connection.getDb();
@@ -126,13 +127,16 @@ async function initializeDatabase(): Promise<void> {
       await initializeTestTables();
     }
   } catch (error) {
-    console.error('Error initializing tournament-service database:', error);
+    logger.error('Error initializing tournament-service database:', error);
     throw error;
   }
 }
 
 // Initialize the database
-initializeDatabase().catch(console.error);
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
+});
 
 /**
  * Promise wrapper for database operations (backward compatibility)

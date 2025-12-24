@@ -1,13 +1,16 @@
 // tournament-service/tests/setup.ts
 import { FastifyInstance } from 'fastify';
 import sqlite3 from 'sqlite3';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE-TEST');
 
 // Use in-memory database for tests
 export const testDb = new sqlite3.Database(':memory:', (err) => {
   if (err) {
-    console.error('Error opening test database:', err);
+    logger.error('Error opening test database:', err);
   } else {
-    console.log('Connected to test SQLite database');
+    logger.info('Connected to test SQLite database');
     initializeTestTables();
   }
 });
