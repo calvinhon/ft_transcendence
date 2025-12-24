@@ -4,7 +4,6 @@ import path from 'path';
 
 const dbPath = path.join(__dirname, '../../database/tournaments.db');
 
-// Initialize database
 export const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
@@ -13,11 +12,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-/**
- * Initialize database tables for production
- */
 function initializeTables(): void {
-  // Create tournaments table
   db.run(`
     CREATE TABLE IF NOT EXISTS tournaments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +27,6 @@ function initializeTables(): void {
     )
   `);
 
-  // Create tournament participants table
   db.run(`
     CREATE TABLE IF NOT EXISTS tournament_participants (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +40,6 @@ function initializeTables(): void {
     )
   `);
 
-  // Create tournament matches table
   db.run(`
     CREATE TABLE IF NOT EXISTS tournament_matches (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,9 +59,6 @@ function initializeTables(): void {
   `);
 }
 
-/**
- * Promise wrapper for database operations
- */
 export function dbRun(sql: string, params: any[] = []): Promise<{ lastID: number; changes: number }> {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function(err) {
@@ -100,21 +90,6 @@ export function dbAll<T = any>(sql: string, params: any[] = []): Promise<T[]> {
         reject(err);
       } else {
         resolve(rows as T[]);
-      }
-    });
-  });
-}
-
-/**
- * Close database connection
- */
-export function closeDatabase(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.close((err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
       }
     });
   });

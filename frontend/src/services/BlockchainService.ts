@@ -20,24 +20,29 @@ export class BlockchainService {
         return BlockchainService.instance;
     }
 
-    public async recordOnBlockchain(participants: Array<{ tournamentId: number, userId: number, rank: number }>): Promise<TransactionResult> {
+    public async recordOnBlockchain(tournamentId: number, players: number[], ranks: number[]): Promise<TransactionResult> {
         const user = App.getInstance().currentUser;
         if (!user) {
             return { success: false, error: 'User not logged in' };
         }
 
         try {
-            const response = await Api.post(`${this.baseURL}/recordRanks`, {
-                participants
-            });
+            const payload = { tournamentId, players, ranks };
+            const res = await Api.post(`${this.baseURL}/record`, payload);
 
-            if (response.success)
-                return { success: true, transactionHash: response.transactionHash };
-            else
-                return { success: false, error: response.error };
-        } catch (error: any) {
-            console.error('Blockchain record error:', error);
-            return { success: false, error: error.message || 'Network error' };
+            const success = !!(res && (res.ok === true || res.ok === 'true'));
+            const txHash = res?.txHash || res?.transactionHash || undefined;
+
+            window.dispatchEvent(new CustomEvent('blockchain', {
+                detail: { success, message: success ? 'Rankings recorded on blockchain' : (res?.error || 'Recording failed'), response: res }
+            }));
+
+            return { success, transactionHash: txHash, error: success ? undefined : (res?.error || 'Failed') };
+        } catch (err: any) {
+            window.dispatchEvent(new CustomEvent('blockchain', {
+                detail: { success: false, message: 'Blockchain recording failed', error: err }
+            }));
+            return { success: false, error: String(err?.message ?? err) };
         }
     }
 }

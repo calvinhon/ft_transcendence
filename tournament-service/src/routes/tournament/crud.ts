@@ -21,7 +21,6 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         return ResponseUtil.error(reply, 'Tournament not found', 404);
       }
 
-      // Return details directly for frontend compatibility
       reply.send(details);
     } catch (error) {
       const err = error as Error;
@@ -53,59 +52,6 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         tournamentId: request.params.tournamentId
       });
       return ResponseUtil.error(reply, err.message || 'Failed to start tournament', 500);
-    }
-  });
-
-  // Record tournament result on blockchain
-  fastify.post<{
-    Body: { tournamentId: number };
-  }>('/blockchain/record', async (request: FastifyRequest<{ Body: { tournamentId: number } }>, reply: FastifyReply) => {
-    try {
-      const { tournamentId } = request.body;
-
-      if (!tournamentId) {
-        return ResponseUtil.error(reply, 'Tournament ID required', 400);
-      }
-
-      // Get tournament details
-      const tournament = await TournamentService.getTournamentById(tournamentId);
-      if (!tournament || tournament.status !== 'finished') {
-        return ResponseUtil.error(reply, 'Finished tournament not found', 404);
-      }
-
-      // Get all participants with their final rankings
-      const participants = await TournamentService.getTournamentParticipants(tournamentId);
-
-      const { recordRank, isBlockchainAvailable } = await import('../../services/blockchainService');
-
-      const blockchainAvailable = await isBlockchainAvailable();
-      if (!blockchainAvailable) {
-        return ResponseUtil.error(reply, 'Blockchain service unavailable', 503);
-      }
-
-      const txHashes: Array<string | null> = [];
-      for (const p of participants) {
-        try {
-          const tx = await recordRank(tournamentId, p.user_id, p.final_rank || 999);
-          txHashes.push((tx && (tx as any).txHash) || null);
-		  fastify.log.info(`[Blockchain] Recorded rank ${p.final_rank} for ${p.user_id}. TX_HASH=${tx.txHash ?? 'n/a'}`);
-        } catch (err) {
-          logger.error('Failed recording participant on blockchain', { tournamentId, participant: p, error: (err as Error).message || err });
-          txHashes.push(null);
-        }
-		await delay(250);
-      }
-
-      logger.info('Tournament recorded on blockchain', { tournamentId, txHashes });
-      return ResponseUtil.success(reply, {
-        message: 'Tournament recorded on blockchain (per-participant results)',
-        transactionHashes: txHashes,
-        participants: participants.length,
-      }, 'Tournament recorded on blockchain successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Blockchain recording failed', { error: err.message, body: request.body });
-      return ResponseUtil.error(reply, 'Blockchain recording failed', 500);
     }
   });
 }

@@ -25,6 +25,11 @@ export interface Tournament {
     winnerId?: number;
 }
 
+export interface Participants {
+    id: number;
+    rank: number;
+}
+
 export class TournamentService {
     private static instance: TournamentService;
     private currentTournament: Tournament | null = null;
@@ -147,28 +152,6 @@ export class TournamentService {
         await this.get(tournamentId);
     }
 
-    public async recordOnBlockchain(tournamentId: string): Promise<any> {
-        try {
-            const tournament = await this.get(tournamentId);
-            const participants = tournament.players.map(p => ({
-                id: p.id,
-                username: p.username,
-                isBot:p.isBot
-            }));
-
-            const res = await Api.post('/api/blockchain-service/blockchain/record', { participants });
-            window.dispatchEvent(new CustomEvent('tournament:blockchain', {
-                detail: { success: true, message: 'Rankings recorded on blockchain', response: res }
-            }));
-            return res;
-        } catch (err) {
-            window.dispatchEvent(new CustomEvent('tournament:blockchain', {
-                detail: { success: false, message: 'Blockchain recording failed', error: err }
-            }));
-            throw err;
-        }
-    }
-
     public async list(): Promise<Tournament[]> {
         return Api.get('/api/tournament/tournaments/list');
     }
@@ -177,9 +160,14 @@ export class TournamentService {
         return this.currentTournament;
     }
 
-    public async getParticipants(tournamentId: string): <participants[]> {
-        const tournament = await this.get(tournamentId);
-        const res = await Api.get('/api/tournament/tournaments/');
-        return res;
+    public async getParticipants(): Promise<Participants[]> {
+        const current = TournamentService.getInstance().getCurrentTournament();
+        const id = current?.id ?? sessionStorage.getItem('current_tournament_id');
+        const res = await Api.get(`/api/tournament/tournaments/participant/${id}`);
+        let list = (res as any).data;
+        return list.map((p: any) => ({
+            id: p.user_id,
+            rank: p.final_rank
+        }));
     }
 }

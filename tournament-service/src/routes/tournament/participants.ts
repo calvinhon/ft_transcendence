@@ -85,4 +85,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       return ResponseUtil.error(reply, 'Failed to retrieve user tournaments', 500);
     }
   });
+
+  // Get all tournament participants
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/tournaments/participant/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+	try {
+		const id = parseInt(request.params.tournamentId, 10);
+		if (Number.isNaN(id)) return ResponseUtil.error(reply, 'Invalid tournament ID', 400);
+		const participants = await ParticipantService.getTournamentParticipants(id);
+		return ResponseUtil.success(reply, participants, 'Tournament participants retrieved successfully');
+	} catch (error) {
+		return ResponseUtil.error(reply, 'Failed to retrieve tournament participants', 500);
+	}
+  })
 }

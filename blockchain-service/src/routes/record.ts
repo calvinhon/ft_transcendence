@@ -5,40 +5,19 @@ const plugin: FastifyPluginAsync<{ blockchainService: BlockchainService }> = asy
   const svc = (opts as any).blockchainService as BlockchainService;
 
   fastify.post('/record', async (request, reply) => {
-    try {
-      const body = request.body as any;
+	try {
+		const { tournamentId, players, ranks } = request.body as any;
+		if (!Number.isInteger(tournamentId) || !Array.isArray(players) || !Array.isArray(ranks) || players.length !== ranks.length) {
+		return reply.status(400).send({ ok:false, error: 'Invalid payload' });
+	}
 
-      // Normalize body to an array of participants
-      let participants: Array<{ tournamentId: number; userId: number; rank: number }> = [];
-
-      if (Array.isArray(body?.participants)) {
-        participants = body.participants.map((p: any) => ({
-          tournamentId: Number(p.tournamentId),
-          userId: Number(p.userId),
-          rank: Number(p.rank),
-        }));
-      } else {
-        return reply.status(400).send({ ok: false, error: 'Array of tournamentId, userId, rank and participants is required' });
-      }
-
-      // Validate participants
-      for (const p of participants) {
-        if (
-          Number.isNaN(p.tournamentId) ||
-          Number.isNaN(p.userId) ||
-          Number.isNaN(p.rank)
-        ) {
-          return reply.status(400).send({ ok: false, error: 'All participants must include numeric tournamentId, userId and rank' });
-        }
-      }
-
-      const txHashes = await svc.recordRanks(participants);
-      return reply.send({ ok: true, txHashes });
+	const txHash = await svc.recordRanks(Number(tournamentId), players.map(Number), ranks.map(Number));
+	return reply.send({ ok: true, txHash });
     } catch (e: any) {
-      fastify.log.error({ err: e }, '[blockchain-service] /record error');
-      return reply.status(500).send({ ok: false, error: e?.message ?? String(e) });
-    }
-  });
+		fastify.log.error({ err: e }, '[blockchain-service] /record error');
+		return reply.status(500).send({ ok: false, error: e?.message ?? String(e) });
+	}
+	});
 };
 
 export default plugin;

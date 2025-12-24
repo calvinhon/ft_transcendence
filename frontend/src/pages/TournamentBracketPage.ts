@@ -13,6 +13,7 @@ export class TournamentBracketPage extends AbstractComponent {
     private blockchainMessage: string | null = null;
     private blockchainMessageType: 'success' | 'error' | null = null;
     private blockchainEventHandler: ((e: Event) => void) | null = null;
+    private recordingInProgress: boolean = false;
 
     constructor() {
         super();
@@ -63,19 +64,44 @@ export class TournamentBracketPage extends AbstractComponent {
             this.clickHandler = null;
         }
         if (this.blockchainEventHandler) {
-            window.removeEventListener('tournament:blockchain', this.blockchainEventHandler);
+            window.removeEventListener('blockchain', this.blockchainEventHandler);
             this.blockchainEventHandler = null;
         }
     }
 
     private async refreshData() {
         if (!this.tournamentId) return;
-		const updated = await TournamentService.getInstance().get(this.tournamentId);
-		this.tournament = updated;
-        const participants = updated.get
-        if (this.tournament?.winnerId != null) {
-          BlockchainService.getInstance().recordOnBlockchain(this.tournament.id)
-            .catch(err => console.error('Blockchain record failed', err));
+        try {
+			this.tournament = await TournamentService.getInstance().get(String(this.tournamentId));
+			const recordedKey = `tournament_recorded_${this.tournamentId}`;
+			const participants = await TournamentService.getInstance().getParticipants();
+            if (this.tournament?.winnerId != null && !sessionStorage.getItem(recordedKey) && !this.recordingInProgress) {
+                this.recordingInProgress = true;
+                const tournamentIdNum = Number(this.tournamentId);
+                const players = participants.map(p => Number(p.id));
+                const ranks = participants.map(p => Number(p.rank));
+
+                try {
+                    const res = await BlockchainService.getInstance().recordOnBlockchain(tournamentIdNum, players, ranks);
+                    if (res.success) {
+                        sessionStorage.setItem(recordedKey, '1');
+                        this.blockchainMessage = 'Rankings recorded on blockchain';
+                        this.blockchainMessageType = 'success';
+                    } else {
+                        this.blockchainMessage = `Blockchain recording failed: ${res.error || 'unknown'}`;
+                        this.blockchainMessageType = 'error';
+                    }
+                    this.render();
+                } catch (e) {
+                    this.blockchainMessage = 'Blockchain recording failed';
+                    this.blockchainMessageType = 'error';
+                    this.render();
+                } finally {
+                    this.recordingInProgress = false;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load tournament participants for blockchain', err);
         }
     }
 
@@ -100,15 +126,12 @@ export class TournamentBracketPage extends AbstractComponent {
             this.blockchainMessageType = d?.success ? 'success' : 'error';
             this.render();
         };
-        window.addEventListener('tournament:blockchain', this.blockchainEventHandler);
+        window.addEventListener('blockchain', this.blockchainEventHandler);
     }
 
     public render(): void {
-        if (this.container) {
-            this.container.innerHTML = this.getHtml();
-            // Note: bindEvents() is called ONCE in onMounted(), not here.
-            // Event delegation handles dynamically rendered content.
-        }
+        if (!this.container) return;
+        this.container.innerHTML = this.getHtml();
     }
 
     private async playMatch(matchId: string) {

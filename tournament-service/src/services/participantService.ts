@@ -75,6 +75,16 @@ export class ParticipantService {
   }
 
   /**
+   * Get all tournament participants
+   */
+  static async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
+	return dbAll<TournamentParticipant>(
+	  'SELECT * FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
+	  [tournamentId]
+	);
+  }
+
+  /**
    * Get tournament leaderboard
    */
   static async getTournamentLeaderboard(tournamentId: number): Promise<any[]> {

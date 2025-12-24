@@ -4,6 +4,7 @@
 import { dbRun, dbGet, dbAll } from '../database';
 import { TournamentMatch, MatchResultBody } from '../types';
 import { TournamentService } from './tournamentService';
+import { ParticipantService } from './participantService';
 import { logger } from '../utils/logger';
 
 export class MatchService {
@@ -122,7 +123,7 @@ export class MatchService {
     );
 
     // Update participant final ranks
-    const participants = await TournamentService.getTournamentParticipants(tournamentId);
+    const participants = await ParticipantService.getTournamentParticipants(tournamentId);
 
     const totalRounds = Math.round(Math.log2(participants.length));
 

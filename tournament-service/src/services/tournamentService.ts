@@ -5,6 +5,7 @@ import { dbRun, dbGet, dbAll } from '../database';
 import { Tournament, TournamentParticipant, TournamentMatch, CreateTournamentBody, TournamentDetails } from '../types';
 import { BracketService } from './bracketService';
 import { MatchService } from './matchService';
+import { ParticipantService } from './participantService';
 import { logger } from '../utils/logger';
 
 export class TournamentService {
@@ -74,7 +75,7 @@ export class TournamentService {
     if (!tournament) return null;
 
     const [participants, matches] = await Promise.all([
-      this.getTournamentParticipants(id),
+      ParticipantService.getTournamentParticipants(id),
       this.getTournamentMatches(id)
     ]);
 
@@ -123,7 +124,7 @@ export class TournamentService {
       throw new Error('Only tournament creator can start the tournament');
     }
 
-    const participants = await this.getTournamentParticipants(id);
+    const participants = await ParticipantService.getTournamentParticipants(id);
     if (![4, 8].includes(participants.length)) {
       throw new Error('Tournament needs either 4 or 8 participants to start');
     }
@@ -154,16 +155,6 @@ export class TournamentService {
 
     logger.info('Tournament started successfully', { id, matchCount: matches.length });
     return this.getTournamentById(id);
-  }
-
-  /**
-   * Get tournament participants
-   */
-  static async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
-    return dbAll<TournamentParticipant>(
-      'SELECT * FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
-      [tournamentId]
-    );
   }
 
   /**
