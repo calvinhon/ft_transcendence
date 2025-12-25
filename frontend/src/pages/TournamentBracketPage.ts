@@ -124,15 +124,27 @@ export class TournamentBracketPage extends AbstractComponent {
         }
 
         // Setup Game
+        const tournamentSettings = TournamentService.getInstance().getTournamentSettings(this.tournament!.id.toString());
+        const defaultSettings = {
+            scoreToWin: 3,
+            ballSpeed: 'medium' as const,
+            paddleSpeed: 'medium' as const,
+            powerups: false,
+            accumulateOnHit: false,
+            difficulty: 'medium' as const
+        };
+        
+        const settings = tournamentSettings || defaultSettings;
+        
         const setup = {
             mode: 'tournament',
             settings: {
-                scoreToWin: 3,
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerups: false,
-                accumulateOnHit: false,
-                difficulty: 'medium'
+                scoreToWin: settings.scoreToWin || defaultSettings.scoreToWin,
+                ballSpeed: settings.ballSpeed || defaultSettings.ballSpeed,
+                paddleSpeed: settings.paddleSpeed || defaultSettings.paddleSpeed,
+                powerups: settings.powerups !== undefined ? settings.powerups : defaultSettings.powerups,
+                accumulateOnHit: settings.accumulateOnHit !== undefined ? settings.accumulateOnHit : defaultSettings.accumulateOnHit,
+                difficulty: settings.difficulty || defaultSettings.difficulty
             },
             team1: [p1],
             team2: [p2],

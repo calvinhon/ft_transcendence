@@ -38,7 +38,7 @@ export class TournamentService {
         return TournamentService.instance;
     }
 
-    public async create(name: string, players: { id: number, alias?: string, avatarUrl?: string | null }[]): Promise<Tournament> {
+    public async create(name: string, players: { id: number, alias?: string, avatarUrl?: string | null }[], settings?: any): Promise<Tournament> {
         const currentUser = App.getInstance().currentUser;
         if (!currentUser) throw new Error("User not logged in");
 
@@ -62,6 +62,11 @@ export class TournamentService {
         });
         sessionStorage.setItem(`tournament_aliases_${tournamentId}`, JSON.stringify(aliasMap));
         sessionStorage.setItem(`tournament_avatars_${tournamentId}`, JSON.stringify(avatarMap));
+        
+        // Save tournament settings
+        if (settings) {
+            sessionStorage.setItem(`tournament_settings_${tournamentId}`, JSON.stringify(settings));
+        }
 
         // 2. Add Participants
         for (const p of players) {
@@ -145,6 +150,16 @@ export class TournamentService {
 
         // Refresh local state
         await this.get(tournamentId);
+    }
+
+    public getTournamentSettings(tournamentId: string): any {
+        try {
+            const settings = sessionStorage.getItem(`tournament_settings_${tournamentId}`);
+            return settings ? JSON.parse(settings) : null;
+        } catch (e) {
+            console.error('Failed to load tournament settings', e);
+            return null;
+        }
     }
 
     public async recordOnBlockchain(tournamentId: string, winnerId: number): Promise<any> {

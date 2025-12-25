@@ -6,7 +6,7 @@ export interface User {
 }
 
 export interface GameSettings {
-    mode: 'classic' | 'arcade' | 'tournament' | 'campaign';
+    mode: 'arcade' | 'tournament' | 'campaign';
     difficulty: 'easy' | 'medium' | 'hard';
     scoreToWin: number;
     ballSpeed?: 'slow' | 'medium' | 'fast';

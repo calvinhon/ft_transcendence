@@ -666,8 +666,8 @@ export class MainMenuPage extends AbstractComponent {
                 paddleSpeed: this.settings.paddleSpeed,
                 powerups: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
-                difficulty: 'medium', // TODO: Add difficulty selector if needed
-                scoreToWin: 5
+                difficulty: 'medium', // Default difficulty, will be overridden for campaign
+                scoreToWin: this.settings.scoreToWin
             },
             team1: [],
             team2: [],
@@ -742,7 +742,14 @@ export class MainMenuPage extends AbstractComponent {
 
                         const name = "Tournament " + new Date().toLocaleTimeString();
 
-                        await TournamentService.getInstance().create(name, mappedPlayers);
+                        await TournamentService.getInstance().create(name, mappedPlayers, {
+                            ballSpeed: this.settings.ballSpeed,
+                            paddleSpeed: this.settings.paddleSpeed,
+                            powerups: this.settings.powerups,
+                            accumulateOnHit: this.settings.accumulateOnHit,
+                            scoreToWin: this.settings.scoreToWin,
+                            difficulty: 'medium'
+                        });
 
                         App.getInstance().router.navigateTo('/tournament');
                     } catch (e) {

@@ -30,6 +30,7 @@ export class GameService {
     }
 
     public async connect(settings: GameSettings, team1?: any[], team2?: any[]): Promise<void> {
+        console.log('GameService.connect called with settings:', settings);
         this.gameSettings = settings;
 
         // Prepare Join Payload to be sent after handshake
@@ -44,9 +45,16 @@ export class GameService {
                 type: 'joinBotGame',
                 userId: user.userId,
                 username: user.username,
-                aiDifficulty: settings.difficulty || 'medium',
-                scoreToWin: settings.scoreToWin || 5,
-                campaignLevel: settings.campaignLevel
+                gameSettings: {
+                    gameMode: 'coop', // Campaign uses coop mode with AI
+                    scoreToWin: settings.scoreToWin || 5,
+                    aiDifficulty: settings.difficulty || 'medium',
+                    ballSpeed: settings.ballSpeed || 'medium',
+                    paddleSpeed: settings.paddleSpeed || 'medium',
+                    powerupsEnabled: settings.powerups || false,
+                    accelerateOnHit: settings.accumulateOnHit || false,
+                    campaignLevel: settings.campaignLevel
+                }
             };
         } else {
             // Arcade / Tournament
@@ -92,6 +100,9 @@ export class GameService {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
         const wsUrl = `${protocol}//${host}/api/game/ws`;
+        console.log('Connecting to WebSocket:', wsUrl);
+
+        const connectStartTime = Date.now();
 
         return new Promise((resolve, reject) => {
             if (this.ws) {
@@ -101,7 +112,8 @@ export class GameService {
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {
-                console.log('WS Connected');
+                const connectTime = Date.now() - connectStartTime;
+                console.log(`WS Connected in ${connectTime}ms`);
                 // Initiate Handshake: Send userConnect immediately
                 if (user) {
                     this.ws?.send(JSON.stringify({
@@ -141,13 +153,16 @@ export class GameService {
                 this.pendingJoinPayload = null;
             }
         } else if (msg.type === 'gameState') {
+            console.log('Game state update:', msg.gameState, msg.countdownValue ? `(countdown: ${msg.countdownValue})` : '');
             this.currentGameState = msg.gameState; // Track state
             this.notifyState(msg);
         } else if (msg.type === 'gameEnd') {
+            console.log('Game ended');
             this.currentGameState = 'finished';
             this.notifyState(msg);
             this.stopInputHandler();
         } else if (msg.type === 'gameStart') {
+            console.log('Game started');
             this.currentGameState = 'playing';
             this.startInputHandler();
         }

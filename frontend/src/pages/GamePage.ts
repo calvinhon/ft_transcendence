@@ -114,14 +114,20 @@ export class GamePage extends AbstractComponent {
         if (p2AvatarEl) (p2AvatarEl as HTMLElement).style.backgroundImage = `url('${p2Avatar}')`;
 
         service.onGameState(async (state) => {
+            console.log('Game state received:', state); // Debug logging
             if (this.renderer) this.renderer.render(state, setup.mode);
 
             // Update Status Text based on game state
             const status = this.$('#game-status-text');
 
-            if (state && state.gameState === 'playing') {
+            if (!state) {
+                if (status) status.innerText = "CONNECTING...";
+            } else if (state.gameState === 'countdown') {
+                const countdownValue = state.countdownValue || 3;
+                if (status) status.innerText = `GET READY... ${countdownValue}`;
+            } else if (state.gameState === 'playing') {
                 if (status) status.innerText = "LIVE COMBAT";
-            } else if (state && (state.gameState === 'finished' || state.type === 'gameEnd')) {
+            } else if (state.gameState === 'finished' || state.type === 'gameEnd') {
                 // --- Game Over Handling ---
                 if (status) status.innerText = "MISSION COMPLETE";
 

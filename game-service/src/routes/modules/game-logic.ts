@@ -60,7 +60,10 @@ export class PongGame {
     this.initializeGameObjects();
 
     logger.game(this.gameId, `Created with settings:`, this.gameSettings);
-    this.startCountdown();
+    // Delay countdown start slightly to ensure frontend is ready
+    setTimeout(() => {
+      this.startCountdown();
+    }, 200);
   }
 
   private initializeGameObjects(): void {
