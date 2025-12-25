@@ -11,7 +11,6 @@ export class GameService {
     private keys: { [key: string]: boolean } = {};
     private inputInterval: any = null;
     private lastKeyPressTime: { [key: string]: number } = {};
-    private lastSentDirection: { [key: string]: 'up' | 'down' | null } = {};
     private team1: any[] = [];
     private team2: any[] = [];
     private uuid: string = Math.random().toString(36).substring(7);
@@ -229,9 +228,6 @@ export class GameService {
             this.sendMove('up');
         } else if (down) {
             this.sendMove('down');
-        } else {
-            // Reset last sent direction when no keys are pressed
-            this.lastSentDirection[this.uuid] = null;
         }
     }
 
@@ -352,15 +348,11 @@ export class GameService {
     }
 
     public sendMove(direction: 'up' | 'down'): void {
-        // Only send if direction changed to avoid message spam
-        if (this.lastSentDirection[this.uuid] === direction) return;
-
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({
                 type: 'movePaddle',
                 direction
             }));
-            this.lastSentDirection[this.uuid] = direction;
         }
     }
 
@@ -394,7 +386,6 @@ export class GameService {
         this.gameStateCallbacks = [];
         // Reset input state to prevent lingering key states
         this.keys = {};
-        this.lastSentDirection = {};
         this.currentGameState = 'unknown';
         this.gameSettings = null;
     }
