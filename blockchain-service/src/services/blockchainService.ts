@@ -32,7 +32,7 @@ export class BlockchainService {
 
 			const tx = await this.contract.recordRanks(BigInt(tournamentId), userIds.map(p => BigInt(p)), ranks.map(r => BigInt(r)));
 			const receipt = await tx.wait();
-			console.log(`[blockchain-service] recordRanks tx mined for tournament=${tournamentId} txHash=${receipt.hash}`);
+			console.log(`[blockchain-service] recordRanks tx mined for tournament=${tournamentId} TX_HASH=${receipt.hash}`);
 			return receipt.hash;
 		} catch (e) {
 			console.error('[blockchain-service] unexpected error in recordRanks job', e);
