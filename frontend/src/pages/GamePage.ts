@@ -11,6 +11,8 @@ export class GamePage extends AbstractComponent {
     private p2Ids: number[] = [];
     private returnTimer: ReturnType<typeof setInterval> | null = null; // For game over countdown
     private isRecording: boolean = false; // Lock to prevent double recording
+    private lastRenderTime: number = 0;
+    private renderThrottleMs: number = 16; // ~60fps max
 
     getHtml(): string {
         return `
@@ -115,7 +117,13 @@ export class GamePage extends AbstractComponent {
 
         service.onGameState(async (state) => {
             console.log('Game state received:', state); // Debug logging
-            if (this.renderer) this.renderer.render(state, setup.mode);
+
+            // Throttle rendering to prevent excessive canvas updates
+            const now = Date.now();
+            if (now - this.lastRenderTime >= this.renderThrottleMs) {
+                if (this.renderer) this.renderer.render(state, setup.mode);
+                this.lastRenderTime = now;
+            }
 
             // Update Status Text based on game state
             const status = this.$('#game-status-text');
