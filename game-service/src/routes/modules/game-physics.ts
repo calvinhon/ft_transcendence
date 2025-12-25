@@ -202,16 +202,16 @@ export class GamePhysics {
     const oldY = paddle.y;
     const moveSpeed = paddleSpeed;
 
-    if (direction === 'up' && paddle.y > 0) {
-      paddle.y = Math.max(0, paddle.y - moveSpeed);
+    if (direction === 'up' && paddle.y > -50) {
+      paddle.y = Math.max(-50, paddle.y - moveSpeed);
       logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y, 'speed:', moveSpeed);
       return true;
-    } else if (direction === 'down' && paddle.y < 500) {
-      paddle.y = Math.min(500, paddle.y + moveSpeed);
+    } else if (direction === 'down' && paddle.y < 550) {
+      paddle.y = Math.min(550, paddle.y + moveSpeed);
       logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y, 'speed:', moveSpeed);
       return true;
     } else {
-      logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 500]');
+      logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [-50, 550]');
       return false;
     }
   }
