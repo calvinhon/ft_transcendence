@@ -2,6 +2,12 @@ import { Router } from './Router';
 import { User } from '../types';
 import { AuthService } from '../services/AuthService';
 
+enum StartState {
+    SUCCESS,
+    LOADING,
+    FAILED
+}
+
 export class App {
     private static instance: App;
     public router: Router;
@@ -30,7 +36,7 @@ export class App {
                 return new LoginPage();
             }
 
-            // 2. If Auth, then check FTUE
+            // 2. If Auth, then check campaign status
             const initialized = localStorage.getItem('ft_transcendence_initialized');
             if (!initialized) {
                 const { LaunchSeqPage } = await import('../pages/LaunchSeqPage');
@@ -107,15 +113,23 @@ export class App {
         };
     }
 
-    public async start(): Promise<void> {
+    public async start(): Promise<StartState> {
         // Remove loading screen
         const loading = document.getElementById('loading');
         if (loading) loading.remove();
 
         // Check initial session first to avoid redirect loops
-        await AuthService.getInstance().checkSession();
+        let res = await AuthService.getInstance().checkSession();
 
-        this.router.init();
+        // Wait for the router to finish the initial render
+        await this.router.init();
+
         (window as any).app = this;
+
+        if (res) {
+            return Promise.resolve(StartState.SUCCESS);
+        }
+
+        return Promise.reject(StartState.FAILED);
     }
 }

@@ -16,10 +16,9 @@
     "vite": "^5.0.8"
   },
   "dependencies": {
-    "@babylonjs/addons": "^8.42.0",
-    "@babylonjs/core": "^8.42.0",
-    "@babylonjs/gui": "^8.42.0",
-    "@babylonjs/loaders": "^8.42.0",
+    "@babylonjs/addons": "^8.43.0",
+    "@babylonjs/core": "^8.43.0",
+    "@babylonjs/loaders": "^8.43.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "chart.js": "^4.5.1"
   }

@@ -1,7 +1,8 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Color4, AbstractMesh } from "@babylonjs/core";
+import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, PowerEase } from "@babylonjs/core";
+import { AbstractMesh, AppendSceneAsync } from "@babylonjs/core";
+// import { CreateBox } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { HtmlMeshRenderer, HtmlMesh, FitStrategy } from "@babylonjs/addons";
-import { AppendSceneAsync } from "@babylonjs/core/Loading/sceneLoader";
 
 export class BabylonWrapper {
     private static instance: BabylonWrapper;
@@ -12,17 +13,21 @@ export class BabylonWrapper {
 
     private constructor() {
         const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-        this.engine = new Engine(canvas, true);
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+        this.engine = new Engine(canvas);
         this.scene = new Scene(this.engine);
-        this.scene.clearColor = new Color4(0.05, 0.1, 0.15, 0);
-        const camera = new ArcRotateCamera("camera", -Math.PI * 1.2, Math.PI / 2.75, 5, Vector3.Zero(), this.scene);
-        camera.fov = 0.1;
-        camera.attachControl(document.getElementById("renderCanvas"), true);
+        this.scene.clearColor = new Color4(0, 0, 0, 0);
+        this.scene.createDefaultLight();
+        const camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.3, 2, Vector3.Zero(), this.scene);
+        camera.attachControl(canvas);
         camera.lowerRadiusLimit = 0.5;
         camera.upperRadiusLimit = 20;
         camera.wheelPrecision = 100;
         this.camera = camera;
-        // Register loaders dynamically (recommended approach)
+        (window as any).scene = this.scene;
+
+        // Register loaders dynamically to support importing mesh later
         registerBuiltInLoaders();
 
         this.setupScene();
@@ -36,12 +41,6 @@ export class BabylonWrapper {
     }
 
     private setupScene(): void {
-        const light = new HemisphericLight("light1", new Vector3(0, 1, 0.2), this.scene);
-        light.intensity = 0.8;
-
-        const light2 = new HemisphericLight("light2", new Vector3(0.5, -1, 0), this.scene);
-        light2.intensity = 0.3;
-
         new HtmlMeshRenderer(this.scene);
 
         this.loadModel();
@@ -61,8 +60,8 @@ export class BabylonWrapper {
             await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
 
             // Find the glowing screen mesh
-            const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("glowing screen"));
-
+            const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("monitorscreenmeshapplied"));
+            this.scene.meshes.find(m => (m.name == "MonitorScreenMeshNonApplied" || m.name.toLowerCase().includes("glowing screen")))!.isVisible = false;
             if (!screenMesh) {
                 console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
@@ -78,44 +77,82 @@ export class BabylonWrapper {
 
     private createHtmlMesh(parentMesh: AbstractMesh | null): void {
         const appElement = document.getElementById("app");
+        console.log(appElement);
         if (!appElement) return;
 
         this.htmlMesh = new HtmlMesh(this.scene, "appHtmlMesh", {
             isCanvasOverlay: false,
-            fitStrategy: FitStrategy.STRETCH
+            fitStrategy: FitStrategy.CONTAIN,
         });
 
         if (parentMesh) {
-            // Units for glowing screen in cubicle model
-            this.htmlMesh.setContent(appElement, 3, 2);
+            // this.htmlMesh.setContent(appElement, 2.7, 2.2);
+            this.htmlMesh.setContent(appElement, 4, 3.12);
+            this.htmlMesh.scalingDeterminant = 1 / 10;
             this.htmlMesh.parent = parentMesh;
+            this.htmlMesh.position.x -= 0.015;
+            this.htmlMesh.position.y += 0.005;
+            // this.htmlMesh.position.z -= 0.1;
 
-            // Reset local transforms
-            this.htmlMesh.position = Vector3.Zero();
-            this.htmlMesh.rotation = Vector3.Zero();
-
-            // Face forward
-            // this.htmlMesh.rotation.y = Math.PI;
-
-            // Offset to avoid clipping/z-fighting
-            this.htmlMesh.position.z = -0.02;
-
-            // Hide the original glowing part
+            // Hide the original part
             parentMesh.isVisible = false;
         } else {
             // Fallback: floating in front of camera
-            this.htmlMesh.setContent(appElement, 4, 3);
-            this.htmlMesh.position = new Vector3(0, 1.5, 0);
+            this.htmlMesh.setContent(appElement, 1, 1);
+            this.camera.setTarget(this.htmlMesh.position);
         }
-
-        // this.htmlMesh.visibility = 1;
 
         if (!parentMesh) {
             this.camera.setTarget(this.htmlMesh.position);
         } else {
-            // Target the monitor
-            this.camera.setTarget(parentMesh.absolutePosition);
-            this.camera.radius = 50.5; // Closer look at the monitor
+            // Target the monitor but start from a distance and animate in
+            const finalRadius = 0.5;
+            // const targetPos = parentMesh.absolutePosition.clone();
+            const targetPos = this.htmlMesh.absolutePosition.clone();
+
+            // Set initial state
+            this.camera.setTarget(targetPos);
+            this.camera.minZ = 0;
+
+            // Animate zoom
+            this.animateCameraTo(finalRadius, targetPos, 0.6, 2500);
         }
+    }
+
+    /**
+     * Smoothly animates the camera to a new radius and target position.
+     * Useful for cinematic transitions and cutscenes.
+     */
+    public animateCameraTo(targetRadius: number, targetPos: Vector3, targetFov: number, duration: number = 2000) {
+        const ease = new PowerEase(15);
+        ease.setEasingMode(EasingFunction.EASINGMODE_EASEOUT);
+
+        const frames = 60;
+        const totalFrames = (duration / 1000) * frames;
+
+        // Radius Animation
+        const radiusAnim = new Animation("radiusAnim", "radius", frames, Animation.ANIMATIONTYPE_FLOAT);
+        radiusAnim.setKeys([
+            { frame: 0, value: this.camera.radius },
+            { frame: totalFrames, value: targetRadius }
+        ]);
+        radiusAnim.setEasingFunction(ease);
+
+        // Target (Position) Animation
+        const targetAnim = new Animation("targetAnim", "target", frames, Animation.ANIMATIONTYPE_VECTOR3);
+        targetAnim.setKeys([
+            { frame: 0, value: this.camera.target.clone() },
+            { frame: totalFrames, value: targetPos }
+        ]);
+        targetAnim.setEasingFunction(ease);
+
+        const fovAnim = new Animation("fovAnim", "fov", frames, Animation.ANIMATIONTYPE_FLOAT);
+        fovAnim.setKeys([
+            { frame: 0, value: this.camera.fov },
+            { frame: totalFrames, value: targetFov }
+        ]);
+        fovAnim.setEasingFunction(ease);
+
+        this.scene.beginDirectAnimation(this.camera, [radiusAnim, targetAnim, fovAnim], 0, totalFrames, false);
     }
 }

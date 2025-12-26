@@ -1,15 +1,21 @@
-import '../css/style.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 import { App } from './core/App';
 import { BabylonWrapper } from './core/BabylonWrapper';
 
-console.log("🚀 [MAIN] Booting System...");
+// console.log("🚀 [MAIN] Booting System...");
 
 const app = App.getInstance();
-app.start();
+app.start()
+    .then(() => {
+        console.log("App started with user session");
+    })
+    .catch(() => {
+        console.log("App started without user session");
+    })
+    .finally(() => {
+        // Initialize BabylonWrapper
+        BabylonWrapper.getInstance();
 
-// Initialize BabylonWrapper
-BabylonWrapper.getInstance();
-
-// Expose for debugging
-(window as any).app = app;
+        // Expose for debugging
+        (window as any).app = app;
+    });

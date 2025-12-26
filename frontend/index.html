@@ -4,10 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Spiritual Ascension" />
+    <link rel="stylesheet" href="./css/style.css" />
     <title>Spiritual Ascension</title>
   </head>
   <body>
-    <div id="app" class="fixed inset-0 flex flex-col overflow-hidden">
+    <div
+      id="app"
+      class="absolute inset-0 justify-center flex flex-col bg-black overflow-hidden"
+    >
       <!-- Routing will inject fragments here -->
       <div
         id="loading"
@@ -19,25 +23,21 @@
       </div>
     </div>
 
-    <canvas
-      id="renderCanvas"
-      class="w-full h-full block outline-none touch-none"
-    ></canvas>
+    <canvas id="renderCanvas" class="absolute inset-0"></canvas>
 
     <style>
-      html,
+      /* html,
       body {
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background: transparent !important; /* Ensure background doesn't block z-index < 0 */
+        background: transparent !important; 
       }
       #app {
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 0; /* Keep it baseline, HtmlMeshRenderer will manage its own containers */
-        /* Width and height are handled in style.css to avoid duplication */
+        z-index: 0; 
       }
       #renderCanvas {
         position: fixed;
@@ -45,9 +45,9 @@
         height: 100vh;
         top: 0;
         left: 0;
-        z-index: 1; /* Keep canvas on top of standard elements if needed */
+        z-index: 1; 
         background: transparent;
-      }
+      } */
     </style>
     <script type="module" crossorigin src="/src/main.ts"></script>
   </body>

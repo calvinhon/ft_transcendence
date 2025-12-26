@@ -27,22 +27,24 @@
   html {
     font-family: "PixelCode", monospace;
     color: #ffffff;
+    font-size: 24px;
   }
 
-  html,
+  /* html,
   body {
     height: 100%;
     background-color: transparent;
     overflow: hidden;
-  }
+  } */
 
-  #app {
+  /* #app {
     width: 100vw;
     height: 100vh;
     position: relative;
     overflow: hidden;
-  }
+  } */
 
+  /*
   input,
   button,
   select,
@@ -53,7 +55,7 @@
 
   button {
     cursor: pointer;
-  }
+  } */
 }
 
 @layer components {
