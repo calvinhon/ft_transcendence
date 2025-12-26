@@ -17,7 +17,6 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     async onMounted() {
-        this.container = document.getElementById('page-content') || undefined;
 
         const current = TournamentService.getInstance().getCurrentTournament();
         if (current) {

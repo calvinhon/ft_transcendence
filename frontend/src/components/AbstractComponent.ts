@@ -31,9 +31,22 @@ export abstract class AbstractComponent {
     }
 
     /**
+     * Sets the container for this component.
+     */
+    public setContainer(el: HTMLElement): void {
+        this.container = el;
+    }
+
+    /**
      * Helper to safely find an element within this component.
      */
     protected $(selector: string): HTMLElement | null {
-        return this.element ? this.element.querySelector(selector) : document.querySelector(selector);
+        if (this.element) {
+            return this.element.querySelector(selector);
+        }
+        if (this.container) {
+            return this.container.querySelector(selector);
+        }
+        return document.querySelector(selector);
     }
 }

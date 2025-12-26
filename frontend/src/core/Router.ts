@@ -55,6 +55,7 @@ export class Router {
             // Dynamic import to avoid circular dependencies
             const { ErrorPage } = await import('../pages/ErrorPage');
             this.currentComponent = new ErrorPage(404, 'Page Not Found');
+            this.currentComponent.setContainer(this.appContainer); // Set container
             this.appContainer.innerHTML = this.currentComponent.getHtml();
             this.currentComponent.onMounted();
             return;
@@ -67,6 +68,7 @@ export class Router {
 
         // Load new component
         this.currentComponent = await route.handler();
+        this.currentComponent.setContainer(this.appContainer); // Set container
 
         // Inject HTML
         this.appContainer.innerHTML = this.currentComponent.getHtml();
