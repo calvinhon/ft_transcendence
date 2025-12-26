@@ -165,7 +165,12 @@ export class LoginModal extends AbstractComponent {
             const container = document.createElement('div');
             this.container = container;
             container.innerHTML = this.getHtml();
-            document.body.appendChild(container);
+            const app = document.getElementById('app');
+            if (app) {
+                app.appendChild(container);
+            } else {
+                document.body.appendChild(container);
+            }
             this.onMounted();
         }
     }

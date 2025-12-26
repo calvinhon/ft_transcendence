@@ -76,7 +76,12 @@ export class TournamentMatchModal {
                 </div>
             `;
 
-            document.body.appendChild(this.container);
+            const app = document.getElementById('app');
+            if (app) {
+                app.appendChild(this.container);
+            } else {
+                document.body.appendChild(this.container);
+            }
 
             // Use setTimeout to ensure DOM is ready before attaching listeners
             setTimeout(() => {

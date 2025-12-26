@@ -48,7 +48,12 @@ export class PasswordConfirmationModal extends AbstractComponent {
     render(): void {
         const overlay = document.createElement('div');
         overlay.innerHTML = this.getHtml();
-        document.body.appendChild(overlay.firstElementChild!);
+        const app = document.getElementById('app');
+        if (app) {
+            app.appendChild(overlay.firstElementChild!);
+        } else {
+            document.body.appendChild(overlay.firstElementChild!);
+        }
         this.bindEvents();
     }
 
