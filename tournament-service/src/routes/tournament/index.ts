@@ -3,7 +3,6 @@ import { FastifyInstance } from 'fastify';
 import tournamentCrudRoutes from './crud';
 import tournamentParticipantRoutes from './participants';
 import tournamentMatchRoutes from './matches';
-import tournamentBracketRoutes from './bracket';
 import tournamentUserRoutes from './user';
 import { createLogger } from '@ft-transcendence/common';
 
@@ -17,9 +16,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance): Promis
   await tournamentParticipantRoutes(fastify);
   logger.info('🏆 [TOURNAMENT-INDEX] Participant routes registered');
   await tournamentMatchRoutes(fastify);
-  logger.info('🏆 [TOURNAMENT-INDEX] Match routes registered');
-  await tournamentBracketRoutes(fastify);
-  logger.info('🏆 [TOURNAMENT-INDEX] Bracket routes registered');
+  console.log('🏆 [TOURNAMENT-INDEX] Match routes registered');
   await tournamentUserRoutes(fastify);
   logger.info('🏆 [TOURNAMENT-INDEX] User routes registered');
 }

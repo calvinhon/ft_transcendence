@@ -57,40 +57,6 @@ export class ParticipantService {
   }
 
   /**
-   * Leave a tournament
-   */
-  static async leaveTournament(tournamentId: number, userId: number): Promise<boolean> {
-    logger.info('User leaving tournament', { tournamentId, userId });
-
-    const tournament = await TournamentService.getTournamentById(tournamentId);
-    if (!tournament) {
-      throw new Error('Tournament not found');
-    }
-
-    if (tournament.status !== 'open') {
-      throw new Error('Cannot leave tournament that has already started');
-    }
-
-    const result = await dbRun(
-      'DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ?',
-      [tournamentId, userId]
-    );
-
-    if (result.changes > 0) {
-      // Update tournament participant count
-      await dbRun(
-        'UPDATE tournaments SET current_participants = current_participants - 1 WHERE id = ?',
-        [tournamentId]
-      );
-
-      logger.info('User left tournament successfully', { tournamentId, userId });
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
    * Get participant by ID
    */
   static async getParticipantById(id: number): Promise<TournamentParticipant | null> {
@@ -111,19 +77,13 @@ export class ParticipantService {
   }
 
   /**
-   * Update participant (for tournament completion)
+   * Get all tournament participants
    */
-  static async updateParticipant(id: number, updates: Partial<TournamentParticipant>): Promise<TournamentParticipant | null> {
-    const fields = Object.keys(updates).filter(key => updates[key as keyof TournamentParticipant] !== undefined);
-    if (fields.length === 0) return null;
-
-    const setClause = fields.map(field => `${field} = ?`).join(', ');
-    const values = fields.map(field => updates[field as keyof TournamentParticipant]);
-    values.push(id);
-
-    await dbRun(`UPDATE tournament_participants SET ${setClause} WHERE id = ?`, values);
-
-    return this.getParticipantById(id);
+  static async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
+	return dbAll<TournamentParticipant>(
+	  'SELECT * FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
+	  [tournamentId]
+	);
   }
 
   /**

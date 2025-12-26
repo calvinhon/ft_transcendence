@@ -3,12 +3,17 @@ import { App } from "../core/App";
 import { TournamentService, Tournament } from "../services/TournamentService";
 import { GameStateService } from "../services/GameStateService";
 import { TournamentMatchModal } from "../components/TournamentMatchModal";
+import { BlockchainService } from "../services/BlockchainService";
 
 export class TournamentBracketPage extends AbstractComponent {
     private tournamentId: string | null = null;
     private tournament: Tournament | null = null;
     private autoRefreshInterval: any = null;
     private clickHandler: ((e: Event) => void) | null = null; // Store handler for cleanup
+    private blockchainMessage: string | null = null;
+    private blockchainMessageType: 'success' | 'error' | null = null;
+    private blockchainEventHandler: ((e: Event) => void) | null = null;
+    private recordingInProgress: boolean = false;
 
     constructor() {
         super();
@@ -43,7 +48,7 @@ export class TournamentBracketPage extends AbstractComponent {
         this.render();
 
         // Auto Refresh
-        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()).catch(console.error), 5000);
+        this.autoRefreshInterval = setInterval(() => this.refreshData().then(() => this.render()).catch(console.error), 1500);
 
         this.bindEvents();
     }
@@ -58,41 +63,75 @@ export class TournamentBracketPage extends AbstractComponent {
             this.container.removeEventListener('click', this.clickHandler);
             this.clickHandler = null;
         }
+        if (this.blockchainEventHandler) {
+            window.removeEventListener('blockchain', this.blockchainEventHandler);
+            this.blockchainEventHandler = null;
+        }
     }
 
     private async refreshData() {
         if (!this.tournamentId) return;
-        this.tournament = await TournamentService.getInstance().get(this.tournamentId);
+        try {
+			this.tournament = await TournamentService.getInstance().get(String(this.tournamentId));
+			const recordedKey = `tournament_recorded_${this.tournamentId}`;
+			const participants = await TournamentService.getInstance().getParticipants();
+            if (this.tournament?.winnerId != null && !sessionStorage.getItem(recordedKey) && !this.recordingInProgress) {
+                this.recordingInProgress = true;
+                const tournamentIdNum = Number(this.tournamentId);
+                const players = participants.map(p => Number(p.id));
+                const ranks = participants.map(p => Number(p.rank));
+
+                try {
+                    const res = await BlockchainService.getInstance().recordOnBlockchain(tournamentIdNum, players, ranks);
+                    if (res.success) {
+                        sessionStorage.setItem(recordedKey, '1');
+                        this.blockchainMessage = 'Rankings recorded on blockchain';
+                        this.blockchainMessageType = 'success';
+                    } else {
+                        this.blockchainMessage = `Blockchain recording failed: ${res.error || 'unknown'}`;
+                        this.blockchainMessageType = 'error';
+                    }
+                    this.render();
+                } catch (e) {
+                    this.blockchainMessage = 'Blockchain recording failed';
+                    this.blockchainMessageType = 'error';
+                    this.render();
+                } finally {
+                    this.recordingInProgress = false;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load tournament participants for blockchain', err);
+        }
     }
 
     private bindEvents() {
-        // Only bind if not already bound
-        if (this.clickHandler) return;
+        if (!this.clickHandler) {
+			this.clickHandler = (e: Event) => {
+				const target = e.target as HTMLElement;
+				const playBtn = target.closest('.match-play-btn') as HTMLElement;
+	
+				if (playBtn) {
+					const matchId = playBtn.dataset.matchId;
+					if (matchId) this.playMatch(matchId);
+				}
+			};
+	
+			this.container?.addEventListener('click', this.clickHandler);
+		} 
 
-        this.clickHandler = (e: Event) => {
-            const target = e.target as HTMLElement;
-            const playBtn = target.closest('.match-play-btn') as HTMLElement;
-
-            if (playBtn) {
-                const matchId = playBtn.dataset.matchId;
-                if (matchId) this.playMatch(matchId);
-            }
-
-            const blockchainBtn = target.closest('#blockchain-record-btn');
-            if (blockchainBtn) {
-                this.recordBlockchain();
-            }
+        this.blockchainEventHandler = (e: Event) => {
+            const d = (e as CustomEvent).detail;
+            this.blockchainMessage = d?.message || null;
+            this.blockchainMessageType = d?.success ? 'success' : 'error';
+            this.render();
         };
-
-        this.container?.addEventListener('click', this.clickHandler);
+        window.addEventListener('blockchain', this.blockchainEventHandler);
     }
 
     public render(): void {
-        if (this.container) {
-            this.container.innerHTML = this.getHtml();
-            // Note: bindEvents() is called ONCE in onMounted(), not here.
-            // Event delegation handles dynamically rendered content.
-        }
+        if (!this.container) return;
+        this.container.innerHTML = this.getHtml();
     }
 
     private async playMatch(matchId: string) {
@@ -145,16 +184,6 @@ export class TournamentBracketPage extends AbstractComponent {
         App.getInstance().router.navigateTo('/game');
     }
 
-    private async recordBlockchain() {
-        if (!this.tournament || !this.tournament.winnerId) return;
-        try {
-            await TournamentService.getInstance().recordOnBlockchain(this.tournament.id, this.tournament.winnerId);
-            alert("Recorded on Blockchain successfully!");
-        } catch (e) {
-            alert("Failed to record on blockchain.");
-        }
-    }
-
     getHtml(): string {
         if (!this.tournament) return `<div class="text-white text-center mt-20">LOADING TOURNAMENT DATA...</div>`;
 
@@ -185,9 +214,11 @@ export class TournamentBracketPage extends AbstractComponent {
                         <div class="mt-8 p-6 border border-green-500 bg-green-900/20 text-center">
                             <h2 class="text-2xl text-green-400 font-bold mb-2">TOURNAMENT COMPLETED</h2>
                             <p class="text-white mb-4">WINNER: <span class="font-bold text-xl">${this.getWinnerName()}</span></p>
-                            <button id="blockchain-record-btn" class="px-6 py-3 bg-accent text-black font-bold hover:bg-white transition-all">
-                                <i class="fas fa-link mr-2"></i> RECORD ON BLOCKCHAIN
-                            </button>
+                            ${this.blockchainMessage ? `
+                                <div class="mt-2 text-center ${this.blockchainMessageType === 'success' ? 'text-green-400' : 'text-red-400'} font-bold">
+                                    ${this.blockchainMessage}
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
                 </div>

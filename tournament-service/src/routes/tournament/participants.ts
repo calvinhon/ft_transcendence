@@ -1,7 +1,6 @@
 // tournament-service/src/routes/tournament/participants.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ParticipantService } from '../../services/participantService';
-import { TournamentService } from '../../services/tournamentService';
 import { JoinTournamentBody } from '../../types';
 import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
 
@@ -38,93 +37,6 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
     }
   });
 
-  // Legacy join tournament route (for backward compatibility)
-  fastify.post<{
-    Params: { tournamentId: string };
-    Body: JoinTournamentBody;
-  }>('/tournaments/:tournamentId/participants', async (request: FastifyRequest<{
-    Params: { tournamentId: string };
-    Body: JoinTournamentBody;
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
-      const { userId } = request.body;
-
-      if (isNaN(tournamentId)) {
-        return sendError(reply, 'Invalid tournament ID', 400);
-      }
-
-      const participant = await ParticipantService.joinTournament(tournamentId, userId);
-      logger.info('User joined tournament via legacy API', { tournamentId, userId });
-      return sendSuccess(reply, participant, 'Successfully joined tournament');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to join tournament via legacy API', {
-        error: err.message,
-        tournamentId: request.params.tournamentId,
-        userId: request.body.userId
-      });
-      return sendError(reply, err.message || 'Failed to join tournament', 500);
-    }
-  });
-
-  // Get tournament participants
-  fastify.get<{
-    Params: { tournamentId: string };
-  }>('/tournaments/:tournamentId/participants', async (request: FastifyRequest<{
-    Params: { tournamentId: string };
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
-
-      if (isNaN(tournamentId)) {
-        return sendError(reply, 'Invalid tournament ID', 400);
-      }
-
-      const participants = await TournamentService.getTournamentParticipants(tournamentId);
-      return sendSuccess(reply, participants, 'Participants retrieved successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to get tournament participants', {
-        error: err.message,
-        tournamentId: request.params.tournamentId
-      });
-      return sendError(reply, 'Failed to retrieve participants', 500);
-    }
-  });
-
-  // Leave tournament
-  fastify.delete<{
-    Params: { tournamentId: string; userId: string };
-  }>('/tournaments/:tournamentId/participants/:userId', async (request: FastifyRequest<{
-    Params: { tournamentId: string; userId: string };
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
-      const userId = parseInt(request.params.userId);
-
-      if (isNaN(tournamentId) || isNaN(userId)) {
-        return sendError(reply, 'Invalid tournament ID or user ID', 400);
-      }
-
-      const success = await ParticipantService.leaveTournament(tournamentId, userId);
-      if (!success) {
-        return sendError(reply, 'Participant not found or cannot leave tournament', 404);
-      }
-
-      logger.info('User left tournament', { tournamentId, userId });
-      return sendSuccess(reply, null, 'Successfully left tournament');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to leave tournament', {
-        error: err.message,
-        tournamentId: request.params.tournamentId,
-        userId: request.params.userId
-      });
-      return sendError(reply, err.message || 'Failed to leave tournament', 500);
-    }
-  });
-
   // Get user's tournament rankings
   fastify.get<{
     Params: { userId: string };
@@ -147,31 +59,6 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         userId: request.params.userId
       });
       return sendError(reply, 'Failed to retrieve user rankings', 500);
-    }
-  });
-
-  // Get tournament leaderboard
-  fastify.get<{
-    Params: { tournamentId: string };
-  }>('/tournaments/:tournamentId/leaderboard', async (request: FastifyRequest<{
-    Params: { tournamentId: string };
-  }>, reply: FastifyReply) => {
-    try {
-      const tournamentId = parseInt(request.params.tournamentId);
-
-      if (isNaN(tournamentId)) {
-        return sendError(reply, 'Invalid tournament ID', 400);
-      }
-
-      const leaderboard = await ParticipantService.getTournamentLeaderboard(tournamentId);
-      return sendSuccess(reply, leaderboard, 'Leaderboard retrieved successfully');
-    } catch (error) {
-      const err = error as Error;
-      logger.error('Failed to get tournament leaderboard', {
-        error: err.message,
-        tournamentId: request.params.tournamentId
-      });
-      return sendError(reply, 'Failed to retrieve leaderboard', 500);
     }
   });
 
@@ -199,4 +86,18 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
       return sendError(reply, 'Failed to retrieve user tournaments', 500);
     }
   });
+
+  // Get all tournament participants
+  fastify.get<{
+    Params: { tournamentId: string };
+  }>('/tournaments/participant/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+	try {
+		const id = parseInt(request.params.tournamentId, 10);
+		if (Number.isNaN(id)) return sendError(reply, 'Invalid tournament ID', 400);
+		const participants = await ParticipantService.getTournamentParticipants(id);
+		return sendSuccess(reply, participants, 'Tournament participants retrieved successfully');
+	} catch (error) {
+		return sendError(reply, 'Failed to retrieve tournament participants', 500);
+	}
+  })
 }

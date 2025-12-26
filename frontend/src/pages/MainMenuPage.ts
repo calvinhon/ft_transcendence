@@ -725,8 +725,8 @@ export class MainMenuPage extends AbstractComponent {
 
         } else {
             // Tournament logic
-            if (this.tournamentPlayers.length < 2) {
-                alert("Need at least 2 players for tournament");
+            if (![4, 8].includes(this.tournamentPlayers.length)) {
+                alert("Need 4 or 8 players for tournament");
                 return;
             }
             const modal = new TournamentAliasModal(

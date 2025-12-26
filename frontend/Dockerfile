@@ -36,8 +36,9 @@ RUN echo "Installing ModSecurity" && \
 	git clone -b ${MODSEC_TAG} --depth 1 https://github.com/SpiderLabs/ModSecurity.git && \
 	git -C /opt/ModSecurity submodule update --init --recursive && \
 	cd /opt/ModSecurity && \
-	./build.sh && ./configure --with-lmdb && \
-	make && make install
+	./build.sh && \
+	./configure --with-lmdb --disable-doxygen-doc --disable-examples --disable-lua && \
+	make -j$(nproc) && make install
 
 RUN echo 'Cloning ModSecurity NGINX Connector and ModSec OWASP Rules, as well as Downloading and Extracting NGINX' && \
 	git clone -b master --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git && \
@@ -47,7 +48,7 @@ RUN echo 'Cloning ModSecurity NGINX Connector and ModSec OWASP Rules, as well as
 RUN echo "Installing NGINX Modules" && \
 	cd /opt/nginx-${NGINX_VERSION} && \
 	./configure --with-compat --add-dynamic-module=../ModSecurity-nginx && \
-	make modules
+	make -j$(nproc) modules
 
 RUN echo "Setting up ModSecurity" && \
 	mv /usr/local/owasp-modsecurity-crs/crs-setup.conf.example /usr/local/owasp-modsecurity-crs/crs-setup.conf && \

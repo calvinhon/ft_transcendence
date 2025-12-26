@@ -25,6 +25,11 @@ export interface Tournament {
     winnerId?: number;
 }
 
+export interface Participants {
+    id: number;
+    rank: number;
+}
+
 export class TournamentService {
     private static instance: TournamentService;
     private currentTournament: Tournament | null = null;
@@ -147,18 +152,22 @@ export class TournamentService {
         await this.get(tournamentId);
     }
 
-    public async recordOnBlockchain(tournamentId: string, winnerId: number): Promise<any> {
-        return Api.post('/api/tournament/blockchain/record', {
-            tournamentId,
-            winnerId
-        });
-    }
-
     public async list(): Promise<Tournament[]> {
         return Api.get('/api/tournament/tournaments/list');
     }
 
     public getCurrentTournament(): Tournament | null {
         return this.currentTournament;
+    }
+
+    public async getParticipants(): Promise<Participants[]> {
+        const current = TournamentService.getInstance().getCurrentTournament();
+        const id = current?.id ?? sessionStorage.getItem('current_tournament_id');
+        const res = await Api.get(`/api/tournament/tournaments/participant/${id}`);
+        let list = (res as any).data;
+        return list.map((p: any) => ({
+            id: p.user_id,
+            rank: p.final_rank
+        }));
     }
 }

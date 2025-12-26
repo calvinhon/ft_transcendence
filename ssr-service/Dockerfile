@@ -23,7 +23,7 @@ RUN npm run build
 RUN npm prune --production
 
 # Expose port
-EXPOSE 3005
+EXPOSE 3000
 
 # Start server
 CMD ["node", "dist/server.js"]
