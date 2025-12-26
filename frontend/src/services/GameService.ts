@@ -343,6 +343,18 @@ export class GameService {
         }
     }
 
+    public pauseGame(): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'pause' }));
+        }
+    }
+
+    public resumeGame(): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'resume' }));
+        }
+    }
+
     public onGameState(cb: (state: any) => void): void {
         this.gameStateCallbacks.push(cb);
     }

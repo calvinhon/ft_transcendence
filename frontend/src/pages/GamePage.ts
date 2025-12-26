@@ -11,6 +11,7 @@ export class GamePage extends AbstractComponent {
     private p2Ids: number[] = [];
     private returnTimer: ReturnType<typeof setInterval> | null = null; // For game over countdown
     private isRecording: boolean = false; // Lock to prevent double recording
+    private isPaused: boolean = false;
 
     getHtml(): string {
         return `
@@ -229,11 +230,44 @@ export class GamePage extends AbstractComponent {
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
+        // Toggle Pause on 'P' or 'Escape'
+        if (e.code === 'KeyP' || e.code === 'Escape') {
+            this.togglePause();
+            e.preventDefault();
+            return;
+        }
+
         // Prevent default scrolling for game keys
         if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code) || e.code.startsWith('Key')) {
             e.preventDefault();
         }
         GameService.getInstance().handleKeyDown(e.code);
+    }
+
+    private togglePause(): void {
+        this.isPaused = !this.isPaused;
+        const container = this.$('.game-container');
+        const overlayId = 'pause-overlay';
+        const existingOverlay = this.$(`#${overlayId}`);
+
+        if (this.isPaused) {
+            GameService.getInstance().pauseGame();
+            if (container && !existingOverlay) {
+                const overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40 text-white font-pixel';
+                overlay.innerHTML = `
+                    <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
+                    <p class="text-xs text-gray-500">PRESS 'P' TO RESUME</p>
+                `;
+                container.appendChild(overlay);
+            }
+        } else {
+            GameService.getInstance().resumeGame();
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+        }
     }
 
     private handleKeyUp = (e: KeyboardEvent) => {

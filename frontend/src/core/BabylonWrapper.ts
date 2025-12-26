@@ -32,6 +32,8 @@ export class BabylonWrapper {
         // Restrict controls: Disable rotation (inputs 0 and 1) but keep zoom (input 2)
         camera.attachControl(canvas, true);
         camera.inputs.removeByType("ArcRotateCameraPointersInput"); // Ensure manual rotation is disabled
+        // Remove default wheel input so we can handle it globally (even over HtmlMesh)
+        camera.inputs.removeByType("ArcRotateCameraMouseWheelInput");
         // We'll re-add a custom pointer input if needed, but for now just disabling the default drag-to-rotate.
 
         camera.lowerRadiusLimit = 0.3;
@@ -88,12 +90,54 @@ export class BabylonWrapper {
             this.engine.resize();
         });
 
+        // Dynamic Lighting Animation (Breathing Glow + CRT Flicker)
+        let time = 0;
+        this.scene.onBeforeRenderObservable.add(() => {
+            time += this.engine.getDeltaTime() * 0.001;
+
+            // Animate Glow (Breathing)
+            if (this.glowLayer) {
+                // Base 0.6, fluctuate +/- 0.1 over ~3 seconds
+                this.glowLayer.intensity = 0.6 + Math.sin(time * 2) * 0.1;
+            }
+
+            // Animate Screen Light (Flicker)
+            if (this.screenLight) {
+                // Base 0.8, fast flicker mixed with slow pulse
+                const flicker = (Math.random() - 0.5) * 0.1; // +/- 0.05
+                this.screenLight.intensity = 0.8 + Math.sin(time * 8) * 0.05 + flicker;
+            }
+        });
+
         this.setupInteractions();
     }
 
     private setupInteractions(): void {
         const canvas = this.engine.getRenderingCanvas();
         if (!canvas) return;
+
+        // Global wheel listener for zoom (works over HtmlMesh too)
+        window.addEventListener("wheel", (e) => {
+            // Prevent default page scrolling if any
+            // e.preventDefault(); // Optional: might block scroll in modals if not careful.
+            // But usually we want zoom. Let's try aggressive zoom.
+
+            const sensitivity = 0.001; // Adjust as needed
+            const delta = e.deltaY;
+
+            // Only zoom if using default camera state (Monitor view) or Lore view? 
+            // Usually we want zoom in both, subject to limits.
+
+            this.camera.radius += delta * sensitivity;
+
+            // Manual Clamp
+            if (this.camera.radius < this.camera.lowerRadiusLimit!) {
+                this.camera.radius = this.camera.lowerRadiusLimit!;
+            }
+            if (this.camera.radius > this.camera.upperRadiusLimit!) {
+                this.camera.radius = this.camera.upperRadiusLimit!;
+            }
+        });
 
         // Mouse follow effect (Tilt)
         let targetAlpha = this.camera.alpha;
