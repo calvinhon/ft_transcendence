@@ -16,6 +16,10 @@ export class BabylonWrapper {
     private defaultCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
     private loreCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
 
+    // Camera Zoom Limits
+    private readonly ZOOM_MIN = 0.4;
+    private readonly ZOOM_MAX = 1.25;
+
     private constructor() {
         const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
         canvas.width = innerWidth;
@@ -36,8 +40,10 @@ export class BabylonWrapper {
         camera.inputs.removeByType("ArcRotateCameraMouseWheelInput");
         // We'll re-add a custom pointer input if needed, but for now just disabling the default drag-to-rotate.
 
-        camera.lowerRadiusLimit = 0.3;
-        camera.upperRadiusLimit = 1.5; // Restrict zoom out significantly
+        // We'll re-add a custom pointer input if needed, but for now just disabling the default drag-to-rotate.
+
+        camera.lowerRadiusLimit = this.ZOOM_MIN;
+        camera.upperRadiusLimit = this.ZOOM_MAX;
         camera.wheelPrecision = 100;
         this.camera = camera;
         (window as any).scene = this.scene;
@@ -137,19 +143,38 @@ export class BabylonWrapper {
             if (this.camera.radius > this.camera.upperRadiusLimit!) {
                 this.camera.radius = this.camera.upperRadiusLimit!;
             }
+            const currentState = this.isLoreView ? this.loreCameraState : this.defaultCameraState;
+            if (currentState) {
+                currentState.radius = this.camera.radius;
+            }
+
+
         });
 
         // Mouse follow effect (Tilt)
         let targetAlpha = this.camera.alpha;
         let targetBeta = this.camera.beta;
-        const tiltIntensity = 0.08; // Increased tilt intensity slightly
 
-        // Use window instead of canvas to capture movement even over iFrames/HtmlMesh
         // Use window instead of canvas to capture movement even over iFrames/HtmlMesh
         window.addEventListener("mousemove", (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1; // -1 to 1
             const y = ((e.clientY - rect.top) / rect.height) * 2 - 1; // -1 to 1
+
+            // Dynamic Tilt Intensity based on Zoom (Radius)
+            // When close (0.3), we need more tilt (e.g., 0.3) to see corners.
+            // When far (1.5), we need less tilt (e.g., 0.05) as we see everything.
+            const minRadius = 0.1;
+            const maxRadius = 1.5;
+            const minTilt = 0.01;
+            const maxTilt = 0.3;
+
+            // Clamp radius for calculation just in case
+            const currentRadius = Math.max(minRadius, Math.min(maxRadius, this.camera.radius));
+
+            // Linear interpolation: higher radius -> lower tilt
+            const t = (currentRadius - minRadius) / (maxRadius - minRadius);
+            const tiltIntensity = maxTilt * (1 - t) + minTilt * t;
 
             const currentState = this.isLoreView ? this.loreCameraState : this.defaultCameraState;
             if (currentState) {
@@ -160,28 +185,6 @@ export class BabylonWrapper {
 
         // Consolidate Pointer logic for Triggers
         this.scene.onPointerObservable.add((pointerInfo) => {
-            // Hover cursor feedback
-            if (pointerInfo.type === PointerEventTypes.POINTERMOVE) {
-                const pickInfo = pointerInfo.pickInfo;
-                if (pickInfo?.hit && pickInfo.pickedMesh &&
-                    (pickInfo.pickedMesh.name === "leftInteractionTrigger" || pickInfo.pickedMesh.name === "rightInteractionTrigger")) {
-
-                    // Only show pointer if we can actually interact in that direction
-                    // Left trigger: Go to Lore (only if not already there)
-                    if (pickInfo.pickedMesh.name === "leftInteractionTrigger" && !this.isLoreView) {
-                        document.body.style.cursor = "pointer";
-                        // Right trigger: Go back to Monitor (only if we ARE in lore view)
-                    } else if (pickInfo.pickedMesh.name === "rightInteractionTrigger" && this.isLoreView) {
-                        document.body.style.cursor = "pointer";
-                    } else {
-                        document.body.style.cursor = "";
-                    }
-                } else {
-                    // Check if we hit the new triggers but condition failed, or hit nothing
-                    document.body.style.cursor = "";
-                }
-            }
-
             // Click handling
             if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
                 const pickInfo = pointerInfo.pickInfo;
@@ -304,7 +307,7 @@ export class BabylonWrapper {
             this.camera.setTarget(this.htmlMesh.position);
         } else {
             // Target the monitor but start from a distance and animate in
-            const finalRadius = 0.5;
+            const finalRadius = this.ZOOM_MIN;
             // const targetPos = parentMesh.absolutePosition.clone();
             const targetPos = this.htmlMesh.absolutePosition.clone();
 
@@ -330,8 +333,10 @@ export class BabylonWrapper {
                 // Ensure rotation inputs are still removed if that was the plan
                 this.camera.inputs.removeByType("ArcRotateCameraPointersInput");
 
-                this.camera.lowerRadiusLimit = 0.3;
-                this.camera.upperRadiusLimit = 1.5;
+                this.camera.inputs.removeByType("ArcRotateCameraPointersInput");
+
+                this.camera.lowerRadiusLimit = this.ZOOM_MIN;
+                this.camera.upperRadiusLimit = this.ZOOM_MAX;
             });
 
             this.createTriggers(parentMesh);
