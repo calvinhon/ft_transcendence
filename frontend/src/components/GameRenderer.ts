@@ -16,6 +16,10 @@ export class GameRenderer {
     // Cached grid for performance
     private gridCanvas: HTMLCanvasElement | null = null;
 
+    // Visuals
+    private ballHistory: { x: number, y: number }[] = [];
+    private paddleHistory: Map<string, { x: number, y: number }[]> = new Map();
+
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d')!;
@@ -61,6 +65,7 @@ export class GameRenderer {
 
         // Draw Game Elements
         this.drawPaddles(gameState.paddles);
+        this.drawBallTrail();
         this.drawBall(gameState.ball);
         this.drawScores(gameState.scores, width);
         this.drawCenterLine(height);
@@ -87,7 +92,7 @@ export class GameRenderer {
         ctx.strokeStyle = '#77e6ff';
         ctx.lineWidth = 4;
         ctx.shadowColor = '#77e6ff';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 20; // Increased glow
         ctx.strokeRect(0, 0, w, h);
         ctx.shadowBlur = 0;
     }
@@ -149,20 +154,54 @@ export class GameRenderer {
             paddles.team1.forEach((p: any, i: number) => {
                 // Cycle colors for arcade teams
                 const colors = ['#77e6ff', '#77ff77', '#ffff77'];
+                this.updatePaddleHistory(`t1-${i}`, p);
+                this.drawPaddleTrail(`t1-${i}`, paddleWidth, paddleHeight, colors[i % colors.length]);
                 this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
             });
         } else if (paddles.player1) {
+            this.updatePaddleHistory('p1', paddles.player1);
+            this.drawPaddleTrail('p1', paddleWidth, paddleHeight, c1);
             this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, paddleHeight, c1);
         }
 
         if (paddles.team2 && paddles.team2.length > 0) {
             paddles.team2.forEach((p: any, i: number) => {
                 const colors = ['#ff7777', '#ff77e6', '#aa77ff'];
+                this.updatePaddleHistory(`t2-${i}`, p);
+                this.drawPaddleTrail(`t2-${i}`, paddleWidth, paddleHeight, colors[i % colors.length]);
                 this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
             });
         } else if (paddles.player2) {
+            this.updatePaddleHistory('p2', paddles.player2);
+            this.drawPaddleTrail('p2', paddleWidth, paddleHeight, c2);
             this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, paddleHeight, c2);
         }
+    }
+
+    private updatePaddleHistory(key: string, pos: any): void {
+        if (!this.paddleHistory.has(key)) {
+            this.paddleHistory.set(key, []);
+        }
+        const history = this.paddleHistory.get(key)!;
+        history.push({ x: pos.x, y: pos.y });
+        if (history.length > 10) history.shift();
+    }
+
+    private drawPaddleTrail(key: string, w: number, h: number, color: string): void {
+        const history = this.paddleHistory.get(key);
+        if (!history || history.length === 0) return;
+
+        const ctx = this.ctx;
+        history.forEach((pos, index) => {
+            const alpha = (index / history.length) * 0.3; // Lower opacity for paddle trail
+            const x = this.scaleX(pos.x);
+            const y = this.scaleY(pos.y);
+
+            ctx.fillStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.fillRect(x, y, w, h);
+            ctx.globalAlpha = 1.0;
+        });
     }
 
     private drawSinglePaddle(gameX: number, gameY: number, w: number, h: number, color: string): void {
@@ -171,7 +210,7 @@ export class GameRenderer {
         const y = this.scaleY(gameY);
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 20; // Increased glow
         ctx.fillStyle = color;
         ctx.fillRect(x, y, w, h);
 
@@ -206,6 +245,11 @@ export class GameRenderer {
 
     private drawBall(ball: any): void {
         if (!ball) return;
+
+        // Update History
+        this.ballHistory.push({ x: ball.x, y: ball.y });
+        if (this.ballHistory.length > 10) this.ballHistory.shift();
+
         const ctx = this.ctx;
 
         const x = this.scaleX(ball.x);
@@ -215,13 +259,29 @@ export class GameRenderer {
         const color = '#ffffff';
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 25; // Increased glow
         ctx.fillStyle = color;
 
         // Square Ball for Retro Feel
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 
         ctx.shadowBlur = 0;
+    }
+
+    private drawBallTrail(): void {
+        if (this.ballHistory.length === 0) return;
+        const ctx = this.ctx;
+        const radius = this.scaleX(BALL_RADIUS);
+
+        this.ballHistory.forEach((pos, index) => {
+            const alpha = (index / this.ballHistory.length) * 0.5; // Fade out
+            const x = this.scaleX(pos.x);
+            const y = this.scaleY(pos.y);
+
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.shadowBlur = 0; // No glow for trail for performance
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        });
     }
 
     private drawScores(scores: any, w: number): void {

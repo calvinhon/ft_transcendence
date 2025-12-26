@@ -15,6 +15,9 @@ export class GameService {
     private team2: any[] = [];
     private uuid: string = Math.random().toString(36).substring(7);
 
+    // Pause State
+    private isPaused: boolean = false;
+
     // Handshake State
     private pendingJoinPayload: any = null;
 
@@ -185,8 +188,8 @@ export class GameService {
         this.inputInterval = setInterval(() => {
             if (!this.gameSettings) return;
 
-            // Block inputs if not in playing state (e.g. countdown)
-            if (this.currentGameState !== 'playing') return;
+            // Block inputs if not in playing state OR if locally paused
+            if (this.currentGameState !== 'playing' || this.isPaused) return;
 
             switch (this.gameSettings.mode) {
                 case 'tournament':
@@ -344,14 +347,16 @@ export class GameService {
     }
 
     public pauseGame(): void {
+        this.isPaused = true;
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type: 'pause' }));
+            this.ws.send(JSON.stringify({ type: 'pause', paused: true }));
         }
     }
 
     public resumeGame(): void {
+        this.isPaused = false;
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type: 'resume' }));
+            this.ws.send(JSON.stringify({ type: 'pause', paused: false }));
         }
     }
 

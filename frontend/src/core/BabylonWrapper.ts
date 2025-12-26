@@ -31,7 +31,8 @@ export class BabylonWrapper {
         const ambientLight = new HemisphericLight("ambient", new Vector3(0, 1, 0), this.scene);
         ambientLight.intensity = 0.2; // Very dim base light
 
-        const camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.3, 2, Vector3.Zero(), this.scene);
+        // Start with a flatter angle (closer to 90deg/PI*0.5)
+        const camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.2, 2, Vector3.Zero(), this.scene);
 
         // Restrict controls: Disable rotation (inputs 0 and 1) but keep zoom (input 2)
         camera.attachControl(canvas, true);
@@ -178,8 +179,8 @@ export class BabylonWrapper {
 
             const currentState = this.isLoreView ? this.loreCameraState : this.defaultCameraState;
             if (currentState) {
-                targetAlpha = currentState.alpha + x * tiltIntensity;
-                targetBeta = currentState.beta + y * tiltIntensity;
+                targetAlpha = currentState.alpha + x * -tiltIntensity;
+                targetBeta = currentState.beta + y * -tiltIntensity;
             }
         });
 
@@ -254,8 +255,8 @@ export class BabylonWrapper {
             await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
 
             // Find the glowing screen mesh
-            const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("monitorscreenmeshapplied"));
-            this.scene.meshes.find(m => (m.name == "MonitorScreenMeshNonApplied" || m.name.toLowerCase().includes("glowing screen")))!.isVisible = false;
+            const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("monitor_mesh"));
+            this.scene.meshes.find(m => (m.name.toLowerCase().includes("glowing screen")))!.isVisible = false;
             if (!screenMesh) {
                 console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
@@ -280,20 +281,20 @@ export class BabylonWrapper {
         });
 
         if (parentMesh) {
-            // this.htmlMesh.setContent(appElement, 2.7, 2.2);
-            this.htmlMesh.setContent(appElement, 4, 3.12);
-            this.htmlMesh.scalingDeterminant = 1 / 10;
+            this.htmlMesh.setContent(appElement, 4.385, 3.395);
+            this.htmlMesh.rotate(new Vector3(1, 0, 0), -Math.PI / 2);
+            this.htmlMesh.scalingDeterminant = 1 / 11;
             this.htmlMesh.parent = parentMesh;
-            this.htmlMesh.position.x -= 0.015;
-            this.htmlMesh.position.y += 0.005;
-            // this.htmlMesh.position.z -= 0.1;
+            this.htmlMesh.position.x -= 0.01;
+            this.htmlMesh.position.z -= 0.005;
+            this.htmlMesh.position.y += 0.0001;
 
             // Hide the original part
             parentMesh.isVisible = false;
 
             // Add screen glow spill light
-            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, 0.2), this.scene);
-            this.screenLight.parent = parentMesh;
+            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, 0.5), this.scene);
+            this.screenLight.parent = this.htmlMesh;
             this.screenLight.diffuse = Color3.FromHexString("#29b6f6");
             this.screenLight.intensity = 0.8;
             this.screenLight.range = 0.6;
@@ -307,7 +308,7 @@ export class BabylonWrapper {
             this.camera.setTarget(this.htmlMesh.position);
         } else {
             // Target the monitor but start from a distance and animate in
-            const finalRadius = this.ZOOM_MIN;
+            const finalRadius = 0.7;
             // const targetPos = parentMesh.absolutePosition.clone();
             const targetPos = this.htmlMesh.absolutePosition.clone();
 
