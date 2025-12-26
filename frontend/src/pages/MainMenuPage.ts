@@ -395,7 +395,7 @@ export class MainMenuPage extends AbstractComponent {
 
     public onMounted(): void {
         // Set container to the app element for renderContent compatibility
-        this.container = document.getElementById('app') || undefined;
+        this.container = document.getElementById('page-content') || undefined;
         // Bind events on the component root
         this.bindEvents();
     }

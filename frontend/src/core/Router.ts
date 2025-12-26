@@ -12,7 +12,7 @@ export class Router {
     private currentComponent: AbstractComponent | null = null;
     private appContainer: HTMLElement;
 
-    constructor(appContainerId: string = 'app') {
+    constructor(appContainerId: string = 'page-content') {
         const el = document.getElementById(appContainerId);
         if (!el) throw new Error(`App container #${appContainerId} not found`);
         this.appContainer = el;

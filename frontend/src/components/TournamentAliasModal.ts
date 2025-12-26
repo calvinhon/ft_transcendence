@@ -120,19 +120,28 @@ export class TournamentAliasModal extends AbstractComponent {
     }
 
     public destroy(): void {
+        const modalContainer = document.getElementById('modal-container');
         if (this.container && this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = undefined;
+
+        // Disable pointer events if no more modals
+        if (modalContainer && modalContainer.children.length === 0) {
+            modalContainer.classList.add('pointer-events-none');
+        }
     }
 
     public render(_containerId: string = ''): void {
         const container = document.createElement('div');
+        container.className = 'pointer-events-auto';
         this.container = container;
         container.innerHTML = this.getHtml();
-        const app = document.getElementById('app');
-        if (app) {
-            app.appendChild(container);
+
+        const modalContainer = document.getElementById('modal-container');
+        if (modalContainer) {
+            modalContainer.appendChild(container);
+            modalContainer.classList.remove('pointer-events-none');
         } else {
             document.body.appendChild(container);
         }

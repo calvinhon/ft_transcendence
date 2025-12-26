@@ -12,15 +12,24 @@
       id="app"
       class="absolute inset-0 justify-center flex flex-col bg-black overflow-hidden"
     >
-      <!-- Routing will inject fragments here -->
       <div
-        id="loading"
-        class="absolute inset-0 flex items-center justify-center bg-cyber-dark z-50 pointer-events-auto"
+        id="page-content"
+        class="w-full h-full justify-center flex flex-col relative"
       >
-        <div class="text-cyber-accent animate-pulse text-2xl cyber-font">
-          LOADING...
+        <!-- Routing will inject fragments here -->
+        <div
+          id="loading"
+          class="absolute inset-0 flex items-center justify-center bg-cyber-dark z-50 pointer-events-auto"
+        >
+          <div class="text-cyber-accent animate-pulse text-2xl cyber-font">
+            LOADING...
+          </div>
         </div>
       </div>
+      <div
+        id="modal-container"
+        class="absolute inset-0 pointer-events-none z-50"
+      ></div>
     </div>
 
     <canvas id="renderCanvas" class="absolute inset-0"></canvas>

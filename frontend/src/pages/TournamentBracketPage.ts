@@ -17,7 +17,7 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     async onMounted() {
-        this.container = document.getElementById('app') as HTMLElement;
+        this.container = document.getElementById('page-content') || undefined;
 
         const current = TournamentService.getInstance().getCurrentTournament();
         if (current) {
@@ -32,11 +32,11 @@ export class TournamentBracketPage extends AbstractComponent {
                     await this.refreshData();
                 } catch (e) {
                     console.error("Failed to restore tournament:", e);
-                    this.container.innerHTML = "<div class='text-white p-8 text-center'>Failed to load tournament data.</div>";
+                    if (this.container) this.container.innerHTML = "<div class='text-white p-8 text-center'>Failed to load tournament data.</div>";
                     return;
                 }
             } else {
-                this.container.innerHTML = "<div class='text-white p-8 text-center'>No Active Tournament Found</div>";
+                if (this.container) this.container.innerHTML = "<div class='text-white p-8 text-center'>No Active Tournament Found</div>";
                 return;
             }
         }

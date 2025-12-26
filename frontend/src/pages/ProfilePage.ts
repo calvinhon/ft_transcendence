@@ -298,7 +298,7 @@ export class ProfilePage extends AbstractComponent {
     }
 
     async onMounted(): Promise<void> {
-        this.container = document.getElementById('app') || document.body;
+        this.container = document.getElementById('page-content') || document.body;
         console.log('Mounting ProfilePage');
         this.$('#back-btn')?.addEventListener('click', () => {
             App.getInstance().router.navigateTo('/main-menu');

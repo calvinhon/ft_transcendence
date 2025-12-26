@@ -46,13 +46,16 @@ export class PasswordConfirmationModal extends AbstractComponent {
     }
 
     render(): void {
-        const overlay = document.createElement('div');
-        overlay.innerHTML = this.getHtml();
-        const app = document.getElementById('app');
-        if (app) {
-            app.appendChild(overlay.firstElementChild!);
+        const container = document.createElement('div');
+        container.className = 'pointer-events-auto';
+        container.innerHTML = this.getHtml();
+
+        const modalContainer = document.getElementById('modal-container');
+        if (modalContainer) {
+            modalContainer.appendChild(container.firstElementChild!);
+            modalContainer.classList.remove('pointer-events-none');
         } else {
-            document.body.appendChild(overlay.firstElementChild!);
+            document.body.appendChild(container.firstElementChild!);
         }
         this.bindEvents();
     }
@@ -102,7 +105,13 @@ export class PasswordConfirmationModal extends AbstractComponent {
     private close(): void {
         const overlay = document.getElementById('modal-overlay');
         if (overlay) {
+            const parent = overlay.parentElement as HTMLElement;
             overlay.remove();
+
+            // Disable pointer events if no more modals
+            if (parent && parent.id === 'modal-container' && parent.children.length === 0) {
+                parent.classList.add('pointer-events-none');
+            }
         }
     }
 }

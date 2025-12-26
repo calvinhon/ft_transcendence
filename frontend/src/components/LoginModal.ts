@@ -15,7 +15,7 @@ export class LoginModal extends AbstractComponent {
     getHtml(): string {
         return `
             <div class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-                <div class="w-full max-w-[420px] p-8 border-2 border-accent rounded-xl shadow-[0_0_30px_rgba(41,182,246,0.2)] bg-black relative">
+                <div class="w-full max-w-[600px] p-8 border-2 border-accent rounded-xl shadow-[0_0_30px_rgba(41,182,246,0.2)] bg-black relative">
                     <button id="modal-close-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                         <i class="fas fa-times"></i>
                     </button>
@@ -147,10 +147,16 @@ export class LoginModal extends AbstractComponent {
     }
 
     public destroy(): void {
+        const modalContainer = document.getElementById('modal-container');
         if (this.container && this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);
         }
         this.container = undefined;
+
+        // Disable pointer events if no more modals
+        if (modalContainer && modalContainer.children.length === 0) {
+            modalContainer.classList.add('pointer-events-none');
+        }
     }
 
     public render(_containerId: string = ''): void {
@@ -163,11 +169,14 @@ export class LoginModal extends AbstractComponent {
         } else {
             // First mount
             const container = document.createElement('div');
+            container.className = 'pointer-events-auto'; // Ensure children are interactive
             this.container = container;
             container.innerHTML = this.getHtml();
-            const app = document.getElementById('app');
-            if (app) {
-                app.appendChild(container);
+
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer) {
+                modalContainer.appendChild(container);
+                modalContainer.classList.remove('pointer-events-none');
             } else {
                 document.body.appendChild(container);
             }

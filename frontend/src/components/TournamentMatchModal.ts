@@ -35,9 +35,8 @@ export class TournamentMatchModal {
             const currentUserName = isCurrentPlayer1 ? this.player1.name : this.player2.name;
             const opponentName = isCurrentPlayer1 ? this.player2.name : this.player1.name;
 
-            // Create modal container
             this.container = document.createElement('div');
-            this.container.className = 'tournament-match-modal';
+            this.container.className = 'tournament-match-modal pointer-events-auto';
             this.container.innerHTML = `
                 <div class="fixed inset-0 bg-black/95 flex items-center justify-center z-[9999]" style="backdrop-filter: blur(5px);">
                     <div class="w-full max-w-[700px] p-8 border-2 border-accent bg-black relative shadow-[0_0_50px_rgba(41,182,246,0.3)]">
@@ -76,9 +75,10 @@ export class TournamentMatchModal {
                 </div>
             `;
 
-            const app = document.getElementById('app');
-            if (app) {
-                app.appendChild(this.container);
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer) {
+                modalContainer.appendChild(this.container);
+                modalContainer.classList.remove('pointer-events-none');
             } else {
                 document.body.appendChild(this.container);
             }
@@ -95,7 +95,13 @@ export class TournamentMatchModal {
                         this.keyHandler = null;
                     }
                     if (this.container && this.container.parentNode) {
+                        const parent = this.container.parentNode as HTMLElement;
                         this.container.parentNode.removeChild(this.container);
+
+                        // Disable pointer events if no more modals
+                        if (parent.id === 'modal-container' && parent.children.length === 0) {
+                            parent.classList.add('pointer-events-none');
+                        }
                     }
                     this.container = null;
                 };
