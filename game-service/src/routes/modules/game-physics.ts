@@ -1,16 +1,56 @@
 // game-service/src/routes/modules/game-physics.ts
-import { Ball, Paddle, Paddles } from './types';
+import { Ball, Paddle, Paddles, Powerup } from './types';
 import { logger } from './logger';
 
 export class GamePhysics {
   private ballSpeed: number;
   private accelerateOnHit: boolean;
   private gameMode: string;
+  private powerupsEnabled: boolean;
+  public powerup: Powerup;
 
-  constructor(ballSpeed: number, accelerateOnHit: boolean, gameMode: string) {
+  constructor(ballSpeed: number, accelerateOnHit: boolean, gameMode: string, powerupsEnabled: boolean) {
     this.ballSpeed = ballSpeed;
     this.accelerateOnHit = accelerateOnHit;
     this.gameMode = gameMode;
+    this.powerupsEnabled = powerupsEnabled;
+    this.powerup = { x: 400, y: 300, active: false, radius: 15 };
+    this.schedulePowerupSpawn();
+  }
+
+  private schedulePowerupSpawn() {
+    if (!this.powerupsEnabled) return;
+
+    // Simple random spawn timer between 5s and 15s
+    const delay = Math.random() * 10000 + 5000;
+    setTimeout(() => {
+      if (!this.powerup.active) {
+        this.spawnPowerup();
+      }
+    }, delay);
+  }
+
+  private checkPowerupExpiration(paddles: Paddles) {
+    const now = Date.now();
+    const checkPaddle = (p: Paddle) => {
+      if (p.powerupExpires && now > p.powerupExpires) {
+        p.height = p.originalHeight || 100;
+        p.powerupExpires = undefined;
+      }
+    };
+
+    if (paddles.team1) paddles.team1.forEach(checkPaddle);
+    if (paddles.team2) paddles.team2.forEach(checkPaddle);
+    if (paddles.player1) checkPaddle(paddles.player1);
+    if (paddles.player2) checkPaddle(paddles.player2);
+  }
+
+  private spawnPowerup() {
+    // Spawn in center area but not too close to edges
+    this.powerup.x = 400;
+    this.powerup.y = Math.random() * 300 + 150; // 150 to 450
+    this.powerup.active = true;
+    logger.debug('Powerup spawned at', this.powerup.x, this.powerup.y);
   }
 
   updateBall(ball: Ball, paddles: Paddles, gameId: number): { scored: boolean; scorer?: 'player1' | 'player2' } {
@@ -43,7 +83,49 @@ export class GamePhysics {
       return { scored: true, scorer: 'player1' };
     }
 
+    // Check for powerup collision
+    if (this.powerup.active) {
+      this.checkPowerupCollision(ball, paddles);
+    }
+
+    // Check for powerup expiration
+    this.checkPowerupExpiration(paddles);
+
     return { scored: false };
+  }
+
+  private checkPowerupCollision(ball: Ball, paddles: Paddles): void {
+    const dx = ball.x - this.powerup.x;
+    const dy = ball.y - this.powerup.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Simple circle collision
+    if (distance < (5 + this.powerup.radius)) { // ball radius approx 5
+      logger.debug('Powerup collected!');
+      this.powerup.active = false;
+
+      // Effect: Increase Paddle Size of the last hitter
+      if (ball.lastHitter) {
+        this.applyPowerupEffect(ball.lastHitter, paddles);
+      }
+
+      this.schedulePowerupSpawn();
+    }
+  }
+
+  private applyPowerupEffect(scorer: 'player1' | 'player2', paddles: Paddles) {
+    const applyToPaddle = (p: Paddle) => {
+      p.height = (p.originalHeight || 100) * 1.5;
+      p.powerupExpires = Date.now() + 10000; // 10 seconds
+    };
+
+    if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
+      const team = scorer === 'player1' ? paddles.team1 : paddles.team2;
+      if (team) team.forEach(applyToPaddle);
+    } else {
+      const p = scorer === 'player1' ? paddles.player1 : paddles.player2;
+      if (p) applyToPaddle(p);
+    }
   }
 
   private checkSweptPaddleCollision(ball: Ball, prevX: number, prevY: number, paddles: Paddles, gameId: number): { collided: boolean } {
@@ -86,9 +168,15 @@ export class GamePhysics {
 
   private checkSweptCollisionWithPaddle(ball: Ball, prevX: number, prevY: number, paddle: Paddle, side: 'left' | 'right', gameId: number): boolean {
     // Define paddle boundaries (10 pixel width)
-    const paddleLeft = side === 'left' ? paddle.x : paddle.x - 10;
-    const paddleRight = side === 'left' ? paddle.x + 10 : paddle.x;
-    const paddleX = side === 'left' ? paddleRight : paddleLeft; // The edge the ball should hit
+    // Define paddle boundaries
+    // Paddle coordinates are always Top-Left
+    const paddleLeft = paddle.x;
+    const paddleRight = paddle.x + 10;
+
+    // The collision face depends on the side provided
+    // Left paddle: Hit Right side (paddleRight)
+    // Right paddle: Hit Left side (paddleLeft)
+    const paddleX = side === 'left' ? paddleRight : paddleLeft;
 
     // Check if ball crosses the paddle's collision plane
     const crossedPaddleX = (prevX <= paddleX && ball.x >= paddleX) || (prevX >= paddleX && ball.x <= paddleX);
@@ -98,13 +186,17 @@ export class GamePhysics {
       const t = (paddleX - prevX) / (ball.x - prevX);
       const crossY = prevY + t * (ball.y - prevY);
 
+      const paddleHeight = paddle.height || 100;
+
       // Check if the crossing point is within the paddle's y-range
-      if (crossY >= paddle.y && crossY <= paddle.y + 110) {
+      if (crossY >= paddle.y && crossY <= paddle.y + paddleHeight) {
         // Adjust ball position to just outside the paddle boundary
         // Add small offset to prevent sticking
         const offset = side === 'left' ? 1 : -1;
         ball.x = paddleX + offset;
         ball.y = crossY;
+
+        ball.lastHitter = side === 'left' ? 'player1' : 'player2'; // Track hitter
 
         this.handlePaddleHit(ball, paddle, side, gameId);
         return true;
@@ -115,7 +207,7 @@ export class GamePhysics {
   }
 
   private handlePaddleHit(ball: Ball, paddle: Paddle, side: 'left' | 'right', gameId: number): void {
-    const hitPos = (ball.y - paddle.y) / 110;
+    const hitPos = (ball.y - paddle.y) / (paddle.height || 110);
     const angle = side === 'left'
       ? (hitPos - 0.5) * Math.PI / 2
       : Math.PI + (hitPos - 0.5) * Math.PI / 2;
@@ -128,8 +220,31 @@ export class GamePhysics {
       logger.game(gameId, `Ball accelerated! ${currentSpeed.toFixed(1)} → ${newSpeed.toFixed(1)}`);
     }
 
-    ball.dx = Math.abs(newSpeed) * Math.cos(angle);
-    ball.dy = newSpeed * Math.sin(angle);
+    // Apply "Flick" physics if paddle has vertical velocity
+    let finalAngle = angle;
+    if (paddle.vy) {
+      // If moving in same direction as reflection angle (roughly), add influence
+      // -PI/2 is UP, PI/2 is DOWN
+      const velocityInfluence = 0.2; // Adjust magnitude of effect
+      if (paddle.vy < 0) { // Moving Up
+        finalAngle -= velocityInfluence;
+      } else if (paddle.vy > 0) { // Moving Down
+        finalAngle += velocityInfluence;
+      }
+      // Clamp angle to prevent too steep reflections
+      const maxAngle = Math.PI / 2.5;
+      if (side === 'left') {
+        finalAngle = Math.max(-maxAngle, Math.min(maxAngle, finalAngle));
+      } else {
+        // Right side angles are PI +/- value
+        const center = Math.PI;
+        finalAngle = Math.max(center - maxAngle, Math.min(center + maxAngle, finalAngle));
+      }
+    }
+
+    ball.dx = Math.abs(newSpeed) * Math.cos(finalAngle);
+    // if (side === 'right') ball.dx = -ball.dx; // REMOVED: cos(angle) handles direction (angle ~ PI for right side)
+    ball.dy = newSpeed * Math.sin(finalAngle);
   }
 
   resetBall(ball: Ball, direction?: 'left' | 'right'): void {
@@ -204,13 +319,16 @@ export class GamePhysics {
 
     if (direction === 'up' && paddle.y > 0) {
       paddle.y = Math.max(0, paddle.y - moveSpeed);
+      paddle.vy = -moveSpeed; // Track velocity
       logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y);
       return true;
     } else if (direction === 'down' && paddle.y < 500) {
       paddle.y = Math.min(500, paddle.y + moveSpeed);
+      paddle.vy = moveSpeed; // Track velocity
       logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
       return true;
     } else {
+      paddle.vy = 0; // Reset velocity if blocked or invalid move
       logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 500]');
       return false;
     }

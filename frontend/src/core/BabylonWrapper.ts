@@ -281,7 +281,7 @@ export class BabylonWrapper {
         });
 
         if (parentMesh) {
-            this.htmlMesh.setContent(appElement, 4.385, 3.395);
+            this.htmlMesh.setContent(appElement, 4.38, 3.395);
             this.htmlMesh.rotate(new Vector3(1, 0, 0), -Math.PI / 2);
             this.htmlMesh.scalingDeterminant = 1 / 11;
             this.htmlMesh.parent = parentMesh;

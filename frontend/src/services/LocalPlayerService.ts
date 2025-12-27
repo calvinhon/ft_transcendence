@@ -9,6 +9,7 @@ export interface LocalPlayer {
     team?: number; // 1 or 2 (for Arcade)
     email?: string;
     avatarUrl?: string;
+    isBot?: boolean;
 }
 
 export class LocalPlayerService {
@@ -124,7 +125,7 @@ export class LocalPlayerService {
             participants.push({
                 id: p.userId,
                 username: p.username,
-                isBot: false,
+                isBot: !!p.isBot,
                 avatarUrl: p.avatarUrl
             });
         });

@@ -1,5 +1,5 @@
 // game-service/src/routes/modules/game-broadcast.ts
-import { GamePlayer, Ball, Paddles, Scores, GameState } from './types';
+import { GamePlayer, Ball, Paddles, Scores, GameState, Powerup } from './types';
 import { logger } from './logger';
 
 export class GameBroadcaster {
@@ -13,13 +13,14 @@ export class GameBroadcaster {
     this.player2 = player2;
   }
 
-  broadcastGameState(ball: Ball, paddles: Paddles, scores: Scores, gameState: 'countdown' | 'playing' | 'finished', countdownValue?: number): void {
+  broadcastGameState(ball: Ball, paddles: Paddles, scores: Scores, gameState: 'countdown' | 'playing' | 'finished', countdownValue?: number, powerup?: Powerup): void {
     const gameStateMessage: GameState = {
       type: 'gameState',
       ball,
       paddles,
       scores,
-      gameState
+      gameState,
+      powerup
     };
 
     // Add countdown value if in countdown state

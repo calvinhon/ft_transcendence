@@ -17,11 +17,23 @@ export interface Ball {
   dx: number;
   dy: number;
   frozen?: boolean; // Optional: freeze ball movement during countdown
+  lastHitter?: 'player1' | 'player2'; // Tracks who last hit the ball for powerup attribution
 }
 
 export interface Paddle {
   x: number;
   y: number;
+  vy?: number; // Vertical velocity for "flick" mechanics
+  height?: number;
+  originalHeight?: number;
+  powerupExpires?: number;
+}
+
+export interface Powerup {
+  x: number;
+  y: number;
+  active: boolean;
+  radius: number;
 }
 
 export interface Paddles {
@@ -40,6 +52,7 @@ export interface GameState {
   type: 'gameState';
   ball: Ball;
   paddles: Paddles;
+  powerup?: Powerup;
   scores: Scores;
   gameState: 'countdown' | 'playing' | 'finished';
   countdownValue?: number; // Only present when gameState is 'countdown'

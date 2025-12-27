@@ -65,6 +65,7 @@ export class GameRenderer {
 
         // Draw Game Elements
         this.drawPaddles(gameState.paddles);
+        this.drawPowerup(gameState.powerup);
         this.drawBallTrail();
         this.drawBall(gameState.ball);
         this.drawScores(gameState.scores, width);
@@ -266,6 +267,47 @@ export class GameRenderer {
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 
         ctx.shadowBlur = 0;
+    }
+
+    private drawPowerup(powerup: any): void {
+        if (!powerup || !powerup.active) return;
+
+        const ctx = this.ctx;
+        const x = this.scaleX(powerup.x);
+        const y = this.scaleY(powerup.y);
+        const baseRadius = this.scaleX(powerup.radius || 15);
+
+        ctx.shadowBlur = 0;
+
+        // Sonar Effect: 2-3 expanding rings
+        const time = Date.now() / 1000;
+        const ringCount = 3;
+
+        // Center core
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(x, y, baseRadius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 2;
+
+        for (let i = 0; i < ringCount; i++) {
+            // Offset time for each ring
+            const offset = i * (1 / ringCount);
+            let t = (time + offset) % 1; // 0 to 1
+
+            // Easing/Expansion
+            const currentRadius = baseRadius * 0.3 + t * (baseRadius * 1.5);
+            const alpha = 1 - t; // Fade out as it expands
+
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1.0;
     }
 
     private drawBallTrail(): void {

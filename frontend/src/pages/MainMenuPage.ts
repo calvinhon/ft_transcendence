@@ -19,6 +19,7 @@ type GameMode = 'campaign' | 'arcade' | 'tournament';
 interface GameSettings {
     ballSpeed: 'slow' | 'medium' | 'fast';
     paddleSpeed: 'slow' | 'medium' | 'fast';
+    aiDifficulty: 'easy' | 'medium' | 'hard';
     powerups: boolean;
     accumulateOnHit: boolean;
     scoreToWin: number;
@@ -32,6 +33,7 @@ export class MainMenuPage extends AbstractComponent {
     private settings: GameSettings = {
         ballSpeed: 'medium',
         paddleSpeed: 'medium',
+        aiDifficulty: 'medium',
         powerups: false,
         accumulateOnHit: false,
         scoreToWin: 5
@@ -178,6 +180,21 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
 
+                        <!-- AI Difficulty (Hidden in Tournament, Disabled in Campaign) -->
+                        ${this.activeMode !== 'tournament' ? `
+                        <div class="${this.activeMode === 'campaign' ? 'opacity-50 pointer-events-none grayscale' : ''}">
+                            <div class="text-lg mb-3 text-accent/80 flex justify-between">
+                                <span>AI Difficulty</span>
+                                ${this.activeMode === 'campaign' ? '<span class="text-xs text-accent border border-accent px-2 py-0.5">AUTO</span>' : ''}
+                            </div>
+                            <div class="flex border border-accent">
+                                ${this.renderDifficultyButton('easy', 'EASY')}
+                                ${this.renderDifficultyButton('medium', 'MEDIUM')}
+                                ${this.renderDifficultyButton('hard', 'HARD')}
+                            </div>
+                        </div>
+                        ` : ''}
+
                         <!-- Paddle Speed -->
                         <div>
                             <div class="text-lg mb-3 text-accent/80">Paddle Speed</div>
@@ -254,6 +271,12 @@ export class MainMenuPage extends AbstractComponent {
                               </div>
                               ADD PLAYERS
                          </button>
+                         <button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
+                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                 <i class="fas fa-robot text-[10px]"></i>
+                              </div>
+                              ADD BOT
+                         </button>
                     </div>
                 </div>
             </div>
@@ -266,6 +289,18 @@ export class MainMenuPage extends AbstractComponent {
             ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
             : 'flex-1 py-2 text-xs hover:bg-accent hover:text-black transition-colors text-gray-500';
         return `<button class="setting-btn ${classes}" data-type="${type}" data-value="${value}">${label}</button>`;
+    }
+
+    private renderDifficultyButton(value: string, label: string): string {
+        const isActive = this.settings.aiDifficulty === value;
+        // If in campaign mode, we might want to show the specific level difficulty, 
+        // but since we are disabling the control, just showing the current selected state (or default) is fine.
+        // Actually for Campaign "AUTO" visual above handles the indication.
+
+        const classes = isActive
+            ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
+            : 'flex-1 py-2 text-xs hover:bg-accent hover:text-black transition-colors text-gray-500';
+        return `<button class="setting-btn ${classes}" data-type="aiDifficulty" data-value="${value}">${label}</button>`;
     }
 
     private getModeDescription(): string {
@@ -515,9 +550,15 @@ export class MainMenuPage extends AbstractComponent {
             // Speed/Setting Buttons
             const settingBtn = target.closest('.setting-btn') as HTMLElement;
             if (settingBtn) {
-                const type = settingBtn.dataset.type as 'ballSpeed' | 'paddleSpeed';
-                const value = settingBtn.dataset.value as 'slow' | 'medium' | 'fast';
-                this.settings[type] = value;
+                const type = settingBtn.dataset.type as 'ballSpeed' | 'paddleSpeed' | 'aiDifficulty';
+                const value = settingBtn.dataset.value as any;
+
+                if (type === 'aiDifficulty') {
+                    this.settings.aiDifficulty = value;
+                } else {
+                    this.settings[type] = value;
+                }
+
                 this.renderContent();
                 return;
             }
@@ -571,6 +612,13 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
 
+            // Add Bot Button
+            const addBotBtn = target.closest('#add-bot-btn');
+            if (addBotBtn) {
+                this.handleAddBot();
+                return;
+            }
+
             // Play Button
             const playBtn = target.closest('#play-btn');
             if (playBtn) {
@@ -597,6 +645,31 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
         };
+    }
+
+    private handleAddBot(): void {
+        import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+            // Find next available bot name
+            let botIndex = 1;
+            const existing = LocalPlayerService.getInstance().getLocalPlayers();
+            while (existing.some(p => p.username === `BOT ${botIndex}`)) {
+                botIndex++;
+            }
+            const botName = `BOT ${botIndex}`;
+
+            // Create pseudo-random ID for bot
+            const botId = Math.floor(Math.random() * 1000000) + 100000;
+
+            LocalPlayerService.getInstance().addLocalPlayer({
+                id: botId.toString(),
+                userId: botId,
+                username: botName,
+                isCurrentUser: false,
+                token: 'bot-token',
+                isBot: true,
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(botName)}&background=333333&color=ffffff`
+            });
+        });
     }
 
     private assignPlayer(id: number, target: string): void {
@@ -663,7 +736,7 @@ export class MainMenuPage extends AbstractComponent {
                 paddleSpeed: this.settings.paddleSpeed,
                 powerups: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
-                difficulty: 'medium', // TODO: Add difficulty selector if needed
+                difficulty: this.settings.aiDifficulty,
                 scoreToWin: this.settings.scoreToWin || 5
             },
             team1: [],

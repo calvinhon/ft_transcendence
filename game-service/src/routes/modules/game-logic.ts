@@ -48,7 +48,7 @@ export class PongGame {
     const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
 
     // Initialize game components
-    this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode);
+    this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode, this.gameSettings.powerupsEnabled);
     this.ai = new GameAI(this.gameSettings.aiDifficulty, this.gameSettings.gameMode, paddleSpeed);
     this.stateManager = new GameStateManager(gameId, player1, player2);
     this.scoring = new GameScoring(gameId, player1, player2, this.gameSettings.scoreToWin);
@@ -73,8 +73,8 @@ export class PongGame {
 
     // Initialize paddles based on game mode
     this.paddles = {
-      player1: { x: 50, y: 250 },
-      player2: { x: 750, y: 250 }
+      player1: { x: 50, y: 250, height: 100, originalHeight: 100 },
+      player2: { x: 750, y: 250, height: 100, originalHeight: 100 }
     };
 
     if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
@@ -89,7 +89,9 @@ export class PongGame {
       for (let i = 0; i < team1Count; i++) {
         this.paddles.team1.push({
           x: 50,
-          y: team1Spacing * (i + 1) - 50 // Center each paddle in its section
+          y: team1Spacing * (i + 1) - 50, // Center each paddle in its section
+          height: 100,
+          originalHeight: 100
         });
       }
 
@@ -97,7 +99,9 @@ export class PongGame {
       for (let i = 0; i < team2Count; i++) {
         this.paddles.team2.push({
           x: 750,
-          y: team2Spacing * (i + 1) - 50
+          y: team2Spacing * (i + 1) - 50,
+          height: 100,
+          originalHeight: 100
         });
       }
 
@@ -131,7 +135,7 @@ export class PongGame {
 
   startCountdown(): void {
     this.stateManager.startCountdown(
-      () => this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue()),
+      () => this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue(), this.physics.powerup),
       () => {
         this.physics.unfreezeBall(this.ball);
         this.startGameLoop();
@@ -170,12 +174,12 @@ export class PongGame {
           // Reset ball after a delay
           setTimeout(() => {
             this.physics.unfreezeBall(this.ball);
-            this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+            this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
           }, 1000);
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
     });
   }
 
@@ -203,7 +207,7 @@ export class PongGame {
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
     }
   }
 
@@ -213,6 +217,13 @@ export class PongGame {
     const index = paddleIndex ?? 0;
 
     logger.gameDebug(this.gameId, `Moving ${side} paddle (${team}[${index}]) ${direction}`);
+
+    // Check if this paddle is controlled by a BOT
+    const teamPlayers = side === 'left' ? this.gameSettings.team1Players : this.gameSettings.team2Players;
+    if (teamPlayers && teamPlayers[index] && teamPlayers[index].isBot) {
+      // Ignore user input for Bot paddles
+      return;
+    }
 
     const teamPaddles = this.paddles[team as keyof Paddles] as any[];
     if (!teamPaddles || !teamPaddles[index]) {
@@ -238,7 +249,7 @@ export class PongGame {
       this.paddles.player2.y = paddle.y;
     }
 
-    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
   }
 
   pauseGame(): void {
@@ -281,6 +292,6 @@ export class PongGame {
 
   // Compatibility method for matchmaking
   broadcastGameState(): void {
-    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue());
+    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue(), this.physics.powerup);
   }
 }
