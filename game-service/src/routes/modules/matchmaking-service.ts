@@ -1,8 +1,8 @@
-// game-service/src/routes/modules/matchmaking-service.ts
 import { GamePlayer, JoinGameMessage } from './types';
 import { matchmakingQueue } from './matchmaking-queue';
 import { gameCreator } from './game-creator';
 import { logger } from './logger';
+import { activeGames } from './game-logic';
 
 // Main matchmaking service that orchestrates the matchmaking process
 export class MatchmakingService {
@@ -47,15 +47,32 @@ export class MatchmakingService {
     const isLocalMultiplayer = (data.gameSettings?.gameMode === 'tournament' || data.gameSettings?.gameMode === 'arcade');
     let secondPlayerId = data.player2Id;
 
-    // If player2Id not explicitly set but we have team2Players, try to get it from there
-    if (!secondPlayerId && data.team2Players && data.team2Players.length > 0) {
-      secondPlayerId = data.team2Players[0].userId;
+    let secondPlayerName = data.player2Name;
+
+    // Check team players for details
+    if (data.team2Players && data.team2Players.length > 0) {
+      const teamPlayer = data.team2Players[0];
+
+      // Use team player ID if main ID is missing
+      if (!secondPlayerId) {
+        secondPlayerId = teamPlayer.userId;
+      }
+
+      // Use team player name if main name is missing
+      if (!secondPlayerName) {
+        secondPlayerName = teamPlayer.username;
+      }
+
+      // override name if it is a bot
+      if (teamPlayer.isBot) {
+        secondPlayerName = "AI";
+      }
     }
 
     if (isLocalMultiplayer && secondPlayerId && secondPlayerId !== 0) {
       // Local match: player2 is also a real player
       logger.matchmaking('Creating local match with player2 ID:', secondPlayerId);
-      player2 = gameCreator.createDummyPlayer(secondPlayerId, data.player2Name || `Player ${secondPlayerId}`);
+      player2 = gameCreator.createDummyPlayer(secondPlayerId, secondPlayerName || `Player ${secondPlayerId}`);
     } else {
       // Regular bot match
       player2 = gameCreator.createBotPlayer();
@@ -72,6 +89,19 @@ export class MatchmakingService {
   // Handle player disconnection
   handleDisconnect(socket: any): void {
     matchmakingQueue.removePlayer(socket);
+
+    // Check if player was in an active game
+    for (const [gameId, game] of activeGames) {
+      // Check if socket belongs to player 1 or 2
+      // Note: For now we check direct socket identity or basic user ID matching if available on socket
+      // But here we only have the socket object. 
+      // We need to check if game.player1.socket === socket
+
+      if (game.player1.socket === socket || game.player2.socket === socket) {
+        game.forceEndGame('Player disconnected');
+        break; // Assuming one game per socket
+      }
+    }
   }
 
   // Helper method to create and start a game

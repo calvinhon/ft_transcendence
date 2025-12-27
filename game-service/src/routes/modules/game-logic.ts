@@ -152,14 +152,19 @@ export class PongGame {
         // In campaign mode, check if player2 is a bot
         shouldActivateAI = this.player2.userId === 0;
       } else if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
-        // In team modes, check if there are any bot players in team2
-        shouldActivateAI = Boolean(this.gameSettings.team2Players &&
+        // In team modes, check if there are any bot players in EITHER team
+        const hasTeam1Bots = Boolean(this.gameSettings.team1Players &&
+          this.gameSettings.team1Players.some(player => player.isBot === true));
+
+        const hasTeam2Bots = Boolean(this.gameSettings.team2Players &&
           this.gameSettings.team2Players.some(player => player.isBot === true));
+
+        shouldActivateAI = hasTeam1Bots || hasTeam2Bots;
       }
 
       if (shouldActivateAI) {
         this.ai.updateBallPosition(this.ball.x, this.ball.y);
-        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team2Players);
+        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
       }
 
       const result = this.physics.updateBall(this.ball, this.paddles, this.gameId);
@@ -279,6 +284,20 @@ export class PongGame {
     this.scoring.broadcastGameEnd();
 
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
+  }
+
+  forceEndGame(reason?: string): void {
+    logger.game(this.gameId, `Force Ending Game: ${reason}`);
+    this.stateManager.endGame(); // Stops loop
+    activeGames.delete(this.gameId);
+
+    // Save with aborted flag = true
+    this.scoring.saveGameResult(true);
+
+    // Optionally broadcast end to remaining players
+    this.scoring.broadcastGameEnd();
+
+    logger.game(this.gameId, `Game force-ended and removed from active games.`);
   }
 
   // Getters for external access

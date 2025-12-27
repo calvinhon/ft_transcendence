@@ -34,7 +34,7 @@ export class MainMenuPage extends AbstractComponent {
         ballSpeed: 'medium',
         paddleSpeed: 'medium',
         aiDifficulty: 'medium',
-        powerups: false,
+        powerups: true,
         accumulateOnHit: false,
         scoreToWin: 5
     };
@@ -106,6 +106,20 @@ export class MainMenuPage extends AbstractComponent {
             this.arcadeTeam1 = this.arcadeTeam1.filter(p => availableIds.has(p.id));
             this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
             this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+
+            this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+
+            // Auto-assign host to campaign if not set
+            if (this.activeMode === 'campaign' && !this.campaignPlayer) {
+                const host = LocalPlayerService.getInstance().getHostUser();
+                if (host) {
+                    // Find host in available players to get full object state
+                    const hostPlayer = this.availablePlayers.find(p => p.id === host.userId);
+                    if (hostPlayer) {
+                        this.campaignPlayer = hostPlayer;
+                    }
+                }
+            }
 
             this.renderContent();
         });
@@ -682,7 +696,18 @@ export class MainMenuPage extends AbstractComponent {
         const isInTournament = this.tournamentPlayers.some(p => p.id === player.id);
 
         if (target === 'campaign') {
-            this.campaignPlayer = player;
+            // Restrict Campaign to Host Only
+            import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+                const host = LocalPlayerService.getInstance().getHostUser();
+                if (host && host.userId === player.id) {
+                    this.campaignPlayer = player;
+                    this.renderContent();
+                } else {
+                    alert("Only the Host can play Campaign Mode.");
+                }
+            });
+            // Early return to wait for promise/prevent render before check
+            return;
         } else if (target === 'tournament') {
             if (this.tournamentPlayers.length < 8 && !isInTournament) {
                 this.tournamentPlayers.push(player);
@@ -732,9 +757,8 @@ export class MainMenuPage extends AbstractComponent {
         const setup: any = {
             mode: this.activeMode,
             settings: {
-                ballSpeed: this.settings.ballSpeed,
                 paddleSpeed: this.settings.paddleSpeed,
-                powerups: this.settings.powerups,
+                powerupsEnabled: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
                 difficulty: this.settings.aiDifficulty,
                 scoreToWin: this.settings.scoreToWin || 5
@@ -806,7 +830,8 @@ export class MainMenuPage extends AbstractComponent {
                         const mappedPlayers = playersWithAliases.map(p => ({
                             id: p.id,
                             alias: p.alias,
-                            avatarUrl: p.avatarUrl // Pass avatarUrl to service
+                            avatarUrl: p.avatarUrl, // Pass avatarUrl to service
+                            isBot: (p as any).isBot // Pass isBot flag
                         }));
 
                         const name = "Tournament " + new Date().toLocaleTimeString();

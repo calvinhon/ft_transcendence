@@ -54,9 +54,23 @@ export class GameScoring {
     return { winnerId, winnerName };
   }
 
-  saveGameResult(): void {
+  saveGameResult(aborted: boolean = false): void {
     const winner = this.getWinner();
-    const winnerId = winner ? winner.winnerId : null;
+    // In aborted games, we might not have a "winner" by max score, so compute one by current score
+    // If scores are equal, maybe no winner? Or Player1 default? Let's check scores.
+    let winnerId: number | null = winner ? winner.winnerId : null;
+
+    // Explicitly handle aborted games
+    if (aborted && !winnerId) {
+      if (this.scores.player1 > this.scores.player2) {
+        winnerId = this.player1.userId;
+      } else if (this.scores.player2 > this.scores.player1) {
+        winnerId = this.player2.userId;
+      } else {
+        // Scores are tied (including 0-0). No winner.
+        winnerId = null;
+      }
+    }
 
     db.run(
       'UPDATE games SET player1_score = ?, player2_score = ?, status = ?, finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
@@ -65,7 +79,7 @@ export class GameScoring {
         if (err) {
           logger.error(`Database update error:`, err);
         } else {
-          logger.game(this.gameId, 'Game recorded in database');
+          logger.game(this.gameId, `Game recorded in database (Aborted: ${aborted}, WinnerID: ${winnerId}, Scores: ${this.scores.player1}-${this.scores.player2})`);
         }
       }
     );

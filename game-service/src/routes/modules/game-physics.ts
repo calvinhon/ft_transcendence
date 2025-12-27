@@ -14,8 +14,13 @@ export class GamePhysics {
     this.accelerateOnHit = accelerateOnHit;
     this.gameMode = gameMode;
     this.powerupsEnabled = powerupsEnabled;
+    this.powerupsEnabled = powerupsEnabled;
     this.powerup = { x: 400, y: 300, active: false, radius: 15 };
-    this.schedulePowerupSpawn();
+
+    logger.debug(`GamePhysics initialized. Powerups Enabled: ${this.powerupsEnabled}`);
+    if (this.powerupsEnabled) {
+      this.schedulePowerupSpawn();
+    }
   }
 
   private schedulePowerupSpawn() {
@@ -189,17 +194,26 @@ export class GamePhysics {
       const paddleHeight = paddle.height || 100;
 
       // Check if the crossing point is within the paddle's y-range
-      if (crossY >= paddle.y && crossY <= paddle.y + paddleHeight) {
-        // Adjust ball position to just outside the paddle boundary
-        // Add small offset to prevent sticking
+      // Add a buffer (ball radius approx 5-10px) to prevent vertical tunneling at edges
+      const tolerance = 10;
+      if (crossY >= paddle.y - tolerance && crossY <= paddle.y + paddleHeight + tolerance) {
+        // Adjust ball position
         const offset = side === 'left' ? 1 : -1;
         ball.x = paddleX + offset;
         ball.y = crossY;
 
-        ball.lastHitter = side === 'left' ? 'player1' : 'player2'; // Track hitter
+        ball.lastHitter = side === 'left' ? 'player1' : 'player2';
+
+        // Debug log for collision
+        logger.gameDebug(gameId, `Paddle Hit! Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight}, Tolerance: ${tolerance}`);
 
         this.handlePaddleHit(ball, paddle, side, gameId);
         return true;
+      }
+
+      // Debug Near Miss
+      if (Math.abs(ball.x - paddleX) < 20 && crossY > paddle.y - 50 && crossY < paddle.y + paddleHeight + 50) {
+        logger.gameDebug(gameId, `Paddle MISS. Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight} (Hit Range: ${paddle.y - tolerance} to ${paddle.y + paddleHeight + tolerance})`);
       }
     }
 
@@ -322,14 +336,19 @@ export class GamePhysics {
       paddle.vy = -moveSpeed; // Track velocity
       logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y);
       return true;
-    } else if (direction === 'down' && paddle.y < 500) {
-      paddle.y = Math.min(500, paddle.y + moveSpeed);
-      paddle.vy = moveSpeed; // Track velocity
-      logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
-      return true;
+    } else if (direction === 'down') {
+      const paddleHeight = paddle.height || 100;
+      const maxY = 600 - paddleHeight;
+      if (paddle.y < maxY) {
+        paddle.y = Math.min(maxY, paddle.y + moveSpeed);
+        paddle.vy = moveSpeed; // Track velocity
+        logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
+        return true;
+      }
+      return false;
     } else {
       paddle.vy = 0; // Reset velocity if blocked or invalid move
-      logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 500]');
+      logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 600]');
       return false;
     }
   }

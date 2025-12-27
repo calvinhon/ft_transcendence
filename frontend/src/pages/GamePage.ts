@@ -89,7 +89,7 @@ export class GamePage extends AbstractComponent {
             mode: setup.mode,
             ballSpeed: setup.settings.ballSpeed,
             paddleSpeed: setup.settings.paddleSpeed,
-            powerups: setup.settings.powerups,
+            powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
             accumulateOnHit: setup.settings.accumulateOnHit,
             difficulty: setup.settings.difficulty,
             scoreToWin: setup.settings.scoreToWin

@@ -144,7 +144,7 @@ export class GameRenderer {
         if (!paddles) return;
 
         const paddleWidth = this.scaleX(PADDLE_WIDTH);
-        const paddleHeight = this.scaleY(PADDLE_HEIGHT);
+        // paddleHeight is now dynamic per paddle
 
         // Default colors
         const c1 = '#77e6ff';
@@ -156,26 +156,30 @@ export class GameRenderer {
                 // Cycle colors for arcade teams
                 const colors = ['#77e6ff', '#77ff77', '#ffff77'];
                 this.updatePaddleHistory(`t1-${i}`, p);
-                this.drawPaddleTrail(`t1-${i}`, paddleWidth, paddleHeight, colors[i % colors.length]);
-                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
+                const h = this.scaleY(p.height || PADDLE_HEIGHT);
+                this.drawPaddleTrail(`t1-${i}`, paddleWidth, h, colors[i % colors.length]);
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, h, colors[i % colors.length]);
             });
         } else if (paddles.player1) {
             this.updatePaddleHistory('p1', paddles.player1);
-            this.drawPaddleTrail('p1', paddleWidth, paddleHeight, c1);
-            this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, paddleHeight, c1);
+            const h = this.scaleY(paddles.player1.height || PADDLE_HEIGHT);
+            this.drawPaddleTrail('p1', paddleWidth, h, c1);
+            this.drawSinglePaddle(paddles.player1.x, paddles.player1.y, paddleWidth, h, c1);
         }
 
         if (paddles.team2 && paddles.team2.length > 0) {
             paddles.team2.forEach((p: any, i: number) => {
                 const colors = ['#ff7777', '#ff77e6', '#aa77ff'];
                 this.updatePaddleHistory(`t2-${i}`, p);
-                this.drawPaddleTrail(`t2-${i}`, paddleWidth, paddleHeight, colors[i % colors.length]);
-                this.drawSinglePaddle(p.x, p.y, paddleWidth, paddleHeight, colors[i % colors.length]);
+                const h = this.scaleY(p.height || PADDLE_HEIGHT);
+                this.drawPaddleTrail(`t2-${i}`, paddleWidth, h, colors[i % colors.length]);
+                this.drawSinglePaddle(p.x, p.y, paddleWidth, h, colors[i % colors.length]);
             });
         } else if (paddles.player2) {
             this.updatePaddleHistory('p2', paddles.player2);
-            this.drawPaddleTrail('p2', paddleWidth, paddleHeight, c2);
-            this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, paddleHeight, c2);
+            const h = this.scaleY(paddles.player2.height || PADDLE_HEIGHT);
+            this.drawPaddleTrail('p2', paddleWidth, h, c2);
+            this.drawSinglePaddle(paddles.player2.x, paddles.player2.y, paddleWidth, h, c2);
         }
     }
 
@@ -211,11 +215,28 @@ export class GameRenderer {
         const y = this.scaleY(gameY);
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 20; // Increased glow
+        ctx.shadowBlur = 20; // Default glow
+
+        // Powerup Effect: Shimmer if paddle is larger than normal
+        // Base height is approx 100 scaled. 
+        const baseHeight = this.scaleY(100);
+        if (h > baseHeight * 1.1) {
+            const time = Date.now() / 200;
+            const shimmer = Math.abs(Math.sin(time)) * 20 + 20; // Oscillate blur between 20 and 40
+            ctx.shadowBlur = shimmer;
+            ctx.shadowColor = '#ffff00'; // Gold glow for powerup
+
+            // Optional: Draw a border
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+        }
+
         ctx.fillStyle = color;
         ctx.fillRect(x, y, w, h);
 
         ctx.shadowBlur = 0;
+        ctx.lineWidth = 0; // Reset
     }
 
     private drawArcadeControls(w: number, h: number): void {

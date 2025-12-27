@@ -20,7 +20,7 @@ export class GameAI {
     this.ballY = ballY;
   }
 
-  moveBotPaddle(paddles: Paddles, gameId: number, team2Players?: any[]): void {
+  moveBotPaddle(paddles: Paddles, gameId: number, team1Players?: any[], team2Players?: any[]): void {
     // Smoother AI Logic
     // No random "skipping" frames (causes jitter). Instead, limit speed and tracking accuracy.
 
@@ -35,35 +35,29 @@ export class GameAI {
 
     switch (this.aiDifficulty) {
       case 'easy':
-        maxSpeed = this.paddleSpeed * 0.5; // 50% Speed
-        targetError = 40; // Aim +/- 40px from ball
-        lazyFactor = 0.2; // Smoothly lag behind
+        maxSpeed = this.paddleSpeed * 0.4; // 40% Speed (Slower)
+        targetError = 60; // Aim +/- 60px from ball
+        lazyFactor = 0.25; // Smoothly lag behind
         break;
       case 'medium':
-        maxSpeed = this.paddleSpeed * 0.8; // 80% Speed
-        targetError = 15; // Aim +/- 15px
+        maxSpeed = this.paddleSpeed * 0.7; // 70% Speed
+        targetError = 30; // Aim +/- 30px
         lazyFactor = 0.1;
         break;
       case 'hard':
-        maxSpeed = this.paddleSpeed * 1.1; // 110% Speed (Slightly faster than base)
-        targetError = 0; // Aim perfectly
-        lazyFactor = 0.05; // Very sharp reaction
+        maxSpeed = this.paddleSpeed * 1.2; // 120% Speed (Fast)
+        targetError = 10; // Aim +/- 10px (Very accurate but not perfect)
+        lazyFactor = 0.02; // Sharp reaction
         break;
     }
 
     let targetY = this.ballY;
 
-    // Add error only if we don't have a stable target yet (optional, or just use constant offset per volley)
-    // For simplicity, we'll aim for the ballY but clamp the movement speed.
-
-    // Level 3 "Hard but not perfect": maybe add a sine wave error or just use the targetError
-    // Actually, "Hard but not always perfect" -> mostly hits, sometimes misses corner cases?
-    // High speed but slight tracking delay is usually enough to make it beatable.
-
     // Apply movement
     const processPaddle = (paddle: any) => {
-      const currentCenter = paddle.y + paddleCenterOffset;
-      let dist = targetY - currentCenter;
+      const h = paddle.height || 100;
+      const centerY = paddle.y + (h / 2);
+      let dist = targetY - centerY;
 
       // Deadzone to prevent micro-jitter when aligned
       if (Math.abs(dist) < 5) return;
@@ -78,7 +72,8 @@ export class GameAI {
 
       // Bounds check
       if (newY < 0) newY = 0;
-      if (newY > 500) newY = 500; // Assuming canvas height 600 - paddle 100
+      const maxY = 600 - h;
+      if (newY > maxY) newY = maxY; // Dynamic boundary
 
       paddle.y = newY;
     };
@@ -86,19 +81,29 @@ export class GameAI {
 
     // Handle arcade/tournament/campaign mode with multiple paddles
     if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
-      if (paddles.team2 && paddles.team2.length > 0) {
-        if (team2Players && team2Players.length > 0) {
-          team2Players.forEach((player, index) => {
-            if (player.isBot && paddles.team2 && paddles.team2[player.paddleIndex]) {
-              processPaddle(paddles.team2[player.paddleIndex]);
+      const processTeam = (players: any[], teamPaddles: any[]) => {
+        if (players && players.length > 0 && teamPaddles && teamPaddles.length > 0) {
+          players.forEach((player, index) => {
+            if (player.isBot && teamPaddles[player.paddleIndex]) {
+              processPaddle(teamPaddles[player.paddleIndex]);
             }
           });
-        } else {
-          // Fallback
-          paddles.team2.forEach((botPaddle) => {
-            processPaddle(botPaddle);
-          });
         }
+      };
+
+      // Process Team 1
+      if (paddles.team1 && team1Players) {
+        processTeam(team1Players, paddles.team1);
+      }
+
+      // Process Team 2
+      if (paddles.team2 && team2Players) {
+        processTeam(team2Players, paddles.team2);
+      } else if (paddles.team2 && !team2Players) {
+        // Fallback for older existing tests or legacy calls (assumes all Team 2 are bots if no player data)
+        paddles.team2.forEach((botPaddle) => {
+          processPaddle(botPaddle);
+        });
       }
     } else {
       // Handle campaign mode
