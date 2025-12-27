@@ -3,7 +3,7 @@ import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import userRoutes from './routes/index';
 
-const fastify = Fastify({ 
+const fastify = Fastify({
   logger: true
 });
 
@@ -15,8 +15,12 @@ fastify.register(cors, {
 // Register routes
 fastify.register(userRoutes);
 
+import { initDbPromise } from './database';
+
 const start = async (): Promise<void> => {
   try {
+    await initDbPromise;
+    console.log('Database initialized successfully');
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     console.log('User service running on port 3000');
   } catch (err) {

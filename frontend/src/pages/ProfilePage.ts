@@ -2,6 +2,7 @@ import { AbstractComponent } from "../components/AbstractComponent";
 import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
 import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, TournamentRanking } from "../services/ProfileService";
+import { FriendService, Friend } from "../services/FriendService";
 import { Api } from "../core/Api";
 import { PasswordConfirmationModal } from "../components/PasswordConfirmationModal";
 import { LocalPlayerService } from "../services/LocalPlayerService";
@@ -12,6 +13,9 @@ export class ProfilePage extends AbstractComponent {
     private stats: GameStats | null = null;
     private history: RecentGame[] = [];
     private rankings: TournamentRanking[] = [];
+    private friends: Array<Friend & { profile?: UserProfile }> = [];
+    private isFriend: boolean = false;
+    private friendStatus?: Friend;
     private aiStats: AIStats = { aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
 
     private loading: boolean = true;
@@ -88,7 +92,10 @@ export class ProfilePage extends AbstractComponent {
                             
                             <!-- Username -->
                             <h2 class="text-3xl font-bold text-accent mb-1">${p.username}</h2>
-                            <div class="text-xs text-gray-500 mb-4">ID: ${p.userId}</div>
+                            <div class="flex items-center justify-center gap-2 mb-4">
+                                <div class="text-xs text-gray-500">ID: ${p.userId}</div>
+                                ${this.renderOnlineStatus()}
+                            </div>
                             
                             <div class="w-full h-px bg-accent/30 my-4"></div>
                             
@@ -124,25 +131,15 @@ export class ProfilePage extends AbstractComponent {
                                 </div>
                                 
                                 <!-- Actions -->
-                                <div class="pt-4 flex gap-3">
-                                    ${this.isEditing
-                ? `
-                                        <button id="cancel-edit-btn" class="flex-1 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white text-xs font-bold">CANCEL</button>
-                                        <button id="save-edit-btn" class="flex-1 py-2 bg-accent text-black font-bold text-xs hover:bg-white transition-colors">SAVE CHANGES</button>
-                                        `
-                : `
-                                        <button id="edit-profile-btn" class="w-full py-3 bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-black font-bold text-sm tracking-widest transition-all">
-                                             <i class="fas fa-cog mr-2"></i>EDIT PROFILE
-                                        </button>
-                                        <button id="logout-btn" class="w-full mt-2 py-3 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white font-bold text-sm tracking-widest transition-all">
-                                             <i class="fas fa-sign-out-alt mr-2"></i>LOGOUT
-                                        </button>
-                                        `
-            }
+                                <div class="pt-4 flex flex-col gap-3">
+                                    ${this.renderActionButtons(p)}
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Friends List (Only for own profile) -->
+                    ${this.renderFriendsList()}
 
                     <!-- Tournament Brief -->
                     <div class="border border-purple-500/50 p-6 bg-black/50">
@@ -254,26 +251,160 @@ export class ProfilePage extends AbstractComponent {
         `;
     }
 
+    private renderOnlineStatus(): string {
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
+        if (!this.profile) return '';
+
+        let isOnline = false;
+
+        // 1. If checking self (main logged-in user)
+        if (currentUser && currentUser.userId === this.profile.userId) {
+            isOnline = true; // Always online if I'm viewing myself
+        }
+        // 2. If this profile belongs to a local player on this device, they're "online"
+        else if (localPlayers.some(lp => lp.userId === this.profile?.userId)) {
+            isOnline = true;
+        }
+        // 3. Use the status we computed in loadProfile (from backend)
+        else if (this.friendStatus) {
+            isOnline = this.friendStatus.isOnline;
+        }
+
+        if (isOnline) {
+            return `<div class="px-2 py-0.5 rounded bg-green-500/20 border border-green-500 text-[10px] text-green-500 font-bold tracking-wider">ONLINE</div>`;
+        } else {
+            return `<div class="px-2 py-0.5 rounded bg-gray-500/20 border border-gray-500 text-[10px] text-gray-500 font-bold tracking-wider">OFFLINE</div>`;
+        }
+    }
+
+    private renderActionButtons(p: UserProfile): string {
+        // Check if the viewed profile corresponds to ANY locally logged in player (or the main auth user)
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
+
+        const isMainUser = currentUser && currentUser.userId === p.userId;
+        const isLocalPlayer = localPlayers.some(lp => lp.userId === p.userId);
+
+        const canEdit = isMainUser || isLocalPlayer;
+
+        if (this.isEditing) {
+            return `
+                <div class="flex gap-3">
+                    <button id="cancel-edit-btn" class="flex-1 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white text-xs font-bold">CANCEL</button>
+                    <button id="save-edit-btn" class="flex-1 py-2 bg-accent text-black font-bold text-xs hover:bg-white transition-colors">SAVE CHANGES</button>
+                </div>
+            `;
+        }
+
+        let buttons = '';
+
+        // EDIT PROFILE functionality
+        if (canEdit) {
+            buttons += `
+                <button id="edit-profile-btn" class="w-full py-3 bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-black font-bold text-sm tracking-widest transition-all mb-2">
+                        <i class="fas fa-cog mr-2"></i>EDIT PROFILE
+                </button>
+            `;
+        }
+
+        // FRIEND functionality 
+        // Show Add/Remove Friend button for:
+        // 1. Other users (not canEdit) 
+        // 2. Local players who are NOT the main user (show Remove Friend if they are friends)
+        const showFriendButton = !isMainUser; // Show for everyone except the main logged-in user's own profile
+
+        if (showFriendButton) {
+            if (this.isFriend) {
+                buttons += `
+                    <button id="remove-friend-btn" class="w-full py-3 border border-red-500/30 text-red-500 hover:bg-red-500/10 font-bold text-sm tracking-widest transition-all mb-2">
+                        <i class="fas fa-user-minus mr-2"></i>REMOVE FRIEND
+                    </button>
+                `;
+            } else {
+                buttons += `
+                    <button id="add-friend-btn" class="w-full py-3 bg-transparent border border-green-500 text-green-500 hover:bg-green-500 hover:text-black font-bold text-sm tracking-widest transition-all mb-2">
+                        <i class="fas fa-user-plus mr-2"></i>ADD FRIEND
+                    </button>
+                `;
+            }
+        }
+
+        // LOGOUT functionality
+        if (canEdit) {
+            buttons += `
+                <button id="logout-btn" class="w-full py-3 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white font-bold text-sm tracking-widest transition-all">
+                        <i class="fas fa-sign-out-alt mr-2"></i>LOGOUT
+                </button>
+            `;
+        }
+
+        return buttons;
+    }
+
+    private renderFriendsList(): string {
+        // Render for everyone, just change title if it's not "my" friends
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
+        const isOwn = currentUser && this.profile && currentUser.userId === this.profile.userId;
+
+        return `
+            <div class="border border-green-500/50 p-6 bg-black/50">
+                <h3 class="text-green-400 font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-users"></i> ${isOwn ? 'MY FRIENDS' : 'FRIENDS'} (${this.friends.length})
+                </h3>
+                <div class="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    ${this.friends.length > 0
+                ? this.friends.map(f => {
+                    const name = f.profile?.username || f.username;
+                    // Only use profile avatar if it exists, don't fall back to generic "User" one if avoidable
+                    const avatar = f.profile?.avatarUrl;
+                    const displayAvatar = avatar
+                        ? `url('${avatar}')`
+                        : `linear-gradient(to bottom right, #333, #111)`;
+
+                    // Check if this friend is a local player on this device - if so, they're online
+                    const isLocalPlayer = localPlayers.some(lp => lp.userId === f.userId);
+                    const friendOnline = isLocalPlayer || f.isOnline;
+
+                    return `
+                        <div class="flex items-center justify-between p-2 bg-white/5 rounded hover:bg-white/10 transition-colors cursor-pointer" onclick="window.history.pushState({}, '', '/profile?id=${f.userId}'); window.dispatchEvent(new Event('popstate'));">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-cover bg-center border border-white/20" style="background-image: ${displayAvatar};">
+                                    ${!avatar ? `<div class="w-full h-full flex items-center justify-center text-[10px] text-gray-500">${name.charAt(0).toUpperCase()}</div>` : ''}
+                                </div>
+                                <span class="text-sm font-bold text-gray-200">${name}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] ${friendOnline ? 'text-green-400' : 'text-gray-500'}">${friendOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                                <div class="w-2 h-2 rounded-full ${friendOnline ? 'bg-green-500 shadow-[0_0_8px_#4ade80]' : 'bg-gray-600'}"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div class="text-xs text-gray-500 text-center py-4">No friends found.</div>'
+            }
+                </div>
+            </div>
+        `;
+    }
+
     private renderGameRow(g: RecentGame): string {
         const date = new Date(g.date).toLocaleDateString();
         const colorClass = g.result === 'win' ? 'text-green-400' : (g.result === 'draw' ? 'text-gray-400' : 'text-red-400');
         const bgHover = g.result === 'win' ? 'hover:bg-green-900/10' : 'hover:bg-red-900/10';
 
-        // Add onclick handler to navigate to detailed view (Step 2)
-        // For now, we'll just add the clickable class and ID
         return `
-            <div 
-                class="p-3 flex items-center justify-between ${bgHover} transition-colors cursor-pointer group"
-                onclick="window.history.pushState({}, '', '/match-details?id=${g.id}'); window.dispatchEvent(new Event('popstate'));"
-            >
+            <div class="p-3 flex items-center justify-between ${bgHover} transition-colors cursor-pointer group"
+                onclick="window.history.pushState({}, '', '/match-details?id=${g.id}'); window.dispatchEvent(new Event('popstate'));">
                 <div class="flex flex-col">
                     <span class="text-sm font-bold ${colorClass}">${g.result.toUpperCase()}</span>
                     <span class="text-[10px] text-gray-500">${g.gameMode.toUpperCase()} • ${date}</span>
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                         <span class="text-sm text-gray-300 block">vs ${g.opponent}</span>
-                         <span class="text-[10px] text-accent opacity-0 group-hover:opacity-100 transition-opacity">VIEW DETAILS ></span>
+                        <span class="text-sm text-gray-300 block">vs ${g.opponent}</span>
+                        <span class="text-[10px] text-accent opacity-0 group-hover:opacity-100 transition-opacity">VIEW DETAILS ></span>
                     </div>
                     <span class="text-lg font-bold font-mono ${colorClass}">${g.score}</span>
                 </div>
@@ -448,6 +579,61 @@ export class ProfilePage extends AbstractComponent {
                 service.getTournamentRankings(userId)
             ]);
 
+            // Friend Logic & Online Status
+            const currentUser = AuthService.getInstance().getCurrentUser();
+            const friendService = FriendService.getInstance();
+
+            // 1. Fetch Friends List for the Profile being viewed (Everyone can see friends now)
+            try {
+                const friendList = await friendService.getFriends(userId);
+                // Enhance friend list with profile data
+                this.friends = await Promise.all(friendList.map(async f => {
+                    // Optimized: In a real app, we might not want to fetch profile for every friend if list is huge.
+                    // But for now, we do it to get avatars.
+                    try {
+                        const p = await service.getUserProfile(f.userId);
+                        return { ...f, profile: p || undefined, username: p?.username || `User ${f.userId}` };
+                    } catch {
+                        return f;
+                    }
+                }));
+            } catch (e) {
+                console.warn('Failed to load friends for user', userId, e);
+                this.friends = [];
+            }
+
+            // 2. Check "My Friendship Status" with this user
+            if (currentUser && currentUser.userId !== userId) {
+                const myFriends = await friendService.getFriends(currentUser.userId);
+                const friendRecord = myFriends.find(f => f.userId == userId);
+
+                if (friendRecord) {
+                    this.isFriend = true;
+                    this.friendStatus = friendRecord;
+                } else {
+                    this.isFriend = false;
+                    this.friendStatus = undefined;
+                }
+            } else {
+                this.isFriend = false;
+            }
+
+            // 3. Check Online Status for the Profile being viewed
+            // We fetch all online users and check if this user is in the list
+            const onlineUsers = await friendService.getOnlineUsers();
+            const isProfileOnline = onlineUsers.includes(userId);
+
+            // Start constructing the 'status' object even if not a friend, so renderOnlineStatus works
+            if (!this.friendStatus) {
+                this.friendStatus = {
+                    userId: userId,
+                    username: profile?.username || 'User',
+                    isOnline: isProfileOnline
+                };
+            } else {
+                this.friendStatus.isOnline = isProfileOnline;
+            }
+
             this.profile = profile;
             this.stats = stats;
             this.history = history;
@@ -528,6 +714,37 @@ export class ProfilePage extends AbstractComponent {
         // Save Edit
         this.$('#save-edit-btn')?.addEventListener('click', () => {
             this.initiateSave();
+        });
+
+        // Friend Actions
+        this.$('#add-friend-btn')?.addEventListener('click', async () => {
+            if (!this.profile) return;
+            const currentUser = AuthService.getInstance().getCurrentUser();
+            if (!currentUser) return;
+
+            const success = await FriendService.getInstance().addFriend(currentUser.userId, this.profile.userId);
+            if (success) {
+                this.isFriend = true;
+                this.refresh();
+            } else {
+                alert('Failed to add friend');
+            }
+        });
+
+        this.$('#remove-friend-btn')?.addEventListener('click', async () => {
+            if (!this.profile) return;
+            const currentUser = AuthService.getInstance().getCurrentUser();
+            if (!currentUser) return;
+
+            if (confirm(`Remove ${this.profile.username} from friends?`)) {
+                const success = await FriendService.getInstance().removeFriend(currentUser.userId, this.profile.userId);
+                if (success) {
+                    this.isFriend = false;
+                    this.refresh();
+                } else {
+                    alert('Failed to remove friend');
+                }
+            }
         });
     }
 

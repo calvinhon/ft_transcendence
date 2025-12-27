@@ -93,5 +93,20 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (game_id) REFERENCES games (id)
       )
     `);
+
+    // Friends Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS friends (
+        user_id INTEGER NOT NULL,
+        friend_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, friend_id),
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (friend_id) REFERENCES users (id)
+      )
+    `, (err) => {
+      if (err) logger.error('Error creating friends table:', err);
+      else logger.db('Friends table ready');
+    });
   }
 });

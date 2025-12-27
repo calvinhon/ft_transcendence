@@ -5,10 +5,16 @@ import { promisifyDbGet, promisifyDbRun } from '../utils/database';
 
 export class UserService {
   static async getOrCreateProfile(userId: number): Promise<UserProfile> {
-    let profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+    const query = `
+      SELECT p.*, u.username 
+      FROM user_profiles p 
+      LEFT JOIN auth.users u ON p.user_id = u.id 
+      WHERE p.user_id = ?
+    `;
+    let profile = await promisifyDbGet<UserProfile>(db, query, [userId]);
     if (!profile) {
       await promisifyDbRun(db, 'INSERT INTO user_profiles (user_id) VALUES (?)', [userId]);
-      profile = await promisifyDbGet<UserProfile>(db, 'SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+      profile = await promisifyDbGet<UserProfile>(db, query, [userId]);
     }
     return profile!;
   }

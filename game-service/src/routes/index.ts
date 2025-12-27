@@ -166,13 +166,58 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
+  // ... existing routes ...
+
+  // Friends Routes
+  fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { userId, friendId } = request.body as any;
+      if (!userId || !friendId) {
+        return sendError(reply, 'Missing userId or friendId', 400);
+      }
+
+      const { friendService } = await import('./modules/friend-service');
+      await friendService.addFriend(userId, friendId);
+      sendSuccess(reply, { success: true });
+    } catch (error) {
+      logger.error('Error adding friend', error);
+      sendError(reply, 'Failed to add friend', 500);
+    }
+  });
+
+  fastify.post('/friends/remove', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { userId, friendId } = request.body as any;
+      if (!userId || !friendId) return sendError(reply, 'Missing userId or friendId', 400);
+
+      const { friendService } = await import('./modules/friend-service');
+      await friendService.removeFriend(userId, friendId);
+      sendSuccess(reply, { success: true });
+    } catch (error) {
+      logger.error('Error removing friend', error);
+      sendError(reply, 'Failed to remove friend', 500);
+    }
+  });
+
+  fastify.get<{ Params: { userId: string } }>('/friends/:userId', async (request, reply) => {
+    try {
+      const { userId } = request.params;
+      const { friendService } = await import('./modules/friend-service');
+      const friends = await friendService.getFriends(parseInt(userId));
+      sendSuccess(reply, friends);
+    } catch (error) {
+      logger.error('Error fetching friends', error);
+      sendError(reply, 'Failed to fetch friends', 500);
+    }
+  });
+
   // Health check
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
     sendSuccess(reply, {
       status: 'healthy',
       service: 'game-service',
       timestamp: new Date().toISOString(),
-      modules: ['websocket', 'game-history', 'game-stats', 'online-users']
+      modules: ['websocket', 'game-history', 'game-stats', 'online-users', 'friend-service']
     });
   });
 }

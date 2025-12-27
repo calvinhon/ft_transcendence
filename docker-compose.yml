@@ -76,6 +76,7 @@ services:
       - "3004:3000"
     volumes:
       - ./user-service/database:/app/database
+      - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
     environment:
       - PORT=3000
       - SERVICE_NAME=user-service

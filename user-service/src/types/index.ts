@@ -2,6 +2,7 @@
 export interface UserProfile {
   id: number;
   user_id: number;
+  username: string; // From auth service
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
