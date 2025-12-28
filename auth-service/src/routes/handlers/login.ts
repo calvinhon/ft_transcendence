@@ -25,6 +25,18 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     const user = await authService.login(identifier, password);
 
+    // Hoach added: Create session and set HTTP-only cookie
+    const sessionToken = await authService.createSession(user.userId);
+
+    reply.setCookie('sessionToken', sessionToken, {
+      httpOnly: true,      // Can't be accessed from JS (prevents XSS theft)
+      secure: true,        // HTTPS only
+      sameSite: 'strict',  // CSRF protection
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 // 7 days
+    });
+    // End Hoach added
+
     logger.info('Login successful for', identifier);
 
     sendSuccess(reply, {

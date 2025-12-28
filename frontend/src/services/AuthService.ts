@@ -79,14 +79,20 @@ export class AuthService {
 
 
     public logout(): void {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Hoach added: Call backend logout to delete HTTP-only cookie session
+        Api.post('/api/auth/logout', {}).catch(e => {
+            console.warn('Logout API call failed', e);
+            // Continue with client-side cleanup even if API fails
+        });
+        // End Hoach added
+
+        // localStorage.removeItem('token');
+        // localStorage.removeItem('user');
 
         // Clear local players state
         LocalPlayerService.getInstance().clearAllPlayers();
 
         App.getInstance().currentUser = null;
-        Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
         App.getInstance().router.navigateTo('/login');
     }
 
@@ -99,57 +105,36 @@ export class AuthService {
     public async checkSession(): Promise<boolean> {
         console.log("AuthService: Checking Session...");
 
-        // FIRST: Try to restore user from localStorage - this is the PRIMARY mechanism
-        this.restoreUserFromStorage();
-
-        if (App.getInstance().currentUser) {
-            console.log("AuthService: User restored from localStorage:", App.getInstance().currentUser?.username);
-
-            // Optionally verify with backend, but don't fail if backend doesn't return user
-            try {
-                const response = await Api.post('/api/auth/verify', {});
-                console.log("AuthService: Backend verify response:", response);
-                // Backend verification passed - session is valid
-            } catch (e: any) {
-                console.warn("AuthService: Backend verify call failed, but localStorage user exists:", e.message);
-                // Continue with localStorage user - don't logout
-            }
-
-            return true;
-        }
-
-        // No user in localStorage - try backend verification as fallback
+        // Hoach added: HTTP-only cookie session validation
+        // No localStorage check - session is in HTTP-only cookie, browser sends it automatically
         try {
             const verifyPromise = Api.post('/api/auth/verify', {});
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Session verify timeout")), 5000)
             );
 
-            console.log("AuthService: Waiting for verify response...");
+            console.log("AuthService: Verifying HTTP-only cookie session...");
             const response = await Promise.race([verifyPromise, timeoutPromise]) as any;
-            console.log("AuthService: Verify response received:", response);
+            console.log("AuthService: Session verification response:", response);
 
             const data = response.data || response;
 
-            // If backend returns a user, use it
+            // Backend validated the HTTP-only cookie and returned user
             if (data.user) {
                 console.log("AuthService: Session valid for user", data.user.username);
                 App.getInstance().currentUser = data.user;
-                localStorage.setItem('user', JSON.stringify(data.user));
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                }
+                // Don't store in localStorage - session is in HTTP-only cookie
                 return true;
             }
 
-            // Backend didn't return user but said valid - no user data available
-            console.warn("AuthService: Backend says valid but no user data");
+            console.warn("AuthService: No user data in verify response");
             return false;
         } catch (e: any) {
-            console.error("AuthService: Verify failed or timed out:", e.message || e);
-            // No localStorage user and backend failed - need to login
+            console.error("AuthService: Session verification failed:", e.message || e);
+            // Session invalid or expired - require login
             return false;
         }
+        // End Hoach added
     }
 
     // ==========================================
@@ -350,20 +335,27 @@ export class AuthService {
 
 
     private handleAuthSuccess(token: string, user: User): void {
-        if (token) localStorage.setItem('token', token);
-        if (user) localStorage.setItem('user', JSON.stringify(user));
+        // Hoach added: Remove localStorage usage, rely on HTTP-only cookie
+        // Cookie is automatically sent by browser on every request
+        // No need to store anything in localStorage
+        // if (token) localStorage.setItem('token', token);
+        // if (user) localStorage.setItem('user', JSON.stringify(user));
+        // End Hoach added
         App.getInstance().currentUser = user;
     }
 
     public restoreUserFromStorage(): void {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            try {
-                const user = JSON.parse(userStr);
-                App.getInstance().currentUser = user;
-            } catch (e) {
-                console.warn("Failed to restore user from storage");
-            }
-        }
+        // Hoach added: Session validation now handled by backend via HTTP-only cookie
+        // Don't restore from localStorage; let checkSession() validate the session
+        // const userStr = localStorage.getItem('user');
+        // if (userStr) {
+        //     try {
+        //         const user = JSON.parse(userStr);
+        //         App.getInstance().currentUser = user;
+        //     } catch (e) {
+        //         console.warn("Failed to restore user from storage");
+        //     }
+        // }
+        // End Hoach added
     }
 }

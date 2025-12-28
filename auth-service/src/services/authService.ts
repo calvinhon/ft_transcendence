@@ -3,6 +3,10 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { User, DatabaseUser } from '../types';
 import { getQuery, runQuery } from '../utils/database';
+// Hoach added: For session token generation
+import { createLogger } from '@ft-transcendence/common';
+const logger = createLogger('AUTH-SERVICE');
+// End Hoach added
 
 export class AuthService {
   async register(username: string, email: string, password: string): Promise<{ userId: number }> {
@@ -43,6 +47,58 @@ export class AuthService {
       email: user.email
     };
   }
+
+  // Hoach added: Create session after successful login
+  async createSession(userId: number): Promise<string> {
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await runQuery(
+      'INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)',
+      [userId, sessionToken, expiresAt.toISOString()]
+    );
+
+    logger.info(`Session created for user ${userId}`);
+    return sessionToken;
+  }
+
+  // Hoach added: Validate and retrieve user from session
+  async validateSession(sessionToken: string): Promise<User | null> {
+    const session = await getQuery<any>(
+      `SELECT s.user_id, u.id, u.username, u.email 
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.session_token = ? AND s.expires_at > datetime('now')`,
+      [sessionToken]
+    );
+
+    if (!session) {
+      logger.warn('Invalid or expired session token');
+      return null;
+    }
+
+    // Update last activity
+    await runQuery(
+      'UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE session_token = ?',
+      [sessionToken]
+    );
+
+    return {
+      userId: session.user_id,
+      username: session.username,
+      email: session.email
+    };
+  }
+
+  // Hoach added: Logout by deleting session
+  async logout(sessionToken: string): Promise<void> {
+    await runQuery(
+      'DELETE FROM sessions WHERE session_token = ?',
+      [sessionToken]
+    );
+    logger.info('Session deleted');
+  }
+  // End Hoach added
 
   async getUserProfile(userId: number): Promise<User> {
     const user = await getQuery<DatabaseUser>(
