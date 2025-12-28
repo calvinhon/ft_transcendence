@@ -23,7 +23,7 @@ async function initializeDatabase(): Promise<void> {
         started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         finished_at DATETIME,
         winner_id INTEGER,
-        game_mode TEXT DEFAULT 'coop',
+        game_mode TEXT DEFAULT 'campaign',
         team1_players TEXT,
         team2_players TEXT,
         tournament_id INTEGER,

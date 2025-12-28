@@ -45,7 +45,7 @@ export interface WebSocketMessage {
 }
 
 export interface GameSettings {
-  gameMode: 'coop' | 'arcade' | 'tournament';
+  gameMode: 'campaign' | 'arcade' | 'tournament';
   aiDifficulty: 'easy' | 'medium' | 'hard';
   ballSpeed: 'slow' | 'medium' | 'fast';
   paddleSpeed: 'slow' | 'medium' | 'fast';

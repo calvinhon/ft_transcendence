@@ -21,7 +21,7 @@ export class GameCreator {
       tournamentMatchId?: number;
     } = {}
   ): Promise<{ gameId: number; game: PongGame }> {
-    const gameMode = gameSettings?.gameMode || 'coop';
+    const gameMode = gameSettings?.gameMode || 'campaign';
     const team1Players = options.team1Players ? JSON.stringify(options.team1Players) : null;
     const team2Players = options.team2Players ? JSON.stringify(options.team2Players) : null;
     const tournamentId = options.tournamentId || null;
@@ -29,7 +29,7 @@ export class GameCreator {
 
     // Include team player data in game settings
     const fullGameSettings: GameSettings = {
-      gameMode: gameSettings?.gameMode || 'coop',
+      gameMode: gameSettings?.gameMode || 'campaign',
       aiDifficulty: gameSettings?.aiDifficulty || 'medium',
       ballSpeed: gameSettings?.ballSpeed || 'medium',
       paddleSpeed: gameSettings?.paddleSpeed || 'medium',
