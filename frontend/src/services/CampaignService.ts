@@ -38,7 +38,22 @@ export class CampaignService {
         } else {
             // Already maxed out
             console.log("Campaign completed!");
+            this.setCompleted();
         }
+    }
+
+    public isCompleted(): boolean {
+        // If current level is max AND we have flagged it as done (OR imply it if we want strict level > max)
+        // For simplicity, let's say if level == MAX_LEVEL and we've beaten it? 
+        // Actually, user asked for "Campaign Mastered".
+        // Let's add a persisted flag or just check if level > MAX_LEVEL? 
+        // But logic caps at MAX_LEVEL. 
+        // Let's add a separate flag in localStorage.
+        return localStorage.getItem('campaign_mastered') === 'true';
+    }
+
+    private setCompleted(): void {
+        localStorage.setItem('campaign_mastered', 'true');
     }
 
     public async saveLevel(level: number): Promise<void> {

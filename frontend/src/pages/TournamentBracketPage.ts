@@ -180,17 +180,32 @@ export class TournamentBracketPage extends AbstractComponent {
             p2 = temp;
         }
 
+        // Restore settings from MainMenu
+        let gameSettings = {
+            scoreToWin: 3,
+            ballSpeed: 'medium',
+            paddleSpeed: 'medium',
+            powerups: false,
+            accumulateOnHit: false,
+            difficulty: 'medium'
+        };
+
+        try {
+            const savedState = sessionStorage.getItem('mainMenuState_v2');
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                if (parsed.settings) {
+                    gameSettings = { ...gameSettings, ...parsed.settings };
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to load settings for tournament match", e);
+        }
+
         // Setup Game
         const setup = {
             mode: 'tournament',
-            settings: {
-                scoreToWin: 3,
-                ballSpeed: 'medium',
-                paddleSpeed: 'medium',
-                powerups: false,
-                accumulateOnHit: false,
-                difficulty: 'medium'
-            },
+            settings: gameSettings,
             team1: [p1],
             team2: [p2],
             tournamentId: parseInt(this.tournament!.id),

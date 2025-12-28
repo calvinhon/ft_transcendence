@@ -1,6 +1,6 @@
 import '@fortawesome/fontawesome-free/css/all.css';
 import { App } from './core/App';
-import { BabylonWrapper } from './core/BabylonWrapper';
+// import { BabylonWrapper } from './core/BabylonWrapper';
 import { PresenceService } from './services/PresenceService';
 
 // console.log("🚀 [MAIN] Booting System...");
@@ -17,7 +17,7 @@ app.start()
     })
     .finally(() => {
         // Initialize BabylonWrapper
-        BabylonWrapper.getInstance();
+        // BabylonWrapper.getInstance();
 
         // Expose for debugging
         (window as any).app = app;

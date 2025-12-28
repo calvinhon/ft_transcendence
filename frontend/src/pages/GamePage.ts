@@ -343,10 +343,13 @@ export class GamePage extends AbstractComponent {
 
                 // Campaign Logic
                 if (setup.mode === 'campaign') {
-                    const myId = App.getInstance().currentUser?.userId;
-                    if (myId && state.winnerId === myId) {
+                    // Player 1 is always the human in campaign mode.
+                    // If winnerId matches the player 1 ID, advance the campaign.
+                    if (winnerId === this.p1Ids[0]) {
                         console.log("Campaign Victory! Advancing Level...");
                         CampaignService.getInstance().advanceLevel();
+                    } else {
+                        console.log("Campaign Defeat. winnerId:", winnerId, "p1Id:", this.p1Ids[0]);
                     }
                 }
             }
