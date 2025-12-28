@@ -162,7 +162,12 @@ export class PongGame {
 
       if (shouldActivateAI) {
 		let now = Date.now();
-		if (now - this.ai.lastBallUpdate >= 1000) {
+		let lagAI = 1000;
+		if (this.gameSettings.aiDifficulty === 'medium')
+			lagAI = 600;
+		if (this.gameSettings.aiDifficulty === 'hard')
+			lagAI = 300;
+		if (now - this.ai.lastBallUpdate >= lagAI) {
        	 this.ai.updateBallPosition(this.ball.x, this.ball.y);this.ai.lastBallUpdate = now;
 		}
         this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
