@@ -16,7 +16,7 @@
   "dependencies": {
     "@fastify/cookie": "^9.0.0",
     "@fastify/cors": "^8.4.0",
-    "@ft-transcendence/common": "^1.0.0",
+    "@ft-transcendence/common": "file:../packages/common",
     "axios": "^1.6.0",
     "bcrypt": "^5.1.1",
     "fastify": "^4.29.1",

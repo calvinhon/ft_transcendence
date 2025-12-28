@@ -6,10 +6,9 @@ const logger = createLogger('AUTH-SERVICE');
 // End Hoach added
 
 export async function verifySessionHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    // Hoach added: Validate session from HTTP-only cookie + per-tab token from header
+    // Hoach added: Validate session from HTTP-only cookie
     const authService = new AuthService();
     const sessionToken = request.cookies.sessionToken;
-    const tabToken = request.headers['x-tab-token'] as string | undefined; // Per-tab token from client
 
     if (!sessionToken) {
         logger.warn('Verify request without session token');
@@ -23,10 +22,10 @@ export async function verifySessionHandler(request: FastifyRequest, reply: Fasti
         return sendError(reply, 'Not logged in', 401);
     }
 
-    // Validate session with both cookie and per-tab token
-    const user = await authService.validateSession(sessionToken, tabToken);
+    // Validate session (5-minute TTL ensures new tabs after 5 mins require login)
+    const user = await authService.validateSession(sessionToken);
     if (!user) {
-        logger.warn(`Invalid or expired session token${tabToken ? ' or tab token mismatch' : ''}`);
+        logger.warn('Invalid or expired session token');
         // Explicitly expire the cookie so browser stops sending it
         reply.clearCookie('sessionToken', {
             httpOnly: true,
@@ -34,7 +33,7 @@ export async function verifySessionHandler(request: FastifyRequest, reply: Fasti
             sameSite: 'strict',
             path: '/'
         });
-        return sendError(reply, 'Session expired or not valid for this tab', 401);
+        return sendError(reply, 'Session expired', 401);
     }
 
     logger.info(`Session verified for user ${user.userId}`);

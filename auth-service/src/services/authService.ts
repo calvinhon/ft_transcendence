@@ -48,26 +48,25 @@ export class AuthService {
     };
   }
 
-  // Hoach added: Create session after successful login with per-tab token
-  async createSession(userId: number): Promise<{ sessionToken: string; tabToken: string }> {
+  // Hoach added: Create session after successful login with 5-minute TTL
+  async createSession(userId: number): Promise<string> {
     const sessionToken = crypto.randomBytes(32).toString('hex');
-    const tabToken = crypto.randomBytes(16).toString('hex'); // Per-tab token (will be stored in sessionStorage)
-    // Hoach modified: 5-minute TTL for short-lived sessions (Option 3: new tabs after 5 mins require login)
+    // Hoach modified: 5-minute TTL for short-lived sessions (forces re-login on new tabs after 5 mins)
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await runQuery(
-      'INSERT INTO sessions (user_id, session_token, tab_token, expires_at) VALUES (?, ?, ?, ?)',
-      [userId, sessionToken, tabToken, expiresAt.toISOString()]
+      'INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)',
+      [userId, sessionToken, expiresAt.toISOString()]
     );
 
     logger.info(`Session created for user ${userId} with 5-minute TTL`);
-    return { sessionToken, tabToken };
+    return sessionToken;
   }
 
-  // Hoach added: Validate session with both cookie (sessionToken) and per-tab token (tabToken)
-  async validateSession(sessionToken: string, tabToken?: string): Promise<User | null> {
+  // Hoach added: Validate session token and check expiration
+  async validateSession(sessionToken: string): Promise<User | null> {
     const session = await getQuery<any>(
-      `SELECT s.user_id, s.tab_token, u.id, u.username, u.email 
+      `SELECT s.user_id, u.id, u.username, u.email 
        FROM sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.session_token = ? AND s.expires_at > datetime('now')`,
@@ -76,12 +75,6 @@ export class AuthService {
 
     if (!session) {
       logger.warn('Invalid or expired session token');
-      return null;
-    }
-
-    // Validate per-tab token if provided (new tabs won't have it)
-    if (tabToken && session.tab_token !== tabToken) {
-      logger.warn(`Tab token mismatch for session ${sessionToken}`);
       return null;
     }
 
