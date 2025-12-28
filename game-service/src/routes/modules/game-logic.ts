@@ -165,8 +165,12 @@ export class PongGame {
       }
 
       if (shouldActivateAI) {
-        this.ai.updateBallPosition(this.ball.x, this.ball.y);
-        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team2Players);
+		let now = Date.now();
+		if (now - this.ai.lastBallUpdate >= 1000) {
+			this.ai.updateBallPosition(this.ball.x, this.ball.y);
+			this.ai.lastBallUpdate = now;
+		}
+		this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team2Players);
       }
 
       const result = this.physics.updateBall(this.ball, this.paddles, this.gameId);
