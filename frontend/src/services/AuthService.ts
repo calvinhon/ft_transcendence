@@ -334,11 +334,11 @@ export class AuthService {
     }
 
 
-    private handleAuthSuccess(token: string, user: User): void {
+    private handleAuthSuccess(_token: string, user: User): void {
         // Hoach added: Remove localStorage usage, rely on HTTP-only cookie
         // Cookie is automatically sent by browser on every request
         // No need to store anything in localStorage
-        // if (token) localStorage.setItem('token', token);
+        // if (_token) localStorage.setItem('token', _token);
         // if (user) localStorage.setItem('user', JSON.stringify(user));
         // End Hoach added
         App.getInstance().currentUser = user;
