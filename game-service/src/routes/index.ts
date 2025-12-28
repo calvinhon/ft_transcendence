@@ -2,16 +2,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
-import { getOnlineUsers } from './modules/online-users';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
-import { sendSuccess, sendError } from './modules/responses';
-import { logger } from './modules/logger';
+import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+import { onlineUsers } from './modules/friend-service';
+
+const logger = createLogger('GAME-SERVICE');
 
 async function gameRoutes(fastify: FastifyInstance): Promise<void> {
-  // Chat routes were removed/disabled from this service. If chat is
-  // reintroduced later, add the appropriate import and uncomment the
-  // initialization call here.
 
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection: SocketStream, req: FastifyRequest) => {
@@ -125,22 +123,6 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Get overall statistics dashboard
-  fastify.get('/stats', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const onlineUsers = getOnlineUsers();
-      const stats = {
-        onlineUsers: onlineUsers.length,
-        timestamp: new Date().toISOString(),
-        service: 'game-service'
-      };
-      sendSuccess(reply, stats);
-    } catch (error) {
-      logger.error('Error fetching stats:', error);
-      sendError(reply, 'Error fetching statistics', 500);
-    }
-  });
-
   // Get game statistics
   fastify.get<{
     Params: { userId: string };
@@ -158,15 +140,17 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get currently online users
   fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const onlineUsers = getOnlineUsers();
-      sendSuccess(reply, onlineUsers);
+      // Map keys to array of objects
+      const users: any[] = [];
+      for (const [id, data] of onlineUsers.entries()) {
+        users.push({ userId: id, username: data.username });
+      }
+      sendSuccess(reply, users);
     } catch (error) {
       logger.error('Error getting online users:', error);
       sendError(reply, 'Error fetching online users', 500);
     }
   });
-
-  // ... existing routes ...
 
   // Friends Routes
   fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -211,15 +195,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Health check
-  fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    sendSuccess(reply, {
-      status: 'healthy',
-      service: 'game-service',
-      timestamp: new Date().toISOString(),
-      modules: ['websocket', 'game-history', 'game-stats', 'online-users', 'friend-service']
-    });
-  });
+
 }
 
 export default gameRoutes;

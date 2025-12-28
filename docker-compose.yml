@@ -23,7 +23,9 @@ services:
       - transcendence-network
 
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
     container_name: auth
     ports:
       - "3001:3000"
@@ -42,7 +44,9 @@ services:
       - transcendence-network
 
   game-service:
-    build: ./game-service
+    build:
+      context: .
+      dockerfile: ./game-service/Dockerfile
     container_name: game
     ports:
       - "3002:3000"
@@ -56,7 +60,9 @@ services:
       - transcendence-network
 
   tournament-service:
-    build: ./tournament-service
+    build:
+      context: .
+      dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
     ports:
       - "3003:3000"
@@ -70,7 +76,9 @@ services:
       - transcendence-network
 
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
     container_name: user
     ports:
       - "3004:3000"
@@ -84,27 +92,61 @@ services:
     networks:
       - transcendence-network
 
-  hardhat-node:
+  blockchain:
     build: ./blockchain
-    container_name: hardhat-node
+    container_name: blockchain
     ports:
       - "8545:8545"
+    command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
-      - ./blockchain/artifacts:/app/artifacts
-    env_file:
-      - .env
-    mem_limit: 1g
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:8545 || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  blockchain-deploy:
+    build: ./blockchain
+    depends_on:
+      blockchain:
+        condition: service_healthy
+    working_dir: /app
+    volumes: 
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
+    command: "npx hardhat run scripts/deploy.ts --network docker"
+    networks:
+      - transcendence-network
+
+  blockchain-service:
+    build: ./blockchain-service
+    container_name: blockchain-service
+    ports:
+      - "3005:3000"
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=blockchain-service
+    volumes:
+      - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
+    env_file:
+      - .env
+    depends_on:
+      blockchain:
+        condition: service_healthy
+      blockchain-deploy:
+        condition: service_completed_successfully
+    networks:
+      - transcendence-network
 
   frontend:
     build: ./frontend
@@ -125,17 +167,20 @@ services:
       - user-service
       - game-service
       - tournament-service
+      - blockchain-service
     mem_limit: 128m
     networks:
       - transcendence-network
 
   ssr-service:
-    build: ./ssr-service
+    build:
+      context: .
+      dockerfile: ./ssr-service/Dockerfile
     container_name: ssr
     ports:
-      - "3005:3005"
+      - "3006:3000"
     environment:
-      - PORT=3005
+      - PORT=3000
       - SERVICE_NAME=ssr-service
       - BASE_URL=http://localhost
     mem_limit: 256m

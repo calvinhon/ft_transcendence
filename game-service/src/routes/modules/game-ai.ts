@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-ai.ts
 import { Paddles } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameAI {
   private aiDifficulty: 'easy' | 'medium' | 'hard';
@@ -24,14 +26,12 @@ export class GameAI {
     // Smoother AI Logic
     // No random "skipping" frames (causes jitter). Instead, limit speed and tracking accuracy.
 
-    const paddleHeight = 100;
-    const paddleHalfHeight = paddleHeight / 2;
     const paddleCenterOffset = 50;
 
     // Difficulty Configuration
     let maxSpeed = this.paddleSpeed;
-    let targetError = 0;
     let lazyFactor = 0; // 0 = Instant reaction, 1 = Very lazy
+    let targetError = 0;
 
     switch (this.aiDifficulty) {
       case 'easy':
@@ -52,6 +52,9 @@ export class GameAI {
     }
 
     let targetY = this.ballY;
+
+    // AI aims directly for the ball with speed limiting for different difficulty levels
+    // High speed with slight tracking delay makes hard mode challenging but beatable
 
     // Apply movement
     const processPaddle = (paddle: any) => {
@@ -111,19 +114,5 @@ export class GameAI {
         processPaddle(paddles.player2);
       }
     }
-  }
-
-  private moveSingleBotPaddle(botPaddle: any, errorMargin: number, moveSpeed: number): void {
-    // Deprecated in favor of inline logic above
-  }
-
-  // For tournament mode, we might want more sophisticated AI
-  moveTournamentBot(paddles: Paddles, gameId: number): void {
-    if (this.gameMode !== 'tournament' || !paddles.team2 || !paddles.team2[0]) {
-      return;
-    }
-
-    // In tournament mode, use the same logic but potentially with different difficulty
-    this.moveBotPaddle(paddles, gameId);
   }
 }

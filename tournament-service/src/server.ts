@@ -1,32 +1,18 @@
 // tournament-service/src/server.ts
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import routes from './routes';
+import { createServer, createServiceConfig } from '@ft-transcendence/common';
 
-const fastify = Fastify({ 
-  logger: true
-});
+const serverConfig = createServiceConfig('TOURNAMENT-SERVICE', 3000);
 
-// Register plugins
-fastify.register(cors, {
-  origin: true
-});
+const serverOptions = {
+  healthCheckModules: ['tournaments', 'matches', 'participants'],
+  corsPlugin: cors
+};
 
-// Initialize and start the server
-async function init(): Promise<void> {
-  console.log('🏆 [SERVER] Initializing server...');
-  // Register routes by calling the function directly
-  await routes(fastify);
-  console.log('🏆 [SERVER] Routes registered');
-  
-  // Start the server
-  try {
-    await fastify.listen({ port: 3000, host: '0.0.0.0' });
-    console.log('Tournament service running on port 3000');
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
+async function start(): Promise<void> {
+  const server = await createServer(serverConfig, routes, serverOptions);
+  await server.start();
 }
 
-init();
+start();

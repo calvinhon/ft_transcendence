@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-scoring.ts
 import { GamePlayer, Scores } from './types';
 import { db } from './database';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameScoring {
   private gameId: number;
@@ -16,7 +18,7 @@ export class GameScoring {
     this.player2 = player2;
     this.maxScore = maxScore;
     this.scores = { player1: 0, player2: 0 };
-    logger.game(gameId, `GameScoring initialized with maxScore: ${this.maxScore}`);
+    logger.info(`[${gameId}] GameScoring initialized with maxScore: ${this.maxScore}`);
   }
 
   scorePoint(scorer: 'player1' | 'player2'): boolean {
@@ -26,7 +28,7 @@ export class GameScoring {
       this.scores.player2++;
     }
 
-    logger.game(this.gameId, `Point scored! Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
+    logger.info(`[${this.gameId}] Point scored! Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
 
     // Log detailed event for Dashboard
     this.logEvent('goal', {
@@ -49,15 +51,13 @@ export class GameScoring {
     const winnerId = this.scores.player1 > this.scores.player2 ? this.player1.userId : this.player2.userId;
     const winnerName = winnerId === this.player1.userId ? this.player1.username : this.player2.username;
 
-    logger.game(this.gameId, `Winner: ${winnerName}`);
+    logger.info(`[${this.gameId}] Winner: ${winnerName}`);
 
     return { winnerId, winnerName };
   }
 
   saveGameResult(aborted: boolean = false): void {
     const winner = this.getWinner();
-    // In aborted games, we might not have a "winner" by max score, so compute one by current score
-    // If scores are equal, maybe no winner? Or Player1 default? Let's check scores.
     let winnerId: number | null = winner ? winner.winnerId : null;
 
     // Explicitly handle aborted games
@@ -79,7 +79,7 @@ export class GameScoring {
         if (err) {
           logger.error(`Database update error:`, err);
         } else {
-          logger.game(this.gameId, `Game recorded in database (Aborted: ${aborted}, WinnerID: ${winnerId}, Scores: ${this.scores.player1}-${this.scores.player2})`);
+          logger.info(`[${this.gameId}] Game recorded in database (Aborted: ${aborted}, WinnerID: ${winnerId}, Scores: ${this.scores.player1}-${this.scores.player2})`);
         }
       }
     );
@@ -96,16 +96,14 @@ export class GameScoring {
       gameId: this.gameId
     };
 
-    logger.game(this.gameId, 'Sending endGame message to players');
+    logger.info(`[${this.gameId}] Sending endGame message to players`);
 
     if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(endMessage));
-      logger.game(this.gameId, `End message sent to ${this.player1.username}`);
     }
 
     if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(endMessage));
-      logger.game(this.gameId, `End message sent to ${this.player2.username}`);
     }
   }
 

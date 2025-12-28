@@ -66,8 +66,7 @@ def create_architecture_diagram():
             bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     clients = [
-        (4.5, 'Web Browser\n(SPA)', 'blue', 'lightblue'),
-        (9.5, 'Mobile\nBrowser', 'blue', 'lightblue')
+        (7, 'Web Browser\n(SPA)', 'blue', 'lightblue'),
     ]
     
     for x, text, edge, face in clients:
@@ -80,9 +79,8 @@ def create_architecture_diagram():
             bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
     
     # Arrow from clients to gateway
-    for x in [4.5, 9.5]:
-        ax.annotate('', xy=(x, gateway_y + 0.4), xytext=(x, client_y - 0.4),
-                   arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
+    ax.annotate('', xy=(7, gateway_y + 0.4), xytext=(7, client_y - 0.4),
+               arrowprops=dict(arrowstyle='->', lw=2.5, color='darkblue'))
     
     # Enlarge the width of the 'Nginx + ModSecurity + Rate Limiting' box
     def create_wide_box_with_text(ax, x, y, text, color='lightblue', 
@@ -544,98 +542,13 @@ def create_testing_pyramid():
                 fontsize=13, ha='center', va='center', fontweight='bold')
     
     # Total info
-    ax.text(5, 0.5, 'Total: 184/184 Tests Passing (100%) | Test Duration: ~18 minutes', 
+    ax.text(5, 0.5, 'Total: 96/96 Tests Passing (100%) | Test Duration: ~18 minutes', 
             fontsize=13, ha='center', bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9),
             fontweight='bold')
     
     plt.tight_layout()
     plt.savefig('testing_pyramid.png', dpi=300, bbox_inches='tight')
     print('✓ testing_pyramid.png created')
-    plt.close()
-
-def create_gdpr_compliance_flow():
-    """Create GDPR compliance data flow diagram"""
-    fig, ax = plt.subplots(figsize=(13, 9))
-    ax.set_xlim(0, 13)
-    ax.set_ylim(0, 10)
-    ax.axis('off')
-    
-    # Title
-    ax.text(6.5, 9.5, 'GDPR Compliance Data Flow', 
-            fontsize=12, fontweight='bold', ha='center')
-    
-    # User request
-    ax.text(6.5, 8.8, 'User Initiates GDPR Request', fontsize=13, fontweight='bold', ha='center')
-    
-    # Three main paths
-    # Path 1: Data Export
-    create_box_with_text(ax, 2, 7.8, 'Path 1:\nData Export',
-                        color='lightblue', edgecolor='darkblue', fontsize=13, fontweight='bold')
-    
-    export_steps = [
-        (7.2, 'Request'),
-        (6.5, 'Collect'),
-        (5.8, 'Anonymize'),
-        (5.1, 'JSON'),
-        (4.4, 'Download'),
-    ]
-    
-    for idx, (y, label) in enumerate(export_steps):
-        create_box_with_text(ax, 2, y, label,
-                            color='lightblue', edgecolor='darkblue', fontsize=13)
-        if idx < len(export_steps) - 1:
-            ax.annotate('', xy=(2, y - 0.3), xytext=(2, y - 0.3 - 0.4),
-                       arrowprops=dict(arrowstyle='->', lw=2, color='darkblue'))
-    
-    # Path 2: Account Deletion
-    create_box_with_text(ax, 6.5, 7.8, 'Path 2:\nAccount Deletion',
-                        color='lightyellow', edgecolor='orange', fontsize=13, fontweight='bold')
-    
-    delete_steps = [
-        (7.2, 'Request'),
-        (6.5, 'Anonymize'),
-        (5.8, 'Keep History'),
-        (5.1, 'Flag User'),
-        (4.4, 'Confirm'),
-    ]
-    
-    for idx, (y, label) in enumerate(delete_steps):
-        create_box_with_text(ax, 6.5, y, label,
-                            color='lightyellow', edgecolor='orange', fontsize=13)
-        if idx < len(delete_steps) - 1:
-            ax.annotate('', xy=(6.5, y - 0.3), xytext=(6.5, y - 0.3 - 0.4),
-                       arrowprops=dict(arrowstyle='->', lw=2, color='orange'))
-    
-    # Path 3: Consent Management
-    create_box_with_text(ax, 11, 7.8, 'Path 3:\nConsent Mgmt',
-                        color='lightgreen', edgecolor='darkgreen', fontsize=13, fontweight='bold')
-    
-    consent_steps = [
-        (7.2, 'Request'),
-        (6.5, 'Manage'),
-        (5.8, 'Log'),
-        (5.1, 'Audit'),
-        (4.4, 'Revoke'),
-    ]
-    
-    for idx, (y, label) in enumerate(consent_steps):
-        create_box_with_text(ax, 11, y, label,
-                            color='lightgreen', edgecolor='darkgreen', fontsize=13)
-        if idx < len(consent_steps) - 1:
-            ax.annotate('', xy=(11, y - 0.3), xytext=(11, y - 0.3 - 0.4),
-                       arrowprops=dict(arrowstyle='->', lw=2, color='darkgreen'))
-    
-    # Database changes
-    create_box_with_text(ax, 6.5, 2.8, 'Database Changes:\ndeleted_at flag | username anonymized\nemail NULL | profile anonymized',
-                        color='plum', edgecolor='purple', fontsize=13, fontweight='bold')
-    
-    # Compliance note
-    create_box_with_text(ax, 6.5, 0.9, 'GDPR Compliance:\nArticles 15-22 (Access, Rectify, Erase,\nRestrict, Port, Objection)',
-                        color='lightsalmon', edgecolor='darkorange', fontsize=13, fontweight='bold')
-    
-    plt.tight_layout()
-    plt.savefig('gdpr_flow.png', dpi=300, bbox_inches='tight')
-    print('✓ gdpr_flow.png created')
     plt.close()
 
 # Generate all figures
@@ -648,6 +561,5 @@ if __name__ == '__main__':
     create_data_flow_diagram()
     create_deployment_topology()
     create_testing_pyramid()
-    create_gdpr_compliance_flow()
     print('\n✅ All figures generated successfully!')
     print('PNG files ready for inclusion in LaTeX report.')

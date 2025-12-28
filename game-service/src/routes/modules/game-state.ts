@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-state.ts
 import { GamePlayer } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameStateManager {
   private gameId: number;
@@ -56,11 +58,11 @@ export class GameStateManager {
       }
 
       const now = Date.now();
-      if (now - this.lastStateTime >= 33) { // ~30 FPS
+      if (now - this.lastStateTime >= 16) { // ~60 FPS broadcasts
         this.lastStateTime = now;
         // Broadcasting is handled by the caller
       }
-    }, 16); // ~60 FPS
+    }, 16); // ~60 FPS game updates for smooth movement
   }
 
   pauseGame(): void {
@@ -131,9 +133,5 @@ export class GameStateManager {
 
   isGamePaused(): boolean {
     return this.isPaused;
-  }
-
-  isGameFinished(): boolean {
-    return this.gameState === 'finished';
   }
 }

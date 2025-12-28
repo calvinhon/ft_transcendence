@@ -92,7 +92,8 @@ export class GamePage extends AbstractComponent {
             powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
             accumulateOnHit: setup.settings.accumulateOnHit,
             difficulty: setup.settings.difficulty,
-            scoreToWin: setup.settings.scoreToWin
+            scoreToWin: setup.settings.scoreToWin,
+            campaignLevel: setup.campaignLevel
         } as any, setup.team1, setup.team2);
 
         // HUD Names and Avatars

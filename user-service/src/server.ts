@@ -1,32 +1,26 @@
-// user-service/src/server.ts
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import userRoutes from './routes/index';
+import { createServer, createServiceConfig } from '@ft-transcendence/common';
 
-const fastify = Fastify({
-  logger: true
-});
+const serverConfig = createServiceConfig('USER-SERVICE', 3000);
 
-// Register plugins
-fastify.register(cors, {
-  origin: true
-});
+const serverOptions = {
+  healthCheckModules: ['users', 'profiles'],
+  corsPlugin: cors
+};
 
-// Register routes
-fastify.register(userRoutes);
-
-import { initDbPromise } from './database';
-
-const start = async (): Promise<void> => {
+async function start(): Promise<void> {
   try {
-    await initDbPromise;
+    const { initializeDatabase } = await import('./database');
+    await initializeDatabase();
     console.log('Database initialized successfully');
-    await fastify.listen({ port: 3000, host: '0.0.0.0' });
-    console.log('User service running on port 3000');
   } catch (err) {
-    fastify.log.error(err);
+    console.error('Failed to initialize database:', err);
     process.exit(1);
   }
-};
+
+  const server = await createServer(serverConfig, userRoutes, serverOptions);
+  await server.start();
+}
 
 start();

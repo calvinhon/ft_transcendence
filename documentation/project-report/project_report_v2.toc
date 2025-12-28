@@ -25,12 +25,11 @@
 \contentsline {subsubsection}{Gameplay \& Real-Time Features}{11}{section*.8}%
 \contentsline {subsubsection}{Social \& Leaderboard Features}{12}{section*.9}%
 \contentsline {subsubsection}{Tournament Management}{12}{section*.10}%
-\contentsline {subsubsection}{GDPR Compliance}{12}{section*.11}%
 \contentsline {subsection}{\numberline {3.2.2}Technical Requirements}{12}{subsection.3.2.2}%
-\contentsline {subsubsection}{Architecture \& Infrastructure}{12}{section*.12}%
-\contentsline {subsubsection}{Technology Stack}{12}{section*.13}%
-\contentsline {subsubsection}{Security Requirements}{13}{section*.14}%
-\contentsline {subsubsection}{Performance Requirements}{13}{section*.15}%
+\contentsline {subsubsection}{Architecture \& Infrastructure}{12}{section*.11}%
+\contentsline {subsubsection}{Technology Stack}{12}{section*.12}%
+\contentsline {subsubsection}{Security Requirements}{13}{section*.13}%
+\contentsline {subsubsection}{Performance Requirements}{13}{section*.14}%
 \contentsline {chapter}{\numberline {4}Design}{14}{chapter.4}%
 \contentsline {section}{\numberline {4.1}System Architecture}{14}{section.4.1}%
 \contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{14}{subsection.4.1.1}%
@@ -48,8 +47,8 @@
 \contentsline {subsection}{\numberline {4.3.4}Layer 3: Authentication \& Authorization}{18}{subsection.4.3.4}%
 \contentsline {subsection}{\numberline {4.3.5}Layer 4: Data Protection}{18}{subsection.4.3.5}%
 \contentsline {subsection}{\numberline {4.3.6}Security Implementation Details}{19}{subsection.4.3.6}%
-\contentsline {subsubsection}{SQL Injection Prevention}{19}{section*.21}%
-\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{19}{section*.22}%
+\contentsline {subsubsection}{SQL Injection Prevention}{19}{section*.20}%
+\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{19}{section*.21}%
 \contentsline {section}{\numberline {4.4}Wireframes and User Interface Design}{19}{section.4.4}%
 \contentsline {subsection}{\numberline {4.4.1}Authentication Flow Wireframes}{19}{subsection.4.4.1}%
 \contentsline {subsection}{\numberline {4.4.2}Game Interface Wireframes}{19}{subsection.4.4.2}%
@@ -58,9 +57,9 @@
 \contentsline {subsection}{\numberline {4.4.5}Main Menu Interface}{21}{subsection.4.4.5}%
 \contentsline {subsection}{\numberline {4.4.6}Game Mode Selection}{22}{subsection.4.4.6}%
 \contentsline {subsection}{\numberline {4.4.7}Authentication UI Implementation}{22}{subsection.4.4.7}%
-\contentsline {subsubsection}{Login Interface}{23}{section*.26}%
-\contentsline {subsubsection}{Registration Interface}{24}{section*.28}%
-\contentsline {subsubsection}{Two-Factor Authentication (2FA)}{24}{section*.30}%
+\contentsline {subsubsection}{Login Interface}{23}{section*.25}%
+\contentsline {subsubsection}{Registration Interface}{24}{section*.27}%
+\contentsline {subsubsection}{Two-Factor Authentication (2FA)}{24}{section*.29}%
 \contentsline {subsection}{\numberline {4.4.8}Gameplay Interface}{25}{subsection.4.4.8}%
 \contentsline {subsection}{\numberline {4.4.9}Game Settings}{26}{subsection.4.4.9}%
 \contentsline {subsection}{\numberline {4.4.10}Campaign Mode}{27}{subsection.4.4.10}%
@@ -70,11 +69,11 @@
 \contentsline {section}{\numberline {5.1}Mandatory Implementation}{30}{section.5.1}%
 \contentsline {subsection}{\numberline {5.1.1}Technology Stack Summary}{30}{subsection.5.1.1}%
 \contentsline {subsection}{\numberline {5.1.2}Backend Framework}{30}{subsection.5.1.2}%
-\contentsline {subsubsection}{Frontend Architecture}{31}{section*.37}%
-\contentsline {subsubsection}{Single-Page Application (SPA)}{31}{section*.38}%
+\contentsline {subsubsection}{Frontend Architecture}{31}{section*.36}%
+\contentsline {subsubsection}{Single-Page Application (SPA)}{31}{section*.37}%
 \contentsline {section}{\numberline {5.2}Web Implementation}{31}{section.5.2}%
 \contentsline {subsection}{\numberline {5.2.1}Backend Framework}{31}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}Blockchain Integration}{31}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.2}Blockchain Integration}{32}{subsection.5.2.2}%
 \contentsline {subsection}{\numberline {5.2.3}Frontend Framework}{32}{subsection.5.2.3}%
 \contentsline {subsection}{\numberline {5.2.4}Database}{32}{subsection.5.2.4}%
 \contentsline {section}{\numberline {5.3}User Management Implementation}{32}{section.5.3}%
@@ -82,20 +81,16 @@
 \contentsline {subsection}{\numberline {5.3.2}Remote Authentication}{32}{subsection.5.3.2}%
 \contentsline {section}{\numberline {5.4}Gameplay and User Experience Implementation}{32}{section.5.4}%
 \contentsline {subsection}{\numberline {5.4.1}Remote Players}{32}{subsection.5.4.1}%
-\contentsline {subsection}{\numberline {5.4.2}Multiplayer (>2 Players)}{32}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.2}Multiplayer (more than 2 players)}{32}{subsection.5.4.2}%
 \contentsline {section}{\numberline {5.5}AI-Algo Implementation}{32}{section.5.5}%
 \contentsline {subsection}{\numberline {5.5.1}AI Opponent}{32}{subsection.5.5.1}%
 \contentsline {subsection}{\numberline {5.5.2}User and Game Stats Dashboards}{32}{subsection.5.5.2}%
 \contentsline {section}{\numberline {5.6}Cybersecurity Implementation}{32}{section.5.6}%
 \contentsline {subsection}{\numberline {5.6.1}WAF/ModSecurity with Vault}{32}{subsection.5.6.1}%
-\contentsline {subsection}{\numberline {5.6.2}GDPR Compliance}{32}{subsection.5.6.2}%
 \contentsline {section}{\numberline {5.7}Devops Implementation}{33}{section.5.7}%
 \contentsline {subsection}{\numberline {5.7.1}Microservices Architecture}{33}{subsection.5.7.1}%
-\contentsline {section}{\numberline {5.8}Server-Side Pong Implementation}{33}{section.5.8}%
-\contentsline {subsection}{\numberline {5.8.1}Server-Side Pong and API}{33}{subsection.5.8.1}%
-\contentsline {section}{\numberline {5.9}Accessibility Implementation}{33}{section.5.9}%
-\contentsline {subsection}{\numberline {5.9.1}Server-Side Rendering}{33}{subsection.5.9.1}%
-\contentsline {subsection}{\numberline {5.9.2}Support on All Devices}{33}{subsection.5.9.2}%
+\contentsline {section}{\numberline {5.8}Accessibility Implementation}{33}{section.5.8}%
+\contentsline {subsection}{\numberline {5.8.1}Server-Side Rendering}{33}{subsection.5.8.1}%
 \contentsline {chapter}{\numberline {6}Testing}{34}{chapter.6}%
 \contentsline {section}{\numberline {6.1}Testing Strategy}{34}{section.6.1}%
 \contentsline {section}{\numberline {6.2}Automated Test Results}{35}{section.6.2}%
@@ -119,10 +114,9 @@
 \contentsline {chapter}{\numberline {8}Conclusion}{39}{chapter.8}%
 \contentsline {chapter}{\numberline {A}Data Flow and System Diagrams}{40}{appendix.A}%
 \contentsline {section}{\numberline {A.1}Game Match Data Flow}{40}{section.A.1}%
-\contentsline {section}{\numberline {A.2}GDPR Compliance Data Flow}{41}{section.A.2}%
-\contentsline {chapter}{\numberline {B}Code Repository Structure}{42}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Deployment \& Operations}{44}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Quick Start}{44}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Service URLs}{44}{section.C.2}%
-\contentsline {section}{\numberline {C.3}Stopping Services}{44}{section.C.3}%
-\contentsline {chapter}{\numberline {D}Glossary}{45}{appendix.D}%
+\contentsline {chapter}{\numberline {B}Code Repository Structure}{41}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Deployment \& Operations}{43}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Quick Start}{43}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Service URLs}{43}{section.C.2}%
+\contentsline {section}{\numberline {C.3}Stopping Services}{43}{section.C.3}%
+\contentsline {chapter}{\numberline {D}Glossary}{44}{appendix.D}%

@@ -1,6 +1,8 @@
 import { db } from './database';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
 import { matchmakingService } from './matchmaking-service';
+
+const logger = createLogger('GAME-SERVICE');
 
 export interface Friend {
     userId: number;
@@ -116,5 +118,7 @@ class FriendService {
 
 // Global active connections set (managed by websocket callbacks)
 export const activeConnections = new Set<number>();
+// Detailed online users map (managed by websocket callbacks)
+export const onlineUsers = new Map<number, { username: string }>();
 
 export const friendService = new FriendService();

@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-physics.ts
 import { Ball, Paddle, Paddles, Powerup } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GamePhysics {
   private ballSpeed: number;
@@ -8,12 +10,12 @@ export class GamePhysics {
   private gameMode: string;
   private powerupsEnabled: boolean;
   public powerup: Powerup;
+  private lastUpdateTime: number = Date.now();
 
   constructor(ballSpeed: number, accelerateOnHit: boolean, gameMode: string, powerupsEnabled: boolean) {
     this.ballSpeed = ballSpeed;
     this.accelerateOnHit = accelerateOnHit;
     this.gameMode = gameMode;
-    this.powerupsEnabled = powerupsEnabled;
     this.powerupsEnabled = powerupsEnabled;
     this.powerup = { x: 400, y: 300, active: false, radius: 15 };
 
@@ -55,19 +57,23 @@ export class GamePhysics {
     this.powerup.x = 400;
     this.powerup.y = Math.random() * 300 + 150; // 150 to 450
     this.powerup.active = true;
-    logger.debug('Powerup spawned at', this.powerup.x, this.powerup.y);
+    logger.debug('Powerup spawned at', { x: this.powerup.x, y: this.powerup.y });
   }
 
   updateBall(ball: Ball, paddles: Paddles, gameId: number): { scored: boolean; scorer?: 'player1' | 'player2' } {
     if (ball.frozen) return { scored: false };
 
+    const currentTime = Date.now();
+    const deltaTime = Math.min((currentTime - this.lastUpdateTime) / 16.67, 2); // Cap at 2x normal speed
+    this.lastUpdateTime = currentTime;
+
     // Store previous position for swept collision detection
     const prevX = ball.x;
     const prevY = ball.y;
 
-    // Update ball position
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    // Update ball position with delta time for smooth movement
+    ball.x += ball.dx * deltaTime;
+    ball.y += ball.dy * deltaTime;
 
     // Ball collision with top/bottom walls
     if (ball.y <= 0 || ball.y >= 600) {
@@ -205,7 +211,7 @@ export class GamePhysics {
         ball.lastHitter = side === 'left' ? 'player1' : 'player2';
 
         // Debug log for collision
-        logger.gameDebug(gameId, `Paddle Hit! Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight}, Tolerance: ${tolerance}`);
+        logger.debug(`[${gameId}] Paddle Hit! Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight}, Tolerance: ${tolerance}`);
 
         this.handlePaddleHit(ball, paddle, side, gameId);
         return true;
@@ -213,7 +219,7 @@ export class GamePhysics {
 
       // Debug Near Miss
       if (Math.abs(ball.x - paddleX) < 20 && crossY > paddle.y - 50 && crossY < paddle.y + paddleHeight + 50) {
-        logger.gameDebug(gameId, `Paddle MISS. Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight} (Hit Range: ${paddle.y - tolerance} to ${paddle.y + paddleHeight + tolerance})`);
+        logger.debug(`[${gameId}] Paddle MISS. Side: ${side}, Y: ${crossY.toFixed(1)}, PaddleY: ${paddle.y.toFixed(1)}, Height: ${paddleHeight} (Hit Range: ${paddle.y - tolerance} to ${paddle.y + paddleHeight + tolerance})`);
       }
     }
 
@@ -231,7 +237,7 @@ export class GamePhysics {
 
     if (this.accelerateOnHit) {
       newSpeed = Math.min(currentSpeed * 1.1, this.ballSpeed * 2); // Cap at 2x speed
-      logger.game(gameId, `Ball accelerated! ${currentSpeed.toFixed(1)} → ${newSpeed.toFixed(1)}`);
+      logger.info(`[${gameId}] Ball accelerated! ${currentSpeed.toFixed(1)} → ${newSpeed.toFixed(1)}`);
     }
 
     // Apply "Flick" physics if paddle has vertical velocity
@@ -261,19 +267,12 @@ export class GamePhysics {
     ball.dy = newSpeed * Math.sin(finalAngle);
   }
 
-  resetBall(ball: Ball, direction?: 'left' | 'right'): void {
+  resetBall(ball: Ball): void {
     ball.x = 400;
     ball.y = 300;
     ball.frozen = true;
 
-    if (direction === 'left') {
-      ball.dx = -this.ballSpeed;
-    } else if (direction === 'right') {
-      ball.dx = this.ballSpeed;
-    } else {
-      ball.dx = (Math.random() > 0.5 ? 1 : -1) * this.ballSpeed;
-    }
-
+    ball.dx = (Math.random() > 0.5 ? 1 : -1) * this.ballSpeed;
     ball.dy = (Math.random() - 0.5) * this.ballSpeed;
   }
 
@@ -292,7 +291,7 @@ export class GamePhysics {
       const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
 
       if (!teamPaddles || !teamPaddles[paddleIndex]) {
-        logger.gameDebug(gameId, 'Invalid paddle index:', paddleIndex, 'for team:', team);
+        logger.debug(`[${gameId}] Invalid paddle index: ${paddleIndex} for team: ${team}`);
         return false;
       }
 
@@ -300,18 +299,18 @@ export class GamePhysics {
     } else if (gameMode === 'tournament') {
       // Handle tournament mode without paddleIndex (local multiplayer)
       // Compare playerId with actual player1Id/player2Id from game
-      logger.gameDebug(gameId, 'Tournament mode - playerId:', playerId, 'player1Id:', player1Id, 'player2Id:', player2Id);
+      logger.debug(`[${gameId}] Tournament mode - playerId: ${playerId}, player1Id: ${player1Id}, player2Id: ${player2Id}`);
       const isPlayer1 = player1Id !== undefined && playerId === player1Id;
       team = isPlayer1 ? 'team1' : 'team2';
       const teamPaddles = paddles[team as keyof Paddles] as Paddle[];
 
       if (!teamPaddles || !teamPaddles[0]) {
-        logger.gameDebug(gameId, 'No paddle found for tournament team:', team);
+        logger.debug(`[${gameId}] No paddle found for tournament team: ${team}`);
         return false;
       }
 
       paddle = teamPaddles[0];
-      logger.gameDebug(gameId, 'Tournament paddle selected for', team, 'at position:', paddle.y);
+      logger.debug(`[${gameId}] Tournament paddle selected for ${team} at position: ${paddle.y}`);
     } else {
       // Handle campaign mode with single paddle
       // For campaign mode, the human player always controls the left paddle (player1)
@@ -321,7 +320,7 @@ export class GamePhysics {
       paddle = paddles[paddleKey as keyof Paddles] as Paddle;
 
       if (!paddle) {
-        logger.gameDebug(gameId, 'Invalid player for paddle movement:', playerId);
+        logger.debug(`[${gameId}] Invalid player for paddle movement: ${playerId}`);
         return false;
       }
     }
@@ -333,22 +332,22 @@ export class GamePhysics {
 
     if (direction === 'up' && paddle.y > 0) {
       paddle.y = Math.max(0, paddle.y - moveSpeed);
-      paddle.vy = -moveSpeed; // Track velocity
-      logger.gameDebug(gameId, 'Paddle moved UP from', oldY, 'to', paddle.y);
+      paddle.vy = -moveSpeed; // Track velocity for physics
+      // logger.debug(`[${gameId}] Paddle moved UP from ${oldY} to ${paddle.y}`);
       return true;
     } else if (direction === 'down') {
       const paddleHeight = paddle.height || 100;
       const maxY = 600 - paddleHeight;
       if (paddle.y < maxY) {
         paddle.y = Math.min(maxY, paddle.y + moveSpeed);
-        paddle.vy = moveSpeed; // Track velocity
-        logger.gameDebug(gameId, 'Paddle moved DOWN from', oldY, 'to', paddle.y);
+        paddle.vy = moveSpeed; // Track velocity for physics
+        // logger.debug(`[${gameId}] Paddle moved DOWN from ${oldY} to ${paddle.y}`);
         return true;
       }
       return false;
     } else {
       paddle.vy = 0; // Reset velocity if blocked or invalid move
-      logger.gameDebug(gameId, 'Movement blocked - direction:', direction, 'currentY:', paddle.y, 'bounds: [0, 600]');
+      logger.debug(`[${gameId}] Movement blocked - direction: ${direction}, currentY: ${paddle.y}, bounds: [0, 600]`);
       return false;
     }
   }

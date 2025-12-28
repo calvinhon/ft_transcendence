@@ -1,6 +1,8 @@
 // game-service/src/routes/modules/game-broadcast.ts
 import { GamePlayer, Ball, Paddles, Scores, GameState, Powerup } from './types';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameBroadcaster {
   private gameId: number;
@@ -28,7 +30,7 @@ export class GameBroadcaster {
       gameStateMessage.countdownValue = countdownValue;
     }
 
-    logger.gameDebug(this.gameId, 'Broadcasting game state:', JSON.stringify(gameStateMessage));
+    // logger.debug(`[${this.gameId}] Broadcasting game state`); // Too noisy
 
     this.sendToPlayers(gameStateMessage);
   }

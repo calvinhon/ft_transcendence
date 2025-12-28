@@ -1,7 +1,7 @@
 // user-service/src/services/userService.ts
 import { db } from '../database';
 import { UserProfile, UpdateProfileBody } from '../types';
-import { promisifyDbGet, promisifyDbRun } from '../utils/database';
+import { promisifyDbGet, promisifyDbRun } from '@ft-transcendence/common';
 
 export class UserService {
   static async getOrCreateProfile(userId: number): Promise<UserProfile> {

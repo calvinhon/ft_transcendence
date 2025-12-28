@@ -37,10 +37,10 @@ export function getMetaTags(route: string): MetaTags {
     },
     profile: {
       title: 'Player Profile - FT Transcendence',
-      description: 'View player statistics, match history, and achievements in FT Transcendence.',
-      keywords: 'player profile, game stats, match history, achievements',
+      description: 'View player statistics and match history in FT Transcendence.',
+      keywords: 'player profile, game stats, match history',
       ogTitle: 'Player Profile - FT Transcendence',
-      ogDescription: 'Player statistics and achievements',
+      ogDescription: 'Player statistics and match history',
       ogType: 'profile',
       ogUrl: `${baseUrl}/profile`,
       twitterCard: 'summary'

@@ -5,6 +5,9 @@ import { renderGamePage } from './renderers/gameRenderer.js';
 import { renderProfilePage } from './renderers/profileRenderer.js';
 import { renderLeaderboardPage } from './renderers/leaderboardRenderer.js';
 import { getMetaTags } from './utils/metaTags.js';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('SSR-SERVICE');
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -19,7 +22,12 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'healthy',
     service: 'ssr-service',
     timestamp: new Date().toISOString(),
-    modules: ['ssr']
+    modules: ['ssr', 'accessibility'],
+    version: '1.0.0',
+    accessibility: {
+      compliant: true,
+      features: ['semantic-html', 'aria-support', 'skip-links', 'keyboard-nav', 'screen-reader']
+    }
   });
 });
 
@@ -29,7 +37,7 @@ app.get('/ssr', async (req: Request, res: Response) => {
     const html = await renderHomePage();
     res.send(html);
   } catch (error) {
-    console.error('SSR Home Error:', error);
+    logger.error('SSR Home Error:', error);
     res.status(500).send('SSR Error');
   }
 });
@@ -39,7 +47,7 @@ app.get('/ssr/game', async (req: Request, res: Response) => {
     const html = await renderGamePage();
     res.send(html);
   } catch (error) {
-    console.error('SSR Game Error:', error);
+    logger.error('SSR Game Error:', error);
     res.status(500).send('SSR Error');
   }
 });
@@ -50,7 +58,7 @@ app.get('/ssr/profile/:userId', async (req: Request, res: Response) => {
     const html = await renderProfilePage(userId);
     res.send(html);
   } catch (error) {
-    console.error('SSR Profile Error:', error);
+    logger.error('SSR Profile Error:', error);
     res.status(500).send('SSR Error');
   }
 });
@@ -60,7 +68,7 @@ app.get('/ssr/leaderboard', async (req: Request, res: Response) => {
     const html = await renderLeaderboardPage();
     res.send(html);
   } catch (error) {
-    console.error('SSR Leaderboard Error:', error);
+    logger.error('SSR Leaderboard Error:', error);
     res.status(500).send('SSR Error');
   }
 });
@@ -77,13 +85,31 @@ app.get('/ssr/status', (req: Request, res: Response) => {
   res.json({
     enabled: true,
     routes: ['/ssr', '/ssr/game', '/ssr/profile/:userId', '/ssr/leaderboard'],
-    features: ['SEO', 'OpenGraph', 'Pre-rendering', 'Hydration']
+    features: [
+      'SEO',
+      'OpenGraph',
+      'Pre-rendering',
+      'Hydration',
+      'Accessibility',
+      'Screen Reader Support',
+      'Reduced Motion Support',
+      'High Contrast Support'
+    ],
+    accessibility: {
+      semanticHtml: true,
+      ariaLabels: true,
+      skipLinks: true,
+      keyboardNavigation: true,
+      screenReaderFriendly: true,
+      prefersReducedMotion: true,
+      prefersContrast: true
+    }
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`SSR service running on port ${PORT}`);
+  logger.info(`SSR service running on port ${PORT}`);
 });
 
 export default app;

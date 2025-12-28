@@ -1,14 +1,17 @@
 import { GamePlayer, JoinGameMessage } from './types';
 import { matchmakingQueue } from './matchmaking-queue';
 import { gameCreator } from './game-creator';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+import { createBotPlayer, createDummyPlayer } from './utils';
 import { activeGames } from './game-logic';
+
+const logger = createLogger('GAME-SERVICE');
 
 // Main matchmaking service that orchestrates the matchmaking process
 export class MatchmakingService {
   // Handle regular matchmaking (waiting queue)
   async handleJoinGame(socket: any, data: JoinGameMessage): Promise<void> {
-    logger.matchmaking('handleJoinGame called with:', data);
+    logger.info('handleJoinGame called with:', data);
 
     const player: GamePlayer = {
       userId: data.userId,
@@ -33,7 +36,7 @@ export class MatchmakingService {
 
   // Handle direct bot game creation
   async handleJoinBotGame(socket: any, data: JoinGameMessage): Promise<void> {
-    logger.matchmaking('handleJoinBotGame called with:', data);
+    logger.info('handleJoinBotGame called with:', data);
 
     const player1: GamePlayer = {
       userId: data.userId,
@@ -71,11 +74,11 @@ export class MatchmakingService {
 
     if (isLocalMultiplayer && secondPlayerId && secondPlayerId !== 0) {
       // Local match: player2 is also a real player
-      logger.matchmaking('Creating local match with player2 ID:', secondPlayerId);
-      player2 = gameCreator.createDummyPlayer(secondPlayerId, secondPlayerName || `Player ${secondPlayerId}`);
+      logger.info('Creating local match with player2 ID:', secondPlayerId);
+      player2 = createDummyPlayer(secondPlayerId, secondPlayerName || `Player ${secondPlayerId}`);
     } else {
       // Regular bot match
-      player2 = gameCreator.createBotPlayer();
+      player2 = createBotPlayer();
     }
 
     await this.createAndStartGame(player1, player2, data.gameSettings, {
@@ -93,10 +96,6 @@ export class MatchmakingService {
     // Check if player was in an active game
     for (const [gameId, game] of activeGames) {
       // Check if socket belongs to player 1 or 2
-      // Note: For now we check direct socket identity or basic user ID matching if available on socket
-      // But here we only have the socket object. 
-      // We need to check if game.player1.socket === socket
-
       if (game.player1.socket === socket || game.player2.socket === socket) {
         game.forceEndGame('Player disconnected');
         break; // Assuming one game per socket
@@ -134,7 +133,7 @@ export class MatchmakingService {
 
   // Helper method to create a bot game for timeout scenarios
   private async createBotGame(player: GamePlayer, data: JoinGameMessage): Promise<void> {
-    const player2 = gameCreator.createBotPlayer();
+    const player2 = createBotPlayer();
 
     await this.createAndStartGame(player, player2, data.gameSettings, {
       team1Players: data.team1Players,

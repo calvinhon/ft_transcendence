@@ -59,7 +59,8 @@ export class GameService {
                 userId: user.userId,
                 username: user.username,
                 aiDifficulty: settings.difficulty || 'medium',
-                scoreToWin: settings.scoreToWin || 5
+                scoreToWin: settings.scoreToWin || 5,
+                campaignLevel: settings.campaignLevel
             };
         } else {
             // Arcade / Tournament
@@ -94,7 +95,8 @@ export class GameService {
                     team1Players: t1,
                     team2Players: t2,
                     team1PlayerCount: t1.length,
-                    team2PlayerCount: t2.length
+                    team2PlayerCount: t2.length,
+                    campaignLevel: settings.campaignLevel
                 },
                 team1Players: t1,
                 team2Players: t2,

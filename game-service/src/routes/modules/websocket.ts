@@ -1,46 +1,49 @@
 // game-service/src/routes/modules/websocket.ts
-import { WebSocketMessage, JoinGameMessage, MovePaddleMessage, InputMessage } from './types';
-import { addOnlineUser } from './online-users';
+import { WebSocketMessage, JoinGameMessage, MovePaddleMessage } from './types';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
-import { logger } from './logger';
-import { activeConnections } from './friend-service';
+import { createLogger } from '@ft-transcendence/common';
+import { activeConnections, onlineUsers } from './friend-service';
+
+const logger = createLogger('GAME-SERVICE');
 
 export function handleWebSocketMessage(socket: any, message: Buffer | string): void {
   try {
     const data = JSON.parse(message.toString()) as WebSocketMessage;
-    // logger.ws('Received WebSocket message:', data.type); // Reduce noise
+    // logger.debug('Received WebSocket message:', data.type); // Reduce noise
 
     switch (data.type) {
       case 'userConnect':
         handleUserConnect(socket, data);
         break;
       case 'joinGame':
-        logger.ws('Processing joinGame');
+        logger.debug('Processing joinGame');
         matchmakingService.handleJoinGame(socket, data as JoinGameMessage);
         break;
       case 'joinBotGame':
-        logger.ws('Processing joinBotGame');
+        logger.debug('Processing joinBotGame');
         matchmakingService.handleJoinBotGame(socket, data as JoinGameMessage);
         break;
       case 'movePaddle':
-        // logger.ws('Processing movePaddle'); // Very noisy
+        // logger.debug('Processing movePaddle'); // Very noisy
         GameHandlers.handleMovePaddle(socket, data as MovePaddleMessage);
         break;
+      /*
       case 'input':
-        // logger.ws('Processing input'); // Noisy
+        // logger.debug('Processing input'); // Noisy
         GameHandlers.handleInput(socket, data as InputMessage);
         break;
       case 'pause':
-        logger.ws('Processing pause');
+        logger.debug('Processing pause');
         GameHandlers.handlePauseGame(socket, data);
         break;
+      */
       case 'disconnect':
-        logger.ws('Processing disconnect');
+        logger.debug('Processing disconnect');
         matchmakingService.handleDisconnect(socket);
         break;
       default:
-        logger.ws('Unknown message type:', data.type);
+        logger.debug(`Unknown message type: ${data.type}`);
     }
   } catch (error) {
     logger.error('WebSocket message error:', error);
@@ -48,12 +51,12 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
 }
 
 function handleUserConnect(socket: any, data: any): void {
-  logger.ws(`Processing userConnect for ${data.username} (${data.userId})`);
-  // Track user as online when they connect with authentication
-  addOnlineUser(data.userId, data.username, socket);
+  logger.info(`Processing userConnect for ${data.username} (${data.userId})`);
 
   // Track in FriendService for online status checks
   activeConnections.add(data.userId);
+  onlineUsers.set(data.userId, { username: data.username });
+
   // Store userId on socket object for cleanup on close
   (socket as any).userId = data.userId;
 
@@ -91,7 +94,7 @@ function handleUserConnect(socket: any, data: any): void {
     // Just acknowledge connection
     socket.send(JSON.stringify({
       type: 'connectionAck',
-      message: 'You are now tracked as online'
+      message: 'WebSocket connection established'
     }));
   }
 }
@@ -101,7 +104,9 @@ export function handleWebSocketClose(socket: any): void {
 
   // Remove from FriendService online tracking
   if ((socket as any).userId) {
-    activeConnections.delete((socket as any).userId);
-    logger.ws(`User ${(socket as any).userId} disconnected (cleaned up)`);
+    const userId = (socket as any).userId;
+    activeConnections.delete(userId);
+    onlineUsers.delete(userId);
+    logger.debug(`User ${userId} disconnected (cleaned up)`);
   }
 }

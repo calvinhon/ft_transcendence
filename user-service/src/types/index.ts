@@ -34,20 +34,6 @@ export interface UserAchievement {
   reward_points: number;
 }
 
-export interface GameStats {
-  wins: number;
-  losses: number;
-  total_games: number;
-  winRate: number;
-}
-
-export interface LeaderboardUser extends UserProfile {
-  wins: number;
-  losses: number;
-  total_games: number;
-  winRate: number;
-}
-
 export interface OnlineUser {
   user_id: number | string;
   username: string;
@@ -68,10 +54,5 @@ export interface UpdateProfileBody {
 
 export interface SearchQuery {
   query: string;
-  limit?: string;
-}
-
-export interface LeaderboardQuery {
-  type?: 'wins' | 'games' | 'winrate';
   limit?: string;
 }

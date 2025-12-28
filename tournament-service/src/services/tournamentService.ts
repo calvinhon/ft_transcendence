@@ -2,15 +2,15 @@
 // Core tournament business logic service
 
 import { dbRun, dbGet, dbAll } from '../database';
-import { Tournament, TournamentParticipant, TournamentMatch, CreateTournamentBody, TournamentDetails } from '../types';
+import { Tournament, TournamentMatch, CreateTournamentBody, TournamentDetails } from '../types';
 import { BracketService } from './bracketService';
 import { MatchService } from './matchService';
-import { logger } from '../utils/logger';
+import { ParticipantService } from './participantService';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('TOURNAMENT-SERVICE');
 
 export class TournamentService {
-  /**
-   * Create a new tournament
-   */
   static async createTournament(data: CreateTournamentBody): Promise<Tournament> {
     logger.info('Creating tournament', { name: data.name, createdBy: data.createdBy });
 
@@ -28,9 +28,6 @@ export class TournamentService {
     return tournament;
   }
 
-  /**
-   * Get tournament by ID
-   */
   static async getTournamentById(id: number): Promise<Tournament | null> {
     const tournament = await dbGet<Tournament>(
       'SELECT * FROM tournaments WHERE id = ?',
@@ -39,9 +36,6 @@ export class TournamentService {
     return tournament || null;
   }
 
-  /**
-   * Get all tournaments with pagination
-   */
   static async getTournaments(page: number = 1, limit: number = 10, status?: string): Promise<{
     tournaments: Tournament[];
     total: number;
@@ -83,7 +77,7 @@ export class TournamentService {
     if (!tournament) return null;
 
     const [participants, matches] = await Promise.all([
-      this.getTournamentParticipants(id),
+      ParticipantService.getTournamentParticipants(id),
       this.getTournamentMatches(id)
     ]);
 
@@ -118,16 +112,6 @@ export class TournamentService {
   }
 
   /**
-   * Delete tournament
-   */
-  static async deleteTournament(id: number): Promise<boolean> {
-    logger.info('Deleting tournament', { id });
-
-    const result = await dbRun('DELETE FROM tournaments WHERE id = ?', [id]);
-    return result.changes > 0;
-  }
-
-  /**
    * Start tournament
    */
   static async startTournament(id: number, startedBy?: number): Promise<Tournament | null> {
@@ -138,18 +122,13 @@ export class TournamentService {
       throw new Error('Tournament not found');
     }
 
-    if (tournament.status !== 'open') {
-      throw new Error('Tournament is not in open status');
-    }
-
     if (startedBy !== undefined && tournament.created_by !== startedBy) {
       throw new Error('Only tournament creator can start the tournament');
     }
 
-    const participants = await this.getTournamentParticipants(id);
-    // Hoach modified to require at least 2 participants to start not 4 or 8
-    if (participants.length < 2) {
-      throw new Error('Tournament needs at least 2 participants to start');
+    const participants = await ParticipantService.getTournamentParticipants(id);
+    if (![4, 8].includes(participants.length)) {
+      throw new Error('Tournament needs either 4 or 8 participants to start');
     }
 
     // Generate bracket and matches
@@ -164,24 +143,8 @@ export class TournamentService {
       );
     }
 
-    // Auto-complete matches that contain a bye (player id 0)
-    // For non-power-of-two participant counts some first-round matches will have a bye
-    // Mark those matches as completed and set the winner to the non-bye player so the
-    // tournament can advance correctly (e.g., 3 participants -> one bye should auto-advance).
-    const insertedMatches = await this.getTournamentMatches(id);
-    for (const m of insertedMatches) {
-      if (m.round === 1 && (m.player1_id === 0 || m.player2_id === 0)) {
-        const winnerId = m.player1_id === 0 ? m.player2_id : m.player1_id;
-        await dbRun(
-          'UPDATE tournament_matches SET winner_id = ?, status = ?, played_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [winnerId, 'completed', m.id]
-        );
-      }
-    }
-
-    // After auto-completing bye matches, evaluate the round completion so next-round matches are created
     try {
-      await MatchService.evaluateRoundCompletion(id, 1);
+      await MatchService.checkRoundCompletion(id, 1);
     } catch (err) {
       logger.error('Failed to evaluate round completion after inserting matches', { tournamentId: id, error: err });
     }
@@ -197,16 +160,6 @@ export class TournamentService {
   }
 
   /**
-   * Get tournament participants
-   */
-  static async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
-    return dbAll<TournamentParticipant>(
-      'SELECT * FROM tournament_participants WHERE tournament_id = ? ORDER BY joined_at',
-      [tournamentId]
-    );
-  }
-
-  /**
    * Get tournament matches
    */
   static async getTournamentMatches(tournamentId: number): Promise<TournamentMatch[]> {
@@ -214,62 +167,5 @@ export class TournamentService {
       'SELECT * FROM tournament_matches WHERE tournament_id = ? ORDER BY round, match_number',
       [tournamentId]
     );
-  }
-
-  /**
-   * Get tournament statistics
-   */
-  static async getTournamentStats(): Promise<{
-    totalTournaments: number;
-    activeTournaments: number;
-    completedTournaments: number;
-    totalParticipants: number;
-  }> {
-    const [totalResult, activeResult, completedResult, participantsResult] = await Promise.all([
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments WHERE status = "active"'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournaments WHERE status = "finished"'),
-      dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tournament_participants')
-    ]);
-
-    return {
-      totalTournaments: totalResult?.count || 0,
-      activeTournaments: activeResult?.count || 0,
-      completedTournaments: completedResult?.count || 0,
-      totalParticipants: participantsResult?.count || 0
-    };
-  }
-
-  /**
-   * Get user's tournament count
-   */
-  static async getUserTournamentCount(userId: number): Promise<number> {
-    const result = await dbGet<{ count: number }>(
-      'SELECT COUNT(DISTINCT t.id) as count FROM tournaments t JOIN tournament_participants tp ON t.id = tp.tournament_id WHERE tp.user_id = ?',
-      [userId]
-    );
-    return result?.count || 0;
-  }
-
-  /**
-   * Get user's tournament rankings
-   */
-  static async getUserTournamentRankings(userId: number): Promise<any[]> {
-    const rankings = await dbAll<any>(
-      `SELECT 
-        t.id as tournamentId,
-        t.name as tournamentName,
-        t.created_at as date,
-        tp.final_rank as rank,
-        (SELECT COUNT(*) FROM tournament_participants WHERE tournament_id = t.id) as totalParticipants,
-        t.status,
-        CASE WHEN t.winner_id = tp.user_id THEN 1 ELSE 0 END as isWinner
-      FROM tournaments t 
-      JOIN tournament_participants tp ON t.id = tp.tournament_id 
-      WHERE tp.user_id = ? AND tp.final_rank IS NOT NULL
-      ORDER BY t.created_at DESC`,
-      [userId]
-    );
-    return rankings;
   }
 }
