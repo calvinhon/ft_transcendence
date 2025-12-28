@@ -48,6 +48,17 @@ async function initializeDatabase(): Promise<void> {
     `);
     // End Hoach added
 
+    // Hoach added: In development, purge existing sessions on startup to avoid persistent logins
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        await promisifyDbRun(db, `DELETE FROM sessions`);
+        logger.info('Dev-mode: cleared sessions table to avoid persistent logins');
+      } catch (e) {
+        logger.warn('Dev-mode: failed to purge sessions table', e);
+      }
+    }
+    // End Hoach added
+
     // Create password reset tokens table
     await promisifyDbRun(db, `
       CREATE TABLE IF NOT EXISTS password_reset_tokens (
