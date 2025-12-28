@@ -530,6 +530,20 @@ export class MainMenuPage extends AbstractComponent {
         root.onclick = (e: MouseEvent) => {
             const target = getEl(e);
 
+            // Hoach edited: Move mode button check to top priority to fix arcade/tournament selection issues
+            // Mode Tabs - Check FIRST before other delegations
+            const modeBtn = target.closest('.mode-btn') as HTMLElement;
+            if (modeBtn && modeBtn.dataset.mode) {
+                e.stopPropagation();
+                const newMode = modeBtn.dataset.mode as GameMode;
+                if (this.activeMode !== newMode) {
+                    this.activeMode = newMode;
+                    this.renderContent();
+                }
+                return;
+            }
+            // End Hoach edited
+
             // Remove Buttons (Unassign) - Check FIRST to prevent card click bubbling
             const removeBtn = target.closest('.remove-from-party-btn') as HTMLElement;
             if (removeBtn) {
@@ -543,20 +557,12 @@ export class MainMenuPage extends AbstractComponent {
 
             // Player Card Click -> Profile (Available OR Party)
             const playerCard = target.closest('.available-player-card, .party-player-card') as HTMLElement;
-            if (playerCard) {
+            if (playerCard && !playerCard.closest('.remove-from-party-btn')) {
                 const id = parseInt(playerCard.dataset.id!);
                 if (!isNaN(id)) {
                     App.getInstance().router.navigateTo(`/profile?id=${id}`);
                     return;
                 }
-            }
-
-            // Mode Tabs
-            const modeBtn = target.closest('.mode-btn') as HTMLElement;
-            if (modeBtn) {
-                this.activeMode = modeBtn.dataset.mode as GameMode;
-                this.renderContent();
-                return;
             }
 
             // Speed/Setting Buttons
