@@ -16,7 +16,9 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["../../shared/*"]
+      "@shared/*": ["../../shared/*"],
+      "@ft-transcendence/common": ["../packages/common/dist"],
+      "@ft-transcendence/common/*": ["../packages/common/dist/*"]
     }
   },
   "include": [

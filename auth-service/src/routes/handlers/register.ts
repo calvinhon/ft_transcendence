@@ -17,7 +17,19 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     if (passwordError) return sendError(reply, passwordError, 400);
     const result = await authService.register(username, email, password);
 
-    sendSuccess(reply, { user: { userId: result.userId, username } }, 'User registered successfully', 201);
+    // Hoach added: Create session and return tabToken for per-tab enforcement
+    const { sessionToken, tabToken } = await authService.createSession(result.userId);
+
+    reply.setCookie('sessionToken', sessionToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 5 * 60 // 5 minutes (matches backend TTL for Option 3: short-lived sessions)
+    });
+    // End Hoach added
+
+    sendSuccess(reply, { user: { userId: result.userId, username }, tabToken }, 'User registered successfully', 201);
   } catch (error: any) {
     if (error.message?.includes('UNIQUE constraint failed')) {
       sendError(reply, 'Username or email already exists', 409);

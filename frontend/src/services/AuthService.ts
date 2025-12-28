@@ -28,8 +28,14 @@ export class AuthService {
             const data = response.data || response;
             const token = data.token; // Might be undefined if using cookies
             const user = data.user;
+            const tabToken = data.tabToken; // Hoach added: Per-tab token for session enforcement
 
             if (response.success) {
+                // Hoach added: Store tabToken in sessionStorage (per-tab storage)
+                if (tabToken) {
+                    sessionStorage.setItem('tabToken', tabToken);
+                }
+                // End Hoach added
                 this.handleAuthSuccess(token, user);
                 if (navigateToHome) {
                     App.getInstance().router.navigateTo('/');
@@ -50,8 +56,14 @@ export class AuthService {
             const data = response.data || response;
             const token = data.token;
             const user = data.user;
+            const tabToken = data.tabToken; // Hoach added: Per-tab token for session enforcement
 
             if (response.success) {
+                // Hoach added: Store tabToken in sessionStorage (per-tab storage)
+                if (tabToken) {
+                    sessionStorage.setItem('tabToken', tabToken);
+                }
+                // End Hoach added
                 this.handleAuthSuccess(token, user);
                 App.getInstance().router.navigateTo('/');
                 return true;
@@ -79,7 +91,7 @@ export class AuthService {
 
 
     public logout(): void {
-        // Hoach added: Call backend logout to delete HTTP-only cookie session
+        // Hoach added: Call backend logout to delete HTTP-only cookie session and clear tabToken
         Api.post('/api/auth/logout', {}).catch(e => {
             console.warn('Logout API call failed', e);
             // Continue with client-side cleanup even if API fails
@@ -88,6 +100,9 @@ export class AuthService {
 
         // localStorage.removeItem('token');
         // localStorage.removeItem('user');
+        // Hoach added: Clear per-tab token from sessionStorage
+        sessionStorage.removeItem('tabToken');
+        // End Hoach added
 
         // Clear local players state
         LocalPlayerService.getInstance().clearAllPlayers();
@@ -105,10 +120,18 @@ export class AuthService {
     public async checkSession(): Promise<boolean> {
         console.log("AuthService: Checking Session...");
 
-        // Hoach added: HTTP-only cookie session validation
+        // Hoach added: HTTP-only cookie session validation with per-tab token
         // No localStorage check - session is in HTTP-only cookie, browser sends it automatically
         try {
-            const verifyPromise = Api.post('/api/auth/verify', {});
+            // Hoach added: Include tabToken from sessionStorage in X-Tab-Token header
+            const tabToken = sessionStorage.getItem('tabToken');
+            const headers: any = {};
+            if (tabToken) {
+                headers['X-Tab-Token'] = tabToken;
+            }
+            // End Hoach added
+
+            const verifyPromise = Api.post('/api/auth/verify', {}, headers);
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Session verify timeout")), 5000)
             );
@@ -131,7 +154,14 @@ export class AuthService {
             return false;
         } catch (e: any) {
             console.error("AuthService: Session verification failed:", e.message || e);
-            // Session invalid or expired - require login
+            // Hoach modified (Option 3): Session expired (5-min TTL) or invalid - clear state and require login
+            sessionStorage.removeItem('tabToken');
+            App.getInstance().currentUser = null;
+            // Redirect to login only if not already on login page
+            if (!window.location.pathname.includes('login')) {
+                App.getInstance().router.navigateTo('/login');
+            }
+            // End Hoach added
             return false;
         }
         // End Hoach added
