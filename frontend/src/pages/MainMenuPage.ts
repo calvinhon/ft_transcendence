@@ -194,8 +194,7 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
 
-                        <!-- AI Difficulty (Hidden in Tournament, Disabled in Campaign) -->
-                        ${this.activeMode !== 'tournament' ? `
+                        <!-- AI Difficulty (Disabled in Campaign) -->
                         <div class="${this.activeMode === 'campaign' ? 'opacity-50 pointer-events-none grayscale' : ''}">
                             <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
@@ -207,7 +206,6 @@ export class MainMenuPage extends AbstractComponent {
                                 ${this.renderDifficultyButton('hard', 'HARD')}
                             </div>
                         </div>
-                        ` : ''}
 
                         <!-- Paddle Speed -->
                         <div>

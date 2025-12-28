@@ -312,7 +312,18 @@ export class ProfilePage extends AbstractComponent {
         // Show Add/Remove Friend button for:
         // 1. Other users (not canEdit) 
         // 2. Local players who are NOT the main user (show Remove Friend if they are friends)
-        const showFriendButton = !isMainUser; // Show for everyone except the main logged-in user's own profile
+        // 3. User is NOT a bot
+        // 3. User is NOT a bot
+        // Check local players for bot status if p doesn't have it explicitly
+        let isBot = p.userId === 0 || (p as any).isBot === true;
+        if (!isBot && p.userId > 100000) { // Heuristic for local bots
+            const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
+            const localP = localPlayers.find(lp => lp.userId === p.userId);
+            if (localP && localP.isBot) isBot = true;
+            // Also assume high IDs are bots if not found in local (e.g. from history)
+            if (!localP) isBot = true;
+        }
+        const showFriendButton = !isMainUser && !isBot; // Show for everyone except main user and bots
 
         if (showFriendButton) {
             if (this.isFriend) {
@@ -724,8 +735,8 @@ export class ProfilePage extends AbstractComponent {
 
             const success = await FriendService.getInstance().addFriend(currentUser.userId, this.profile.userId);
             if (success) {
-                this.isFriend = true;
-                this.refresh();
+                // Reload profile/friends list to get updated status/online state
+                await this.loadProfile(this.profile.userId);
             } else {
                 alert('Failed to add friend');
             }
@@ -739,8 +750,8 @@ export class ProfilePage extends AbstractComponent {
             if (confirm(`Remove ${this.profile.username} from friends?`)) {
                 const success = await FriendService.getInstance().removeFriend(currentUser.userId, this.profile.userId);
                 if (success) {
-                    this.isFriend = false;
-                    this.refresh();
+                    // Reload profile to update status
+                    await this.loadProfile(this.profile.userId);
                 } else {
                     alert('Failed to remove friend');
                 }

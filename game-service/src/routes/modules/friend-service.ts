@@ -25,7 +25,7 @@ class FriendService {
                 db.run(
                     'INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)',
                     [userId, friendId],
-                    (err) => {
+                    (err: any) => {
                         if (err && !err.message.includes('UNIQUE constraint failed')) {
                             logger.error(`Error adding friend ${userId} -> ${friendId}`, err);
                         }
@@ -34,7 +34,7 @@ class FriendService {
                 db.run(
                     'INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)',
                     [friendId, userId],
-                    (err) => {
+                    (err: any) => {
                         if (err && !err.message.includes('UNIQUE constraint failed')) {
                             logger.error(`Error adding reverse friend ${friendId} -> ${userId}`, err);
                         }
@@ -77,7 +77,7 @@ class FriendService {
                 WHERE user_id = ?
             `;
 
-            db.all(query, [userId], (err, rows: any[]) => {
+            db.all(query, [userId], (err: any, rows: any[]) => {
                 if (err) {
                     logger.error(`Error fetching friends for ${userId}`, err);
                     reject(err);

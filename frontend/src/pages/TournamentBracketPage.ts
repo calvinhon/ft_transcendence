@@ -158,8 +158,21 @@ export class TournamentBracketPage extends AbstractComponent {
         }
 
         // Determine teams based on choice
-        let p1 = { userId: match.player1Id, username: match.player1Name, paddleIndex: 0 };
-        let p2 = { userId: match.player2Id, username: match.player2Name, paddleIndex: 0 };
+        const player1Info = this.tournament!.players.find(p => p.id === match.player1Id);
+        const player2Info = this.tournament!.players.find(p => p.id === match.player2Id);
+
+        let p1 = {
+            userId: match.player1Id,
+            username: match.player1Name,
+            paddleIndex: 0,
+            isBot: !!player1Info?.isBot
+        };
+        let p2 = {
+            userId: match.player2Id,
+            username: match.player2Name,
+            paddleIndex: 0,
+            isBot: !!player2Info?.isBot
+        };
 
         if (choice === 'swap') {
             const temp = p1;
@@ -276,12 +289,12 @@ export class TournamentBracketPage extends AbstractComponent {
                 <div class="flex flex-col gap-2">
                     <!-- P1 -->
                     <div class="flex justify-between items-center ${match.winnerId === match.player1Id ? 'text-green-400 font-bold' : 'text-gray-300'}">
-                        <span>${this.getPlayerName(match.player1Id)}</span>
+                        <span>${this.getPlayerName(match.player1Id)} ${this.isBot(match.player1Id) ? '<span class="text-[10px] text-accent ml-1">[BOT]</span>' : ''}</span>
                         <span>${match.score1 ?? '-'}</span>
                     </div>
                     <!-- P2 -->
                     <div class="flex justify-between items-center ${match.winnerId === match.player2Id ? 'text-green-400 font-bold' : 'text-gray-300'}">
-                        <span>${this.getPlayerName(match.player2Id)}</span>
+                        <span>${this.getPlayerName(match.player2Id)} ${this.isBot(match.player2Id) ? '<span class="text-[10px] text-accent ml-1">[BOT]</span>' : ''}</span>
                         <span>${match.score2 ?? '-'}</span>
                     </div>
                 </div>
@@ -305,5 +318,10 @@ export class TournamentBracketPage extends AbstractComponent {
         if (id === 0) return "TBD";
         const p = this.tournament?.players.find(pl => pl.id === id);
         return p ? p.username : `Player ${id}`;
+    }
+
+    private isBot(id: number): boolean {
+        const p = this.tournament?.players.find(pl => pl.id === id);
+        return !!p?.isBot || id === 0;
     }
 }

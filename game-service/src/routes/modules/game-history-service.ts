@@ -49,7 +49,7 @@ export class GameHistoryService {
         `INSERT INTO games (player1_id, player2_id, player1_score, player2_score, winner_id, game_mode, status, finished_at, team1_players, team2_players, tournament_id, tournament_match_id)
          VALUES (?, ?, ?, ?, ?, ?, 'finished', datetime('now'), ?, ?, ?, ?)`,
         [player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players || null, team2Players || null, tournamentId || null, tournamentMatchId || null],
-        function (err: Error | null) {
+        function (this: any, err: Error | null) {
           if (err) {
             logger.error('Database error saving game:', err);
             reject(err);
@@ -128,6 +128,8 @@ export class GameHistoryService {
   // Fetch player name from user service or auth service
   private async fetchPlayerName(userId: number): Promise<string> {
     if (userId === 0) return 'AI';
+    // Heuristic: IDs >= 100000 are ephemeral/bot IDs in this system
+    if (userId >= 100000) return 'BOT';
     try {
       // Try User Service for Display Name
       const userResponse = await fetch(`http://user-service:3000/profile/${userId}`);
@@ -135,6 +137,9 @@ export class GameHistoryService {
         const userData = await userResponse.json() as any;
         if (userData.display_name && userData.display_name !== 'undefined') {
           return userData.display_name;
+        }
+        if (userData.username && userData.username !== 'undefined') {
+          return userData.username;
         }
       }
 

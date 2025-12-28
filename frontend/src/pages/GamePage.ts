@@ -12,6 +12,7 @@ export class GamePage extends AbstractComponent {
     private returnTimer: ReturnType<typeof setInterval> | null = null; // For game over countdown
     private isRecording: boolean = false; // Lock to prevent double recording
     private isPaused: boolean = false;
+    private animationFrameId: number | null = null;
 
     getHtml(): string {
         return `
@@ -114,16 +115,142 @@ export class GamePage extends AbstractComponent {
         if (p1AvatarEl) (p1AvatarEl as HTMLElement).style.backgroundImage = `url('${p1Avatar}')`;
         if (p2AvatarEl) (p2AvatarEl as HTMLElement).style.backgroundImage = `url('${p2Avatar}')`;
 
-        service.onGameState(async (state) => {
-            if (this.renderer) this.renderer.render(state, setup.mode);
+        // Initialize LERP state
+        let visualState: any = null;
+        let targetState: any = null;
+
+        const LERP_FACTOR = 0.3; // Adjust for smoothness (0.1 = slow/smooth, 0.5 = snappy)
+        const SNAP_THRESHOLD = 50; // Pixels distance to trigger instant snap (e.g. respawn)
+
+        const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor;
+
+        const updateLoop = () => {
+            if (!this.renderer || !targetState) return;
+
+            if (!visualState) {
+                visualState = JSON.parse(JSON.stringify(targetState));
+            }
+
+            // Interpolate Ball
+            if (targetState.ball && visualState.ball) {
+                // NaN Protection: If visual state is corrupted, snap immediately
+                if (isNaN(visualState.ball.x) || isNaN(visualState.ball.y)) {
+                    visualState.ball.x = targetState.ball.x;
+                    visualState.ball.y = targetState.ball.y;
+                }
+
+                const dist = Math.sqrt(Math.pow(targetState.ball.x - visualState.ball.x, 2) + Math.pow(targetState.ball.y - visualState.ball.y, 2));
+
+                // NaN Protection: If distance calculation failed
+                if (isNaN(dist)) {
+                    visualState.ball.x = targetState.ball.x;
+                    visualState.ball.y = targetState.ball.y;
+                } else if (dist > SNAP_THRESHOLD || targetState.ball.frozen) {
+                    // Snap if distance is too large (teleport/respawn) or ball is frozen
+                    visualState.ball.x = targetState.ball.x;
+                    visualState.ball.y = targetState.ball.y;
+                } else {
+                    visualState.ball.x = lerp(visualState.ball.x, targetState.ball.x, LERP_FACTOR);
+                    visualState.ball.y = lerp(visualState.ball.y, targetState.ball.y, LERP_FACTOR);
+                }
+            }
+
+            // Interpolate Paddles
+            if (visualState.paddles && targetState.paddles) {
+                // Helper to sync paddle arrays
+                const syncPaddles = (targetArr: any[], visualArr: any[]) => {
+                    if (!targetArr || !visualArr) return;
+                    targetArr.forEach((tPaddle, i) => {
+                        if (!visualArr[i]) visualArr[i] = { ...tPaddle };
+                        // Sync Size (Powerups)
+                        visualArr[i].height = tPaddle.height;
+                        visualArr[i].width = tPaddle.width;
+
+                        // Snap if large move
+                        if (Math.abs(tPaddle.y - visualArr[i].y) > SNAP_THRESHOLD) {
+                            visualArr[i].y = tPaddle.y;
+                        } else {
+                            visualArr[i].y = lerp(visualArr[i].y, tPaddle.y, LERP_FACTOR);
+                        }
+                    });
+                };
+
+                syncPaddles(targetState.paddles.team1, visualState.paddles.team1);
+                syncPaddles(targetState.paddles.team2, visualState.paddles.team2);
+
+                // Sync Single Player paddles
+                if (targetState.paddles.player1 && visualState.paddles.player1) {
+                    visualState.paddles.player1.height = targetState.paddles.player1.height; // Sync size
+                    if (Math.abs(targetState.paddles.player1.y - visualState.paddles.player1.y) > SNAP_THRESHOLD)
+                        visualState.paddles.player1.y = targetState.paddles.player1.y;
+                    else
+                        visualState.paddles.player1.y = lerp(visualState.paddles.player1.y, targetState.paddles.player1.y, LERP_FACTOR);
+                }
+                if (targetState.paddles.player2 && visualState.paddles.player2) {
+                    visualState.paddles.player2.height = targetState.paddles.player2.height; // Sync size
+                    if (Math.abs(targetState.paddles.player2.y - visualState.paddles.player2.y) > SNAP_THRESHOLD)
+                        visualState.paddles.player2.y = targetState.paddles.player2.y;
+                    else
+                        visualState.paddles.player2.y = lerp(visualState.paddles.player2.y, targetState.paddles.player2.y, LERP_FACTOR);
+                }
+            }
+
+            // Directly copy non-interpolated data
+            visualState.scores = targetState.scores;
+            visualState.powerup = targetState.powerup;
+            visualState.gameState = targetState.gameState;
+            visualState.countdownValue = targetState.countdownValue;
+
+            this.renderer.render(visualState, setup.mode);
 
             // Update Status Text based on game state
             const status = this.$('#game-status-text');
+            if (visualState.gameState === 'playing' && status) status.innerText = "PLAYING";
 
-            if (state && state.gameState === 'playing') {
-                if (status) status.innerText = "PLAYING";
-            } else if (state && (state.gameState === 'finished' || state.type === 'gameEnd')) {
+            if (visualState.gameState !== 'finished' && visualState.type !== 'gameEnd') {
+                this.animationFrameId = requestAnimationFrame(updateLoop);
+            }
+        };
+
+        service.onGameState(async (state) => {
+            // Handle Non-GameState Events strictly
+            if (state.type === 'gamePaused') {
+                this.isPaused = true;
+                this.updatePauseUI();
+                return;
+            } else if (state.type === 'gameResumed') {
+                this.isPaused = false;
+                this.updatePauseUI();
+                // Ensure loop is running
+                if (!this.animationFrameId) updateLoop();
+                return;
+            }
+
+            // Only update target state if it's a valid game state update
+            if (state.type === 'gameState' || state.ball) {
+                if (!targetState) {
+                    // First state received
+                    targetState = state;
+                    visualState = JSON.parse(JSON.stringify(state));
+                    updateLoop();
+                } else {
+                    targetState = state;
+                    // If loop stopped (e.g. resumed from pause), restart it
+                    if (!this.animationFrameId) updateLoop();
+                }
+            }
+
+            // Check for Game Over immediately on state receipt to handle events
+            if (state && (state.gameState === 'finished' || state.type === 'gameEnd')) {
+                // Render final state once to ensure score is updated
+                if (this.renderer) this.renderer.render(state, setup.mode);
+                if (this.animationFrameId) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
+
                 // --- Game Over Handling ---
+                const status = this.$('#game-status-text');
                 if (status) status.innerText = "FINISHED";
 
                 // Prevent multiple recordings/overlays
@@ -138,8 +265,8 @@ export class GamePage extends AbstractComponent {
 
                 // Compute winnerId from scores if not provided
                 let winnerId = state.winnerId;
-                if (!winnerId && p1Score !== p2Score) {
-                    winnerId = p1Score > p2Score ? this.p1Ids[0] : this.p2Ids[0];
+                if (!winnerId) { // p1Score !== p2Score condition removed to handle draws if needed or non-score wins
+                    winnerId = p1Score >= p2Score ? this.p1Ids[0] : this.p2Ids[0];
                 }
 
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
@@ -148,12 +275,15 @@ export class GamePage extends AbstractComponent {
                 if (setup.mode === 'tournament' && setup.tournamentId && setup.tournamentMatchId) {
                     let finalScore1 = p1Score;
                     let finalScore2 = p2Score;
+                    let recordWinner = winnerId;
 
                     // If Team 1 user isn't the original Player 1, they swapped sides!
                     if (setup.tournamentPlayer1Id && setup.team1[0].userId !== setup.tournamentPlayer1Id) {
                         console.log("Detecting players swapped, swapping scores for tournament record");
                         finalScore1 = p2Score;
                         finalScore2 = p1Score;
+                        // Winner ID is likely correct from backend, but if it was based on P1/P2 slot...
+                        // Backend winnerId corresponds to User ID, so it should be correct regardless of slot.
                     }
 
                     // Manually record to tournament service with CORRECT scores
@@ -163,7 +293,7 @@ export class GamePage extends AbstractComponent {
                         await TournamentService.getInstance().recordMatchResult(
                             setup.tournamentId.toString(),
                             setup.tournamentMatchId.toString(),
-                            winnerId,
+                            recordWinner,
                             finalScore1,
                             finalScore2
                         );
@@ -172,11 +302,6 @@ export class GamePage extends AbstractComponent {
                     }
                 }
 
-                // Frontend does NOT record match result anymore, backend handles it.
-                // We only handle tournament specific logic if needed, but even that might be redundant if backend handles it.
-                // Keeping tournament logic as is for now if it hits a different service, but removing general game save.
-
-                // Add Auto-Return Timer UI
                 // Add Auto-Return Timer UI
                 const container = this.$('.game-container');
                 if (container && !this.$('#game-over-overlay')) {
@@ -224,8 +349,6 @@ export class GamePage extends AbstractComponent {
                         CampaignService.getInstance().advanceLevel();
                     }
                 }
-
-
             }
         });
     }
@@ -247,12 +370,21 @@ export class GamePage extends AbstractComponent {
 
     private togglePause(): void {
         this.isPaused = !this.isPaused;
+
+        if (this.isPaused) {
+            GameService.getInstance().pauseGame();
+        } else {
+            GameService.getInstance().resumeGame();
+        }
+        this.updatePauseUI();
+    }
+
+    private updatePauseUI(): void {
         const container = this.$('.game-container');
         const overlayId = 'pause-overlay';
         const existingOverlay = this.$(`#${overlayId}`);
 
         if (this.isPaused) {
-            GameService.getInstance().pauseGame();
             if (container && !existingOverlay) {
                 const overlay = document.createElement('div');
                 overlay.id = overlayId;
@@ -264,7 +396,6 @@ export class GamePage extends AbstractComponent {
                 container.appendChild(overlay);
             }
         } else {
-            GameService.getInstance().resumeGame();
             if (existingOverlay) {
                 existingOverlay.remove();
             }
@@ -293,6 +424,11 @@ export class GamePage extends AbstractComponent {
             clearInterval(this.returnTimer);
             this.returnTimer = null;
         }
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+
         window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('keyup', this.handleKeyUp);
         GameService.getInstance().disconnect();

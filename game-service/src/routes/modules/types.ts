@@ -1,4 +1,10 @@
 // game-service/src/routes/modules/types.ts
+export interface OnlineUserData {
+  username: string;
+  sockets: Set<any>; // WebSocket
+  lastSeen: Date;
+}
+
 export interface GamePlayer {
   userId: number;
   username: string;
@@ -69,7 +75,6 @@ export interface GameSettings {
   team2PlayerCount?: number; // Number of players on team 2
   team1Players?: any[]; // Player data for team 1
   team2Players?: any[]; // Player data for team 2
-  campaignLevel?: number; // Current campaign level for paddle speed scaling
 }
 
 export interface JoinGameMessage extends WebSocketMessage {
@@ -91,8 +96,6 @@ export interface MovePaddleMessage extends WebSocketMessage {
   playerId?: number; // For campaign mode - actual database player ID
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
   side?: 'left' | 'right'; // For tournament/arcade - position-based control
-  timestamp?: number; // Client timestamp for anti-cheat validation
-  position?: number; // Current paddle Y position for validation
 }
 
 export interface InputMessage extends WebSocketMessage {
@@ -126,4 +129,13 @@ export interface GameStats {
   wins: number;
   losses: number;
   winRate: number;
+}
+
+export interface OnlineUser {
+  user_id: number | string;
+  username: string;
+  display_name: string;
+  status: 'online';
+  last_seen: string;
+  is_bot: boolean;
 }

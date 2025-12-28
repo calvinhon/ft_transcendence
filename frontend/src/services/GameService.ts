@@ -164,6 +164,12 @@ export class GameService {
         } else if (msg.type === 'gameStart') {
             this.currentGameState = 'playing';
             this.startInputHandler();
+        } else if (msg.type === 'gamePaused') {
+            this.currentGameState = 'paused';
+            this.notifyState(msg);
+        } else if (msg.type === 'gameResumed') {
+            this.currentGameState = 'playing';
+            this.notifyState(msg);
         }
     }
 

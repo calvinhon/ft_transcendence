@@ -33,14 +33,14 @@ async function initializeDatabase(): Promise<void> {
 
     // Migrate existing database: Add new columns if they don't exist
     // Using raw db.all/run here to preserve original logic flow
-    db.all("PRAGMA table_info(games)", (err, columns: any[]) => {
+    db.all("PRAGMA table_info(games)", (err: any, columns: any[]) => {
       if (!err && columns) {
         const columnNames = columns.map(col => col.name);
 
         // Add game_mode column if it doesn't exist
         if (!columnNames.includes('game_mode')) {
           logger.info('Adding game_mode column...');
-          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'campaign'", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'campaign'", (err: any) => {
             if (err) logger.error('Failed to add game_mode column:', err);
             else logger.info('game_mode column added');
           });
@@ -49,7 +49,7 @@ async function initializeDatabase(): Promise<void> {
         // Add team1_players column if it doesn't exist
         if (!columnNames.includes('team1_players')) {
           logger.info('Adding team1_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err: any) => {
             if (err) logger.error('Failed to add team1_players column:', err);
             else logger.info('team1_players column added');
           });
@@ -58,7 +58,7 @@ async function initializeDatabase(): Promise<void> {
         // Add team2_players column if it doesn't exist
         if (!columnNames.includes('team2_players')) {
           logger.info('Adding team2_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err: any) => {
             if (err) logger.error('Failed to add team2_players column:', err);
             else logger.info('team2_players column added');
           });
@@ -67,7 +67,7 @@ async function initializeDatabase(): Promise<void> {
         // Add tournament_id column if it doesn't exist
         if (!columnNames.includes('tournament_id')) {
           logger.info('Adding tournament_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err: any) => {
             if (err) logger.error('Failed to add tournament_id column:', err);
             else logger.info('tournament_id column added');
           });
@@ -76,7 +76,7 @@ async function initializeDatabase(): Promise<void> {
         // Add tournament_match_id column if it doesn't exist
         if (!columnNames.includes('tournament_match_id')) {
           logger.info('Adding tournament_match_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err) => {
+          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err: any) => {
             if (err) logger.error('Failed to add tournament_match_id column:', err);
             else logger.info('tournament_match_id column added');
           });
@@ -105,7 +105,7 @@ async function initializeDatabase(): Promise<void> {
         FOREIGN KEY (user_id) REFERENCES users (id),
         FOREIGN KEY (friend_id) REFERENCES users (id)
       )
-    `, (err) => {
+    `, (err: any) => {
       if (err) logger.error('Error creating friends table:', err);
       else logger.info('Friends table ready');
     });

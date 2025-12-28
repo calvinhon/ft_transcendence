@@ -105,7 +105,7 @@ export class TournamentService {
             players: response.participants ? response.participants.map((p: any) => ({
                 id: p.user_id,
                 username: aliasMap[p.user_id] || p.username || `Player ${p.user_id}`,
-                isBot: false,
+                isBot: p.user_id === 0 || p.is_bot === true,
                 avatarUrl: avatarMap[p.user_id] || p.avatar_url || null
             })) : [],
             matches: response.matches ? response.matches.map((m: any) => ({

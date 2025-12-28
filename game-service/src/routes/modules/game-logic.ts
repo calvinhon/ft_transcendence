@@ -1,9 +1,7 @@
 // game-service/src/routes/modules/game-logic.ts
 import { GamePlayer, Ball, Paddle, Paddles, Scores, GameState, GameSettings } from './types';
 import { db } from './database';
-import { createLogger } from '@ft-transcendence/common';
-
-const logger = createLogger('GAME-SERVICE');
+import { logger } from './logger';
 import { GamePhysics } from './game-physics';
 import { GameAI } from './game-ai';
 import { GameStateManager } from './game-state';
@@ -47,7 +45,7 @@ export class PongGame {
 
     // Convert string settings to numeric values
     const ballSpeed = this.getBallSpeedValue(this.gameSettings.ballSpeed);
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
 
     // Initialize game components
     this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode, this.gameSettings.powerupsEnabled);
@@ -115,29 +113,20 @@ export class PongGame {
 
   private getBallSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': return 3;     // Slow and easy to track
-      case 'medium': return 5;   // Standard speed
-      case 'fast': return 7;     // Very fast and intense!
-      default: return 5;
+      case 'slow': return 6;     // Slow and easy to track
+      case 'medium': return 8;   // Standard speed
+      case 'fast': return 12;    // Very fast and intense!
+      default: return 8;
     }
   }
 
-  private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast', campaignLevel?: number): number {
-    let baseSpeed: number;
+  private getPaddleSpeedValue(speed: 'slow' | 'medium' | 'fast'): number {
     switch (speed) {
-      case 'slow': baseSpeed = 8; break;      // Slower response
-      case 'medium': baseSpeed = 12; break;   // Standard response
-      case 'fast': baseSpeed = 16; break;     // Super responsive and intense!
-      default: baseSpeed = 10;
+      case 'slow': return 8;      // Slower response
+      case 'medium': return 13;   // Standard response
+      case 'fast': return 18;     // Super responsive and intense!
+      default: return 10;
     }
-
-    // For campaign mode, increase paddle speed with level
-    if (campaignLevel && campaignLevel > 1) {
-      const levelBonus = Math.floor((campaignLevel - 1) * 2); // +2 speed per level
-      baseSpeed += levelBonus;
-    }
-
-    return baseSpeed;
   }
 
   private getInitialBallDirection(): number {
@@ -200,7 +189,7 @@ export class PongGame {
   }
 
   movePaddle(playerId: number, direction: 'up' | 'down', paddleIndex?: number): void {
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
     const moved = this.physics.movePaddle(
       this.paddles,
       playerId,
@@ -228,7 +217,7 @@ export class PongGame {
   }
 
   movePaddleBySide(side: 'left' | 'right', direction: 'up' | 'down', paddleIndex?: number): void {
-    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed, this.gameSettings.campaignLevel);
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
     const team = side === 'left' ? 'team1' : 'team2';
     const index = paddleIndex ?? 0;
 
@@ -291,6 +280,7 @@ export class PongGame {
     this.stateManager.endGame();
     activeGames.delete(this.gameId);
 
+    this.scoring.saveGameResult();
     this.scoring.broadcastGameEnd();
 
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
@@ -313,6 +303,10 @@ export class PongGame {
   // Getters for external access
   get isPaused(): boolean {
     return this.stateManager.isGamePaused();
+  }
+
+  get gameState(): 'countdown' | 'playing' | 'finished' {
+    return this.stateManager.getGameState();
   }
 
   // Compatibility method for matchmaking
