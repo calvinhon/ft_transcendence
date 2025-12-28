@@ -209,7 +209,7 @@ export class BabylonWrapper {
         });
     }
 
-    private async panToLore(): Promise<void> {
+    public async panToLore(): Promise<void> {
         const newspaper = this.scene.getMeshByName("NEWS_NEWS_0");
         if (!newspaper) {
             console.warn("NEWS_NEWS_0 mesh not found");
@@ -235,7 +235,7 @@ export class BabylonWrapper {
         this.animateCameraTo(targetRadius, targetPos, targetFov, this.loreCameraState.alpha, this.loreCameraState.beta, 1500);
     }
 
-    private async panToMonitor(): Promise<void> {
+    public async panToMonitor(): Promise<void> {
         if (!this.defaultCameraState) return;
 
         this.isLoreView = false;

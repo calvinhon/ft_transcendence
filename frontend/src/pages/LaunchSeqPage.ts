@@ -31,29 +31,9 @@ export class LaunchSeqPage extends AbstractComponent {
                         PRESS TO INITIATE SEQUENCE
                     </div>
                 </div>
-
-                <!-- Video Container (Hidden initially) -->
-                <div id="video-container" class="absolute inset-0 bg-black hidden flex items-center justify-center">
-                    <div class="text-center">
-                         <h2 class="text-4xl text-white font-pixel mb-4 animate-bounce">
-                            [ CUTSCENE PLACEHOLDER ]
-                         </h2>
-                         <p class="text-accent font-vcr">Simulating Atmosphere Entry...</p>
-                         <div class="w-64 h-2 bg-gray-800 rounded mt-8 overflow-hidden">
-                            <div class="h-full bg-accent animate-loading-bar"></div>
-                         </div>
-                    </div>
-                </div>
             </div>
 
             <style>
-                @keyframes loading-bar {
-                    0% { width: 0%; }
-                    100% { width: 100%; }
-                }
-                .animate-loading-bar {
-                    animation: loading-bar 5s linear forwards;
-                }
                 .animate-fade-in {
                     opacity: 1 !important;
                 }
@@ -75,17 +55,18 @@ export class LaunchSeqPage extends AbstractComponent {
 
     private playCutscene(): void {
         const ui = this.$('#launch-ui');
-        const video = this.$('#video-container');
 
         if (ui) ui.style.display = 'none';
-        if (video) video.classList.remove('hidden');
 
         // Verify "database" (mock check) - Set flag that we've seen the intro
         localStorage.setItem('ft_transcendence_initialized', 'true');
 
-        // Simulate 5s cutscene
-        setTimeout(() => {
-            App.getInstance().router.navigateTo('/main-menu');
-        }, 5000);
+        // Pan to lore instead of placeholder
+        import('../core/BabylonWrapper').then(({ BabylonWrapper }) => {
+            BabylonWrapper.getInstance().panToLore();
+        });
+
+        // Navigate immediately so that when they pan back, they are at the menu
+        App.getInstance().router.navigateTo('/main-menu');
     }
 }
