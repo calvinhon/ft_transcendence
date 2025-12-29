@@ -122,6 +122,12 @@ export class GamePhysics {
     const applyToPaddle = (p: Paddle) => {
       p.height = (p.originalHeight || 100) * 1.5;
       p.powerupExpires = Date.now() + 10000; // 10 seconds
+
+      // Clamp position to prevent clipping out of bounds
+      const maxY = 600 - p.height;
+      if (p.y > maxY) {
+        p.y = maxY;
+      }
     };
 
     if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {

@@ -183,7 +183,7 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
 
                     <!-- Settings -->
-                    <div class="flex-1 border border-accent p-6 flex flex-col gap-8">
+                    <div class="flex-1 border border-accent p-6 flex flex-col gap-8 ${this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted() ? 'opacity-50 pointer-events-none grayscale' : ''}">
                         <!-- Ball Speed -->
                         <div>
                             <div class="text-lg mb-3 text-accent/80">Ball Speed</div>
@@ -194,9 +194,9 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
 
-                        <!-- AI Difficulty (Disabled in Campaign) -->
-                        <div class="${this.activeMode === 'campaign' ? 'opacity-50 pointer-events-none grayscale' : ''}">
-                            <div class="text-lg mb-3 text-accent/80 flex justify-between">
+                        <!-- AI Difficulty -->
+                        <div>
+                             <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
                                 ${this.activeMode === 'campaign' ? '<span class="text-xs text-accent border border-accent px-2 py-0.5">AUTO</span>' : ''}
                             </div>
@@ -283,12 +283,12 @@ export class MainMenuPage extends AbstractComponent {
                               </div>
                               ADD PLAYERS
                          </button>
-                         <button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
+                         ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
                               <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
                                  <i class="fas fa-robot text-[10px]"></i>
                               </div>
                               ADD BOT
-                         </button>
+                         </button>` : ''}
                     </div>
                 </div>
             </div>
@@ -296,7 +296,17 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private renderSpeedButton(type: 'ballSpeed' | 'paddleSpeed', value: string, label: string): string {
-        const isActive = this.settings[type] === value;
+        let isActive = this.settings[type] === value;
+
+        // Override visual state for Campaign Mode
+        if (this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted()) {
+            const level = CampaignService.getInstance().getCurrentLevel();
+            let forcedValue = 'medium';
+            if (level === 1) forcedValue = 'slow';
+            if (level === 3) forcedValue = 'fast';
+            isActive = (value === forcedValue);
+        }
+
         const classes = isActive
             ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
             : 'flex-1 py-2 text-xs hover:bg-accent hover:text-black transition-colors text-gray-500';
@@ -304,10 +314,16 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private renderDifficultyButton(value: string, label: string): string {
-        const isActive = this.settings.aiDifficulty === value;
-        // If in campaign mode, we might want to show the specific level difficulty, 
-        // but since we are disabling the control, just showing the current selected state (or default) is fine.
-        // Actually for Campaign "AUTO" visual above handles the indication.
+        let isActive = this.settings.aiDifficulty === value;
+
+        // Override visual state for Campaign Mode
+        if (this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted()) {
+            const level = CampaignService.getInstance().getCurrentLevel();
+            let forcedValue = 'medium';
+            if (level === 1) forcedValue = 'easy';
+            if (level === 3) forcedValue = 'hard';
+            isActive = (value === forcedValue);
+        }
 
         const classes = isActive
             ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
@@ -320,6 +336,10 @@ export class MainMenuPage extends AbstractComponent {
             case 'campaign':
                 const level = CampaignService.getInstance().getCurrentLevel();
                 const max = CampaignService.getInstance().getMaxLevel();
+                const isMastered = CampaignService.getInstance().isCompleted();
+                if (isMastered) {
+                    return `CAMPAIGN MASTERED. <span class="text-accent font-bold">ALL SYSTEMS UNLOCKED.</span> Replay any level with custom options.`;
+                }
                 return `Embark on a solo journey against alien AI. Current Level: <span class="text-accent font-bold">${level}/${max}</span>. Defeat increasingly difficult opponents to ascend.`;
             case 'arcade': return "Classic 2v2 or 1v1 action. Assign players to teams and battle it out locally.";
             case 'tournament': return "Gather up to 8 players for a bracket-style elimination tournament. Only one can be the champion.";
@@ -349,7 +369,7 @@ export class MainMenuPage extends AbstractComponent {
                         <div class="text-red-500 text-sm mb-2">ENEMY</div>
                         <div class="border border-red-900 bg-red-900/10 p-4 mx-auto w-full max-w-[200px]">
                             <i class="fas fa-robot text-4xl mb-2 text-red-500"></i>
-                            <div class="text-red-500">ALIEN HIVE</div>
+                            <div class="text-red-500">AL-IEN</div>
                         </div>
                     </div>
                 </div>
@@ -441,6 +461,9 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     public onMounted(): void {
+        // Force refresh UI to ensure latest campaign level is shown
+        this.renderContent();
+
         // Bind events on the component root
         this.bindEvents();
     }
@@ -666,10 +689,23 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private handleAddBot(): void {
+        if (this.activeMode === 'tournament') {
+            alert("Bots cannot be added in Tournament mode.");
+            return;
+        }
+
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+            const existing = LocalPlayerService.getInstance().getLocalPlayers();
+
+            // Limit bots to 2
+            const botCount = existing.filter(p => p.isBot).length;
+            if (botCount >= 2) {
+                alert("Maximum of 2 bots allowed.");
+                return;
+            }
+
             // Find next available bot name
             let botIndex = 1;
-            const existing = LocalPlayerService.getInstance().getLocalPlayers();
             while (existing.some(p => p.username === `BOT ${botIndex}`)) {
                 botIndex++;
             }
@@ -713,6 +749,10 @@ export class MainMenuPage extends AbstractComponent {
             // Early return to wait for promise/prevent render before check
             return;
         } else if (target === 'tournament') {
+            if (player.isBot) {
+                alert("Bots cannot be added to Tournament mode.");
+                return;
+            }
             if (this.tournamentPlayers.length < 8 && !isInTournament) {
                 this.tournamentPlayers.push(player);
             }
@@ -787,12 +827,57 @@ export class MainMenuPage extends AbstractComponent {
             // AI Opponent
             setup.team2 = [{
                 userId: 0,
-                username: 'ALIEN HIVE'
+                username: 'AL-IEN'
             } as any];
 
             const level = CampaignService.getInstance().getCurrentLevel();
-            setup.settings.difficulty = CampaignService.getInstance().getDifficultyForLevel(level);
             setup.campaignLevel = level;
+
+            // Enforce Level Settings (1=Low, 2=Med, 3=High) UNLESS Mastered
+            if (!CampaignService.getInstance().isCompleted()) {
+                if (level === 1) {
+                    setup.settings = {
+                        ballSpeed: 'slow',
+                        paddleSpeed: 'slow',
+                        difficulty: 'easy',
+                        powerupsEnabled: false,
+                        accumulateOnHit: false,
+                        scoreToWin: 5
+                    };
+                } else if (level === 2) {
+                    setup.settings = {
+                        ballSpeed: 'medium',
+                        paddleSpeed: 'medium',
+                        difficulty: 'medium',
+                        powerupsEnabled: false,
+                        accumulateOnHit: false,
+                        scoreToWin: 5
+                    };
+                } else {
+                    setup.settings = {
+                        ballSpeed: 'fast',
+                        paddleSpeed: 'fast',
+                        difficulty: 'hard',
+                        powerupsEnabled: true,
+                        accumulateOnHit: true,
+                        scoreToWin: 5
+                    };
+                }
+            } else {
+                // Use user selected settings
+                setup.settings = {
+                    ballSpeed: this.settings.ballSpeed,
+                    paddleSpeed: this.settings.ballSpeed, // Use same for paddle or add paddle setting? UI has paddleSpeed
+                    difficulty: this.settings.aiDifficulty,
+                    powerupsEnabled: this.settings.powerups,
+                    accumulateOnHit: this.settings.accumulateOnHit,
+                    scoreToWin: this.settings.scoreToWin
+                };
+                // Fix: Map paddleSpeed correctly
+                setup.settings.paddleSpeed = this.settings.paddleSpeed;
+            }
+            // Ensure compatibility with backend field names if they differ
+            setup.settings.aiDifficulty = setup.settings.difficulty;
 
             GameStateService.getInstance().setSetup(setup as any);
             App.getInstance().router.navigateTo('/game');
