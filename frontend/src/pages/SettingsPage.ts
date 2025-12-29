@@ -3,6 +3,7 @@ import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
 import { UserProfile } from "../services/ProfileService";
 import { Api } from "../core/Api";
+import { WebGLService } from "../services/WebGLService";
 
 export class SettingsPage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -115,6 +116,12 @@ export class SettingsPage extends AbstractComponent {
                     </div>
                 </div>
 
+                <!-- 3D Mode Settings -->
+                <div class="border border-white/20 p-6 bg-white/5">
+                    <h2 class="text-accent mb-4 border-b border-white/10 pb-2">DISPLAY MODE</h2>
+                    ${this.render3DModeSection()}
+                </div>
+
                 <!-- Actions -->
                 <div class="flex gap-4 pt-4 border-t border-white/10">
                     <button id="save-btn" class="flex-1 bg-accent/10 border border-accent text-accent py-3 hover:bg-accent hover:text-black transition-all font-bold tracking-widest">
@@ -122,6 +129,47 @@ export class SettingsPage extends AbstractComponent {
                     </button>
                 </div>
 
+            </div>
+        `;
+    }
+
+    private render3DModeSection(): string {
+        const webglService = WebGLService.getInstance();
+        const isWebGLSupported = webglService.isWebGLSupported();
+        const is3DEnabled = webglService.is3DModeEnabled();
+
+        if (!isWebGLSupported) {
+            return `
+                <div class="flex items-center justify-between text-gray-500">
+                    <div>
+                        <div class="text-sm">WebGL NOT SUPPORTED</div>
+                        <div class="text-xs text-gray-600">3D Mode unavailable in this browser</div>
+                    </div>
+                    <div class="text-red-500">
+                        <i class="fas fa-times-circle text-xl"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm">3D MODE</div>
+                    <div class="text-xs text-gray-500">Immersive retro office environment</div>
+                </div>
+                <button id="toggle-3d-mode" 
+                    class="px-4 py-2 border ${is3DEnabled
+                ? 'border-green-500 text-green-500 hover:bg-green-900/20'
+                : 'border-gray-600 text-gray-500 hover:bg-gray-900/20'} 
+                    transition-all font-mono text-sm flex items-center gap-2">
+                    <i class="fas ${is3DEnabled ? 'fa-cube' : 'fa-square'}"></i>
+                    ${is3DEnabled ? 'ENABLED' : 'DISABLED'}
+                </button>
+            </div>
+            <div class="mt-3 text-xs text-gray-600">
+                <i class="fas fa-info-circle mr-1"></i>
+                Changes require page reload to take effect
             </div>
         `;
     }
@@ -147,6 +195,20 @@ export class SettingsPage extends AbstractComponent {
 
         this.$('#save-btn')?.addEventListener('click', () => {
             this.saveProfile();
+        });
+
+        // 3D Mode toggle
+        this.$('#toggle-3d-mode')?.addEventListener('click', () => {
+            const webglService = WebGLService.getInstance();
+            const newValue = !webglService.is3DModeEnabled();
+            webglService.set3DModeEnabled(newValue);
+
+            // Show reload prompt
+            if (confirm('3D Mode changed. Reload page to apply changes?')) {
+                window.location.reload();
+            } else {
+                this.refresh();
+            }
         });
     }
 

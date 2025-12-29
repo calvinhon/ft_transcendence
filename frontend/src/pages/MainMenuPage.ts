@@ -198,7 +198,6 @@ export class MainMenuPage extends AbstractComponent {
                         <div>
                              <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
-                                ${this.activeMode === 'campaign' ? '<span class="text-xs text-accent border border-accent px-2 py-0.5">AUTO</span>' : ''}
                             </div>
                             <div class="flex border border-accent">
                                 ${this.renderDifficultyButton('easy', 'EASY')}
@@ -251,7 +250,7 @@ export class MainMenuPage extends AbstractComponent {
                 </div>
 
                 <!-- MIDDLE COLUMN: DYNAMIC PARTY PANE -->
-                <div class="w-1/3 border-y-2 border-accent flex flex-col bg-black/50">
+                <div class="w-1/3 border-accent flex flex-col bg-black/50">
                     <div class="bg-accent text-black p-3 font-bold flex justify-between items-center text-lg">
                         <span>${this.getMiddlePaneTitle()}</span>
                     </div>
@@ -261,34 +260,41 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
                 </div>
 
-                <!-- RIGHT COLUMN: AVAILABLE PLAYERS -->
-                <div class="flex-1 border border-accent flex flex-col bg-black/50">
-                    <div class="bg-accent text-black p-3 font-bold text-lg">
-                        AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
-                    </div>
-                    <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
-                        DRAG TO DEPLOY • CLICK FOR INTEL
-                    </div>
-
-                    <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
-                        <div class="grid gap-4 grid-cols-2" id="available-list">
-                            ${this.renderAvailablePlayers()}
-                        </div>
-                    </div>
+                <!-- RIGHT COLUMN: HOST PROFILE + AVAILABLE PLAYERS -->
+                <div class="flex-1 flex flex-col gap-4">
                     
-                    <div class="p-4 border-t border-accent/20 bg-black/40">
-                         <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-plus text-[10px]"></i>
-                              </div>
-                              ADD PLAYERS
-                         </button>
-                         ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-robot text-[10px]"></i>
-                              </div>
-                              ADD BOT
-                         </button>` : ''}
+                    <!-- Host Profile Card -->
+                    ${this.renderHostProfileCard()}
+                    
+                    <!-- Available Players Pane -->
+                    <div class="flex-1 border border-accent flex flex-col bg-black/50">
+                        <div class="bg-accent text-black p-3 font-bold text-lg">
+                            AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
+                        </div>
+                        <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
+                            DRAG TO DEPLOY • CLICK FOR INTEL
+                        </div>
+
+                        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
+                            <div class="grid gap-4 grid-cols-2" id="available-list">
+                                ${this.renderAvailablePlayers()}
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 border-t border-accent/20 bg-black/40">
+                             <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-plus text-[10px]"></i>
+                                  </div>
+                                  ADD PLAYERS
+                             </button>
+                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-robot text-[10px]"></i>
+                                  </div>
+                                  ADD BOT
+                             </button>` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -408,6 +414,53 @@ export class MainMenuPage extends AbstractComponent {
             `;
         }
         return '';
+    }
+
+    private renderHostProfileCard(): string {
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        if (!currentUser) {
+            return `<div class="border border-accent/30 p-4 bg-black/50 text-gray-500 text-center">Not logged in</div>`;
+        }
+
+        // Find host in available players to get avatar
+        const hostPlayer = this.availablePlayers.find(p => p.id === currentUser.userId);
+        const avatarUrl = hostPlayer?.avatarUrl
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=0A0A0A&color=29B6F6`;
+
+        // Get campaign level for display
+        const campaignLevel = CampaignService.getInstance().getCurrentLevel();
+        const maxLevel = CampaignService.getInstance().getMaxLevel();
+        const isMastered = CampaignService.getInstance().isCompleted();
+
+        return `
+            <div class="border border-accent bg-black/70 p-4 flex items-center gap-4 relative group">
+                <!-- Avatar with glow effect -->
+                <div class="w-16 h-16 border-2 border-accent rounded overflow-hidden flex-shrink-0 shadow-[0_0_15px_rgba(41,182,246,0.3)]">
+                    <img src="${avatarUrl}" class="w-full h-full object-cover" alt="${currentUser.username}">
+                </div>
+                
+                <!-- User Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-xl font-bold text-white truncate tracking-wide">${currentUser.username}</div>
+                    <div class="text-accent text-sm tracking-widest">
+                        ${isMastered
+                ? '<i class="fas fa-crown mr-1"></i> MASTER'
+                : `<i class="fas fa-signal mr-1"></i> LEVEL ${campaignLevel}/${maxLevel}`
+            }
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="settings-btn" class="w-10 h-10 border border-white/30 hover:border-accent hover:text-accent text-gray-500 flex items-center justify-center transition-all" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button id="logout-btn" class="w-10 h-10 border border-white/30 hover:border-red-500 hover:text-red-500 text-gray-500 flex items-center justify-center transition-all" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     private renderPlayerCard(p: Player, context: string, team?: number): string {
@@ -677,6 +730,16 @@ export class MainMenuPage extends AbstractComponent {
             const settingsBtn = target.closest('#settings-btn');
             if (settingsBtn) {
                 App.getInstance().router.navigateTo('/settings');
+                return;
+            }
+
+            // Logout Button
+            const logoutBtn = target.closest('#logout-btn');
+            if (logoutBtn) {
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthService.getInstance().logout();
+                    App.getInstance().router.navigateTo('/login');
+                }
                 return;
             }
         };
