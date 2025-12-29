@@ -344,7 +344,7 @@ export class BabylonWrapper {
             parentMesh.isVisible = false;
 
             // Add screen glow spill light
-            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, 0.5), this.scene);
+            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, -4), this.scene);
             this.screenLight.parent = this.htmlMesh;
             this.screenLight.diffuse = Color3.FromHexString("#29b6f6");
             this.screenLight.intensity = 0.8;
