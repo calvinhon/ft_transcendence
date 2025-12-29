@@ -6,7 +6,9 @@ import { sendError, sendSuccess, createLogger, ERROR_MESSAGES } from '@ft-transc
 const logger = createLogger('AUTH-SERVICE');
 
 export async function profileHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService();
+  //Hoach edited: Pass request.server to AuthService
+  const authService = new AuthService(request.server);
+  //Hoach edit ended
   try {
     const { userId } = request.params as { userId: string };
     const userIdNum = parseInt(userId, 10);

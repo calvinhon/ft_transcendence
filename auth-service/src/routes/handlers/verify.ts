@@ -5,38 +5,34 @@ import { AuthService } from '../../services/authService';
 const logger = createLogger('AUTH-SERVICE');
 // End Hoach added
 
+//Hoach edited: Changed verify to use JWT verification instead of session validation
 export async function verifySessionHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    // Hoach added: Validate session from HTTP-only cookie
-    const authService = new AuthService();
-    const sessionToken = request.cookies.sessionToken;
+  const token = request.cookies.token;
 
-    if (!sessionToken) {
-        logger.warn('Verify request without session token');
-        // Ensure browser cookie is cleared (HttpOnly cookie cannot be removed by JS)
-        reply.clearCookie('sessionToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/'
-        });
-        return sendError(reply, 'Not logged in', 401);
-    }
+  if (!token) {
+    logger.warn('Verify request without token');
+    reply.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+    return sendError(reply, 'Not logged in', 401);
+  }
 
-    // Validate session (5-minute TTL ensures new tabs after 5 mins require login)
-    const user = await authService.validateSession(sessionToken);
-    if (!user) {
-        logger.warn('Invalid or expired session token');
-        // Explicitly expire the cookie so browser stops sending it
-        reply.clearCookie('sessionToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/'
-        });
-        return sendError(reply, 'Session expired', 401);
-    }
-
-    logger.info(`Session verified for user ${user.userId}`);
-    sendSuccess(reply, { user, valid: true }, 'Session valid');
-    // End Hoach added
+  try {
+    const decoded = await request.server.jwt.verify(token);
+    logger.info(`Token verified for user ${decoded.userId}`);
+    sendSuccess(reply, { user: decoded, valid: true }, 'Token valid');
+  } catch (error) {
+    logger.warn('Invalid token');
+    reply.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/'
+    });
+    return sendError(reply, 'Invalid token', 401);
+  }
 }
+//Hoach edit ended

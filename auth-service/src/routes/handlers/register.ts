@@ -7,7 +7,9 @@ import { validateRequiredFields, validateEmail, sendError, sendSuccess, createLo
 const logger = createLogger('AUTH-SERVICE');
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService();
+  //Hoach edited: Pass request.server to AuthService
+  const authService = new AuthService(request.server);
+  //Hoach edit ended
   try {
     const { username, email, password } = request.body as RegisterRequestBody;
     const validationError = validateRequiredFields(request.body, ['username', 'email', 'password']);

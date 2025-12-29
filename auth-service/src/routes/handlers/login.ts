@@ -6,7 +6,9 @@ import { validateRequiredFields, sendError, sendSuccess, createLogger, ERROR_MES
 const logger = createLogger('AUTH-SERVICE');
 
 export async function loginHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService();
+  //Hoach edited: Pass request.server to AuthService constructor
+  const authService = new AuthService(request.server);
+  //Hoach edit ended
   let identifier = 'unknown';
   try {
     const body = request.body as { username: string; password: string };
@@ -23,18 +25,17 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     logger.info('Validation passed for', identifier);
 
-    const user = await authService.login(identifier, password);
+    //Hoach edited: Destructure user and token from login, set token cookie
+    const { user, token } = await authService.login(identifier, password);
 
-    // Hoach added: Create session with 5-minute TTL
-    const sessionToken = await authService.createSession(user.userId);
-
-    reply.setCookie('sessionToken', sessionToken, {
+    reply.setCookie('token', token, {
       httpOnly: true,      // Can't be accessed from JS (prevents XSS theft)
       secure: true,        // HTTPS only
       sameSite: 'strict',  // CSRF protection
       path: '/',
-      maxAge: 5 * 60 // 5 minutes (matches backend TTL: forces new login on new tabs after 5 mins)
+      maxAge: 24 * 60 * 60 // 24 hours
     });
+    //Hoach edit ended
     // End Hoach added
 
     logger.info('Login successful for', identifier);

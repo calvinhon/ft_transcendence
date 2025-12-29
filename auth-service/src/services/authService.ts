@@ -1,7 +1,8 @@
 // auth-service/src/services/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { User, DatabaseUser } from '../types';
+import { FastifyInstance } from 'fastify';
+import { User, DatabaseUser, JWTPayload } from '../types';
 import { getQuery, runQuery } from '../utils/database';
 // Hoach added: For session token generation
 import { createLogger } from '@ft-transcendence/common';
@@ -9,6 +10,9 @@ const logger = createLogger('AUTH-SERVICE');
 // End Hoach added
 
 export class AuthService {
+  //Hoach edited: Added constructor to inject fastify for JWT
+  constructor(private fastify: FastifyInstance) {}
+  //Hoach edit ended
   async register(username: string, email: string, password: string): Promise<{ userId: number }> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -20,7 +24,8 @@ export class AuthService {
     return { userId: (result as any).lastID };
   }
 
-  async login(identifier: string, password: string): Promise<User> {
+  //Hoach edited: Changed login to return user and JWT token instead of just user
+  async login(identifier: string, password: string): Promise<{ user: User; token: string }> {
     const user = await getQuery<DatabaseUser>(
       'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
@@ -41,12 +46,21 @@ export class AuthService {
       [user.id]
     );
 
-    return {
+    const token = this.fastify.jwt.sign({
       userId: user.id,
-      username: user.username,
-      email: user.email
+      username: user.username
+    }, { expiresIn: '24h' });
+
+    return {
+      user: {
+        userId: user.id,
+        username: user.username,
+        email: user.email
+      },
+      token
     };
   }
+  //Hoach edit ended
 
   // Hoach added: Create session after successful login with 5-minute TTL
   async createSession(userId: number): Promise<string> {
@@ -118,6 +132,16 @@ export class AuthService {
       created_at: user.created_at
     };
   }
+
+  //Hoach edited: Added verifyToken method for JWT verification
+  async verifyToken(token: string): Promise<JWTPayload> {
+    try {
+      return this.fastify.jwt.verify(token) as JWTPayload;
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+  //Hoach edit ended
 
   async createPasswordResetToken(email: string): Promise<{ resetToken: string; resetLink: string }> {
     const user = await getQuery<{ id: number; email: string }>(
