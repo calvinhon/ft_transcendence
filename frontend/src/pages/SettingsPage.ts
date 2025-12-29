@@ -249,7 +249,8 @@ export class SettingsPage extends AbstractComponent {
         const avatarUrl = (this.$('#input-avatar') as HTMLInputElement).value;
         const password = (this.$('#input-password') as HTMLInputElement).value;
 
-        if (!password) {
+        const response = await (await fetch(`/api/auth/profile/oauth/${this.profile?.userId}`, { method: 'GET', credentials: 'include' })).json();
+        if (!response.data.oauth_provider && !password) {
             this.error = "PASSWORD REQUIRED TO SAVE CHANGES";
             this.refresh();
             // NOTE: Refreshing wipes input! This is bad UX.
