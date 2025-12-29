@@ -61,6 +61,7 @@ export class ProfilePage extends AbstractComponent {
 
         const p = this.profile;
         const s = this.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+        const isBot = p.userId <= 0 || (p as any).isBot === true;
 
 
 
@@ -86,7 +87,7 @@ export class ProfilePage extends AbstractComponent {
                             <h2 class="text-3xl font-bold text-accent mb-1">${p.username}</h2>
                             <div class="flex items-center justify-center gap-2 mb-4">
                                 <div class="text-xs text-gray-500">ID: ${p.userId}</div>
-                                ${this.renderOnlineStatus()}
+                                ${!isBot ? this.renderOnlineStatus() : ''}
                             </div>
                             
                             <div class="w-full h-px bg-accent/30 my-4"></div>
@@ -98,17 +99,21 @@ export class ProfilePage extends AbstractComponent {
                                 </div>
                                 
                                 <!-- Country -->
+                                ${!isBot ? `
                                 <div class="flex justify-between">
                                          <span class="text-gray-500">COUNTRY</span>
                                          <span>${p.country || 'Unknown'}</span>
                                        </div>
+                                ` : ''}
 
                                 <!-- Bio -->
-                                ${p.bio ? `<div class="pt-2 text-gray-400 italic text-xs text-center">"${p.bio}"</div>` : ''}
+                                ${p.bio && !isBot ? `<div class="pt-2 text-gray-400 italic text-xs text-center">"${p.bio}"</div>` : ''}
 
+                                ${!isBot ? `
                                 <div class="flex justify-between pt-2">
                                     <span class="text-yellow-400">Level ${p.campaignLevel || 1}</span>
                                 </div>
+                                ` : ''}
                                 
                                 <!-- Actions -->
                                 <div class="pt-4 flex flex-col gap-3">
@@ -119,9 +124,10 @@ export class ProfilePage extends AbstractComponent {
                     </div>
 
                     <!-- Friends List (Only for own profile) -->
-                    ${this.renderFriendsList()}
+                    ${!isBot ? this.renderFriendsList() : ''}
 
                     <!-- Tournament Brief -->
+                    ${!isBot ? `
                     <div class="border border-purple-500/50 p-6 bg-black/50">
                         <h3 class="text-purple-400 font-bold mb-4 flex items-center gap-2">
                             <i class="fas fa-trophy"></i> TOURNAMENTS
@@ -136,7 +142,7 @@ export class ProfilePage extends AbstractComponent {
                                 <div class="text-[10px] text-gray-400">VICTORIES</div>
                             </div>
                         </div>
-                    </div>
+                    </div>` : ''}
                 </div>
 
                 <!-- RIGHT COL: STATS & HISTORY -->
@@ -217,6 +223,7 @@ export class ProfilePage extends AbstractComponent {
                     </div>
 
                     <!-- Tournament History -->
+                    ${!isBot ? `
                     <div class="border border-white/20">
                         <div class="bg-white/5 p-3 border-b border-white/20 font-bold text-purple-400">
                             TOURNAMENT RECORD
@@ -224,7 +231,7 @@ export class ProfilePage extends AbstractComponent {
                         <div class="divide-y divide-white/10 max-h-[200px] overflow-y-auto">
                             ${this.rankings.length > 0 ? this.rankings.map(r => this.renderTournamentRow(r)).join('') : '<div class="p-8 text-center text-gray-500">No tournament records found</div>'}
                         </div>
-                    </div>
+                    </div>` : ''}
 
                 </div>
             </div>
@@ -263,15 +270,8 @@ export class ProfilePage extends AbstractComponent {
         const currentUser = AuthService.getInstance().getCurrentUser();
         const isMainUser = currentUser && currentUser.userId === p.userId;
 
-        // Check local players for bot status if p doesn't have it explicitly
-        let isBot = p.userId === 0 || (p as any).isBot === true;
-        if (!isBot && p.userId > 100000) { // Heuristic for local bots
-            const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
-            const localP = localPlayers.find(lp => lp.userId === p.userId);
-            if (localP && localP.isBot) isBot = true;
-            // Also assume high IDs are bots if not found in local (e.g. from history)
-            if (!localP) isBot = true;
-        }
+        // Bot detection
+        const isBot = p.userId <= 0 || (p as any).isBot === true;
 
         let buttons = '';
 

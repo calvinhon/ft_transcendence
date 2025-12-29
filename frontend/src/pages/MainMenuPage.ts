@@ -198,6 +198,7 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
 
                         <!-- AI Difficulty -->
+                        ${this.activeMode !== 'tournament' ? `
                         <div>
                              <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
@@ -208,6 +209,7 @@ export class MainMenuPage extends AbstractComponent {
                                 ${this.renderDifficultyButton('hard', 'HARD')}
                             </div>
                         </div>
+                        ` : ''}
 
                         <!-- Paddle Speed -->
                         <div>
@@ -756,7 +758,7 @@ export class MainMenuPage extends AbstractComponent {
             if (scoreBtn) {
                 const action = scoreBtn.dataset.action;
                 let current = this.settings.scoreToWin || 5;
-                if (action === 'inc') current = Math.min(21, current + 1);
+                if (action === 'inc') current = Math.min(11, current + 1);
                 if (action === 'dec') current = Math.max(1, current - 1);
                 this.settings.scoreToWin = current;
                 this.renderContent();
@@ -790,23 +792,16 @@ export class MainMenuPage extends AbstractComponent {
 
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
             const existing = LocalPlayerService.getInstance().getLocalPlayers();
+            const bot1 = existing.find(p => p.userId === -1);
+            const bot2 = existing.find(p => p.userId === -2);
 
-            // Limit bots to 2
-            const botCount = existing.filter(p => p.isBot).length;
-            if (botCount >= 2) {
+            if (bot1 && bot2) {
                 alert("Maximum of 2 bots allowed.");
                 return;
             }
 
-            // Find next available bot name
-            let botIndex = 1;
-            while (existing.some(p => p.username === `BOT ${botIndex}`)) {
-                botIndex++;
-            }
-            const botName = `BOT ${botIndex}`;
-
-            // Create pseudo-random ID for bot
-            const botId = Math.floor(Math.random() * 1000000) + 100000;
+            const botId = !bot1 ? -1 : -2;
+            const botName = !bot1 ? "BOT 1" : "BOT 2";
 
             LocalPlayerService.getInstance().addLocalPlayer({
                 id: botId.toString(),
@@ -851,6 +846,11 @@ export class MainMenuPage extends AbstractComponent {
                 this.tournamentPlayers.push(player);
             }
         } else if (target === 'team1') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam1.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
@@ -858,6 +858,11 @@ export class MainMenuPage extends AbstractComponent {
                 console.warn(`Player ${player.username} is already on Team 2`);
             }
         } else if (target === 'team2') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam2.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
@@ -986,14 +991,14 @@ export class MainMenuPage extends AbstractComponent {
             setup.team1 = this.arcadeTeam1.map(p => ({
                 userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot || (p.userId >= 100000), // Ensure bot flag
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 
             setup.team2 = this.arcadeTeam2.map(p => ({
                 userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot || (p.userId >= 100000), // Ensure bot flag
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 

@@ -61,6 +61,18 @@ export class ProfileService {
     }
 
     public async getUserProfile(userId: number): Promise<UserProfile | null> {
+        if (userId <= 0) {
+            const name = userId === 0 ? "Al-Ien" : `BOT ${Math.abs(userId)}`;
+            return {
+                id: userId,
+                userId: userId,
+                username: name,
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=333333&color=ffffff`,
+                bio: "Automated Opponent Logic Unit",
+                country: "CORE",
+                createdAt: new Date().toISOString()
+            };
+        }
         try {
             const data = await Api.get(`/api/user/profile/${userId}`);
             if (!data) return null;
@@ -132,13 +144,19 @@ export class ProfileService {
                 else result = 'loss';
 
                 // Opponent Name Logic (simplified port)
+                const getBotName = (id: number) => {
+                    if (id === 0) return "Al-Ien";
+                    if (id < 0) return `BOT ${Math.abs(id)}`;
+                    return `User ${id}`;
+                };
+
                 let opponent = 'Unknown';
                 if (g.game_mode === 'tournament' && g.tournament_match_id) {
                     opponent = isPlayer1 ? g.player2_name : g.player1_name;
-                    if (!opponent) opponent = (g.player2_id === 0 || g.player1_id === 0) ? 'AI' : 'Opponent';
+                    if (!opponent) opponent = (g.player2_id <= 0 || g.player1_id <= 0) ? 'AI' : 'Opponent';
                 } else {
-                    opponent = isPlayer1 ? (g.player2_name || (g.player2_id === 0 ? 'AI' : `User ${g.player2_id}`))
-                        : (g.player1_name || (g.player1_id === 0 ? 'AI' : `User ${g.player1_id}`));
+                    opponent = isPlayer1 ? (g.player2_name || getBotName(g.player2_id))
+                        : (g.player1_name || getBotName(g.player1_id));
                 }
 
                 let teammates = '';

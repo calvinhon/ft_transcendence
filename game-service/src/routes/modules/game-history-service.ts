@@ -154,8 +154,9 @@ export class GameHistoryService {
 
   // Fetch player name from user service or auth service
   private async fetchPlayerName(userId: number): Promise<string> {
-    if (userId === 0) return 'AI';
-    // Heuristic: IDs >= 100000 are ephemeral/bot IDs in this system
+    if (userId === 0) return 'Al-Ien';
+    if (userId < 0) return `BOT ${Math.abs(userId)}`;
+    // Heuristic: IDs >= 100000 are legacy ephemeral/bot IDs
     if (userId >= 100000) return 'BOT';
     try {
       // Try User Service for Display Name

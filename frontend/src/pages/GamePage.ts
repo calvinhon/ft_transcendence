@@ -5,7 +5,7 @@ import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 
-const SNAP_THRESHOLD = 50; // Distance to snap rather than lerp
+const SNAP_THRESHOLD = 200; // Distance to snap rather than lerp. Higher = smoother for fast objects.
 
 export class GamePage extends AbstractComponent {
     private renderer: GameRenderer | null = null;
@@ -29,7 +29,7 @@ export class GamePage extends AbstractComponent {
                     </div>
 
                     <!-- Center Status -->
-                    <div class="flex-1 flex items-center justify-center font-pixel text-xs text-text-muted">
+                    <div class="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-text-muted">
                         <span id="game-status-text">INITIALIZING...</span>
                     </div>
 
@@ -42,13 +42,6 @@ export class GamePage extends AbstractComponent {
 
                 <!-- Canvas Container -->
                 <div class="game-container flex-1 w-full border border-accent relative bg-black overflow-hidden">
-                    <!-- Overlay Controls -->
-                    <div class="absolute top-4 right-4 flex gap-2 z-20">
-                         <button id="exit-btn" class="w-8 h-8 border border-white text-white hover:bg-red-500 hover:border-red-500 flex items-center justify-center cursor-pointer">
-                            <i class="fas fa-stop"></i>
-                        </button>
-                    </div>
-
                     <canvas id="game-canvas" class="w-full h-full block"></canvas>
                 </div>
             </div>
@@ -78,14 +71,10 @@ export class GamePage extends AbstractComponent {
         window.addEventListener('keydown', this.handleKeyDown);
         window.addEventListener('keyup', this.handleKeyUp);
 
-        this.$('#exit-btn')?.addEventListener('click', () => {
-            this.exitGame();
-        });
-
         // Sanitize teams to ensure usernames are present
         const getName = (p: any) => {
             if (p.username) return p.username;
-            if (p.isBot || (p.userId >= 100000)) return `BOT ${p.userId % 10000}`;
+            if (p.isBot || p.userId <= 0) return `BOT ${Math.abs(p.userId) || 1}`;
             return `User ${p.userId}`;
         };
 
@@ -133,7 +122,7 @@ export class GamePage extends AbstractComponent {
         let targetState: any = null;
 
         let lastUpdateTime = performance.now();
-        const DECAY = 25; // Catch-up speed (higher = faster)
+        const DECAY = 60; // Catch-up speed (higher = faster/tighter. 60 reduces visual gap significantly)
 
         const lerp = (start: number, target: number, dt: number) => {
             return target + (start - target) * Math.exp(-DECAY * dt);
@@ -324,27 +313,10 @@ export class GamePage extends AbstractComponent {
                         console.error("Frontend tournament record failed:", err);
                     }
                 } else if (setup.mode === 'arcade' || setup.mode === 'campaign') {
-                    // --- ARCADE & CAMPAIGN Match History Recording ---
-                    // Save ONE record per match with full team arrays
-                    const matchPayload = {
-                        player1_id: sanitizedTeam1[0]?.userId || 0,
-                        player2_id: sanitizedTeam2[0]?.userId || 0,
-                        player1_score: p1Score,
-                        player2_score: p2Score,
-                        winner_id: winnerId,
-                        game_mode: setup.mode,
-                        team1: sanitizedTeam1,
-                        team2: sanitizedTeam2,
-                        started_at: this.startTime ? this.startTime.toISOString() : new Date().toISOString(),
-                        finished_at: new Date().toISOString()
-                    };
-
-                    try {
-                        await GameService.getInstance().recordMatchResult(matchPayload);
-                        console.log('Arcade/Campaign match recorded:', matchPayload);
-                    } catch (err) {
-                        console.error('Failed to record arcade match:', err);
-                    }
+                    // ARCADE & CAMPAIGN Match History Recording
+                    // Handled by Backend GameScoring service automatically.
+                    // Frontend manual save caused duplicate entries (and incorrect "Bot 1" naming).
+                    console.log('Arcade/Campaign match finished. Saving handled by backend.');
                 }
 
                 // Add Auto-Return Timer UI
@@ -439,9 +411,18 @@ export class GamePage extends AbstractComponent {
                 overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40 text-white font-pixel';
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
-                    <p class="text-xs text-gray-500">PRESS 'P' TO RESUME</p>
+                    <div class="flex flex-col gap-4 items-center">
+                        <button id="pause-resume-btn" class="px-8 py-2 border border-accent hover:bg-accent/20 text-sm">RESUME</button>
+                        <button id="pause-quit-btn" class="px-8 py-2 border border-red-500 text-red-500 hover:bg-red-500/20 text-sm">QUIT GAME</button>
+                    </div>
+                    <p class="mt-6 text-[8px] text-gray-500 font-pixel tracking-widest uppercase">Press 'P' to Resume</p>
                 `;
                 container.appendChild(overlay);
+
+                overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
+                overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
+                    if (confirm("Quit game?")) this.exitGame();
+                });
             }
         } else {
             if (existingOverlay) {
