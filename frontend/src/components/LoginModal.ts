@@ -64,10 +64,10 @@ export class LoginModal extends AbstractComponent {
                         <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="42">
                             <img src="/assets/42_logo.svg" alt="42" class="w-6 h-6 invert" onerror="this.style.display='none';this.parentElement.innerHTML='42'">
                         </button>
-                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="google">
+                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="Google">
                             <i class="fab fa-google text-white text-xl"></i>
                         </button>
-                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="github">
+                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="GitHub">
                             <i class="fab fa-github text-white text-xl"></i>
                         </button>
                     </div>

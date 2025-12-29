@@ -759,7 +759,10 @@ export class ProfilePage extends AbstractComponent {
         });
     }
 
-    private initiateSave(): void {
+    private async initiateSave(): Promise<void> {
+        const response = await (await fetch(`/api/auth/profile/oauth/${this.profile?.userId}`, { method: 'GET', credentials: 'include' })).json();
+        if (response.data.oauth_provider)
+            return this.saveChanges() as unknown as void;
         const modal = new PasswordConfirmationModal(
             (password) => this.saveChanges(password),
             () => { } // On cancel do nothing
@@ -767,7 +770,7 @@ export class ProfilePage extends AbstractComponent {
         modal.render();
     }
 
-    private async saveChanges(password: string): Promise<void> {
+    private async saveChanges(password?: string): Promise<void> {
         if (!this.profile) return;
 
         // Harvest Data
@@ -787,8 +790,10 @@ export class ProfilePage extends AbstractComponent {
 
             // 1. Verify Password using the TARGET PROFILE'S username
             // Use verifyCredentials to avoid changing the global authenticated session
-            const authRes = await AuthService.getInstance().verifyCredentials(this.profile.username, password);
-            if (!authRes.success) throw new Error("Invalid password");
+            if (password) {
+                const authRes = await AuthService.getInstance().verifyCredentials(this.profile.username, password);
+                if (!authRes.success) throw new Error("Invalid password");
+            }
 
             // 2. Perform Update
             const payload = {

@@ -40,28 +40,35 @@
       html {
         background: black;
       }
-      /* html,
-      body {
+
+      /* 3D Mode Styles - Applied when BabylonJS is active */
+      body.babylon-3d-mode,
+      body.babylon-3d-mode html {
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background: transparent !important; 
+        background: transparent !important;
       }
-      #app {
+      body.babylon-3d-mode #app {
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 0; 
+        z-index: 0;
       }
-      #renderCanvas {
+      body.babylon-3d-mode #renderCanvas {
         position: fixed;
         width: 100vw;
         height: 100vh;
         top: 0;
         left: 0;
-        z-index: 1; 
+        z-index: 1;
         background: transparent;
-      } */
+      }
+
+      /* Hide canvas when not in 3D mode */
+      body:not(.babylon-3d-mode) #renderCanvas {
+        display: none;
+      }
     </style>
     <script type="module" crossorigin src="/src/main.ts"></script>
   </body>

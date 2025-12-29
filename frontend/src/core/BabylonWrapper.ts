@@ -3,6 +3,7 @@ import { AbstractMesh, AppendSceneAsync } from "@babylonjs/core";
 // import { CreateBox } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { HtmlMeshRenderer, HtmlMesh, FitStrategy } from "@babylonjs/addons";
+import { WebGLService } from "../services/WebGLService";
 
 export class BabylonWrapper {
     private static instance: BabylonWrapper;
@@ -29,7 +30,7 @@ export class BabylonWrapper {
         this.scene.clearColor = new Color4(0, 0, 0, 0);
         // this.scene.createDefaultLight();
         const ambientLight = new HemisphericLight("ambient", new Vector3(0, 1, 0), this.scene);
-        ambientLight.intensity = 0.2; // Very dim base light
+        ambientLight.intensity = 0.03; // Very dim base light
 
         // Start with a flatter angle (closer to 90deg/PI*0.5)
         const camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.2, 2, Vector3.Zero(), this.scene);
@@ -62,12 +63,63 @@ export class BabylonWrapper {
         return BabylonWrapper.instance;
     }
 
+    /**
+     * Returns the instance only if 3D mode is enabled.
+     * Creates the instance if it doesn't exist and 3D mode is enabled.
+     * Returns null if 3D mode is disabled.
+     */
+    public static getInstanceIfEnabled(): BabylonWrapper | null {
+        if (!WebGLService.getInstance().is3DModeEnabled()) {
+            return null;
+        }
+        return BabylonWrapper.getInstance();
+    }
+
+    /**
+     * Destroys the BabylonJS instance and cleans up resources
+     */
+    public destroy(): void {
+        console.log("[BabylonWrapper] Destroying instance...");
+
+        // Stop render loop
+        this.engine.stopRenderLoop();
+
+        // Dispose of HtmlMesh
+        if (this.htmlMesh) {
+            this.htmlMesh.dispose();
+            this.htmlMesh = null;
+        }
+
+        // Dispose of glow layer
+        if (this.glowLayer) {
+            this.glowLayer.dispose();
+            this.glowLayer = null;
+        }
+
+        // Dispose of screen light
+        if (this.screenLight) {
+            this.screenLight.dispose();
+            this.screenLight = null;
+        }
+
+        // Dispose scene and engine
+        this.scene.dispose();
+        this.engine.dispose();
+
+        // Remove canvas
+        const canvas = document.getElementById("renderCanvas");
+        if (canvas) {
+            canvas.remove();
+        }
+
+        // Clear singleton
+        BabylonWrapper.instance = null as any;
+
+        console.log("[BabylonWrapper] Instance destroyed");
+    }
+
     private setupScene(): void {
         new HtmlMeshRenderer(this.scene);
-        this.glowLayer = new GlowLayer("glow", this.scene);
-        this.glowLayer.intensity = 0.6; // Reduced to match reference without overblooming
-        this.glowLayer.blurKernelSize = 12;
-
         // Create Camera hotspots (hotspots for left/right navigation)
         // Create Camera hotspots (Sized for Z=0.5)
         // At Z=0.5, with FOV~0.8 (default), plane height is ~0.42, width ~0.75 (16:9)
@@ -101,12 +153,6 @@ export class BabylonWrapper {
         let time = 0;
         this.scene.onBeforeRenderObservable.add(() => {
             time += this.engine.getDeltaTime() * 0.001;
-
-            // Animate Glow (Breathing)
-            if (this.glowLayer) {
-                // Base 0.6, fluctuate +/- 0.1 over ~3 seconds
-                this.glowLayer.intensity = 0.6 + Math.sin(time * 2) * 0.1;
-            }
 
             // Animate Screen Light (Flicker)
             if (this.screenLight) {
@@ -191,7 +237,7 @@ export class BabylonWrapper {
                 const pickInfo = pointerInfo.pickInfo;
                 if (pickInfo?.hit && pickInfo.pickedMesh) {
                     const meshName = pickInfo.pickedMesh.name;
-                    console.log("CLICK: Picked mesh:", meshName, "(isLoreView:", this.isLoreView, ")");
+                    // console.log("CLICK: Picked mesh:", meshName, "(isLoreView:", this.isLoreView, ")");
 
                     if (meshName === "leftInteractionTrigger" && !this.isLoreView) {
                         this.panToLore();
@@ -261,7 +307,7 @@ export class BabylonWrapper {
                 console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
             } else {
-                console.log("Found glowing screen mesh:", screenMesh.name);
+                // console.log("Found glowing screen mesh:", screenMesh.name);
                 this.createHtmlMesh(screenMesh);
             }
         } catch (error) {
@@ -281,8 +327,13 @@ export class BabylonWrapper {
         });
 
         if (parentMesh) {
+            // Firefox fix: Apply CSS backface-visibility and vertical flip
+            appElement.style.backfaceVisibility = 'visible';
+            appElement.style.transform = 'scaleY(-1)';
+
             this.htmlMesh.setContent(appElement, 4.38, 3.395);
-            this.htmlMesh.rotate(new Vector3(1, 0, 0), -Math.PI / 2);
+            // Firefox fix: Use +Math.PI/2 instead of -Math.PI/2 to show front face
+            this.htmlMesh.rotate(new Vector3(1, 0, 0), +Math.PI / 2);
             this.htmlMesh.scalingDeterminant = 1 / 11;
             this.htmlMesh.parent = parentMesh;
             this.htmlMesh.position.x -= 0.01;
@@ -293,7 +344,7 @@ export class BabylonWrapper {
             parentMesh.isVisible = false;
 
             // Add screen glow spill light
-            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, 0.5), this.scene);
+            this.screenLight = new PointLight("screenLight", new Vector3(0, 0, -4), this.scene);
             this.screenLight.parent = this.htmlMesh;
             this.screenLight.diffuse = Color3.FromHexString("#29b6f6");
             this.screenLight.intensity = 0.8;

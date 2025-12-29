@@ -183,7 +183,7 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
 
                     <!-- Settings -->
-                    <div class="flex-1 border border-accent p-6 flex flex-col gap-8">
+                    <div class="flex-1 border border-accent p-6 flex flex-col gap-8 ${this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted() ? 'opacity-50 pointer-events-none grayscale' : ''}">
                         <!-- Ball Speed -->
                         <div>
                             <div class="text-lg mb-3 text-accent/80">Ball Speed</div>
@@ -194,11 +194,10 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
 
-                        <!-- AI Difficulty (Disabled in Campaign) -->
-                        <div class="${this.activeMode === 'campaign' ? 'opacity-50 pointer-events-none grayscale' : ''}">
-                            <div class="text-lg mb-3 text-accent/80 flex justify-between">
+                        <!-- AI Difficulty -->
+                        <div>
+                             <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
-                                ${this.activeMode === 'campaign' ? '<span class="text-xs text-accent border border-accent px-2 py-0.5">AUTO</span>' : ''}
                             </div>
                             <div class="flex border border-accent">
                                 ${this.renderDifficultyButton('easy', 'EASY')}
@@ -251,7 +250,7 @@ export class MainMenuPage extends AbstractComponent {
                 </div>
 
                 <!-- MIDDLE COLUMN: DYNAMIC PARTY PANE -->
-                <div class="w-1/3 border-y-2 border-accent flex flex-col bg-black/50">
+                <div class="w-1/3 border-accent flex flex-col bg-black/50">
                     <div class="bg-accent text-black p-3 font-bold flex justify-between items-center text-lg">
                         <span>${this.getMiddlePaneTitle()}</span>
                     </div>
@@ -261,34 +260,41 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
                 </div>
 
-                <!-- RIGHT COLUMN: AVAILABLE PLAYERS -->
-                <div class="flex-1 border border-accent flex flex-col bg-black/50">
-                    <div class="bg-accent text-black p-3 font-bold text-lg">
-                        AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
-                    </div>
-                    <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
-                        DRAG TO DEPLOY • CLICK FOR INTEL
-                    </div>
-
-                    <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
-                        <div class="grid gap-4 grid-cols-2" id="available-list">
-                            ${this.renderAvailablePlayers()}
-                        </div>
-                    </div>
+                <!-- RIGHT COLUMN: HOST PROFILE + AVAILABLE PLAYERS -->
+                <div class="flex-1 flex flex-col gap-4">
                     
-                    <div class="p-4 border-t border-accent/20 bg-black/40">
-                         <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-plus text-[10px]"></i>
-                              </div>
-                              ADD PLAYERS
-                         </button>
-                         <button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-robot text-[10px]"></i>
-                              </div>
-                              ADD BOT
-                         </button>
+                    <!-- Host Profile Card -->
+                    ${this.renderHostProfileCard()}
+                    
+                    <!-- Available Players Pane -->
+                    <div class="flex-1 border border-accent flex flex-col bg-black/50">
+                        <div class="bg-accent text-black p-3 font-bold text-lg">
+                            AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
+                        </div>
+                        <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
+                            DRAG TO DEPLOY • CLICK FOR INTEL
+                        </div>
+
+                        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
+                            <div class="grid gap-4 grid-cols-2" id="available-list">
+                                ${this.renderAvailablePlayers()}
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 border-t border-accent/20 bg-black/40">
+                             <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-plus text-[10px]"></i>
+                                  </div>
+                                  ADD PLAYERS
+                             </button>
+                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-robot text-[10px]"></i>
+                                  </div>
+                                  ADD BOT
+                             </button>` : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -296,7 +302,17 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private renderSpeedButton(type: 'ballSpeed' | 'paddleSpeed', value: string, label: string): string {
-        const isActive = this.settings[type] === value;
+        let isActive = this.settings[type] === value;
+
+        // Override visual state for Campaign Mode
+        if (this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted()) {
+            const level = CampaignService.getInstance().getCurrentLevel();
+            let forcedValue = 'medium';
+            if (level === 1) forcedValue = 'slow';
+            if (level === 3) forcedValue = 'fast';
+            isActive = (value === forcedValue);
+        }
+
         const classes = isActive
             ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
             : 'flex-1 py-2 text-xs hover:bg-accent hover:text-black transition-colors text-gray-500';
@@ -304,10 +320,16 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private renderDifficultyButton(value: string, label: string): string {
-        const isActive = this.settings.aiDifficulty === value;
-        // If in campaign mode, we might want to show the specific level difficulty, 
-        // but since we are disabling the control, just showing the current selected state (or default) is fine.
-        // Actually for Campaign "AUTO" visual above handles the indication.
+        let isActive = this.settings.aiDifficulty === value;
+
+        // Override visual state for Campaign Mode
+        if (this.activeMode === 'campaign' && !CampaignService.getInstance().isCompleted()) {
+            const level = CampaignService.getInstance().getCurrentLevel();
+            let forcedValue = 'medium';
+            if (level === 1) forcedValue = 'easy';
+            if (level === 3) forcedValue = 'hard';
+            isActive = (value === forcedValue);
+        }
 
         const classes = isActive
             ? 'flex-1 py-2 text-xs bg-accent text-black font-bold'
@@ -320,6 +342,10 @@ export class MainMenuPage extends AbstractComponent {
             case 'campaign':
                 const level = CampaignService.getInstance().getCurrentLevel();
                 const max = CampaignService.getInstance().getMaxLevel();
+                const isMastered = CampaignService.getInstance().isCompleted();
+                if (isMastered) {
+                    return `CAMPAIGN MASTERED. <span class="text-accent font-bold">ALL SYSTEMS UNLOCKED.</span> Replay any level with custom options.`;
+                }
                 return `Embark on a solo journey against alien AI. Current Level: <span class="text-accent font-bold">${level}/${max}</span>. Defeat increasingly difficult opponents to ascend.`;
             case 'arcade': return "Classic 2v2 or 1v1 action. Assign players to teams and battle it out locally.";
             case 'tournament': return "Gather up to 8 players for a bracket-style elimination tournament. Only one can be the champion.";
@@ -349,7 +375,7 @@ export class MainMenuPage extends AbstractComponent {
                         <div class="text-red-500 text-sm mb-2">ENEMY</div>
                         <div class="border border-red-900 bg-red-900/10 p-4 mx-auto w-full max-w-[200px]">
                             <i class="fas fa-robot text-4xl mb-2 text-red-500"></i>
-                            <div class="text-red-500">ALIEN HIVE</div>
+                            <div class="text-red-500">AL-IEN</div>
                         </div>
                     </div>
                 </div>
@@ -388,6 +414,53 @@ export class MainMenuPage extends AbstractComponent {
             `;
         }
         return '';
+    }
+
+    private renderHostProfileCard(): string {
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        if (!currentUser) {
+            return `<div class="border border-accent/30 p-4 bg-black/50 text-gray-500 text-center">Not logged in</div>`;
+        }
+
+        // Find host in available players to get avatar
+        const hostPlayer = this.availablePlayers.find(p => p.id === currentUser.userId);
+        const avatarUrl = hostPlayer?.avatarUrl
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=0A0A0A&color=29B6F6`;
+
+        // Get campaign level for display
+        const campaignLevel = CampaignService.getInstance().getCurrentLevel();
+        const maxLevel = CampaignService.getInstance().getMaxLevel();
+        const isMastered = CampaignService.getInstance().isCompleted();
+
+        return `
+            <div class="border border-accent bg-black/70 p-4 flex items-center gap-4 relative group">
+                <!-- Avatar with glow effect -->
+                <div class="w-16 h-16 border-2 border-accent rounded overflow-hidden flex-shrink-0 shadow-[0_0_15px_rgba(41,182,246,0.3)]">
+                    <img src="${avatarUrl}" class="w-full h-full object-cover" alt="${currentUser.username}">
+                </div>
+                
+                <!-- User Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-xl font-bold text-white truncate tracking-wide">${currentUser.username}</div>
+                    <div class="text-accent text-sm tracking-widest">
+                        ${isMastered
+                ? '<i class="fas fa-crown mr-1"></i> MASTER'
+                : `<i class="fas fa-signal mr-1"></i> LEVEL ${campaignLevel}/${maxLevel}`
+            }
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="settings-btn" class="w-10 h-10 border border-white/30 hover:border-accent hover:text-accent text-gray-500 flex items-center justify-center transition-all" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button id="logout-btn" class="w-10 h-10 border border-white/30 hover:border-red-500 hover:text-red-500 text-gray-500 flex items-center justify-center transition-all" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     private renderPlayerCard(p: Player, context: string, team?: number): string {
@@ -441,6 +514,9 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     public onMounted(): void {
+        // Force refresh UI to ensure latest campaign level is shown
+        this.renderContent();
+
         // Bind events on the component root
         this.bindEvents();
     }
@@ -656,14 +732,37 @@ export class MainMenuPage extends AbstractComponent {
                 App.getInstance().router.navigateTo('/settings');
                 return;
             }
+
+            // Logout Button
+            const logoutBtn = target.closest('#logout-btn');
+            if (logoutBtn) {
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthService.getInstance().logout();
+                    App.getInstance().router.navigateTo('/login');
+                }
+                return;
+            }
         };
     }
 
     private handleAddBot(): void {
+        if (this.activeMode === 'tournament') {
+            alert("Bots cannot be added in Tournament mode.");
+            return;
+        }
+
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+            const existing = LocalPlayerService.getInstance().getLocalPlayers();
+
+            // Limit bots to 2
+            const botCount = existing.filter(p => p.isBot).length;
+            if (botCount >= 2) {
+                alert("Maximum of 2 bots allowed.");
+                return;
+            }
+
             // Find next available bot name
             let botIndex = 1;
-            const existing = LocalPlayerService.getInstance().getLocalPlayers();
             while (existing.some(p => p.username === `BOT ${botIndex}`)) {
                 botIndex++;
             }
@@ -707,6 +806,10 @@ export class MainMenuPage extends AbstractComponent {
             // Early return to wait for promise/prevent render before check
             return;
         } else if (target === 'tournament') {
+            if (player.isBot) {
+                alert("Bots cannot be added to Tournament mode.");
+                return;
+            }
             if (this.tournamentPlayers.length < 8 && !isInTournament) {
                 this.tournamentPlayers.push(player);
             }
@@ -781,12 +884,57 @@ export class MainMenuPage extends AbstractComponent {
             // AI Opponent
             setup.team2 = [{
                 userId: 0,
-                username: 'ALIEN HIVE'
+                username: 'AL-IEN'
             } as any];
 
             const level = CampaignService.getInstance().getCurrentLevel();
-            setup.settings.difficulty = CampaignService.getInstance().getDifficultyForLevel(level);
             setup.campaignLevel = level;
+
+            // Enforce Level Settings (1=Low, 2=Med, 3=High) UNLESS Mastered
+            if (!CampaignService.getInstance().isCompleted()) {
+                if (level === 1) {
+                    setup.settings = {
+                        ballSpeed: 'slow',
+                        paddleSpeed: 'slow',
+                        difficulty: 'easy',
+                        powerupsEnabled: false,
+                        accumulateOnHit: false,
+                        scoreToWin: 5
+                    };
+                } else if (level === 2) {
+                    setup.settings = {
+                        ballSpeed: 'medium',
+                        paddleSpeed: 'medium',
+                        difficulty: 'medium',
+                        powerupsEnabled: false,
+                        accumulateOnHit: false,
+                        scoreToWin: 5
+                    };
+                } else {
+                    setup.settings = {
+                        ballSpeed: 'fast',
+                        paddleSpeed: 'fast',
+                        difficulty: 'hard',
+                        powerupsEnabled: true,
+                        accumulateOnHit: true,
+                        scoreToWin: 5
+                    };
+                }
+            } else {
+                // Use user selected settings
+                setup.settings = {
+                    ballSpeed: this.settings.ballSpeed,
+                    paddleSpeed: this.settings.ballSpeed, // Use same for paddle or add paddle setting? UI has paddleSpeed
+                    difficulty: this.settings.aiDifficulty,
+                    powerupsEnabled: this.settings.powerups,
+                    accumulateOnHit: this.settings.accumulateOnHit,
+                    scoreToWin: this.settings.scoreToWin
+                };
+                // Fix: Map paddleSpeed correctly
+                setup.settings.paddleSpeed = this.settings.paddleSpeed;
+            }
+            // Ensure compatibility with backend field names if they differ
+            setup.settings.aiDifficulty = setup.settings.difficulty;
 
             GameStateService.getInstance().setSetup(setup as any);
             App.getInstance().router.navigateTo('/game');

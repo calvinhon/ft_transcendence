@@ -141,11 +141,11 @@ export class AuthService {
     }
 
     public async loginWithGoogle(): Promise<void> {
-        await this.initiateOAuthPopup('google');
+        await this.initiateOAuthPopup('Google');
     }
 
     public async loginWithGithub(): Promise<void> {
-        await this.initiateOAuthPopup('github');
+        await this.initiateOAuthPopup('GitHub');
     }
 
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
