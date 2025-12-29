@@ -53,6 +53,11 @@ export class LocalPlayerService {
     }
 
     public addLocalPlayer(player: LocalPlayer): void {
+        // Set default avatar if missing
+        if (!player.avatarUrl) {
+            player.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.username)}&background=0A0A0A&color=29B6F6`;
+        }
+
         const check = this.isDuplicateLocalPlayer({
             ...player,
             userId: player.userId,

@@ -93,7 +93,7 @@ export class GameRenderer {
         ctx.strokeStyle = '#77e6ff';
         ctx.lineWidth = 4;
         ctx.shadowColor = '#77e6ff';
-        ctx.shadowBlur = 20; // Increased glow
+        ctx.shadowBlur = 8; // Optimized for Firefox performance
         ctx.strokeRect(0, 0, w, h);
         ctx.shadowBlur = 0;
     }
@@ -215,14 +215,14 @@ export class GameRenderer {
         const y = this.scaleY(gameY);
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 20; // Default glow
+        ctx.shadowBlur = 8; // Optimized for performance
 
         // Powerup Effect: Shimmer if paddle is larger than normal
         // Base height is approx 100 scaled. 
         const baseHeight = this.scaleY(100);
         if (h > baseHeight * 1.1) {
             const time = Date.now() / 200;
-            const shimmer = Math.abs(Math.sin(time)) * 20 + 20; // Oscillate blur between 20 and 40
+            const shimmer = Math.abs(Math.sin(time)) * 10 + 10; // Optimized shimmer
             ctx.shadowBlur = shimmer;
             ctx.shadowColor = '#ffff00'; // Gold glow for powerup
 
@@ -281,7 +281,7 @@ export class GameRenderer {
         const color = '#ffffff';
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = 25; // Increased glow
+        ctx.shadowBlur = 10; // Optimized for performance
         ctx.fillStyle = color;
 
         // Square Ball for Retro Feel
@@ -380,7 +380,7 @@ export class GameRenderer {
         ctx.fillRect(0, 0, w, h);
 
         ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 10; // Optimized
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 80px "VCR OSD Mono", monospace';
         ctx.textAlign = 'center';

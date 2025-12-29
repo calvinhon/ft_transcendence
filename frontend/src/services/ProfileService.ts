@@ -36,6 +36,7 @@ export interface RecentGame {
     score: string;
     date: string;
     gameMode: string;
+    teammates?: string;
 }
 
 export interface TournamentRanking {
@@ -140,13 +141,28 @@ export class ProfileService {
                         : (g.player1_name || (g.player1_id === 0 ? 'AI' : `User ${g.player1_id}`));
                 }
 
+                let teammates = '';
+                if (g.game_mode === 'arcade') {
+                    const myTeam = isPlayer1 ? g.player1_name : g.player2_name;
+                    if (myTeam && myTeam.includes('&')) {
+                        // Current user is one of them, we want the OTHER(s)
+                        const parts = myTeam.split('&').map((s: string) => s.trim());
+                        // Try to find current user's profile to get their name
+                        const currentUser = AuthService.getInstance().getCurrentUser();
+                        const myName = currentUser?.username;
+
+                        teammates = parts.filter((p: string) => p !== myName).join(' & ');
+                    }
+                }
+
                 return {
                     id: g.id,
                     opponent: opponent,
                     result: result,
                     score: `${myScore}-${oppScore}`,
                     date: g.finished_at || g.started_at,
-                    gameMode: g.game_mode || 'general'
+                    gameMode: g.game_mode || 'general',
+                    teammates: teammates || undefined
                 };
             });
         } catch (e) {

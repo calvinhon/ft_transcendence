@@ -104,13 +104,40 @@ export class GameHistoryService {
       const enrichedGame = { ...game };
 
       try {
-        // Fetch player1 name
-        if (game.player1_id !== undefined && game.player1_id !== null) {
+        // Use stored team data if available (for arcade multi-player names)
+        if (game.game_mode === 'arcade' && (game.team1_players || game.team2_players)) {
+          try {
+            if (game.team1_players) {
+              const t1 = JSON.parse(game.team1_players);
+              const names: string[] = [];
+              for (const p of t1) {
+                const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
+                const name = p.username || await this.fetchPlayerName(id);
+                if (name) names.push(name);
+              }
+              if (names.length > 0) enrichedGame.player1_name = names.join(' & ');
+            }
+            if (game.team2_players) {
+              const t2 = JSON.parse(game.team2_players);
+              const names: string[] = [];
+              for (const p of t2) {
+                const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
+                const name = p.username || await this.fetchPlayerName(id);
+                if (name) names.push(name);
+              }
+              if (names.length > 0) enrichedGame.player2_name = names.join(' & ');
+            }
+          } catch (e) {
+            logger.warn('Error parsing team players JSON:', e);
+          }
+        }
+
+        // Fallback to individual fetch if name not set
+        if (!enrichedGame.player1_name && game.player1_id !== undefined && game.player1_id !== null) {
           enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
         }
 
-        // Fetch player2 name
-        if (game.player2_id !== undefined && game.player2_id !== null) {
+        if (!enrichedGame.player2_name && game.player2_id !== undefined && game.player2_id !== null) {
           enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
         }
       } catch (fetchError) {
@@ -184,8 +211,36 @@ export class GameHistoryService {
   async enrichGameWithPlayerNames(game: GameRecord): Promise<GameRecord> {
     const enrichedGame = { ...game };
     try {
-      if (game.player1_id !== undefined && game.player1_id !== null) enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
-      if (game.player2_id !== undefined && game.player2_id !== null) enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
+      // Use stored team data if available (for arcade multi-player names)
+      if (game.game_mode === 'arcade' && (game.team1_players || game.team2_players)) {
+        try {
+          if (game.team1_players) {
+            const t1 = JSON.parse(game.team1_players);
+            const names: string[] = [];
+            for (const p of t1) {
+              const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
+              const name = p.username || await this.fetchPlayerName(id);
+              if (name) names.push(name);
+            }
+            if (names.length > 0) enrichedGame.player1_name = names.join(' & ');
+          }
+          if (game.team2_players) {
+            const t2 = JSON.parse(game.team2_players);
+            const names: string[] = [];
+            for (const p of t2) {
+              const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
+              const name = p.username || await this.fetchPlayerName(id);
+              if (name) names.push(name);
+            }
+            if (names.length > 0) enrichedGame.player2_name = names.join(' & ');
+          }
+        } catch (e) {
+          logger.warn('Error parsing team players JSON:', e);
+        }
+      }
+
+      if (!enrichedGame.player1_name && game.player1_id !== undefined && game.player1_id !== null) enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
+      if (!enrichedGame.player2_name && game.player2_id !== undefined && game.player2_id !== null) enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
       if (game.winner_id !== undefined && game.winner_id !== null) enrichedGame.winner_name = await this.fetchPlayerName(game.winner_id);
     } catch (fetchError) {
       logger.warn('Could not fetch player names:', fetchError);
