@@ -41,8 +41,8 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 	if (request.query.provider !== 'Google')
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
 
-	// Use secrets cache if available
-	if (!googleSecrets) {
+	// Use secrets cache if available (check clientID to determine if populated)
+	if (!googleSecrets.clientID) {
 		try {
 			const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
 			const secrets = vaultResponse.data.data.data;

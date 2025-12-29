@@ -60,7 +60,7 @@ Records completed game sessions with scores and metadata.
 | `started_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Game start time |
 | `finished_at` | DATETIME | - | Game completion time |
 | `winner_id` | INTEGER | - | Winning player's user ID |
-| `game_mode` | TEXT | DEFAULT 'coop' | Game mode (coop/arcade/tournament) |
+| `game_mode` | TEXT | DEFAULT 'campaign' | Game mode (coop/arcade/tournament) |
 | `team1_players` | TEXT | - | JSON array of team 1 player IDs (arcade mode) |
 | `team2_players` | TEXT | - | JSON array of team 2 player IDs (arcade mode) |
 | `tournament_id` | INTEGER | - | Associated tournament ID |
