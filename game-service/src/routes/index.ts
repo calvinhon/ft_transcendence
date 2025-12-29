@@ -29,7 +29,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { userId: string };
   }>('/history/:userId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game history routes
   }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     try {
       const { userId } = request.params;
@@ -46,7 +46,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { gameId: string };
   }>('/:gameId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game details routes
   }, async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     try {
       const { gameId } = request.params;
@@ -68,7 +68,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { gameId: string };
   }>('/:gameId/events', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game events routes
   }, async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     try {
       const { gameId } = request.params;
@@ -82,7 +82,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Save game result
   fastify.post('/save', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game save routes
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as any;
@@ -135,7 +135,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { userId: string };
   }>('/stats/:userId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game stats routes
   }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     try {
       const { userId } = request.params;
@@ -149,7 +149,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Get currently online users
   fastify.get('/online', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect online users routes
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       // Map keys to array of objects
@@ -166,7 +166,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Friends Routes
   fastify.post('/friends/add', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect friends add routes
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId, friendId } = request.body as any;
@@ -184,7 +184,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.post('/friends/remove', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect friends remove routes
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId, friendId } = request.body as any;
@@ -200,7 +200,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.get<{ Params: { userId: string } }>('/friends/:userId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect friends list routes
   }, async (request, reply) => {
     try {
       const { userId } = request.params;

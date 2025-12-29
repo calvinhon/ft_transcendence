@@ -11,7 +11,7 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
   fastify.post<{
     Body: MatchResultBody;
   }>('/matches/result', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect match result routes
   }, async (request: FastifyRequest<{
     Body: MatchResultBody;
   }>, reply: FastifyReply) => {
@@ -36,7 +36,7 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
     Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;
   }>('/tournaments/:tournamentId/matches/:matchId/result', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament match result routes
   }, async (request: FastifyRequest<{
     Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;

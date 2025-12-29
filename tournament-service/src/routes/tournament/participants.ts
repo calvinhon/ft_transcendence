@@ -12,7 +12,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
   }>('/tournaments/:tournamentId/join', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament join routes
   }, async (request: FastifyRequest<{
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
@@ -43,7 +43,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   fastify.get<{
     Params: { userId: string };
   }>('/user/:userId/rankings', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect user rankings routes
   }, async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
@@ -70,7 +70,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   fastify.get<{
     Params: { userId: string };
   }>('/tournaments/user/:userId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect user tournaments routes
   }, async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
@@ -97,7 +97,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   fastify.get<{
     Params: { tournamentId: string };
   }>('/tournaments/participant/:tournamentId', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament participants routes
   }, async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
 	try {
 		const id = parseInt(request.params.tournamentId, 10);

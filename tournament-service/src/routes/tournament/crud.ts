@@ -11,7 +11,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   fastify.get<{
     Params: { id: string };
   }>('/tournaments/:id', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament retrieval routes
   }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const id = parseInt(request.params.id);
@@ -36,7 +36,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   fastify.post<{
     Params: { tournamentId: string };
   }>('/tournaments/:tournamentId/start', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament start routes
   }, async (request: FastifyRequest<{
     Params: { tournamentId: string };
   }>, reply: FastifyReply) => {

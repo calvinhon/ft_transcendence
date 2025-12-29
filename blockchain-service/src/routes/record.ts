@@ -6,7 +6,7 @@ const plugin: FastifyPluginAsync<{ blockchainService: BlockchainService }> = asy
   const svc = (opts as any).blockchainService as BlockchainService;
 
   fastify.post('/record', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect blockchain record routes
   }, async (request, reply) => {
 	try {
 		const { tournamentId, players, ranks } = request.body as any;

@@ -12,7 +12,7 @@ export default async function tournamentUserRoutes(fastify: FastifyInstance): Pr
   fastify.post<{
     Body: { name: string; description?: string; maxParticipants?: number; createdBy: number };
   }>('/tournaments/create', {
-    preHandler: requireJWTAuth
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect tournament creation routes
   }, async (request: FastifyRequest<{
     Body: { name: string; description?: string; maxParticipants?: number; createdBy: number };
   }>, reply: FastifyReply) => {
