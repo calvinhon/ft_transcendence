@@ -99,26 +99,6 @@ export class AuthService {
     public async checkSession(): Promise<boolean> {
         console.log("AuthService: Checking Session...");
 
-        // FIRST: Try to restore user from localStorage - this is the PRIMARY mechanism
-        this.restoreUserFromStorage();
-
-        if (App.getInstance().currentUser) {
-            console.log("AuthService: User restored from localStorage:", App.getInstance().currentUser?.username);
-
-            // Optionally verify with backend, but don't fail if backend doesn't return user
-            try {
-                const response = await Api.post('/api/auth/verify', {});
-                console.log("AuthService: Backend verify response:", response);
-                // Backend verification passed - session is valid
-            } catch (e: any) {
-                console.warn("AuthService: Backend verify call failed, but localStorage user exists:", e.message);
-                // Continue with localStorage user - don't logout
-            }
-
-            return true;
-        }
-
-        // No user in localStorage - try backend verification as fallback
         try {
             const verifyPromise = Api.post('/api/auth/verify', {});
             const timeoutPromise = new Promise((_, reject) =>
@@ -348,22 +328,9 @@ export class AuthService {
         }
     }
 
-
     private handleAuthSuccess(token: string, user: User): void {
         if (token) localStorage.setItem('token', token);
         if (user) localStorage.setItem('user', JSON.stringify(user));
         App.getInstance().currentUser = user;
-    }
-
-    public restoreUserFromStorage(): void {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-            try {
-                const user = JSON.parse(userStr);
-                App.getInstance().currentUser = user;
-            } catch (e) {
-                console.warn("Failed to restore user from storage");
-            }
-        }
     }
 }
