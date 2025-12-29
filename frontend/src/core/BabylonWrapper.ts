@@ -327,8 +327,13 @@ export class BabylonWrapper {
         });
 
         if (parentMesh) {
+            // Firefox fix: Apply CSS backface-visibility and vertical flip
+            appElement.style.backfaceVisibility = 'visible';
+            appElement.style.transform = 'scaleY(-1)';
+
             this.htmlMesh.setContent(appElement, 4.38, 3.395);
-            this.htmlMesh.rotate(new Vector3(1, 0, 0), -Math.PI / 2);
+            // Firefox fix: Use +Math.PI/2 instead of -Math.PI/2 to show front face
+            this.htmlMesh.rotate(new Vector3(1, 0, 0), +Math.PI / 2);
             this.htmlMesh.scalingDeterminant = 1 / 11;
             this.htmlMesh.parent = parentMesh;
             this.htmlMesh.position.x -= 0.01;
