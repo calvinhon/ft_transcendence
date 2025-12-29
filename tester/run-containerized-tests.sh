@@ -28,7 +28,6 @@ CONTAINERS=(
     "tournament"
     "user"
     "vault"
-    "hardhat-node"
     "frontend"
     "ssr"
 )

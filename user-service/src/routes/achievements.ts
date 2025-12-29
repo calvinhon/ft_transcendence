@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../database';
 import { Achievement, UserAchievement } from '../types';
-import { promisifyDbGet, promisifyDbRun, promisifyDbAll } from '@ft-transcendence/common';
+import { promisifyDbGet, promisifyDbRun, promisifyDbAll, requireJWTAuth } from '@ft-transcendence/common';
 
 export async function setupAchievementRoutes(fastify: FastifyInstance): Promise<void> {
   // Get all achievements
@@ -18,7 +18,9 @@ export async function setupAchievementRoutes(fastify: FastifyInstance): Promise<
   // Get user's achievements
   fastify.get<{
     Params: { userId: string };
-  }>('/achievements/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  }>('/achievements/:userId', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect user achievements routes
+  }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const { userId } = request.params;
 
     try {
@@ -36,7 +38,9 @@ export async function setupAchievementRoutes(fastify: FastifyInstance): Promise<
   // Unlock achievement for user
   fastify.post<{
     Body: { userId: string; achievementId: number };
-  }>('/achievement/unlock', async (request: FastifyRequest<{ Body: { userId: string; achievementId: number } }>, reply: FastifyReply) => {
+  }>('/achievement/unlock', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect achievement unlock routes
+  }, async (request: FastifyRequest<{ Body: { userId: string; achievementId: number } }>, reply: FastifyReply) => {
     const { userId, achievementId } = request.body;
 
     if (!userId || !achievementId) {

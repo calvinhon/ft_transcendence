@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { TournamentService } from '../../services/tournamentService';
 import { CreateTournamentBody, TournamentQuery } from '../../types';
-import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, sendHealthCheck, createLogger, requireJWTAuth } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 
@@ -10,7 +10,9 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   // Get tournament by ID
   fastify.get<{
     Params: { id: string };
-  }>('/tournaments/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/:id', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     try {
       const id = parseInt(request.params.id);
       if (isNaN(id)) {
@@ -33,7 +35,9 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   // Start tournament (specific route)
   fastify.post<{
     Params: { tournamentId: string };
-  }>('/tournaments/:tournamentId/start', async (request: FastifyRequest<{
+  }>('/tournaments/:tournamentId/start', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Params: { tournamentId: string };
   }>, reply: FastifyReply) => {
     try {

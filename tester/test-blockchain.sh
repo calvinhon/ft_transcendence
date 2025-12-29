@@ -221,6 +221,20 @@ test_cache_and_artifacts() {
     return 1
 }
 
+# Test 13: Blockchain Service Health Check
+test_blockchain_service_health() {
+    echo -e "${YELLOW}Running Test 13: Blockchain Service Health Check${NC}"
+    
+    # Check if blockchain service is responding to health endpoint
+    if curl -s http://localhost:3005/health 2>/dev/null | grep -q '"status":"ok"'; then
+        log_result 13 "Blockchain Service Health Check" "PASS"
+        return 0
+    fi
+    
+    log_result 13 "Blockchain Service Health Check" "FAIL"
+    return 1
+}
+
 # Main execution
 main() {
     echo -e "${YELLOW}=== Blockchain Test Suite ===${NC}"
@@ -241,6 +255,7 @@ main() {
     test_smart_contract_testing || true
     test_contract_documentation || true
     test_cache_and_artifacts || true
+    test_blockchain_service_health || true
     
     echo ""
     echo -e "${YELLOW}=== Test Summary ===${NC}"

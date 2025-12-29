@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MatchService } from '../../services/matchService';
 import { MatchResultBody } from '../../types';
-import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, createLogger, requireJWTAuth } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 
@@ -10,7 +10,9 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
   // Submit match result (game-service route)
   fastify.post<{
     Body: MatchResultBody;
-  }>('/matches/result', async (request: FastifyRequest<{
+  }>('/matches/result', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Body: MatchResultBody;
   }>, reply: FastifyReply) => {
     try {
@@ -33,7 +35,9 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
   fastify.post<{
     Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;
-  }>('/tournaments/:tournamentId/matches/:matchId/result', async (request: FastifyRequest<{
+  }>('/tournaments/:tournamentId/matches/:matchId/result', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;
   }>, reply: FastifyReply) => {

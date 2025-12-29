@@ -103,6 +103,48 @@ export async function requireAuth(request: any, reply: any): Promise<void> {
   logger.debug('Authentication token extracted');
 }
 
+//Hoach edited: Added JWT authentication middleware for HTTP-only cookies
+/**
+ * JWT Authentication middleware using HTTP-only cookies
+ * Verifies JWT token from cookies and adds user info to request
+ */
+export async function requireJWTAuth(request: any, reply: any): Promise<void> {
+  const logger = createLogger('JWT-AUTH-MIDDLEWARE');
+
+  try {
+    // Check for JWT token in HTTP-only cookie
+    const token = request.cookies.token;
+
+    if (!token) {
+      logger.warn('No JWT token found in cookies');
+      reply.code(401).send({ error: 'Authentication required' });
+      return;
+    }
+
+    // Verify JWT token using fastify-jwt
+    const decoded = await request.server.jwt.verify(token);
+
+    // Add user info to request
+    request.user = {
+      id: decoded.userId,
+      username: decoded.username,
+      // Add other user fields as needed
+    };
+
+    logger.debug('JWT authentication successful', { userId: decoded.userId });
+  } catch (error) {
+    logger.warn('JWT verification failed:', error);
+    // Clear invalid token
+    reply.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+    reply.code(401).send({ error: 'Invalid or expired token' });
+  }
+}
+//Hoach edit ended
+
 /**
  * Admin role middleware helper
  */

@@ -18,9 +18,13 @@ import {
 //Hoach edit ended
 
 async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
+  console.log('🔄 authRoutes function called');
+
   // Register routes
   fastify.post('/register', registerHandler);
+  console.log('✅ Registered /register');
   fastify.post('/login', loginHandler);
+  console.log('✅ Registered /login');
   fastify.post('/logout', logoutHandler);
   fastify.get('/profile/:userId', profileHandler);
   fastify.post('/verify', verifySessionHandler); // Add verify

@@ -541,12 +541,53 @@ it("should complete full tournament lifecycle", async function() {
 
 ---
 
+## Test 13: Blockchain Service Health Check
+
+### Objective
+Verify blockchain service is running and healthy.
+
+### Test Steps
+1. Start blockchain service
+2. Call health endpoint
+3. Verify response format
+4. Check service status
+
+### Test Commands
+```bash
+# Check blockchain service health
+curl -s http://localhost:3005/health
+
+# Expected output:
+{
+  "status": "ok",
+  "service": "blockchain-service",
+  "timestamp": "2025-12-29T..."
+}
+```
+
+### Expected Results
+```json
+{
+  "status": "ok",
+  "service": "blockchain-service",
+  "timestamp": "2025-12-29T10:30:00.000Z"
+}
+```
+
+### Pass Criteria
+- Health endpoint responds
+- Status is "ok"
+- Service name correct
+- Timestamp is valid ISO string
+
+---
+
 ## Summary
 
 **Blockchain:** Solidity + Hardhat ✅  
 **Contract:** TournamentRankings  
-**Total Tests:** 12  
-**Pass Criteria:** All 12 must pass
+**Total Tests:** 13  
+**Pass Criteria:** All 13 must pass
 
 ### Quick Test Command
 ```bash

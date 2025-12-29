@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ParticipantService } from '../../services/participantService';
 import { JoinTournamentBody } from '../../types';
-import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, createLogger, requireJWTAuth } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 
@@ -11,7 +11,9 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   fastify.post<{
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
-  }>('/tournaments/:tournamentId/join', async (request: FastifyRequest<{
+  }>('/tournaments/:tournamentId/join', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
   }>, reply: FastifyReply) => {
@@ -40,7 +42,9 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   // Get user's tournament rankings
   fastify.get<{
     Params: { userId: string };
-  }>('/user/:userId/rankings', async (request: FastifyRequest<{
+  }>('/user/:userId/rankings', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
     try {
@@ -65,7 +69,9 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   // Get user tournaments
   fastify.get<{
     Params: { userId: string };
-  }>('/tournaments/user/:userId', async (request: FastifyRequest<{
+  }>('/tournaments/user/:userId', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
     try {
@@ -90,7 +96,9 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   // Get all tournament participants
   fastify.get<{
     Params: { tournamentId: string };
-  }>('/tournaments/participant/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
+  }>('/tournaments/participant/:tournamentId', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
 	try {
 		const id = parseInt(request.params.tournamentId, 10);
 		if (Number.isNaN(id)) return sendError(reply, 'Invalid tournament ID', 400);

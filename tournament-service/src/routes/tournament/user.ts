@@ -1,7 +1,7 @@
 // tournament-service/src/routes/tournament/user.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { TournamentService } from '../../services/tournamentService';
-import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, createLogger, requireJWTAuth } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 
@@ -11,7 +11,9 @@ export default async function tournamentUserRoutes(fastify: FastifyInstance): Pr
   // Legacy tournament creation route (for frontend compatibility)
   fastify.post<{
     Body: { name: string; description?: string; maxParticipants?: number; createdBy: number };
-  }>('/tournaments/create', async (request: FastifyRequest<{
+  }>('/tournaments/create', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{
     Body: { name: string; description?: string; maxParticipants?: number; createdBy: number };
   }>, reply: FastifyReply) => {
     try {

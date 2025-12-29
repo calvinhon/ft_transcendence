@@ -128,7 +128,9 @@ services:
       - transcendence-network
 
   blockchain-service:
-    build: ./blockchain-service
+    build:
+      context: .
+      dockerfile: ./blockchain-service/Dockerfile
     container_name: blockchain-service
     ports:
       - "3005:3000"

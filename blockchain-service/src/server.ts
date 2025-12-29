@@ -49,6 +49,11 @@ async function start() {
     await fastify.register(cors, { origin: true });
     await fastify.register(recordRoute as any, { blockchainService: bs });
 
+    // Health check endpoint
+    fastify.get('/health', async (request, reply) => {
+      return { status: 'ok', service: 'blockchain-service', timestamp: new Date().toISOString() };
+    });
+
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     console.log(`Blockchain service running on port 3000, RPC=${RPC}, contract=${CONTRACT}`);
   } catch (err) {

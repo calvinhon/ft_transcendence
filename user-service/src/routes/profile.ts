@@ -3,13 +3,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from '../services/userService';
 import { UpdateProfileBody } from '../types';
 import { db } from '../database';
-import { promisifyDbRun } from '@ft-transcendence/common';
+import { promisifyDbRun, requireJWTAuth } from '@ft-transcendence/common';
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // Get user profile
   fastify.get<{
     Params: { userId: string };
-  }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  }>('/profile/:userId', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect profile routes
+  }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const { userId } = request.params;
 
     try {
@@ -25,7 +27,9 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
   fastify.put<{
     Params: { userId: string };
     Body: UpdateProfileBody;
-  }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: UpdateProfileBody }>, reply: FastifyReply) => {
+  }>('/profile/:userId', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect profile update routes
+  }, async (request: FastifyRequest<{ Params: { userId: string }; Body: UpdateProfileBody }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const updates = request.body;
 
@@ -50,7 +54,9 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
       lost?: number;
       [key: string]: any;
     };
-  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number;[key: string]: any; } }>, reply: FastifyReply) => {
+  }>('/game/update-stats/:userId', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect game stats update routes
+  }, async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number;[key: string]: any; } }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
 

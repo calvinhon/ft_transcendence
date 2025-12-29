@@ -296,6 +296,8 @@ health:
 	@curl -s http://localhost:3004/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Tournament Service (3003):"
 	@curl -s http://localhost:3003/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@echo "  Blockchain Service (3005):"
+	@curl -s http://localhost:3005/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo ""
 	@echo "📦 Database Check:"
 	@echo "  Auth DB: $(shell [ -f auth-service/database/auth.db ] && echo '✅ Exists' || echo '❌ Missing')"

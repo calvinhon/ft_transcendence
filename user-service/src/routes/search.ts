@@ -2,13 +2,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../database';
 import { SearchQuery, OnlineUser } from '../types';
-import { promisifyDbAll, clampLimit } from '@ft-transcendence/common';
+import { promisifyDbAll, clampLimit, requireJWTAuth } from '@ft-transcendence/common';
 
 export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void> {
   // Search users by display name or username
   fastify.get<{
     Querystring: SearchQuery;
-  }>('/search/users', async (request: FastifyRequest<{ Querystring: SearchQuery }>, reply: FastifyReply) => {
+  }>('/search/users', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect user search routes
+  }, async (request: FastifyRequest<{ Querystring: SearchQuery }>, reply: FastifyReply) => {
     const { query, limit = '10' } = request.query;
 
     if (!query || query.trim().length < 2) {
@@ -43,7 +45,9 @@ export async function setupSearchRoutes(fastify: FastifyInstance): Promise<void>
   });
 
   // Get online users (placeholder - would need real-time tracking)
-  fastify.get('/users/online', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/users/online', {
+    preHandler: requireJWTAuth //Hoach edited: Added JWT authentication to protect online users routes
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const users = await promisifyDbAll<OnlineUser>(db, `SELECT up.user_id, up.display_name, up.avatar_url,
                 'online' as status, 0 as is_bot, CURRENT_TIMESTAMP as last_seen

@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
 // Hoach added: For session validation
 import { AuthService } from '../../services/authService';
+import { JWTPayload } from '../../types';
 const logger = createLogger('AUTH-SERVICE');
 // End Hoach added
 
@@ -21,7 +22,7 @@ export async function verifySessionHandler(request: FastifyRequest, reply: Fasti
   }
 
   try {
-    const decoded = await request.server.jwt.verify(token);
+    const decoded = await request.server.jwt.verify(token) as JWTPayload;
     logger.info(`Token verified for user ${decoded.userId}`);
     sendSuccess(reply, { user: decoded, valid: true }, 'Token valid');
   } catch (error) {

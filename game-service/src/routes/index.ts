@@ -4,7 +4,7 @@ import { SocketStream } from '@fastify/websocket';
 import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocket';
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
-import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, sendHealthCheck, createLogger, requireJWTAuth } from '@ft-transcendence/common';
 import { onlineUsers } from './modules/friend-service';
 
 const logger = createLogger('GAME-SERVICE');
@@ -28,7 +28,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get game history
   fastify.get<{
     Params: { userId: string };
-  }>('/history/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  }>('/history/:userId', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     try {
       const { userId } = request.params;
       const games = await gameHistoryService.getGameHistory(userId);
@@ -43,7 +45,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get single game details
   fastify.get<{
     Params: { gameId: string };
-  }>('/:gameId', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+  }>('/:gameId', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     try {
       const { gameId } = request.params;
       const game = await gameHistoryService.getGameDetails(parseInt(gameId));
@@ -63,7 +67,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get game events
   fastify.get<{
     Params: { gameId: string };
-  }>('/:gameId/events', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+  }>('/:gameId/events', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     try {
       const { gameId } = request.params;
       const events = await gameHistoryService.getGameEvents(parseInt(gameId));
@@ -75,7 +81,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // Save game result
-  fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/save', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as any;
       logger.info('Saving game result:', body);
@@ -126,7 +134,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get game statistics
   fastify.get<{
     Params: { userId: string };
-  }>('/stats/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+  }>('/stats/:userId', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     try {
       const { userId } = request.params;
       const stats = await gameStatsService.getGameStats(userId);
@@ -138,7 +148,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // Get currently online users
-  fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/online', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       // Map keys to array of objects
       const users: any[] = [];
@@ -153,7 +165,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // Friends Routes
-  fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/friends/add', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId, friendId } = request.body as any;
       if (!userId || !friendId) {
@@ -169,7 +183,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  fastify.post('/friends/remove', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/friends/remove', {
+    preHandler: requireJWTAuth
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId, friendId } = request.body as any;
       if (!userId || !friendId) return sendError(reply, 'Missing userId or friendId', 400);
@@ -183,7 +199,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  fastify.get<{ Params: { userId: string } }>('/friends/:userId', async (request, reply) => {
+  fastify.get<{ Params: { userId: string } }>('/friends/:userId', {
+    preHandler: requireJWTAuth
+  }, async (request, reply) => {
     try {
       const { userId } = request.params;
       const { friendService } = await import('./modules/friend-service');

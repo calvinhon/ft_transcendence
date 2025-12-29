@@ -6,7 +6,7 @@ import { sendError, sendSuccess, createLogger, validatePassword, ERROR_MESSAGES 
 const logger = createLogger('AUTH-SERVICE');
 
 export async function resetPasswordHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const authService = new AuthService();
+  const authService = new AuthService(request.server);
   try {
     const { token, newPassword } = request.body as { token: string; newPassword: string };
 

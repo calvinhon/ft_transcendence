@@ -1,7 +1,7 @@
 // auth-service/src/routes/handlers/twoFactorHandlers.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { twoFactorService } from '../../services/twoFactorService.js';
-import { sendSuccess, sendError } from '../../utils/responses.js';
+import { sendSuccess, sendError } from '@ft-transcendence/common';
 
 /**
  * POST /auth/2fa/setup
