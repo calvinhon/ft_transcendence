@@ -41,11 +41,12 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 	if (request.query.provider !== 'Google')
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider'});
 
-	// Use secrets cache if available
-	if (!googleSecrets) {
+	// Use secrets cache if available (check clientID to determine if populated)
+	if (!googleSecrets.clientID) {
 		try {
-			const secrets = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN} }).data.data.data;
-			if (!secrets || !secrets.Client_ID || !secrets.Client_Secret || !secrets.clientCallbackURL)
+			const resp = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN} });
+			const secrets = resp.data?.data?.data;
+			if (!secrets || !secrets.Client_ID || !secrets.Client_Secret || !secrets.Callback_URL)
 				throw new Error('Vault response missing secrets');
 			googleSecrets = { clientID: secrets.Client_ID, clientSecret: secrets.Client_Secret, clientCallbackURL: secrets.Callback_URL };
 		} catch (err: any) {
