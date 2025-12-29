@@ -145,12 +145,10 @@ export class PongGame {
 
   startGameLoop(): void {
     this.stateManager.startGameLoop(() => {
-      // Check if AI control is needed based on game mode
       let shouldActivateAI = false;
 
       if (this.gameSettings.gameMode === 'campaign') {
-        // In campaign mode, check if player2 is a bot
-        shouldActivateAI = this.player2.userId === 0;
+        shouldActivateAI = true;
       } else if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
         // In team modes, check if there are any bot players in EITHER team
         const hasTeam1Bots = Boolean(this.gameSettings.team1Players &&
@@ -163,7 +161,15 @@ export class PongGame {
       }
 
       if (shouldActivateAI) {
-        this.ai.updateBallPosition(this.ball.x, this.ball.y);
+		let now = Date.now();
+		let lagAI = 1000;
+		if (this.gameSettings.aiDifficulty === 'medium')
+			lagAI = 600;
+		if (this.gameSettings.aiDifficulty === 'hard')
+			lagAI = 300;
+		if (now - this.ai.lastBallUpdate >= lagAI) {
+       	 this.ai.updateBallPosition(this.ball.x, this.ball.y);this.ai.lastBallUpdate = now;
+		}
         this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
       }
 
