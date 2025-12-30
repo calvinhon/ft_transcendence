@@ -1,7 +1,6 @@
 # Docker Compose - Combined Configuration
 # Use profiles to control which services start:
 # - Default: Core services only (fast development)
-# - Full profile: All services including SSR (--profile full)
 
 services:
   vault:
@@ -169,21 +168,6 @@ services:
       - tournament-service
       - blockchain-service
     mem_limit: 128m
-    networks:
-      - transcendence-network
-
-  ssr-service:
-    build:
-      context: .
-      dockerfile: ./ssr-service/Dockerfile
-    container_name: ssr
-    ports:
-      - "3006:3000"
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=ssr-service
-      - BASE_URL=http://localhost
-    mem_limit: 256m
     networks:
       - transcendence-network
 
