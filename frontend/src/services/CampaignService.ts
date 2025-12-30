@@ -74,7 +74,7 @@ export class CampaignService {
             // Let's assume there's an endpoint or we can update profile.
             // Adjust this path if legacy used a different specific route.
             if (user) {
-                await Api.patch(`/api/user/profile/${user.userId}`, {
+                await Api.post(`/api/user/game/update-stats/${user.userId}`, {
                     campaign_level: level
                 });
             }

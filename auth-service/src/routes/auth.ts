@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import { registerHandler } from './handlers/register';
 import { loginHandler } from './handlers/login';
 import { logoutHandler } from './handlers/logout';
-import { profileHandler } from './handlers/profile';
+import { profileHandler, profileOauthIdentificationHandler } from './handlers/profile';
 import { forgotPasswordHandler } from './handlers/forgotPassword';
 import { resetPasswordHandler } from './handlers/resetPassword';
 import { verifySessionHandler } from './handlers/verify';
@@ -16,6 +16,7 @@ import { oauthInitHandler, oauthCallbackHandler } from './handlers/oauth';
 //   handleGet2FAStatus,
 // } from './handlers/twoFactorHandlers';
 //Hoach edit ended
+import { oauthInitHandler, oauthCallbackHandler } from './handlers/oauth';
 
 async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
   console.log('�🚀🚀 AUTH ROUTES FUNCTION STARTED 🚀🚀🚀');
@@ -27,9 +28,12 @@ async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<voi
   console.log('✅ Registered /login');
   fastify.post('/logout', logoutHandler);
   fastify.get('/profile/:userId', profileHandler);
+  fastify.get('/profile/oauth/:userId', profileOauthIdentificationHandler);
   fastify.post('/verify', verifySessionHandler); // Add verify
   fastify.post('/forgot-password', forgotPasswordHandler);
   fastify.post('/reset-password', resetPasswordHandler);
+  fastify.get('/oauth/callback', oauthCallbackHandler);
+  fastify.get('/oauth/init', oauthInitHandler);
 
   console.log('🔍 Before OAuth routes');
   //Hoach edited: Added OAuth and 2FA routes

@@ -9,7 +9,11 @@ export class GameAI {
   private gameMode: string;
   private ballX: number = 400;
   private ballY: number = 300;
+  private prevBallX: number = 0;
+  private prevBallY: number = 0;
   private paddleSpeed: number;
+  public lastBallUpdate = 0;
+  private paddleMissState: WeakMap<any, { lastMissTs: number }> = new WeakMap();
 
   constructor(aiDifficulty: 'easy' | 'medium' | 'hard', gameMode: string, paddleSpeed: number) {
     this.aiDifficulty = aiDifficulty;
@@ -18,100 +22,95 @@ export class GameAI {
   }
 
   updateBallPosition(ballX: number, ballY: number): void {
+	this.prevBallY = this.ballY;
+	this.prevBallX = this.ballX;
     this.ballX = ballX;
     this.ballY = ballY;
   }
 
+  predictBallY(xTarget: number): number {
+    const dx = this.ballX - this.prevBallX;
+    if (dx < 0.5 && xTarget === 750 || dx > -0.5 && xTarget === 50) return this.ballY;
+    const dy = this.ballY - this.prevBallY;
+
+    const ticksToTarget = (xTarget - this.ballX) / dx;
+
+    let predictedY = this.ballY + dy * ticksToTarget;
+
+    predictedY = this.reflectWithinBounds(predictedY, 600);
+
+    return predictedY;
+  }
+
+  private reflectWithinBounds(y: number, max: number): number {
+    const period = 2 * max;
+    y %= period;
+    if (y > max) y = period - y;
+    return y;
+  }
+
   moveBotPaddle(paddles: Paddles, gameId: number, team1Players?: any[], team2Players?: any[]): void {
-    // Smoother AI Logic
-    // No random "skipping" frames (causes jitter). Instead, limit speed and tracking accuracy.
 
-    const paddleCenterOffset = 50;
+    const paddleCenter = 50;
 
-    // Difficulty Configuration
-    let maxSpeed = this.paddleSpeed;
-    let lazyFactor = 0; // 0 = Instant reaction, 1 = Very lazy
-    let targetError = 0;
+    const processPaddle = (paddle: any, xTarget: number) => {
+      const predicted = this.predictBallY(xTarget);
+      let desiredTop = predicted - paddleCenter;
 
-    switch (this.aiDifficulty) {
-      case 'easy':
-        maxSpeed = this.paddleSpeed * 0.4; // 40% Speed (Slower)
-        targetError = 60; // Aim +/- 60px from ball
-        lazyFactor = 0.25; // Smoothly lag behind
-        break;
-      case 'medium':
-        maxSpeed = this.paddleSpeed * 0.7; // 70% Speed
-        targetError = 30; // Aim +/- 30px
-        lazyFactor = 0.1;
-        break;
-      case 'hard':
-        maxSpeed = this.paddleSpeed * 1.2; // 120% Speed (Fast)
-        targetError = 10; // Aim +/- 10px (Very accurate but not perfect)
-        lazyFactor = 0.02; // Sharp reaction
-        break;
-    }
+      const now = Date.now();
+      const state = this.paddleMissState.get(paddle) || { lastMissTs: 0 };
 
-    let targetY = this.ballY;
-
-    // AI aims directly for the ball with speed limiting for different difficulty levels
-    // High speed with slight tracking delay makes hard mode challenging but beatable
-
-    // Apply movement
-    const processPaddle = (paddle: any) => {
-      const h = paddle.height || 100;
-      const centerY = paddle.y + (h / 2);
-      let dist = targetY - centerY;
-
-      // Deadzone to prevent micro-jitter when aligned
-      if (Math.abs(dist) < 5) return;
-
-      // Cap speed
-      let move = dist * (1 - lazyFactor); // Proportional control
-      if (Math.abs(move) > maxSpeed) {
-        move = Math.sign(move) * maxSpeed;
+      let missChance = 0.05;
+      let missCooldown = 5000;
+      switch (this.aiDifficulty) {
+        case 'easy':
+          missChance = 0.15;
+          missCooldown = 3000;
+          break;
+        case 'hard':
+          missChance = 0.01;
+          missCooldown = 8000;
+          break;
       }
 
-      let newY = paddle.y + move;
+      if (now - state.lastMissTs > missCooldown && Math.random() <= missChance) {
+        desiredTop += (Math.random() < 0.5 ? -1 : 1) * 100;
+        state.lastMissTs = now;
+        this.paddleMissState.set(paddle, state);
+      }
 
-      // Bounds check
-      if (newY < 0) newY = 0;
-      const maxY = 600 - h;
-      if (newY > maxY) newY = maxY; // Dynamic boundary
+      desiredTop = Math.max(0, Math.min(500, desiredTop));
 
-      paddle.y = newY;
+      const delta = desiredTop - paddle.y;
+      if (Math.abs(delta) < 4) return;
+
+      const move = Math.sign(delta) * Math.min(Math.abs(delta), this.paddleSpeed);
+      paddle.y = Math.max(0, Math.min(500, paddle.y + move));
     };
 
-
-    // Handle arcade/tournament/campaign mode with multiple paddles
+	// Handle arcade/tournament/campaign mode with multiple paddles
     if (this.gameMode === 'arcade' || this.gameMode === 'tournament') {
-      const processTeam = (players: any[], teamPaddles: any[]) => {
+      const processTeam = (players: any[] | undefined, teamPaddles: any[] | undefined, xTarget: number) => {
         if (players && players.length > 0 && teamPaddles && teamPaddles.length > 0) {
-          players.forEach((player, index) => {
+          players.forEach((player) => {
             if (player.isBot && teamPaddles[player.paddleIndex]) {
-              processPaddle(teamPaddles[player.paddleIndex]);
+              processPaddle(teamPaddles[player.paddleIndex], xTarget);
             }
           });
         }
       };
 
-      // Process Team 1
-      if (paddles.team1 && team1Players) {
-        processTeam(team1Players, paddles.team1);
-      }
+      // Process Team 1 (left side, xTarget ~ 50)
+      if (paddles.team1 && team1Players)
+        processTeam(team1Players, paddles.team1, 50);
 
-      // Process Team 2
-      if (paddles.team2 && team2Players) {
-        processTeam(team2Players, paddles.team2);
-      } else if (paddles.team2 && !team2Players) {
-        // Fallback for older existing tests or legacy calls (assumes all Team 2 are bots if no player data)
-        paddles.team2.forEach((botPaddle) => {
-          processPaddle(botPaddle);
-        });
-      }
+      // Process Team 2 (right side, xTarget ~ 750)
+      if (paddles.team2 && team2Players)
+        processTeam(team2Players, paddles.team2, 750);
     } else {
-      // Handle campaign mode
+      // Handle campaign mode (player2 is on the right)
       if (paddles.player2) {
-        processPaddle(paddles.player2);
+        processPaddle(paddles.player2, 750);
       }
     }
   }

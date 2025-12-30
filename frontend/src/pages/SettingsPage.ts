@@ -3,6 +3,7 @@ import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
 import { UserProfile } from "../services/ProfileService";
 import { Api } from "../core/Api";
+import { WebGLService } from "../services/WebGLService";
 
 export class SettingsPage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -105,14 +106,13 @@ export class SettingsPage extends AbstractComponent {
                                 placeholder="Unknown">
                         </div>
                         
-                        <!-- Password Confirmation -->
-                        <div class="pt-4 border-t border-white/10">
-                            <label class="block text-xs text-red-500 mb-1">CONFIRM PASSWORD (REQUIRED)</label>
-                            <input type="password" id="input-password" 
-                                class="w-full bg-black border border-red-900/50 p-2 text-white focus:border-red-500 outline-none font-mono text-sm"
-                                placeholder="Enter password to save changes">
-                        </div>
                     </div>
+                </div>
+
+                <!-- 3D Mode Settings -->
+                <div class="border border-white/20 p-6 bg-white/5">
+                    <h2 class="text-accent mb-4 border-b border-white/10 pb-2">DISPLAY MODE</h2>
+                    ${this.render3DModeSection()}
                 </div>
 
                 <!-- Actions -->
@@ -122,6 +122,47 @@ export class SettingsPage extends AbstractComponent {
                     </button>
                 </div>
 
+            </div>
+        `;
+    }
+
+    private render3DModeSection(): string {
+        const webglService = WebGLService.getInstance();
+        const isWebGLSupported = webglService.isWebGLSupported();
+        const is3DEnabled = webglService.is3DModeEnabled();
+
+        if (!isWebGLSupported) {
+            return `
+                <div class="flex items-center justify-between text-gray-500">
+                    <div>
+                        <div class="text-sm">WebGL NOT SUPPORTED</div>
+                        <div class="text-xs text-gray-600">3D Mode unavailable in this browser</div>
+                    </div>
+                    <div class="text-red-500">
+                        <i class="fas fa-times-circle text-xl"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-sm">3D MODE</div>
+                    <div class="text-xs text-gray-500">Immersive retro office environment</div>
+                </div>
+                <button id="toggle-3d-mode" 
+                    class="px-4 py-2 border ${is3DEnabled
+                ? 'border-green-500 text-green-500 hover:bg-green-900/20'
+                : 'border-gray-600 text-gray-500 hover:bg-gray-900/20'} 
+                    transition-all font-mono text-sm flex items-center gap-2">
+                    <i class="fas ${is3DEnabled ? 'fa-cube' : 'fa-square'}"></i>
+                    ${is3DEnabled ? 'ENABLED' : 'DISABLED'}
+                </button>
+            </div>
+            <div class="mt-3 text-xs text-gray-600">
+                <i class="fas fa-info-circle mr-1"></i>
+                Changes require page reload to take effect
             </div>
         `;
     }
@@ -147,6 +188,20 @@ export class SettingsPage extends AbstractComponent {
 
         this.$('#save-btn')?.addEventListener('click', () => {
             this.saveProfile();
+        });
+
+        // 3D Mode toggle
+        this.$('#toggle-3d-mode')?.addEventListener('click', () => {
+            const webglService = WebGLService.getInstance();
+            const newValue = !webglService.is3DModeEnabled();
+            webglService.set3DModeEnabled(newValue);
+
+            // Show reload prompt
+            if (confirm('3D Mode changed. Reload page to apply changes?')) {
+                window.location.reload();
+            } else {
+                this.refresh();
+            }
         });
     }
 
@@ -185,39 +240,19 @@ export class SettingsPage extends AbstractComponent {
         const bio = (this.$('#input-bio') as HTMLTextAreaElement).value;
         const country = (this.$('#input-country') as HTMLInputElement).value;
         const avatarUrl = (this.$('#input-avatar') as HTMLInputElement).value;
-        const password = (this.$('#input-password') as HTMLInputElement).value;
-
-        if (!password) {
-            this.error = "PASSWORD REQUIRED TO SAVE CHANGES";
-            this.refresh();
-            // NOTE: Refreshing wipes input! This is bad UX.
-            // Ideally we just update the error div text.
-            // But AbstractComponent usually re-renders.
-            // I should modify refresh to NOT re-render if inputs are dirty? or manually restore?
-            // For now, I'll alert() or just set innerHTML of error div if exists.
-            // Actually, I should fix the UX later. For MVP, re-render is annoying but functional if I don't wipe too much.
-            // Wait, re-render Wipes everything.
-            // I will manually inject error message into DOM without full re-render.
-            this.showError("PASSWORD REQUIRED TO SAVE CHANGES");
-            return;
-        }
 
         // Visual Feedback
         const btn = this.$('#save-btn') as HTMLButtonElement;
         if (btn) {
             btn.disabled = true;
-            btn.innerText = "VERIFYING...";
+            btn.innerText = "SAVING...";
         }
 
         try {
             const user = AuthService.getInstance().getCurrentUser();
             if (!user) throw new Error("Not logged in");
 
-            // 1. Verify Password via Login
-            await AuthService.getInstance().login(user.username, password);
-            // Note: Login updates session/token. This works.
-
-            if (btn) btn.innerText = "SAVING...";
+            // Direct update without password verification
 
             const updates = {
                 displayName,

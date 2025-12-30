@@ -16,6 +16,14 @@ export class UserService {
       await promisifyDbRun(db, 'INSERT INTO user_profiles (user_id) VALUES (?)', [userId]);
       profile = await promisifyDbGet<UserProfile>(db, query, [userId]);
     }
+
+    // Set default avatar if missing
+    if (profile && !profile.avatar_url && profile.username) {
+      const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.username)}&background=0A0A0A&color=29B6F6`;
+      await promisifyDbRun(db, 'UPDATE user_profiles SET avatar_url = ? WHERE user_id = ?', [defaultAvatar, userId]);
+      profile.avatar_url = defaultAvatar;
+    }
+
     return profile!;
   }
 

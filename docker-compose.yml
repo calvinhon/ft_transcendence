@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: ./auth-service/Dockerfile
     container_name: auth
-    ports:
+    expose:
       - "3001:3000"
     volumes:
       - ./auth-service/database:/app/database
@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: ./game-service/Dockerfile
     container_name: game
-    ports:
+    expose:
       - "3002:3000"
     volumes:
       - ./game-service/database:/app/database
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
-    ports:
+    expose:
       - "3003:3000"
     volumes:
       - ./tournament-service/database:/app/database
@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     container_name: user
-    ports:
+    expose:
       - "3004:3000"
     volumes:
       - ./user-service/database:/app/database
@@ -95,7 +95,7 @@ services:
   blockchain:
     build: ./blockchain
     container_name: blockchain
-    ports:
+    expose:
       - "8545:8545"
     command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
@@ -179,7 +179,7 @@ services:
       context: .
       dockerfile: ./ssr-service/Dockerfile
     container_name: ssr
-    ports:
+    expose:
       - "3006:3000"
     environment:
       - PORT=3000

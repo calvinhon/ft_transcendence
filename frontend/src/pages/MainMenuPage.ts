@@ -5,9 +5,11 @@ import { TournamentAliasModal } from "../components/TournamentAliasModal";
 import { LoginModal } from "../components/LoginModal";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
+import { LocalPlayerService } from "../services/LocalPlayerService";
 
 interface Player {
     id: number;
+    userId: number;      // Actual numeric ID for backend
     username: string;
     isBot?: boolean;
     alias?: string;
@@ -93,6 +95,7 @@ export class MainMenuPage extends AbstractComponent {
             const all = LocalPlayerService.getInstance().getAllParticipants();
             this.availablePlayers = all.map(p => ({
                 id: p.id,
+                userId: p.id, // Fixed: Use p.id (which is numeric)
                 username: p.username,
                 isBot: p.isBot,
                 avatarUrl: p.avatarUrl // CRITICAL: Preserve avatarUrl
@@ -195,10 +198,10 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
 
                         <!-- AI Difficulty -->
+                        ${this.activeMode !== 'tournament' ? `
                         <div>
                              <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
-                                ${this.activeMode === 'campaign' ? '<span class="text-xs text-accent border border-accent px-2 py-0.5">AUTO</span>' : ''}
                             </div>
                             <div class="flex border border-accent">
                                 ${this.renderDifficultyButton('easy', 'EASY')}
@@ -206,6 +209,7 @@ export class MainMenuPage extends AbstractComponent {
                                 ${this.renderDifficultyButton('hard', 'HARD')}
                             </div>
                         </div>
+                        ` : ''}
 
                         <!-- Paddle Speed -->
                         <div>
@@ -251,7 +255,7 @@ export class MainMenuPage extends AbstractComponent {
                 </div>
 
                 <!-- MIDDLE COLUMN: DYNAMIC PARTY PANE -->
-                <div class="w-1/3 border-y-2 border-accent flex flex-col bg-black/50">
+                <div class="w-1/3 border-accent flex flex-col bg-black/50">
                     <div class="bg-accent text-black p-3 font-bold flex justify-between items-center text-lg">
                         <span>${this.getMiddlePaneTitle()}</span>
                     </div>
@@ -259,36 +263,51 @@ export class MainMenuPage extends AbstractComponent {
                     <div class="flex-1 p-4 relative overflow-y-auto custom-scrollbar">
                         ${this.renderMiddlePaneContent()}
                     </div>
-                </div>
 
-                <!-- RIGHT COLUMN: AVAILABLE PLAYERS -->
-                <div class="flex-1 border border-accent flex flex-col bg-black/50">
-                    <div class="bg-accent text-black p-3 font-bold text-lg">
-                        AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
-                    </div>
-                    <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
-                        DRAG TO DEPLOY • CLICK FOR INTEL
-                    </div>
-
-                    <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
-                        <div class="grid gap-4 grid-cols-2" id="available-list">
-                            ${this.renderAvailablePlayers()}
+                    <!-- Logout Zone (Moved from Right Column) -->
+                    <div id="logout-zone" class="p-4 border-t border-accent/20 bg-black/40 group cursor-pointer hover:bg-red-500/10 transition-colors">
+                        <div class="w-full py-4 border-2 border-dashed border-red-500/20 text-red-500/50 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest">
+                            <i class="fas fa-sign-out-alt group-hover:scale-110 transition-transform"></i> DRAG HERE TO LOGOUT
                         </div>
                     </div>
+                </div>
+
+                <!-- RIGHT COLUMN: HOST PROFILE + AVAILABLE PLAYERS -->
+                <div class="flex-1 flex flex-col gap-4">
                     
-                    <div class="p-4 border-t border-accent/20 bg-black/40">
-                         <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-plus text-[10px]"></i>
-                              </div>
-                              ADD PLAYERS
-                         </button>
-                         ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
-                              <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
-                                 <i class="fas fa-robot text-[10px]"></i>
-                              </div>
-                              ADD BOT
-                         </button>` : ''}
+                    <!-- Host Profile Card -->
+                    ${this.renderHostProfileCard()}
+                    
+                    <!-- Available Players Pane -->
+                    <div class="flex-1 border border-accent flex flex-col bg-black/50">
+                        <div class="bg-accent text-black p-3 font-bold text-lg">
+                            AVAILABLE <span class="text-sm opacity-80 ml-2">(${this.availablePlayers.length})</span>
+                        </div>
+                        <div class="bg-black/40 p-2 text-[10px] text-gray-400 text-center tracking-widest border-b border-white/5">
+                            DRAG TO DEPLOY • CLICK FOR INTEL
+                        </div>
+
+                        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
+                            <div class="grid gap-4 grid-cols-2" id="available-list">
+                                ${this.renderAvailablePlayers()}
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 border-t border-accent/20 bg-black/40">
+                             <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-plus text-[10px]"></i>
+                                  </div>
+                                  ADD PLAYERS
+                             </button>
+                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
+                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                                     <i class="fas fa-robot text-[10px]"></i>
+                                  </div>
+                                  ADD BOT
+                             </button>` : ''}
+                             
+                        </div>
                     </div>
                 </div>
             </div>
@@ -410,6 +429,53 @@ export class MainMenuPage extends AbstractComponent {
         return '';
     }
 
+    private renderHostProfileCard(): string {
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        if (!currentUser) {
+            return `<div class="border border-accent/30 p-4 bg-black/50 text-gray-500 text-center">Not logged in</div>`;
+        }
+
+        // Find host in available players to get avatar
+        const hostPlayer = this.availablePlayers.find(p => p.id === currentUser.userId);
+        const avatarUrl = hostPlayer?.avatarUrl
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.username)}&background=0A0A0A&color=29B6F6`;
+
+        // Get campaign level for display
+        const campaignLevel = CampaignService.getInstance().getCurrentLevel();
+        const maxLevel = CampaignService.getInstance().getMaxLevel();
+        const isMastered = CampaignService.getInstance().isCompleted();
+
+        return `
+            <div class="border border-accent bg-black/70 p-4 flex items-center gap-4 relative group">
+                <!-- Avatar with glow effect -->
+                <div class="w-16 h-16 border-2 border-accent rounded overflow-hidden flex-shrink-0 shadow-[0_0_15px_rgba(41,182,246,0.3)]">
+                    <img src="${avatarUrl}" class="w-full h-full object-cover" alt="${currentUser.username}">
+                </div>
+                
+                <!-- User Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-xl font-bold text-white truncate tracking-wide">${currentUser.username}</div>
+                    <div class="text-accent text-sm tracking-widest">
+                        ${isMastered
+                ? '<i class="fas fa-crown mr-1"></i> MASTER'
+                : `<i class="fas fa-signal mr-1"></i> LEVEL ${campaignLevel}/${maxLevel}`
+            }
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="settings-btn" class="w-10 h-10 border border-white/30 hover:border-accent hover:text-accent text-gray-500 flex items-center justify-center transition-all" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button id="logout-btn" class="w-10 h-10 border border-white/30 hover:border-red-500 hover:text-red-500 text-gray-500 flex items-center justify-center transition-all" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
     private renderPlayerCard(p: Player, context: string, team?: number): string {
         const avatarStyle = p.avatarUrl
             ? `background-image: url('${p.avatarUrl}')`
@@ -461,6 +527,24 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     public onMounted(): void {
+        // Sync Host Avatar from Backend
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        if (currentUser) {
+            import('../services/ProfileService').then(async ({ ProfileService }) => {
+                try {
+                    const profile = await ProfileService.getInstance().getUserProfile(currentUser.userId);
+                    if (profile && profile.avatarUrl) {
+                        // Update in LocalPlayerService
+                        LocalPlayerService.getInstance().updateLocalPlayer(currentUser.userId, { avatarUrl: profile.avatarUrl });
+                        // Force re-render after update
+                        this.renderContent();
+                    }
+                } catch (e) {
+                    console.warn('Failed to sync host avatar', e);
+                }
+            });
+        }
+
         // Force refresh UI to ensure latest campaign level is shown
         this.renderContent();
 
@@ -540,6 +624,14 @@ export class MainMenuPage extends AbstractComponent {
                 if (zone.id === 'tournament-zone') targetType = 'tournament';
                 if (zone.id === 'team-1-zone') targetType = 'team1';
                 if (zone.id === 'team-2-zone') targetType = 'team2';
+
+                if (zone.id === 'logout-zone') {
+                    const lp = LocalPlayerService.getInstance().getLocalPlayers().find(p => p.userId === userId);
+                    if (lp) {
+                        LocalPlayerService.getInstance().removeLocalPlayer(lp.id);
+                    }
+                    return;
+                }
 
                 if (targetType) {
                     this.assignPlayer(userId, targetType);
@@ -672,7 +764,7 @@ export class MainMenuPage extends AbstractComponent {
             if (scoreBtn) {
                 const action = scoreBtn.dataset.action;
                 let current = this.settings.scoreToWin || 5;
-                if (action === 'inc') current = Math.min(21, current + 1);
+                if (action === 'inc') current = Math.min(11, current + 1);
                 if (action === 'dec') current = Math.max(1, current - 1);
                 this.settings.scoreToWin = current;
                 this.renderContent();
@@ -683,6 +775,16 @@ export class MainMenuPage extends AbstractComponent {
             const settingsBtn = target.closest('#settings-btn');
             if (settingsBtn) {
                 App.getInstance().router.navigateTo('/settings');
+                return;
+            }
+
+            // Logout Button
+            const logoutBtn = target.closest('#logout-btn');
+            if (logoutBtn) {
+                if (confirm('Are you sure you want to logout?')) {
+                    AuthService.getInstance().logout();
+                    App.getInstance().router.navigateTo('/login');
+                }
                 return;
             }
         };
@@ -696,23 +798,16 @@ export class MainMenuPage extends AbstractComponent {
 
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
             const existing = LocalPlayerService.getInstance().getLocalPlayers();
+            const bot1 = existing.find(p => p.userId === -1);
+            const bot2 = existing.find(p => p.userId === -2);
 
-            // Limit bots to 2
-            const botCount = existing.filter(p => p.isBot).length;
-            if (botCount >= 2) {
+            if (bot1 && bot2) {
                 alert("Maximum of 2 bots allowed.");
                 return;
             }
 
-            // Find next available bot name
-            let botIndex = 1;
-            while (existing.some(p => p.username === `BOT ${botIndex}`)) {
-                botIndex++;
-            }
-            const botName = `BOT ${botIndex}`;
-
-            // Create pseudo-random ID for bot
-            const botId = Math.floor(Math.random() * 1000000) + 100000;
+            const botId = !bot1 ? -1 : -2;
+            const botName = !bot1 ? "BOT 1" : "BOT 2";
 
             LocalPlayerService.getInstance().addLocalPlayer({
                 id: botId.toString(),
@@ -757,6 +852,11 @@ export class MainMenuPage extends AbstractComponent {
                 this.tournamentPlayers.push(player);
             }
         } else if (target === 'team1') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam1.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
@@ -764,6 +864,11 @@ export class MainMenuPage extends AbstractComponent {
                 console.warn(`Player ${player.username} is already on Team 2`);
             }
         } else if (target === 'team2') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam2.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
@@ -890,16 +995,16 @@ export class MainMenuPage extends AbstractComponent {
             }
 
             setup.team1 = this.arcadeTeam1.map(p => ({
-                userId: p.id,
+                userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot,
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 
             setup.team2 = this.arcadeTeam2.map(p => ({
-                userId: p.id,
+                userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot,
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 

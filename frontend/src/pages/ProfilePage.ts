@@ -3,8 +3,6 @@ import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
 import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, TournamentRanking } from "../services/ProfileService";
 import { FriendService, Friend } from "../services/FriendService";
-import { Api } from "../core/Api";
-import { PasswordConfirmationModal } from "../components/PasswordConfirmationModal";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import Chart from 'chart.js/auto';
 
@@ -20,7 +18,7 @@ export class ProfilePage extends AbstractComponent {
 
     private loading: boolean = true;
     private error: string | null = null;
-    private isEditing: boolean = false; // State for inline editing
+    // isEditing removed
     private charts: Chart[] = [];
 
     getHtml(): string {
@@ -63,6 +61,7 @@ export class ProfilePage extends AbstractComponent {
 
         const p = this.profile;
         const s = this.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+        const isBot = p.userId <= 0 || (p as any).isBot === true;
 
 
 
@@ -83,18 +82,12 @@ export class ProfilePage extends AbstractComponent {
                 : `<div class="w-full h-full bg-gray-900 flex items-center justify-center text-4xl text-gray-600">${(p.username || '?').charAt(0).toUpperCase()}</div>`
             }
                             </div>
-                             ${this.isEditing
-                ? `<div class="w-full mb-4">
-                                     <label class="text-[10px] text-gray-500 mb-1 block text-left">AVATAR URL</label>
-                                     <input type="text" id="edit-avatar" value="${p.avatarUrl || ''}" class="w-full bg-black border border-accent/30 p-2 text-xs text-white focus:border-accent outline-none">
-                                   </div>`
-                : ''}
                             
                             <!-- Username -->
                             <h2 class="text-3xl font-bold text-accent mb-1">${p.username}</h2>
                             <div class="flex items-center justify-center gap-2 mb-4">
                                 <div class="text-xs text-gray-500">ID: ${p.userId}</div>
-                                ${this.renderOnlineStatus()}
+                                ${!isBot ? this.renderOnlineStatus() : ''}
                             </div>
                             
                             <div class="w-full h-px bg-accent/30 my-4"></div>
@@ -106,29 +99,21 @@ export class ProfilePage extends AbstractComponent {
                                 </div>
                                 
                                 <!-- Country -->
-                                ${this.isEditing
-                ? `<div class="space-y-1">
-                                         <label class="text-[10px] text-gray-500">COUNTRY</label>
-                                         <input type="text" id="edit-country" value="${p.country || ''}" class="w-full bg-black border border-accent/30 p-2 text-white focus:border-accent outline-none">
-                                       </div>`
-                : `<div class="flex justify-between">
+                                ${!isBot ? `
+                                <div class="flex justify-between">
                                          <span class="text-gray-500">COUNTRY</span>
                                          <span>${p.country || 'Unknown'}</span>
-                                       </div>`
-            }
+                                       </div>
+                                ` : ''}
 
                                 <!-- Bio -->
-                                ${this.isEditing
-                ? `<div class="space-y-1 pt-2">
-                                          <label class="text-[10px] text-gray-500">BIO</label>
-                                          <textarea id="edit-bio" rows="3" class="w-full bg-black border border-accent/30 p-2 text-white focus:border-accent outline-none text-xs" placeholder="Enter status...">${p.bio || ''}</textarea>
-                                        </div>`
-                : p.bio ? `<div class="pt-2 text-gray-400 italic text-xs text-center">"${p.bio}"</div>` : ''
-            }
+                                ${p.bio && !isBot ? `<div class="pt-2 text-gray-400 italic text-xs text-center">"${p.bio}"</div>` : ''}
 
+                                ${!isBot ? `
                                 <div class="flex justify-between pt-2">
                                     <span class="text-yellow-400">Level ${p.campaignLevel || 1}</span>
                                 </div>
+                                ` : ''}
                                 
                                 <!-- Actions -->
                                 <div class="pt-4 flex flex-col gap-3">
@@ -139,9 +124,10 @@ export class ProfilePage extends AbstractComponent {
                     </div>
 
                     <!-- Friends List (Only for own profile) -->
-                    ${this.renderFriendsList()}
+                    ${!isBot ? this.renderFriendsList() : ''}
 
                     <!-- Tournament Brief -->
+                    ${!isBot ? `
                     <div class="border border-purple-500/50 p-6 bg-black/50">
                         <h3 class="text-purple-400 font-bold mb-4 flex items-center gap-2">
                             <i class="fas fa-trophy"></i> TOURNAMENTS
@@ -156,7 +142,7 @@ export class ProfilePage extends AbstractComponent {
                                 <div class="text-[10px] text-gray-400">VICTORIES</div>
                             </div>
                         </div>
-                    </div>
+                    </div>` : ''}
                 </div>
 
                 <!-- RIGHT COL: STATS & HISTORY -->
@@ -237,6 +223,7 @@ export class ProfilePage extends AbstractComponent {
                     </div>
 
                     <!-- Tournament History -->
+                    ${!isBot ? `
                     <div class="border border-white/20">
                         <div class="bg-white/5 p-3 border-b border-white/20 font-bold text-purple-400">
                             TOURNAMENT RECORD
@@ -244,7 +231,7 @@ export class ProfilePage extends AbstractComponent {
                         <div class="divide-y divide-white/10 max-h-[200px] overflow-y-auto">
                             ${this.rankings.length > 0 ? this.rankings.map(r => this.renderTournamentRow(r)).join('') : '<div class="p-8 text-center text-gray-500">No tournament records found</div>'}
                         </div>
-                    </div>
+                    </div>` : ''}
 
                 </div>
             </div>
@@ -281,48 +268,13 @@ export class ProfilePage extends AbstractComponent {
     private renderActionButtons(p: UserProfile): string {
         // Check if the viewed profile corresponds to ANY locally logged in player (or the main auth user)
         const currentUser = AuthService.getInstance().getCurrentUser();
-        const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
-
         const isMainUser = currentUser && currentUser.userId === p.userId;
-        const isLocalPlayer = localPlayers.some(lp => lp.userId === p.userId);
 
-        const canEdit = isMainUser || isLocalPlayer;
-
-        if (this.isEditing) {
-            return `
-                <div class="flex gap-3">
-                    <button id="cancel-edit-btn" class="flex-1 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-white text-xs font-bold">CANCEL</button>
-                    <button id="save-edit-btn" class="flex-1 py-2 bg-accent text-black font-bold text-xs hover:bg-white transition-colors">SAVE CHANGES</button>
-                </div>
-            `;
-        }
+        // Bot detection
+        const isBot = p.userId <= 0 || (p as any).isBot === true;
 
         let buttons = '';
 
-        // EDIT PROFILE functionality
-        if (canEdit) {
-            buttons += `
-                <button id="edit-profile-btn" class="w-full py-3 bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-black font-bold text-sm tracking-widest transition-all mb-2">
-                        <i class="fas fa-cog mr-2"></i>EDIT PROFILE
-                </button>
-            `;
-        }
-
-        // FRIEND functionality 
-        // Show Add/Remove Friend button for:
-        // 1. Other users (not canEdit) 
-        // 2. Local players who are NOT the main user (show Remove Friend if they are friends)
-        // 3. User is NOT a bot
-        // 3. User is NOT a bot
-        // Check local players for bot status if p doesn't have it explicitly
-        let isBot = p.userId === 0 || (p as any).isBot === true;
-        if (!isBot && p.userId > 100000) { // Heuristic for local bots
-            const localPlayers = LocalPlayerService.getInstance().getLocalPlayers();
-            const localP = localPlayers.find(lp => lp.userId === p.userId);
-            if (localP && localP.isBot) isBot = true;
-            // Also assume high IDs are bots if not found in local (e.g. from history)
-            if (!localP) isBot = true;
-        }
         const showFriendButton = !isMainUser && !isBot; // Show for everyone except main user and bots
 
         if (showFriendButton) {
@@ -339,15 +291,6 @@ export class ProfilePage extends AbstractComponent {
                     </button>
                 `;
             }
-        }
-
-        // LOGOUT functionality
-        if (canEdit) {
-            buttons += `
-                <button id="logout-btn" class="w-full py-3 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white font-bold text-sm tracking-widest transition-all">
-                        <i class="fas fa-sign-out-alt mr-2"></i>LOGOUT
-                </button>
-            `;
         }
 
         return buttons;
@@ -411,6 +354,7 @@ export class ProfilePage extends AbstractComponent {
                 <div class="flex flex-col">
                     <span class="text-sm font-bold ${colorClass}">${g.result.toUpperCase()}</span>
                     <span class="text-[10px] text-gray-500">${g.gameMode.toUpperCase()} • ${date}</span>
+                    ${g.teammates ? `<span class="text-[9px] text-accent/70">W/ ${g.teammates.toUpperCase()}</span>` : ''}
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="text-right">
@@ -683,50 +627,6 @@ export class ProfilePage extends AbstractComponent {
             App.getInstance().router.navigateTo('/main-menu');
         });
 
-        // Edit Profile Toggle
-        this.$('#edit-profile-btn')?.addEventListener('click', () => {
-            this.isEditing = true;
-            this.refresh();
-        });
-
-        this.$('#logout-btn')?.addEventListener('click', () => {
-            const currentUser = AuthService.getInstance().getCurrentUser();
-            const isMainUser = currentUser && this.profile && currentUser.userId === this.profile.userId;
-
-            if (isMainUser) {
-                if (confirm('Are you sure you want to logout globally?')) {
-                    AuthService.getInstance().logout();
-                }
-            } else {
-                // Check if it's a local player
-                const localService = LocalPlayerService.getInstance();
-                const localPlayer = localService.getLocalPlayers().find(p => p.userId === this.profile?.userId);
-
-                if (localPlayer) {
-                    if (confirm(`Remove ${localPlayer.username} from the session?`)) {
-                        localService.removeLocalPlayer(localPlayer.id);
-                        App.getInstance().router.navigateTo('/main-menu');
-                    }
-                } else {
-                    // Fallback for viewing other profiles (shouldn't really happen if logic is correct, or maybe admin view)
-                    if (confirm('Are you sure you want to logout globally?')) {
-                        AuthService.getInstance().logout();
-                    }
-                }
-            }
-        });
-
-        // Cancel Edit
-        this.$('#cancel-edit-btn')?.addEventListener('click', () => {
-            this.isEditing = false;
-            this.refresh();
-        });
-
-        // Save Edit
-        this.$('#save-edit-btn')?.addEventListener('click', () => {
-            this.initiateSave();
-        });
-
         // Friend Actions
         this.$('#add-friend-btn')?.addEventListener('click', async () => {
             if (!this.profile) return;
@@ -759,66 +659,6 @@ export class ProfilePage extends AbstractComponent {
         });
     }
 
-    private initiateSave(): void {
-        const modal = new PasswordConfirmationModal(
-            (password) => this.saveChanges(password),
-            () => { } // On cancel do nothing
-        );
-        modal.render();
-    }
-
-    private async saveChanges(password: string): Promise<void> {
-        if (!this.profile) return;
-
-        // Harvest Data
-        const avatar = (this.$('#edit-avatar') as HTMLInputElement).value;
-        const country = (this.$('#edit-country') as HTMLInputElement).value;
-        const bio = (this.$('#edit-bio') as HTMLTextAreaElement).value;
-
-        // Visual Feedback
-        const btn = this.$('#save-edit-btn') as HTMLButtonElement;
-        if (btn) {
-            btn.innerText = "SAVING...";
-            btn.disabled = true;
-        }
-
-        try {
-            if (!this.profile) throw new Error("Profile not loaded");
-
-            // 1. Verify Password using the TARGET PROFILE'S username
-            // Use verifyCredentials to avoid changing the global authenticated session
-            const authRes = await AuthService.getInstance().verifyCredentials(this.profile.username, password);
-            if (!authRes.success) throw new Error("Invalid password");
-
-            // 2. Perform Update
-            const payload = {
-                avatarUrl: avatar,
-                country: country,
-                bio: bio
-            };
-
-            const res = await Api.put(`/api/user/profile/${this.profile.userId}`, payload);
-            if (res.error) throw new Error(res.error);
-
-            // 3. Sync with LocalPlayerService to reflect changes immediately in Main Menu
-            LocalPlayerService.getInstance().updateLocalPlayer(this.profile.userId, {
-                avatarUrl: avatar,
-                // potentially update other fields if LocalPlayer supported them
-            });
-
-            // Success
-            this.isEditing = false;
-            // Reload to be sure
-            await this.loadProfile(this.profile.userId);
-
-        } catch (e: any) {
-            alert(e.message || "Failed to update profile"); // Simple feedback for now
-            if (btn) {
-                btn.innerText = "SAVE CHANGES";
-                btn.disabled = false;
-            }
-        }
-    }
 
     private refresh(): void {
         const container = this.container;

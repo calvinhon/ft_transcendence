@@ -152,11 +152,11 @@ export class AuthService {
     }
 
     public async loginWithGoogle(): Promise<void> {
-        await this.initiateOAuthPopup('google');
+        await this.initiateOAuthPopup('Google');
     }
 
     public async loginWithGithub(): Promise<void> {
-        await this.initiateOAuthPopup('github');
+        await this.initiateOAuthPopup('GitHub');
     }
 
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
@@ -360,5 +360,10 @@ export class AuthService {
         //     }
         // }
         // End Hoach added
+    }
+    private handleAuthSuccess(token: string, user: User): void {
+        if (token) localStorage.setItem('token', token);
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        App.getInstance().currentUser = user;
     }
 }
