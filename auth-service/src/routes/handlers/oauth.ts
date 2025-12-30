@@ -4,13 +4,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { randomBytes } from 'crypto';
 import { getQuery, runQuery } from '../../utils/database';
 
-interface APICredentials {
-	clientID: string;
-	clientSecret: string;
-	clientCallbackURL: string;
-}
-
-let googleSecrets: APICredentials = { clientID: '', clientSecret: '', clientCallbackURL: '' };
+let googleSecrets: any = null;
 
 function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: { success: boolean, user?: any, error?: string }): void {
 	const messageData = data.success
@@ -48,7 +42,7 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 			const secrets = vaultResponse.data.data.data;
 			if (!secrets || !secrets.Client_ID || !secrets.Client_Secret || !secrets.clientCallbackURL)
 				throw new Error('Vault response missing secrets');
-			googleSecrets = { clientID: secrets.Client_ID, clientSecret: secrets.Client_Secret, clientCallbackURL: secrets.Callback_URL };
+			googleSecrets = { clientID: secrets.Client_ID as string, clientSecret: secrets.Client_Secret as string, clientCallbackURL: secrets.Callback_URL as string };
 		} catch (err: any) {
 			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
 		}
@@ -66,7 +60,7 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 	});
 
 	// Create API Sign In redirect
-	return reply.redirect(`'https://accounts.google.com/o/oauth2/v2/auth?'${new URLSearchParams({
+	return reply.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
 		client_id: googleSecrets.clientID,
 		redirect_uri: googleSecrets.clientCallbackURL,
 		scope: 'openid profile email',
