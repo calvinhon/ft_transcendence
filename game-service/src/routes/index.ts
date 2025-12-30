@@ -5,7 +5,7 @@ import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocke
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
 import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
-import { onlineUsers } from './modules/friend-service';
+import { onlineUsers } from './modules/online-users';
 
 const logger = createLogger('GAME-SERVICE');
 
@@ -152,48 +152,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Friends Routes
-  fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { userId, friendId } = request.body as any;
-      if (!userId || !friendId) {
-        return sendError(reply, 'Missing userId or friendId', 400);
-      }
 
-      const { friendService } = await import('./modules/friend-service');
-      await friendService.addFriend(userId, friendId);
-      sendSuccess(reply, { success: true });
-    } catch (error) {
-      logger.error('Error adding friend', error);
-      sendError(reply, 'Failed to add friend', 500);
-    }
-  });
-
-  fastify.post('/friends/remove', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const { userId, friendId } = request.body as any;
-      if (!userId || !friendId) return sendError(reply, 'Missing userId or friendId', 400);
-
-      const { friendService } = await import('./modules/friend-service');
-      await friendService.removeFriend(userId, friendId);
-      sendSuccess(reply, { success: true });
-    } catch (error) {
-      logger.error('Error removing friend', error);
-      sendError(reply, 'Failed to remove friend', 500);
-    }
-  });
-
-  fastify.get<{ Params: { userId: string } }>('/friends/:userId', async (request, reply) => {
-    try {
-      const { userId } = request.params;
-      const { friendService } = await import('./modules/friend-service');
-      const friends = await friendService.getFriends(parseInt(userId));
-      sendSuccess(reply, friends);
-    } catch (error) {
-      logger.error('Error fetching friends', error);
-      sendError(reply, 'Failed to fetch friends', 500);
-    }
-  });
 
 
 }

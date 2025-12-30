@@ -14,6 +14,7 @@ export class BabylonWrapper {
     private glowLayer: GlowLayer | null = null;
     private screenLight: PointLight | null = null;
     private isLoreView: boolean = false;
+    private active2DGame: boolean = false;
     private defaultCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
     private loreCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
 
@@ -79,8 +80,6 @@ export class BabylonWrapper {
      * Destroys the BabylonJS instance and cleans up resources
      */
     public destroy(): void {
-        console.log("[BabylonWrapper] Destroying instance...");
-
         // Stop render loop
         this.engine.stopRenderLoop();
 
@@ -114,8 +113,6 @@ export class BabylonWrapper {
 
         // Clear singleton
         BabylonWrapper.instance = null as any;
-
-        console.log("[BabylonWrapper] Instance destroyed");
     }
 
     private setupScene(): void {
@@ -241,7 +238,6 @@ export class BabylonWrapper {
                 const pickInfo = pointerInfo.pickInfo;
                 if (pickInfo?.hit && pickInfo.pickedMesh) {
                     const meshName = pickInfo.pickedMesh.name;
-                    // console.log("CLICK: Picked mesh:", meshName, "(isLoreView:", this.isLoreView, ")");
 
                     if (meshName === "leftInteractionTrigger" && !this.isLoreView) {
                         this.panToLore();
@@ -254,7 +250,8 @@ export class BabylonWrapper {
 
         this.scene.onBeforeRenderObservable.add(() => {
             // Skip camera lerp in game mode - camera should stay fixed
-            if (this.isGameMode) return;
+            // Also skip if playing 2D game to prevent conflict/recursion
+            if (this.isGameMode || this.active2DGame) return;
 
             // Lerp camera alpha/beta for smooth follow
             this.camera.alpha += (targetAlpha - this.camera.alpha) * 0.1;
@@ -302,7 +299,13 @@ export class BabylonWrapper {
         );
     }
 
-    // --- GAME MODE TRANSITIONS ---
+    /**
+     * When 2D game is active, we disable camera tilt to prevent infinite loop recursion
+     * caused by HtmlMesh updates interacting with camera listeners.
+     */
+    public set2DGameActive(active: boolean): void {
+        this.active2DGame = active;
+    }
 
     // --- GAME MODE TRANSITIONS ---
     private isGameMode: boolean = false;
@@ -360,7 +363,6 @@ export class BabylonWrapper {
             1500,
             () => {
                 // Ensure finalized position after animation
-                console.log("Animation Complete: Snapping to target");
                 this.camera.radius = 14;
                 this.camera.alpha = -Math.PI / 2;
                 this.camera.beta = 0.01;
@@ -446,7 +448,6 @@ export class BabylonWrapper {
 
     private async loadModel(): Promise<void> {
         try {
-            console.log("Loading model low_poly_90s_office_cubicle.glb...");
             await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
 
             // Find the glowing screen mesh
@@ -456,7 +457,6 @@ export class BabylonWrapper {
                 console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
             } else {
-                // console.log("Found glowing screen mesh:", screenMesh.name);
                 this.createHtmlMesh(screenMesh);
             }
         } catch (error) {
@@ -467,7 +467,6 @@ export class BabylonWrapper {
 
     private createHtmlMesh(parentMesh: AbstractMesh | null): void {
         const appElement = document.getElementById("app");
-        console.log(appElement);
         if (!appElement) return;
 
         this.htmlMesh = new HtmlMesh(this.scene, "appHtmlMesh", {

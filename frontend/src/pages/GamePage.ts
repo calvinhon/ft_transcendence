@@ -1,10 +1,12 @@
 import { AbstractComponent } from "../components/AbstractComponent";
 import { ThreeDGameRenderer } from "../components/ThreeDGameRenderer";
 import { GameRenderer } from "../components/GameRenderer";
+import { BabylonWrapper } from "../core/BabylonWrapper";
 import { GameService } from "../services/GameService";
 import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
+import { WebGLService } from "../services/WebGLService";
 
 const SNAP_THRESHOLD = 200; // Distance to snap rather than lerp. Higher = smoother for fast objects.
 
@@ -72,7 +74,9 @@ export class GamePage extends AbstractComponent {
         }
 
         // Toggle Renderer
-        if (setup.settings.use3D) {
+        // Toggle Renderer
+        const canUse3D = WebGLService.getInstance().is3DModeEnabled();
+        if (setup.settings.use3D && canUse3D) {
             console.log("3D Mode Enabled: Switching to Babylon Renderer");
             this.is3DMode = true;
             if (canvas) canvas.style.display = 'none'; // Hide 2D Canvas
@@ -80,19 +84,33 @@ export class GamePage extends AbstractComponent {
             if (screen) {
                 screen.classList.remove('bg-black');
                 screen.classList.add('bg-transparent');
-                screen.style.display = 'none'; // Hide the entire game screen since HtmlMesh will be disabled
+
+                // If using HtmlMeshProjector (Babylon), we might want to hide the screen container 
+                // BUT if we hide it, HtmlMesh might not find content. 
+                // Actually HtmlMesh clones or moves content.
+                // In 3D mode, the GAME is rendered by Babylon meshes, NOT HtmlMesh. 
+                // So we can hide the 2D UI container.
+                screen.style.display = 'none';
             }
             this.renderer = new ThreeDGameRenderer() as any;
 
             // Create floating HUD for 3D mode (outside of HtmlMesh)
             this.createFloatingHUD(setup);
         } else {
+            // 2D Mode
             if (canvas) canvas.style.display = 'block';
             this.renderer = new GameRenderer(canvas);
+
+            // Safety: Tell Babylon to relax (disable tilt/camera updates) to prevent recursion crashes
+            // while HtmlMesh is displaying this 2D game.
+            if (canUse3D) {
+                BabylonWrapper.getInstanceIfEnabled()?.set2DGameActive(true);
+            }
         }
 
-        window.addEventListener('keydown', this.handleKeyDown);
-        window.addEventListener('keyup', this.handleKeyUp);
+        // Use capture to ensure we get events before other elements swallow them
+        window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.addEventListener('keyup', this.handleKeyUp, { capture: true });
 
         // Sanitize teams to ensure usernames are present
         const getName = (p: any) => {
@@ -268,17 +286,19 @@ export class GamePage extends AbstractComponent {
                 targetState = state;
 
                 // Update Score DOM (with null checks)
-                if (state.leftScore !== undefined && state.rightScore !== undefined) {
-                    if (this.is3DMode) {
-                        // Update floating HUD for 3D mode
-                        this.updateFloatingHUD(state.leftScore, state.rightScore);
-                    } else {
-                        // Update regular HUD for 2D mode
-                        const p1ScoreEl = this.$('#p1-score');
-                        const p2ScoreEl = this.$('#p2-score');
-                        if (p1ScoreEl) p1ScoreEl.innerText = state.leftScore.toString();
-                        if (p2ScoreEl) p2ScoreEl.innerText = state.rightScore.toString();
-                    }
+                // Update Score DOM (with fallback for nested scores object)
+                const lScore = state.leftScore !== undefined ? state.leftScore : (state.scores?.player1 ?? 0);
+                const rScore = state.rightScore !== undefined ? state.rightScore : (state.scores?.player2 ?? 0);
+
+                if (this.is3DMode) {
+                    // Update floating HUD for 3D mode
+                    this.updateFloatingHUD(lScore, rScore);
+                } else {
+                    // Update regular HUD for 2D mode
+                    const p1ScoreEl = this.$('#p1-score');
+                    const p2ScoreEl = this.$('#p2-score');
+                    if (p1ScoreEl) p1ScoreEl.innerText = lScore.toString();
+                    if (p2ScoreEl) p2ScoreEl.innerText = rScore.toString();
                 }
 
                 // Render frame
@@ -440,15 +460,14 @@ export class GamePage extends AbstractComponent {
     }
 
     private updatePauseUI(): void {
-        const container = this.$('.game-container');
         const overlayId = 'pause-overlay';
-        const existingOverlay = this.$(`#${overlayId}`);
+        let existingOverlay = document.getElementById(overlayId);
 
         if (this.isPaused) {
-            if (container && !existingOverlay) {
+            if (!existingOverlay) {
                 const overlay = document.createElement('div');
                 overlay.id = overlayId;
-                overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40 text-white font-pixel';
+                overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[10000] text-white font-pixel'; // fixed and high z-index
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
                     <div class="flex flex-col gap-4 items-center">
@@ -457,7 +476,9 @@ export class GamePage extends AbstractComponent {
                     </div>
                     <p class="mt-6 text-[8px] text-gray-500 font-pixel tracking-widest uppercase">Press 'P' to Resume</p>
                 `;
-                container.appendChild(overlay);
+
+                // Append to body to ensure visibility over 3D canvas
+                document.body.appendChild(overlay);
 
                 overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
                 overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
@@ -479,6 +500,10 @@ export class GamePage extends AbstractComponent {
         const setup = GameStateService.getInstance().getSetup();
         GameService.getInstance().disconnect();
 
+        // Remove Pause Overlay
+        const overlay = document.getElementById('pause-overlay');
+        if (overlay) overlay.remove();
+
         let nextRoute = '/';
         if (setup && (setup.mode === 'tournament' || setup.tournamentId)) {
             nextRoute = '/tournament';
@@ -493,7 +518,16 @@ export class GamePage extends AbstractComponent {
         App.getInstance().router.navigateTo(nextRoute);
     }
 
+
     onDestroy(): void {
+        window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.removeEventListener('keyup', this.handleKeyUp, { capture: true }); // Fixed cleanup
+
+        // Restore Babylon camera state if we were in 2D mode (re-enable tilt)
+        if (!this.is3DMode && WebGLService.getInstance().is3DModeEnabled()) {
+            BabylonWrapper.getInstanceIfEnabled()?.set2DGameActive(false);
+        }
+
         if (this.returnTimer) {
             clearInterval(this.returnTimer);
             this.returnTimer = null;
@@ -502,6 +536,10 @@ export class GamePage extends AbstractComponent {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
+
+        // Remove Pause Overlay
+        const overlay = document.getElementById('pause-overlay');
+        if (overlay) overlay.remove();
 
         // Clean up floating HUD
         if (this.floatingHud) {
@@ -515,8 +553,8 @@ export class GamePage extends AbstractComponent {
             this.renderer = null;
         }
 
-        window.removeEventListener('keydown', this.handleKeyDown);
-        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
         GameService.getInstance().disconnect();
     }
 

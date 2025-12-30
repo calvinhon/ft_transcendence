@@ -6,6 +6,7 @@ import { LoginModal } from "../components/LoginModal";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
+import { WebGLService } from "../services/WebGLService";
 
 interface Player {
     id: number;
@@ -252,7 +253,7 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
                     
                     <!-- Global Settings (Non-Gameplay) -->
-                    ${this.activeMode === 'arcade' ? `
+                    ${this.activeMode === 'arcade' && WebGLService.getInstance().is3DModeEnabled() ? `
                     <div class="border border-accent p-4 -mt-4 mb-4 bg-black/50">
                         <label class="flex justify-between items-center cursor-pointer group">
                             <span class="text-sm tracking-wider text-gray-300 group-hover:text-accent transition-colors">ENABLE 3D GAMEPLAY MODE</span>
@@ -870,8 +871,8 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            // Limit to 1 player per team for Arcade (1v1)
-            const limit = this.activeMode === 'arcade' ? 1 : 2;
+            // Limit to 2 players per team for Arcade (up to 2v2)
+            const limit = 2;
             if (this.arcadeTeam1.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
             } else if (isOnTeam2) {
@@ -886,8 +887,8 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            // Limit to 1 player per team for Arcade (1v1)
-            const limit = this.activeMode === 'arcade' ? 1 : 2;
+            // Limit to 2 players per team for Arcade (up to 2v2)
+            const limit = 2;
             if (this.arcadeTeam2.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
             } else if (isOnTeam1) {

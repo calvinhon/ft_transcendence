@@ -1,7 +1,7 @@
 
 import {
     Scene, Vector3, MeshBuilder, StandardMaterial, Color3,
-    GlowLayer, PointLight, TrailMesh, Mesh
+    GlowLayer, PointLight, TrailMesh, Mesh, DynamicTexture
 } from "@babylonjs/core";
 import { BabylonWrapper } from "../core/BabylonWrapper";
 
@@ -38,19 +38,48 @@ export class ThreeDGameRenderer {
         const existingGlow = this.scene.effectLayers.find(e => e instanceof GlowLayer);
         if (existingGlow) {
             this.glowLayer = existingGlow as GlowLayer;
-            this.glowLayer.intensity = 0.6;
+            this.glowLayer.intensity = 0.3;
         } else {
             this.glowLayer = new GlowLayer("gameGlow", this.scene);
-            this.glowLayer.intensity = 0.6;
+            this.glowLayer.intensity = 0.3;
         }
     }
 
     private createArena(): void {
-        // Floor
-        const ground = MeshBuilder.CreateGround("game_ground", { width: ARENA_WIDTH, height: ARENA_HEIGHT }, this.scene);
+        // Floor with Dynamic Grid Texture
+        const ground = MeshBuilder.CreateGround("game_ground", { width: ARENA_WIDTH, height: ARENA_HEIGHT, subdivisions: 32 }, this.scene);
         const groundMat = new StandardMaterial("game_groundMat", this.scene);
-        groundMat.diffuseColor = Color3.Black();
-        groundMat.emissiveColor = new Color3(0.05, 0.05, 0.1);
+
+        // Create Grid Texture
+        const resolution = 1024;
+        const gridTexture = new DynamicTexture("gridTexture", resolution, this.scene, false);
+        const ctx = gridTexture.getContext();
+
+        // Background Black
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, resolution, resolution);
+
+        // Draw Grid
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; // Very faint white lines
+        ctx.lineWidth = 2;
+        const gridCount = 20;
+        const step = resolution / gridCount;
+
+        ctx.beginPath();
+        for (let i = 0; i <= gridCount; i++) {
+            const p = i * step;
+            ctx.moveTo(p, 0); ctx.lineTo(p, resolution);
+            ctx.moveTo(0, p); ctx.lineTo(resolution, p);
+        }
+        ctx.stroke();
+        gridTexture.update();
+
+        // Material Config: Only show texture where lit
+        groundMat.diffuseTexture = gridTexture;
+        groundMat.diffuseColor = Color3.White(); // Base color white effectively multiplies texture color
+        groundMat.emissiveColor = Color3.Black(); // No self-emission, needs light
+        groundMat.specularColor = new Color3(0.5, 0.5, 0.5); // Reflective
+
         ground.material = groundMat;
         this.arenaMesh = ground;
 
@@ -59,11 +88,11 @@ export class ThreeDGameRenderer {
         borderMat.emissiveColor = Color3.FromHexString("#77e6ff");
 
         const topBorder = MeshBuilder.CreateBox("game_borderTop", { width: ARENA_WIDTH, height: 0.1, depth: 0.1 }, this.scene);
-        topBorder.position.z = ARENA_HEIGHT / 2;
+        topBorder.position.z = ARENA_HEIGHT / 2 + 0.05; // Offset by half depth to align inner face
         topBorder.material = borderMat;
 
         const bottomBorder = MeshBuilder.CreateBox("game_borderBot", { width: ARENA_WIDTH, height: 0.1, depth: 0.1 }, this.scene);
-        bottomBorder.position.z = -ARENA_HEIGHT / 2;
+        bottomBorder.position.z = -ARENA_HEIGHT / 2 - 0.05; // Offset by half depth to align inner face
         bottomBorder.material = borderMat;
 
         // Center Line
@@ -72,6 +101,13 @@ export class ThreeDGameRenderer {
         const centerMat = new StandardMaterial("game_centerMat", this.scene);
         centerMat.emissiveColor = new Color3(0.2, 0.2, 0.2);
         centerLine.material = centerMat;
+
+        // Lighting Exclusions:
+        // Ensure ground ONLY receives light from the ball (PointLights) and NOT the global env light
+        const globalLight = this.scene.getLightByName("gameLight");
+        if (globalLight) {
+            globalLight.excludedMeshes.push(ground);
+        }
     }
 
     private createBall(): void {
@@ -83,9 +119,9 @@ export class ThreeDGameRenderer {
         // Light attached to ball
         const light = new PointLight("game_ballLight", new Vector3(0, 0.5, 0), this.scene);
         light.parent = this.ballMesh;
-        light.intensity = 0.5;
+        light.intensity = 1.5; // Brighter
         light.diffuse = Color3.White();
-        light.range = 3;
+        light.range = 8; // Wider range to light up grid
 
         // Trail
         this.ballTrail = new TrailMesh("game_ballTrail", this.ballMesh, this.scene, 0.1, 20, true);
@@ -105,15 +141,11 @@ export class ThreeDGameRenderer {
         // Pulse animation handled in update
     }
 
-
-
     public render(gameState: any, _gameMode: string = 'campaign'): void {
         if (!this.ballMesh) return;
 
         // Update Ball
         // Map 2D (0,0 top-left) to 3D (0,0 center)
-        // X: 0..800 -> -5..5
-        // Y: 0..600 -> 3.75..-3.75
         const params = gameState.ball || { x: 400, y: 300 };
         const bx = (params.x / GAME_WIDTH) * ARENA_WIDTH - ARENA_WIDTH / 2;
         const bz = -((params.y / GAME_HEIGHT) * ARENA_HEIGHT - ARENA_HEIGHT / 2);
@@ -122,17 +154,20 @@ export class ThreeDGameRenderer {
         this.ballMesh.position.z = bz;
 
         // Update Paddles
-        // Logic copied from GameRenderer 2D loops
         const paddles = gameState.paddles || {};
         const activeIds = new Set<string>();
 
         const processPaddle = (p: any, key: string, color: string) => {
-            // We need to recreate logic for height scaling
-            // We'll CreateBox with depth: 1, then scale Z to matches expected worldHeight
-
             let mesh = this.paddleMeshes.get(key);
             const worldH = (p.height || 100) / GAME_HEIGHT * ARENA_HEIGHT;
-            const worldX = (p.x / GAME_WIDTH) * ARENA_WIDTH - ARENA_WIDTH / 2 + (PADDLE_WIDTH_3D * 1.5); // Offset slightly
+
+            // Calculate Center X of the backend paddle (Backend sends Top-Left X)
+            const paddleW = p.width || 10;
+            const centerX = p.x + paddleW / 2;
+
+            // Map 2D Center X to 3D World X
+            const worldX = (centerX / GAME_WIDTH) * ARENA_WIDTH - ARENA_WIDTH / 2;
+
             // Y (2D) is Top-Left corner of paddle. 
             // Z (3D) Center = (Y + H/2) mapped
             const centerY2D = p.y + (p.height || 100) / 2;
@@ -141,14 +176,23 @@ export class ThreeDGameRenderer {
             if (!mesh) {
                 mesh = MeshBuilder.CreateBox("game_paddle_" + key, { width: PADDLE_WIDTH_3D, height: 0.2, depth: 1 }, this.scene);
                 const mat = new StandardMaterial("game_paddleMat_" + key, this.scene);
-                mat.emissiveColor = Color3.FromHexString(color);
+                const pColor = Color3.FromHexString(color);
+                mat.emissiveColor = pColor;
+                mat.diffuseColor = pColor;
                 mesh.material = mat;
+
                 this.paddleMeshes.set(key, mesh);
             }
 
             mesh.position.x = worldX;
             mesh.position.z = worldZ;
-            mesh.scaling.z = worldH; // Since initial depth is 1
+
+            // Dynamic Scaling for Powerups:
+            // Backend width/height (2D) -> 3D Scaling
+            // Initial depth was 1. So worldH gives exactly the scale factor needed.
+            if (mesh.scaling.z !== worldH) {
+                mesh.scaling.z = worldH;
+            }
 
             activeIds.add(key);
         };
@@ -171,7 +215,7 @@ export class ThreeDGameRenderer {
             processPaddle(paddles.player2, 'p2', '#ff77e6');
         }
 
-        // Cleanup inactive paddles (e.g. if player leaves?) - mostly for safety
+        // Cleanup inactive paddles
         for (const [key, mesh] of this.paddleMeshes) {
             if (!activeIds.has(key)) {
                 mesh.dispose();
@@ -210,7 +254,6 @@ export class ThreeDGameRenderer {
         this.paddleMeshes.forEach(m => m.dispose());
         this.powerupMesh.dispose();
         if (this.ballTrail) this.ballTrail.dispose();
-
-        // Clean up internal materials if needed, but they get GC'd usually 
+        if (this.glowLayer) this.glowLayer.dispose();
     }
 }

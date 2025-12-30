@@ -2,6 +2,7 @@
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import authRoutes from './routes/auth';
+import { initializeDatabase } from './utils/database';
 import { createServer, createServiceConfig } from '@ft-transcendence/common';
 
 const serverConfig = createServiceConfig('AUTH-SERVICE', 3000);
@@ -12,15 +13,23 @@ const serverOptions = {
 };
 
 async function start(): Promise<void> {
-  const server = await createServer(serverConfig, async (fastify) => {
-    // Register additional plugins
-    await fastify.register(cookie);
+  try {
+    // Initialize database before starting server
+    await initializeDatabase();
 
-    // Register routes
-    await fastify.register(authRoutes);
-  }, serverOptions);
+    const server = await createServer(serverConfig, async (fastify) => {
+      // Register additional plugins
+      await fastify.register(cookie);
 
-  await server.start();
+      // Register routes
+      await fastify.register(authRoutes);
+    }, serverOptions);
+
+    await server.start();
+  } catch (error) {
+    console.error('Failed to start AUTH-SERVICE:', error);
+    process.exit(1);
+  }
 }
 
 // Start the server if this file is run directly
