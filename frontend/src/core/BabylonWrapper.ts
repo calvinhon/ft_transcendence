@@ -1,4 +1,4 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, PowerEase, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, HemisphericLight } from "@babylonjs/core";
+import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, HemisphericLight, CubicEase } from "@babylonjs/core";
 import { AbstractMesh, AppendSceneAsync } from "@babylonjs/core";
 // import { CreateBox } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
@@ -171,6 +171,8 @@ export class BabylonWrapper {
 
         // Global wheel listener for zoom (works over HtmlMesh too)
         window.addEventListener("wheel", (e) => {
+            if (this.isGameMode) return; // Disable zoom in game mode
+
             // Prevent default page scrolling if any
             // e.preventDefault(); // Optional: might block scroll in modals if not careful.
             // But usually we want zoom. Let's try aggressive zoom.
@@ -204,6 +206,8 @@ export class BabylonWrapper {
 
         // Use window instead of canvas to capture movement even over iFrames/HtmlMesh
         window.addEventListener("mousemove", (e) => {
+            if (this.isGameMode) return; // Disable tilt in game mode
+
             const rect = canvas.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1; // -1 to 1
             const y = ((e.clientY - rect.top) / rect.height) * 2 - 1; // -1 to 1
@@ -249,6 +253,9 @@ export class BabylonWrapper {
         });
 
         this.scene.onBeforeRenderObservable.add(() => {
+            // Skip camera lerp in game mode - camera should stay fixed
+            if (this.isGameMode) return;
+
             // Lerp camera alpha/beta for smooth follow
             this.camera.alpha += (targetAlpha - this.camera.alpha) * 0.1;
             this.camera.beta += (targetBeta - this.camera.beta) * 0.1;
@@ -293,6 +300,148 @@ export class BabylonWrapper {
             this.defaultCameraState.beta,
             1500
         );
+    }
+
+    // --- GAME MODE TRANSITIONS ---
+
+    // --- GAME MODE TRANSITIONS ---
+    private isGameMode: boolean = false;
+
+    public enterGameMode(): void {
+        this.isGameMode = true;
+        // Hide Office Environment
+        this.scene.meshes.forEach(m => {
+            if (m.name !== "appHtmlMesh" && !m.name.startsWith("game_")) {
+                m.isVisible = false;
+            }
+        });
+
+        // Hide HTML Mesh (Monitor UI) - The game will be 3D meshes now
+        if (this.htmlMesh) {
+            this.htmlMesh.setEnabled(false);
+        }
+
+        // Camera Position for Game (Top-Down / Isometric)
+        // Fixed position looking at origin (0,0,0) where the game board will be
+        const targetPos = Vector3.Zero();
+
+        // Save current state to restore later
+        if (!this.defaultCameraState) {
+            this.defaultCameraState = {
+                radius: this.camera.radius,
+                alpha: this.camera.alpha,
+                beta: this.camera.beta,
+                target: this.camera.target.clone()
+            };
+        }
+
+        // Detach defaults and clear limits to allow free movement for Game View
+        // Stop existing animations
+        this.scene.stopAnimation(this.camera);
+
+        // Detach defaults and clear limits to allow free movement for Game View
+        this.camera.detachControl();
+        this.camera.lowerRadiusLimit = null;
+        this.camera.upperRadiusLimit = null;
+        this.camera.lowerBetaLimit = null;
+        this.camera.upperBetaLimit = null;
+
+        // Ensure Up vector is correct
+        this.camera.upVector = new Vector3(0, 1, 0);
+
+        // Animate to Game View
+        // Use beta = 0.01 instead of 0 to avoid potential gimbal lock issues with ArcRotateCamera
+        this.animateCameraTo(
+            14, // Radius
+            targetPos,
+            0.6, // FOV
+            -Math.PI / 2, // Alpha
+            0.01, // Beta
+            1500,
+            () => {
+                // Ensure finalized position after animation
+                console.log("Animation Complete: Snapping to target");
+                this.camera.radius = 14;
+                this.camera.alpha = -Math.PI / 2;
+                this.camera.beta = 0.01;
+                this.camera.target = Vector3.Zero();
+            }
+        );
+
+        // Adjust Lighting
+        if (this.screenLight) this.screenLight.setEnabled(false);
+
+        // Add Game Light if needed
+        let gameLight = this.scene.getLightByName("gameLight");
+        if (!gameLight) {
+            // Hemispheric light for visibility (reduced intensity for better contrast)
+            gameLight = new HemisphericLight("gameLight", new Vector3(0, 1, 0), this.scene);
+            gameLight.intensity = 0.4;
+        }
+        gameLight.setEnabled(true);
+    }
+
+    public exitGameMode(): void {
+        this.isGameMode = false;
+        // Restore Office Environment
+        this.scene.meshes.forEach(m => {
+            // Don't show game meshes
+            if (!m.name.startsWith("game_")) {
+                m.isVisible = true;
+            }
+            // Specific hides from loadModel
+            if (m.name.toLowerCase().includes("glowing screen")) m.isVisible = false;
+            // Triggers are invisible by default
+            if (m.name.includes("Trigger")) m.visibility = 0;
+        });
+
+        // Show HTML Mesh
+        if (this.htmlMesh) {
+            this.htmlMesh.setEnabled(true);
+        }
+
+        // Restore Lighting
+        if (this.screenLight) this.screenLight.setEnabled(true);
+        const gameLight = this.scene.getLightByName("gameLight");
+        if (gameLight) gameLight.setEnabled(false);
+
+        // Turn off Game Meshes (cleanup should handle this, but safety net)
+        this.scene.meshes.forEach(m => {
+            if (m.name.startsWith("game_")) {
+                m.dispose();
+            }
+        });
+
+        // Restore Camera Controls and Limits
+        const canvas = this.engine.getRenderingCanvas();
+        if (canvas) {
+            // Restore limits from constructor constants
+            this.camera.lowerRadiusLimit = this.ZOOM_MIN;
+            this.camera.upperRadiusLimit = this.ZOOM_MAX;
+
+            // Re-attach controls
+            this.camera.attachControl(canvas, true);
+        }
+
+        // Animate back to Monitor
+        if (this.defaultCameraState) {
+            this.animateCameraTo(
+                this.defaultCameraState.radius,
+                this.defaultCameraState.target,
+                0.6, // Target FOV
+                this.defaultCameraState.alpha,
+                this.defaultCameraState.beta,
+                1500
+            );
+        }
+    }
+
+    public getScene(): Scene {
+        return this.scene;
+    }
+
+    public getCamera(): ArcRotateCamera {
+        return this.camera;
     }
 
     private async loadModel(): Promise<void> {
@@ -405,8 +554,8 @@ export class BabylonWrapper {
      * Useful for cinematic transitions and cutscenes.
      */
     public animateCameraTo(targetRadius: number, targetPos: Vector3, targetFov: number, targetAlpha: number, targetBeta: number, duration: number = 2000, onComplete?: () => void) {
-        const ease = new PowerEase(15);
-        ease.setEasingMode(EasingFunction.EASINGMODE_EASEOUT);
+        const ease = new CubicEase();
+        ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
         const frames = 60;
         const totalFrames = (duration / 1000) * frames;

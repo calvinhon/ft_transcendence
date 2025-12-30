@@ -428,4 +428,8 @@ export class GameRenderer {
     //
     //     ctx.shadowBlur = 0;
     // }
+    public dispose(): void {
+        window.removeEventListener('resize', () => this.resize());
+        // Clean up any other cache or events if necessary
+    }
 }

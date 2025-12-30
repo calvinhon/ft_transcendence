@@ -1,4 +1,5 @@
 import { AbstractComponent } from "../components/AbstractComponent";
+import { ThreeDGameRenderer } from "../components/ThreeDGameRenderer";
 import { GameRenderer } from "../components/GameRenderer";
 import { GameService } from "../services/GameService";
 import { App } from "../core/App";
@@ -16,16 +17,19 @@ export class GamePage extends AbstractComponent {
     private isPaused: boolean = false;
     private animationFrameId: number | null = null;
     private startTime: Date | null = null;
+    private floatingHud: HTMLElement | null = null; // Floating HUD for 3D mode
+    private is3DMode: boolean = false;
 
     getHtml(): string {
         return `
             <div id="game-screen" class="screen active w-full h-full bg-black p-2 border-[4px] border-accent box-border flex flex-col">
                 <!-- Top Bar (HUD) -->
-                <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative">
+                <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative z-20">
                     <!-- Left Player -->
                     <div class="flex items-center w-1/3 border-r border-white">
                         <div id="p1-avatar" class="w-14 h-full border-r border-white bg-cover bg-center" style="background-color: #333;"></div>
                         <span id="p1-name" class="pl-4 font-vcr uppercase truncate">Player 1</span>
+                        <span id="p1-score" class="ml-auto pr-4 font-vcr text-2xl text-accent">0</span>
                     </div>
 
                     <!-- Center Status -->
@@ -35,6 +39,7 @@ export class GamePage extends AbstractComponent {
 
                     <!-- Right Player -->
                     <div class="flex items-center justify-end w-1/3 border-l border-white">
+                        <span id="p2-score" class="mr-auto pl-4 font-vcr text-2xl text-accent">0</span>
                         <span id="p2-name" class="pr-4 font-vcr uppercase truncate">Player 2</span>
                         <div id="p2-avatar" class="w-14 h-full border-l border-white bg-cover bg-center" style="background-color: #333;"></div>
                     </div>
@@ -66,7 +71,25 @@ export class GamePage extends AbstractComponent {
             }
         }
 
-        this.renderer = new GameRenderer(canvas);
+        // Toggle Renderer
+        if (setup.settings.use3D) {
+            console.log("3D Mode Enabled: Switching to Babylon Renderer");
+            this.is3DMode = true;
+            if (canvas) canvas.style.display = 'none'; // Hide 2D Canvas
+            const screen = this.$('#game-screen');
+            if (screen) {
+                screen.classList.remove('bg-black');
+                screen.classList.add('bg-transparent');
+                screen.style.display = 'none'; // Hide the entire game screen since HtmlMesh will be disabled
+            }
+            this.renderer = new ThreeDGameRenderer() as any;
+
+            // Create floating HUD for 3D mode (outside of HtmlMesh)
+            this.createFloatingHUD(setup);
+        } else {
+            if (canvas) canvas.style.display = 'block';
+            this.renderer = new GameRenderer(canvas);
+        }
 
         window.addEventListener('keydown', this.handleKeyDown);
         window.addEventListener('keyup', this.handleKeyUp);
@@ -240,9 +263,26 @@ export class GamePage extends AbstractComponent {
                 // --- Tracking Start Time ---
                 if (state && (state.gameState === 'playing' || state.type === 'gameStart') && !this.startTime) {
                     this.startTime = new Date();
-                } else {
-                    targetState = state;
-                    // If loop stopped (e.g. resumed from pause), restart it
+                }
+
+                targetState = state;
+
+                // Update Score DOM (with null checks)
+                if (state.leftScore !== undefined && state.rightScore !== undefined) {
+                    if (this.is3DMode) {
+                        // Update floating HUD for 3D mode
+                        this.updateFloatingHUD(state.leftScore, state.rightScore);
+                    } else {
+                        // Update regular HUD for 2D mode
+                        const p1ScoreEl = this.$('#p1-score');
+                        const p2ScoreEl = this.$('#p2-score');
+                        if (p1ScoreEl) p1ScoreEl.innerText = state.leftScore.toString();
+                        if (p2ScoreEl) p2ScoreEl.innerText = state.rightScore.toString();
+                    }
+                }
+
+                // Render frame
+                if (this.renderer) {
                     if (!this.animationFrameId) updateLoop();
                 }
             }
@@ -444,6 +484,11 @@ export class GamePage extends AbstractComponent {
             nextRoute = '/tournament';
         }
 
+        if (this.renderer && typeof (this.renderer as any).dispose === 'function') {
+            (this.renderer as any).dispose();
+            this.renderer = null;
+        }
+
         GameStateService.getInstance().clearSetup();
         App.getInstance().router.navigateTo(nextRoute);
     }
@@ -458,8 +503,105 @@ export class GamePage extends AbstractComponent {
             this.animationFrameId = null;
         }
 
+        // Clean up floating HUD
+        if (this.floatingHud) {
+            this.floatingHud.remove();
+            this.floatingHud = null;
+        }
+
+        // Ensure renderer cleanup if not already done via exitGame
+        if (this.renderer && typeof (this.renderer as any).dispose === 'function') {
+            (this.renderer as any).dispose();
+            this.renderer = null;
+        }
+
         window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('keyup', this.handleKeyUp);
         GameService.getInstance().disconnect();
+    }
+
+    private createFloatingHUD(setup: any): void {
+        // Create a floating HUD that sits on top of the Babylon canvas
+        // This is necessary because in 3D mode, the HtmlMesh (which contains #app) is disabled
+        const sanitizedTeam1 = setup.team1 || [];
+        const sanitizedTeam2 = setup.team2 || [];
+
+        const p1Name = sanitizedTeam1.map((p: any) => p.username || `User ${p.userId}`).join(', ') || 'PLAYER 1';
+        const p2Name = sanitizedTeam2.map((p: any) => p.username || `User ${p.userId}`).join(', ') || 'PLAYER 2';
+
+        const p1Avatar = sanitizedTeam1[0]?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p1Name)}&background=0A0A0A&color=29B6F6`;
+        const p2Avatar = sanitizedTeam2[0]?.avatarUrl || (sanitizedTeam2[0]?.isBot ? 'https://ui-avatars.com/api/?name=AI&background=FF0000&color=FFF' : `https://ui-avatars.com/api/?name=${encodeURIComponent(p2Name)}&background=0A0A0A&color=29B6F6`);
+
+        this.floatingHud = document.createElement('div');
+        this.floatingHud.id = 'floating-game-hud';
+        this.floatingHud.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            pointer-events: none;
+            padding: 12px;
+        `;
+
+        this.floatingHud.innerHTML = `
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid #29b6f6;
+                padding: 8px 16px;
+                font-family: 'VCR OSD Mono', monospace;
+                color: white;
+            ">
+                <!-- Left Player -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background-image: url('${p1Avatar}');
+                        background-size: cover;
+                        background-position: center;
+                        border: 2px solid #29b6f6;
+                    "></div>
+                    <span style="text-transform: uppercase; font-size: 14px;">${p1Name}</span>
+                    <span id="floating-p1-score" style="font-size: 28px; color: #29b6f6; font-weight: bold;">0</span>
+                </div>
+                
+                <!-- Center -->
+                <div style="text-align: center;">
+                    <span id="floating-game-status" style="font-size: 12px; color: #888;">PLAYING</span>
+                </div>
+                
+                <!-- Right Player -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span id="floating-p2-score" style="font-size: 28px; color: #29b6f6; font-weight: bold;">0</span>
+                    <span style="text-transform: uppercase; font-size: 14px;">${p2Name}</span>
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background-image: url('${p2Avatar}');
+                        background-size: cover;
+                        background-position: center;
+                        border: 2px solid #29b6f6;
+                    "></div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(this.floatingHud);
+    }
+
+    private updateFloatingHUD(leftScore: number, rightScore: number): void {
+        if (!this.floatingHud) return;
+
+        const p1ScoreEl = this.floatingHud.querySelector('#floating-p1-score');
+        const p2ScoreEl = this.floatingHud.querySelector('#floating-p2-score');
+
+        if (p1ScoreEl) p1ScoreEl.textContent = leftScore.toString();
+        if (p2ScoreEl) p2ScoreEl.textContent = rightScore.toString();
     }
 }

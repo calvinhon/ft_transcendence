@@ -25,6 +25,7 @@ interface GameSettings {
     powerups: boolean;
     accumulateOnHit: boolean;
     scoreToWin: number;
+    use3D?: boolean;
 }
 
 export class MainMenuPage extends AbstractComponent {
@@ -38,7 +39,8 @@ export class MainMenuPage extends AbstractComponent {
         aiDifficulty: 'medium',
         powerups: true,
         accumulateOnHit: false,
-        scoreToWin: 5
+        scoreToWin: 5,
+        use3D: false
     };
 
     // Mode Specific State
@@ -229,6 +231,7 @@ export class MainMenuPage extends AbstractComponent {
                                     ${this.settings.powerups ? '<div class="w-4 h-4 bg-accent"></div>' : ''}
                                 </div>
                             </label>
+
                             <label class="flex justify-between items-center cursor-pointer group">
                                 <span class="text-lg group-hover:text-accent transition-colors">Accelerate on Hit</span>
                                 <div class="relative w-6 h-6 border border-accent flex items-center justify-center setting-toggle" data-setting="accumulateOnHit">
@@ -247,6 +250,18 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Global Settings (Non-Gameplay) -->
+                    ${this.activeMode === 'arcade' ? `
+                    <div class="border border-accent p-4 -mt-4 mb-4 bg-black/50">
+                        <label class="flex justify-between items-center cursor-pointer group">
+                            <span class="text-sm tracking-wider text-gray-300 group-hover:text-accent transition-colors">ENABLE 3D GAMEPLAY MODE</span>
+                            <div class="relative w-6 h-6 border border-accent flex items-center justify-center setting-toggle" data-setting="use3D">
+                                ${this.settings.use3D ? '<div class="w-4 h-4 bg-accent"></div>' : ''}
+                            </div>
+                        </label>
+                    </div>
+                    ` : ''}
 
 
                      <button id="play-btn" class="w-full py-5 bg-accent text-black font-bold text-2xl tracking-[0.2em] hover:bg-white hover:shadow-[0_0_15px_rgba(41,182,246,0.5)] transition-all">
@@ -693,8 +708,11 @@ export class MainMenuPage extends AbstractComponent {
             // Toggles
             const toggle = target.closest('.setting-toggle');
             if (toggle) {
-                const setting = toggle.getAttribute('data-setting') as 'powerups' | 'accumulateOnHit';
-                this.settings[setting] = !this.settings[setting];
+                const setting = toggle.getAttribute('data-setting') as keyof GameSettings;
+                if (setting === 'use3D' || setting === 'powerups' || setting === 'accumulateOnHit') {
+                    // Toggle boolean settings
+                    (this.settings as any)[setting] = !this.settings[setting];
+                }
                 this.renderContent();
                 return;
             }
@@ -852,10 +870,14 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
+            // Limit to 1 player per team for Arcade (1v1)
+            const limit = this.activeMode === 'arcade' ? 1 : 2;
+            if (this.arcadeTeam1.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
             } else if (isOnTeam2) {
                 console.warn(`Player ${player.username} is already on Team 2`);
+            } else if (this.arcadeTeam1.length >= limit) {
+                alert(`Team 1 is full (Max ${limit})`);
             }
         } else if (target === 'team2') {
             // Check bot limit
@@ -864,10 +886,14 @@ export class MainMenuPage extends AbstractComponent {
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
+            // Limit to 1 player per team for Arcade (1v1)
+            const limit = this.activeMode === 'arcade' ? 1 : 2;
+            if (this.arcadeTeam2.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
             } else if (isOnTeam1) {
                 console.warn(`Player ${player.username} is already on Team 1`);
+            } else if (this.arcadeTeam2.length >= limit) {
+                alert(`Team 2 is full (Max ${limit})`);
             }
         }
         this.renderContent();
@@ -904,7 +930,8 @@ export class MainMenuPage extends AbstractComponent {
                 powerupsEnabled: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
                 difficulty: this.settings.aiDifficulty,
-                scoreToWin: this.settings.scoreToWin || 5
+                scoreToWin: this.settings.scoreToWin || 5,
+                use3D: this.activeMode === 'arcade' ? this.settings.use3D : false
             },
             team1: [],
             team2: [],
@@ -977,6 +1004,11 @@ export class MainMenuPage extends AbstractComponent {
             }
             // Ensure compatibility with backend field names if they differ
             setup.settings.aiDifficulty = setup.settings.difficulty;
+
+            // Enforce 3D Setting availability (Only Arcade)
+            // if (this.activeMode !== 'arcade') {
+            //     setup.settings.use3D = false;
+            // }
 
             GameStateService.getInstance().setSetup(setup as any);
             App.getInstance().router.navigateTo('/game');

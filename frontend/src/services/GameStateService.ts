@@ -9,6 +9,7 @@ export interface GameSetup {
         accumulateOnHit: boolean;
         difficulty: string;
         scoreToWin: number;
+        use3D?: boolean;
     };
     team1: User[];
     team2: User[];
