@@ -28,7 +28,7 @@ services:
       dockerfile: ./auth-service/Dockerfile
     container_name: auth
     expose:
-      - "3001:3000"
+      - 3001
     volumes:
       - ./auth-service/database:/app/database
     environment:
@@ -49,7 +49,7 @@ services:
       dockerfile: ./game-service/Dockerfile
     container_name: game
     expose:
-      - "3002:3000"
+      - 3002
     volumes:
       - ./game-service/database:/app/database
     environment:
@@ -65,7 +65,7 @@ services:
       dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
     expose:
-      - "3003:3000"
+      - 3003
     volumes:
       - ./tournament-service/database:/app/database
     environment:
@@ -81,7 +81,7 @@ services:
       dockerfile: ./user-service/Dockerfile
     container_name: user
     expose:
-      - "3004:3000"
+      - 3004
     volumes:
       - ./user-service/database:/app/database
       - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
@@ -96,7 +96,7 @@ services:
     build: ./blockchain
     container_name: blockchain
     expose:
-      - "8545:8545"
+      - 8545
     command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
       - hardhat-data:/app/data
@@ -178,7 +178,7 @@ services:
       dockerfile: ./ssr-service/Dockerfile
     container_name: ssr
     expose:
-      - "3006:3000"
+      - 3006
     environment:
       - PORT=3000
       - SERVICE_NAME=ssr-service
