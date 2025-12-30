@@ -79,14 +79,20 @@ export class AuthService {
 
 
     public logout(): void {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Hoach added: Call backend logout to delete HTTP-only cookie session
+        Api.post('/api/auth/logout', {}).catch(e => {
+            console.warn('Logout API call failed', e);
+            // Continue with client-side cleanup even if API fails
+        });
+        // End Hoach added
+
+        // localStorage.removeItem('token');
+        // localStorage.removeItem('user');
 
         // Clear local players state
         LocalPlayerService.getInstance().clearAllPlayers();
 
         App.getInstance().currentUser = null;
-        Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
         App.getInstance().router.navigateTo('/login');
     }
 
@@ -99,37 +105,42 @@ export class AuthService {
     public async checkSession(): Promise<boolean> {
         console.log("AuthService: Checking Session...");
 
+        // Hoach added: HTTP-only cookie session validation (5-minute TTL)
+        // No localStorage check - session is in HTTP-only cookie, browser sends it automatically
         try {
             const verifyPromise = Api.post('/api/auth/verify', {});
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Session verify timeout")), 5000)
             );
 
-            console.log("AuthService: Waiting for verify response...");
+            console.log("AuthService: Verifying HTTP-only cookie session...");
             const response = await Promise.race([verifyPromise, timeoutPromise]) as any;
-            console.log("AuthService: Verify response received:", response);
+            console.log("AuthService: Session verification response:", response);
 
             const data = response.data || response;
 
-            // If backend returns a user, use it
+            // Backend validated the HTTP-only cookie and returned user
             if (data.user) {
                 console.log("AuthService: Session valid for user", data.user.username);
                 App.getInstance().currentUser = data.user;
-                localStorage.setItem('user', JSON.stringify(data.user));
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                }
+                // Don't store in localStorage - session is in HTTP-only cookie
                 return true;
             }
 
-            // Backend didn't return user but said valid - no user data available
-            console.warn("AuthService: Backend says valid but no user data");
+            console.warn("AuthService: No user data in verify response");
             return false;
         } catch (e: any) {
-            console.error("AuthService: Verify failed or timed out:", e.message || e);
-            // No localStorage user and backend failed - need to login
+            console.error("AuthService: Session verification failed:", e.message || e);
+            // Hoach modified: Session expired (5-min TTL) - clear state and redirect to login
+            App.getInstance().currentUser = null;
+            // Redirect to login only if not already on login page
+            if (!window.location.pathname.includes('login')) {
+                App.getInstance().router.navigateTo('/login');
+            }
+            // End Hoach added
             return false;
         }
+        // End Hoach added
     }
 
     // ==========================================
@@ -257,20 +268,19 @@ export class AuthService {
         }
     }
 
+    // Hoach edited: Listen for OAUTH_SUCCESS from backend popup
     private waitForOAuthPopup(popup: Window): Promise<any> {
+        // Hoach edit start
         return new Promise((resolve, reject) => {
             let handled = false;
-
-            // Listener for message from popup
             const messageHandler = (event: MessageEvent) => {
-                // Security check: ensure origin matches (if needed, currently relative)
-                // if (event.origin !== window.location.origin) return;
-
+                // Accept any origin for now (backend sends '*'), but you can restrict this
                 if (event.data && event.data.type === 'OAUTH_SUCCESS') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
                     popup.close();
-                    resolve(event.data.payload);
+                    // Backend sends: { type: 'OAUTH_SUCCESS', token, user }
+                    resolve({ success: true, user: event.data.user, token: event.data.token });
                 } else if (event.data && event.data.type === 'OAUTH_ERROR') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
@@ -278,10 +288,7 @@ export class AuthService {
                     reject(new Error(event.data.error));
                 }
             };
-
             window.addEventListener('message', messageHandler);
-
-            // Poll to see if popup closed manually
             const timer = setInterval(() => {
                 if (popup.closed) {
                     clearInterval(timer);
@@ -292,6 +299,7 @@ export class AuthService {
                 }
             }, 1000);
         });
+        // Hoach edit end
     }
 
     /**
@@ -328,6 +336,31 @@ export class AuthService {
         }
     }
 
+
+    private handleAuthSuccess(_token: string, user: User): void {
+        // Hoach added: Remove localStorage usage, rely on HTTP-only cookie
+        // Cookie is automatically sent by browser on every request
+        // No need to store anything in localStorage
+        // if (_token) localStorage.setItem('token', _token);
+        // if (user) localStorage.setItem('user', JSON.stringify(user));
+        // End Hoach added
+        App.getInstance().currentUser = user;
+    }
+
+    public restoreUserFromStorage(): void {
+        // Hoach added: Session validation now handled by backend via HTTP-only cookie
+        // Don't restore from localStorage; let checkSession() validate the session
+        // const userStr = localStorage.getItem('user');
+        // if (userStr) {
+        //     try {
+        //         const user = JSON.parse(userStr);
+        //         App.getInstance().currentUser = user;
+        //     } catch (e) {
+        //         console.warn("Failed to restore user from storage");
+        //     }
+        // }
+        // End Hoach added
+    }
     private handleAuthSuccess(token: string, user: User): void {
         if (token) localStorage.setItem('token', token);
         if (user) localStorage.setItem('user', JSON.stringify(user));

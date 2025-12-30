@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: ./auth-service/Dockerfile
     container_name: auth
-    expose:
+    ports:
       - "3001:3000"
     volumes:
       - ./auth-service/database:/app/database
@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: ./game-service/Dockerfile
     container_name: game
-    expose:
+    ports:
       - "3002:3000"
     volumes:
       - ./game-service/database:/app/database
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
-    expose:
+    ports:
       - "3003:3000"
     volumes:
       - ./tournament-service/database:/app/database
@@ -80,7 +80,7 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     container_name: user
-    expose:
+    ports:
       - "3004:3000"
     volumes:
       - ./user-service/database:/app/database
@@ -128,7 +128,9 @@ services:
       - transcendence-network
 
   blockchain-service:
-    build: ./blockchain-service
+    build:
+      context: .
+      dockerfile: ./blockchain-service/Dockerfile
     container_name: blockchain-service
     ports:
       - "3005:3000"

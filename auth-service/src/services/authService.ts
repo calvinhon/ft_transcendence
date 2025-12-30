@@ -1,10 +1,18 @@
 // auth-service/src/services/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { User, DatabaseUser } from '../types';
+import { FastifyInstance } from 'fastify';
+import { User, DatabaseUser, JWTPayload } from '../types';
 import { getQuery, runQuery } from '../utils/database';
+// Hoach added: For session token generation
+import { createLogger } from '@ft-transcendence/common';
+const logger = createLogger('AUTH-SERVICE');
+// End Hoach added
 
 export class AuthService {
+  //Hoach edited: Added constructor to inject fastify for JWT
+  constructor(private fastify: FastifyInstance) {}
+  //Hoach edit ended
   async register(username: string, email: string, password: string): Promise<{ userId: number }> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -16,7 +24,8 @@ export class AuthService {
     return { userId: (result as any).lastID };
   }
 
-  async login(identifier: string, password: string): Promise<User> {
+  //Hoach edited: Changed login to return user and JWT token instead of just user
+  async login(identifier: string, password: string): Promise<{ user: User; token: string }> {
     const user = await getQuery<DatabaseUser>(
       'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
@@ -37,12 +46,74 @@ export class AuthService {
       [user.id]
     );
 
-    return {
+    const token = this.fastify.jwt.sign({
       userId: user.id,
-      username: user.username,
-      email: user.email
+      username: user.username
+    }, { expiresIn: '24h' });
+
+    return {
+      user: {
+        userId: user.id,
+        username: user.username,
+        email: user.email
+      },
+      token
     };
   }
+  //Hoach edit ended
+
+  // Hoach added: Create session after successful login with 5-minute TTL
+  async createSession(userId: number): Promise<string> {
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    // Hoach modified: 5-minute TTL for short-lived sessions (forces re-login on new tabs after 5 mins)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await runQuery(
+      'INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)',
+      [userId, sessionToken, expiresAt.toISOString()]
+    );
+
+    logger.info(`Session created for user ${userId} with 5-minute TTL`);
+    return sessionToken;
+  }
+
+  // Hoach added: Validate session token and check expiration
+  async validateSession(sessionToken: string): Promise<User | null> {
+    const session = await getQuery<any>(
+      `SELECT s.user_id, u.id, u.username, u.email 
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.session_token = ? AND s.expires_at > datetime('now')`,
+      [sessionToken]
+    );
+
+    if (!session) {
+      logger.warn('Invalid or expired session token');
+      return null;
+    }
+
+    // Update last activity
+    await runQuery(
+      'UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE session_token = ?',
+      [sessionToken]
+    );
+
+    return {
+      userId: session.user_id,
+      username: session.username,
+      email: session.email
+    };
+  }
+
+  // Hoach added: Logout by deleting session
+  async logout(sessionToken: string): Promise<void> {
+    await runQuery(
+      'DELETE FROM sessions WHERE session_token = ?',
+      [sessionToken]
+    );
+    logger.info('Session deleted');
+  }
+  // End Hoach added
 
   async getUserProfile(userId: number): Promise<User> {
     const user = await getQuery<DatabaseUser>(
@@ -61,6 +132,16 @@ export class AuthService {
       created_at: user.created_at
     };
   }
+
+  //Hoach edited: Added verifyToken method for JWT verification
+  async verifyToken(token: string): Promise<JWTPayload> {
+    try {
+      return this.fastify.jwt.verify(token) as JWTPayload;
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
+  }
+  //Hoach edit ended
 
   async createPasswordResetToken(email: string): Promise<{ resetToken: string; resetLink: string }> {
     const user = await getQuery<{ id: number; email: string }>(

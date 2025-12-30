@@ -31,6 +31,47 @@ async function initializeDatabase(): Promise<void> {
         last_login DATETIME
       )
     `);
+
+    // Ensure last_login column exists
+    await ensureColumnExists(db, 'users', 'last_login', 'DATETIME');
+
+    // Hoach added: Create sessions table for HTTP-only cookie storage with short TTL
+    await promisifyDbRun(db, `
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        session_token TEXT NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      )
+    `);
+    // End Hoach added
+
+    // Hoach added: In development, purge existing sessions on startup to avoid persistent logins
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        await promisifyDbRun(db, `DELETE FROM sessions`);
+        logger.info('Dev-mode: cleared sessions table to avoid persistent logins');
+      } catch (e) {
+        logger.warn('Dev-mode: failed to purge sessions table', e);
+      }
+    }
+    // End Hoach added
+
+    // Create password reset tokens table
+    await promisifyDbRun(db, `
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        used BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      )
+    `);
   } catch (error) {
     logger.error('Error initializing auth-service database:', error);
     throw error;
