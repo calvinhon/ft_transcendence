@@ -268,20 +268,19 @@ export class AuthService {
         }
     }
 
+    // Hoach edited: Listen for OAUTH_SUCCESS from backend popup
     private waitForOAuthPopup(popup: Window): Promise<any> {
+        // Hoach edit start
         return new Promise((resolve, reject) => {
             let handled = false;
-
-            // Listener for message from popup
             const messageHandler = (event: MessageEvent) => {
-                // Security check: ensure origin matches (if needed, currently relative)
-                // if (event.origin !== window.location.origin) return;
-
+                // Accept any origin for now (backend sends '*'), but you can restrict this
                 if (event.data && event.data.type === 'OAUTH_SUCCESS') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
                     popup.close();
-                    resolve(event.data.payload);
+                    // Backend sends: { type: 'OAUTH_SUCCESS', token, user }
+                    resolve({ success: true, user: event.data.user, token: event.data.token });
                 } else if (event.data && event.data.type === 'OAUTH_ERROR') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
@@ -289,10 +288,7 @@ export class AuthService {
                     reject(new Error(event.data.error));
                 }
             };
-
             window.addEventListener('message', messageHandler);
-
-            // Poll to see if popup closed manually
             const timer = setInterval(() => {
                 if (popup.closed) {
                     clearInterval(timer);
@@ -303,6 +299,7 @@ export class AuthService {
                 }
             }, 1000);
         });
+        // Hoach edit end
     }
 
     /**

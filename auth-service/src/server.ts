@@ -26,7 +26,6 @@ async function start(): Promise<void> {
     });
 
     // Register routes
-    // await fastify.register(authRoutes);
     await authRoutes(fastify);
   }, serverOptions);
 

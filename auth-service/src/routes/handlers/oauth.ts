@@ -1,4 +1,5 @@
 // auth-service/src/routes/handlers/oauth.ts
+console.log('🚀 OAuth module loaded!');
 import { FastifyRequest, FastifyReply } from 'fastify';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
@@ -29,16 +30,16 @@ async function loadOAuthSecrets(): Promise<void> {
 
     oauthSecrets = {
       school42: {
-        client_id: school42.data.data.data.school42_client_id,
-        client_secret: school42.data.data.data.school42_client_secret
+        client_id: school42.data.data.data.client_id,
+        client_secret: school42.data.data.data.client_secret
       },
       google: {
-        client_id: google.data.data.data.google_client_id,
-        client_secret: google.data.data.data.google_client_secret
+        client_id: google.data.data.data.client_id,
+        client_secret: google.data.data.data.client_secret
       },
       github: {
-        client_id: github.data.data.data.github_client_id,
-        client_secret: github.data.data.data.github_client_secret
+        client_id: github.data.data.data.client_id,
+        client_secret: github.data.data.data.client_secret
       }
     };
 
@@ -159,10 +160,23 @@ export async function oauthCallbackHandler(
       maxAge: 7 * 24 * 60 * 60 // 7 days
     });
 
-    // Redirect to frontend with success parameters
-    const frontendUrl = process.env.FRONTEND_URL || 'https://localhost';
-    console.log(`✅ OAuth success for provider ${actualProvider}, user: ${user.username}, redirecting to: ${frontendUrl}?code=success&provider=${actualProvider}`);
-    reply.redirect(`${frontendUrl}?code=success&provider=${actualProvider}`);
+    // Return HTML that posts token and user info to opener and closes popup
+    const html = `<!DOCTYPE html>
+      <html><head><title>OAuth Login Success</title></head><body>
+      <script>
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'OAUTH_SUCCESS',
+            token: ${JSON.stringify(token)},
+            user: ${JSON.stringify({ id: user.id, username: user.username, email: user.email, provider: actualProvider })}
+          }, '*');
+          window.close();
+        } else {
+          document.write('Login successful. You may close this window.');
+        }
+      </script>
+      </body></html>`;
+    reply.type('text/html').send(html);
   } catch (err) {
     console.error('❌ OAuth callback error:', err);
     const frontendUrl = process.env.FRONTEND_URL || 'https://localhost';
@@ -354,15 +368,18 @@ async function exchangeGithubCode(code: string): Promise<any> {
 export async function oauthInitHandler(
   request: FastifyRequest<{
     Querystring: {
-      provider: '42' | 'google' | 'github';
+      provider?: '42' | 'google' | 'github';
     };
   }>,
   reply: FastifyReply
 ): Promise<void> {
+  console.log('🎯 oauthInitHandler called!');
   try {
-    const { provider } = request.query;
+    const { provider = '42' } = request.query; // Default to '42' if no provider specified
+    console.log(`🔍 OAuth init called with provider: "${provider}"`);
 
-    if (!provider || !['42', 'google', 'github'].includes(provider)) {
+    if (!['42', 'google', 'github'].includes(provider)) {
+      console.log(`❌ Invalid provider: "${provider}"`);
       reply.status(400).send({ error: 'Invalid provider' });
       return;
     }
