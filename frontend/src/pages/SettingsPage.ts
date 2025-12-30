@@ -240,6 +240,7 @@ export class SettingsPage extends AbstractComponent {
         const bio = (this.$('#input-bio') as HTMLTextAreaElement).value;
         const country = (this.$('#input-country') as HTMLInputElement).value;
         const avatarUrl = (this.$('#input-avatar') as HTMLInputElement).value;
+        const customAvatar = avatarUrl !== this.profile.avatarUrl ? 1 : this.profile.customAvatar;
 
         // Visual Feedback
         const btn = this.$('#save-btn') as HTMLButtonElement;
@@ -258,7 +259,8 @@ export class SettingsPage extends AbstractComponent {
                 displayName,
                 bio,
                 country,
-                avatarUrl
+                avatarUrl,
+                customAvatar
             };
 
             const res = await Api.put(`/api/user/profile/${user.userId}`, updates);

@@ -108,14 +108,16 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 	if (user) {
 		if (!user.oauth_provider)
 			return generateOAuthPopupResponse(reply, 409, { success: false, error: 'Email is already in use' });
-		if (userData.picture)
-			try {
-				const profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture }, { timeout: 5000 });
+		try {
+			const response = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000 });
+			if (!response.data.is_custom_avatar && userData.picture) {
+				const profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture, is_custom_avatar: 0 }, { timeout: 5000 });
 				if (profile.status === 200)
 					console.log('Updated the image of the user');
-			} catch (err) {
-				console.log('Image update for existing user failed');
 			}
+		} catch (err) {
+			console.log('Image update for existing user failed');
+		}
 		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email } });
 	} else { // register the new user
 		try {
