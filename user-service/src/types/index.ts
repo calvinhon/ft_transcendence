@@ -50,6 +50,7 @@ export interface UpdateProfileBody {
   country?: string;
   preferredLanguage?: string;
   themePreference?: string;
+  customAvatar?: number
 }
 
 export interface SearchQuery {

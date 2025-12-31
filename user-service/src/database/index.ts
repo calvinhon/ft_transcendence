@@ -37,6 +37,7 @@ export async function initializeDatabase(): Promise<void> {
         user_id INTEGER UNIQUE NOT NULL,
         display_name TEXT,
         avatar_url TEXT,
+        is_custom_avatar INTEGER DEFAULT 0,
         bio TEXT,
         country TEXT,
         preferred_language TEXT DEFAULT 'en',

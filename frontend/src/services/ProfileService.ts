@@ -7,6 +7,7 @@ export interface UserProfile {
     userId: number;
     username: string;
     avatarUrl: string | null;
+    customAvatar: number;
     bio: string | null;
     country: string | null;
     campaignLevel?: number;
@@ -68,6 +69,7 @@ export class ProfileService {
                 userId: userId,
                 username: name,
                 avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=333333&color=ffffff`,
+                customAvatar: 0,
                 bio: "Automated Opponent Logic Unit",
                 country: "CORE",
                 createdAt: new Date().toISOString()
@@ -98,6 +100,7 @@ export class ProfileService {
                     return `User ${data.user_id}`;
                 })(),
                 avatarUrl: data.avatar_url,
+                customAvatar: data.is_custom_avatar,
                 bio: data.bio,
                 country: data.country,
                 campaignLevel: data.campaign_level,
