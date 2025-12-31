@@ -1,6 +1,6 @@
 import { AbstractComponent } from "../components/AbstractComponent";
 import { AuthService } from "../services/AuthService";
-import { App } from "../core/App";
+
 
 export class RegisterPage extends AbstractComponent {
     constructor() {
@@ -10,51 +10,51 @@ export class RegisterPage extends AbstractComponent {
 
     getHtml(): string {
         return `
-            <div class="w-full h-full flex items-center justify-center relative bg-bg-primary">
-                <div class="w-full max-w-[600px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative">
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
-                            REGISTER
-                        </h1>
-                    </div>
-                    <form id="register-form" class="flex flex-col gap-4">
-                        <input
-                            type="text"
-                            id="register-username"
-                            placeholder="Username"
-                            required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
-                        />
-                        <input
-                            type="email"
-                            id="register-email"
-                            placeholder="Email"
-                            required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
-                        />
-                        <input
-                            type="password"
-                            id="register-password"
-                            placeholder="Password"
-                            required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
-                        />
-
-                        <div id="error-msg" class="text-primary text-xs text-center hidden font-vcr uppercase"></div>
-
-                        <button
-                            type="submit"
-                            class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
-                        >
-                            CREATE ACCOUNT
+            <div class="flex bg-black items-center justify-center relative w-full h-full">
+                <div class="w-full max-w-[600px] border-2 border-accent shadow-[0_0_20px_rgba(0,255,255,0.2)] bg-black relative pointer-events-auto">
+                    <!-- Tabs -->
+                    <div class="flex w-full border-b-2 border-accent">
+                        <button id="tab-login" class="w-1/2 justify-center items-center flex py-4 bg-transparent hover:bg-white/5 text-text-muted hover:text-white font-vcr font-bold text-xl transition-colors cursor-pointer">
+                            LOGIN
                         </button>
-                    </form>
-                    <div class="mt-6 text-center">
-                        <a
-                            href="#"
-                            id="back-to-login"
-                            class="text-text-muted hover:text-white text-xs font-vcr uppercase tracking-wider"
-                        >Back to Login</a>
+                        <div class="w-1/2 justify-center items-center flex py-4 bg-accent text-black font-vcr font-bold text-xl cursor-default">
+                            REGISTER
+                        </div>
+                    </div>
+
+                    <div class="p-12 flex flex-col gap-8">
+                        <form id="register-form" class="flex flex-col gap-6">
+                            <input
+                                type="text"
+                                id="register-username"
+                                placeholder="Username"
+                                required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
+                            />
+                            <input
+                                type="email"
+                                id="register-email"
+                                placeholder="Email"
+                                required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
+                            />
+                            <input
+                                type="password"
+                                id="register-password"
+                                placeholder="Password"
+                                required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
+                            />
+    
+                            <div id="error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+    
+                            <button
+                                type="submit"
+                                class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]"
+                            >
+                                CREATE ACCOUNT
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -80,9 +80,10 @@ export class RegisterPage extends AbstractComponent {
             }
         });
 
-        this.$('#back-to-login')?.addEventListener('click', (e) => {
+        this.$('#tab-login')?.addEventListener('click', (e) => {
             e.preventDefault();
-            App.getInstance().router.navigateTo('/login');
+            const app = (window as any).app;
+            if (app) app.router.navigateTo('/login');
         });
     }
 }
