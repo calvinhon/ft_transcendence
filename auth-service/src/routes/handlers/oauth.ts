@@ -127,7 +127,9 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 				console.log(store);
 				userData.name += Math.random().toString();
 			}
-			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, Google)', [userData.name, userData.email]);
+			//Hoach edited
+			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, ?)', [userData.name, userData.email, 'Google']);
+			//Hoach edit ended
 			user = await getQuery('SELECT * FROM users WHERE email = ?', [userData.email]);
 			console.log(user ? 'User was created successfully.' : 'User was not created.');
 			if (!user)
