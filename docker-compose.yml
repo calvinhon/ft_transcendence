@@ -2,6 +2,7 @@
 # Use profiles to control which services start:
 # - Default: Core services only (fast development)
 # - Full profile: All services including SSR (--profile full)
+# UPDATED: Added health checks for improved container orchestration reliability
 
 services:
   vault:
@@ -56,6 +57,14 @@ services:
       - PORT=3000
       - SERVICE_NAME=game-service
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
@@ -72,6 +81,14 @@ services:
       - PORT=3000
       - SERVICE_NAME=tournament-service
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
@@ -89,6 +106,14 @@ services:
       - PORT=3000
       - SERVICE_NAME=user-service
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
@@ -145,6 +170,14 @@ services:
         condition: service_healthy
       blockchain-deploy:
         condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/ || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
