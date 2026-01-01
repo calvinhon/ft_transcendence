@@ -148,4 +148,5 @@ vite.config.ts.timestamp-*
 .idea/
 *.swp
 *.swo
+*.txt
 frontend_legacy/

@@ -31,7 +31,9 @@ CONTAINERS=(
     "tournament"
     "user"
     "vault"
-    "hardhat-node"
+    # Hoach edited - Updated container name from hardhat-node to blockchain
+    "blockchain"
+    # Hoach edit ended
     "frontend"
     "ssr"
 )

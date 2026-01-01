@@ -127,20 +127,19 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 				console.log(store);
 				userData.name += Math.random().toString();
 			}
-			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, Google)', [userData.name, userData.email]);
+			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, \'Google\')', [userData.name, userData.email]);
 			user = await getQuery('SELECT * FROM users WHERE email = ?', [userData.email]);
 			console.log(user ? 'User was created successfully.' : 'User was not created.');
 			if (!user)
 				throw new Error('User was not created');
 		} catch (err: any) {
-			console.log('User creation failed.');
+			console.log('User creation failed.', err.message);
 			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
 		}
 		try {
 			// Add a profile for the user in the user database.
 			console.log('Attempting to create a user profile for the new user');
 			let profile = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000 });
-			console.log(profile);
 			if (profile.status === 200)
 				console.log('User profile ready for update');
 

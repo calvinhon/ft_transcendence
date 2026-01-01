@@ -42,16 +42,18 @@ log_result() {
 test_service_discovery() {
     echo -e "${YELLOW}Running Test 1: Service Discovery${NC}"
     
-    # Check if all services are reachable (works in Docker or host)
-    local services=("3001" "3002" "3003" "3004")
+    # Hoach edited - Updated to use HTTPS endpoints through nginx proxy
+    # Check if all services are reachable through nginx proxy
+    local services=("auth" "game" "tournament" "user")
     local all_running=true
     
-    for port in "${services[@]}"; do
-        if ! curl -s --max-time 2 http://localhost:$port/health > /dev/null 2>&1; then
+    for service in "${services[@]}"; do
+        if ! curl -sk --max-time 2 https://localhost/api/$service/health > /dev/null 2>&1; then
             all_running=false
             break
         fi
     done
+    # Hoach edit ended
     
     if [ "$all_running" = true ]; then
         log_result 1 "Service Discovery" "PASS"
@@ -66,8 +68,10 @@ test_service_discovery() {
 test_inter_service_communication() {
     echo -e "${YELLOW}Running Test 2: Inter-Service Communication${NC}"
     
+    # Hoach edited - Updated to use HTTPS endpoint
     # Check if services can communicate with each other
-    local response=$(curl -s http://localhost:3002/health 2>/dev/null)
+    local response=$(curl -sk https://localhost/api/game/health 2>/dev/null)
+    # Hoach edit ended
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 2 "Inter-Service Communication" "PASS"
