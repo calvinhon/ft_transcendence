@@ -179,10 +179,10 @@ ensure-database-folders:
 	@mkdir -p tournament-service/database
 	@mkdir -p user-service/database
 	@mkdir -p vault/data
-	@touch auth-service/database/.gitkeep
-	@touch game-service/database/.gitkeep
-	@touch tournament-service/database/.gitkeep
-	@touch user-service/database/.gitkeep
+	@touch auth-service/database/.gitkeep 2>/dev/null || true
+	@touch game-service/database/.gitkeep 2>/dev/null || true
+	@touch tournament-service/database/.gitkeep 2>/dev/null || true
+	@touch user-service/database/.gitkeep 2>/dev/null || true
 	@if [ ! -f .env ]; then \
 		echo "📝 Creating empty .env file..."; \
 		touch .env; \

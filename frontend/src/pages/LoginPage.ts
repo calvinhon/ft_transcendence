@@ -2,13 +2,13 @@ import { AbstractComponent } from "../components/AbstractComponent";
 import { AuthService } from "../services/AuthService";
 
 export class LoginPage extends AbstractComponent {
-    constructor() {
-        super();
-        this.setTitle('Login');
-    }
+  constructor() {
+    super();
+    this.setTitle("Login");
+  }
 
-    getHtml(): string {
-        return `
+  getHtml(): string {
+    return `
             <div class="flex bg-black items-center justify-center relative w-full h-full">
                 <div class="w-full max-w-[600px] border-2 border-accent shadow-[0_0_20px_rgba(0,255,255,0.2)] bg-black relative pointer-events-auto">
                     <!-- Tabs -->
@@ -62,36 +62,48 @@ export class LoginPage extends AbstractComponent {
                 </div>
             </div>
         `;
-    }
+  }
 
-    onMounted(): void {
-        const form = this.$('#login-form');
-        form?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = (this.$('#username') as HTMLInputElement).value;
-            const password = (this.$('#password') as HTMLInputElement).value;
-            const errorDiv = this.$('#error-msg')!;
+  onMounted(): void {
+    const form = this.$("#login-form");
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = (this.$("#username") as HTMLInputElement).value;
+      const password = (this.$("#password") as HTMLInputElement).value;
+      const errorDiv = this.$("#error-msg")!;
 
-            try {
-                const result = await AuthService.getInstance().login(username, password);
-                if (!result.success) {
-                    throw new Error(result.error || "Authentication Failed");
-                }
-                // Router navigation happens in AuthService on success
-            } catch (err: any) {
-                errorDiv.textContent = err.message || "Authentication Failed";
-                errorDiv.classList.remove('hidden');
-            }
-        });
+      try {
+        if (
+          username.toLowerCase() == "snyysbevg" &&
+          password.toLowerCase() == "tbgpuln!"
+        )
+          throw new Error("Try again with ROT13");
+        else if (
+          username.toLowerCase() == "fallforit" &&
+          password.toLowerCase() == "gotchya!"
+        )
+          throw new Error("Literally just read those values again.");
+        const result = await AuthService.getInstance().login(
+          username,
+          password
+        );
+        if (!result.success) {
+          throw new Error(result.error || "Authentication Failed");
+        }
+      } catch (err: any) {
+        errorDiv.textContent = err.message || "Authentication Failed";
+        errorDiv.classList.remove("hidden");
+      }
+    });
 
-        this.$('#login-google')?.addEventListener('click', async () => {
-            await AuthService.getInstance().loginWithGoogle();
-        });
+    this.$("#login-google")?.addEventListener("click", async () => {
+      await AuthService.getInstance().loginWithGoogle();
+    });
 
-        this.$('#tab-register')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            const app = (window as any).app;
-            if (app) app.router.navigateTo('/register');
-        });
-    }
+    this.$("#tab-register")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const app = (window as any).app;
+      if (app) app.router.navigateTo("/register");
+    });
+  }
 }

@@ -84,6 +84,6 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 RUN apk update --no-cache && \
 	apk add --no-cache yajl libstdc++ libmaxminddb-libs lmdb libxml2 pcre
 
-EXPOSE 80 443
+EXPOSE 8443 
 
 CMD ["nginx", "-g", "daemon off;"]
