@@ -283,8 +283,8 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
 
                     <!-- Logout Zone (Moved from Right Column) -->
-                    <div id="logout-zone" class="p-4 border-t border-accent/20 bg-black/40 group cursor-pointer hover:bg-red-500/10 transition-colors">
-                        <div class="w-full py-4 border-2 border-dashed border-red-500/20 text-red-500/50 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest">
+                    <div id="logout-zone" class="p-4 border-t border-red-900/30 bg-red-900/5 group cursor-pointer transition-all hover:bg-red-900/20">
+                        <div class="w-full py-4 border-2 border-dashed border-red-900/50 text-red-700 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-[10px] tracking-widest opacity-70 group-hover:opacity-100">
                             <i class="fas fa-sign-out-alt group-hover:scale-110 transition-transform"></i> DRAG HERE TO LOGOUT
                         </div>
                     </div>
@@ -312,14 +312,14 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
                         
                         <div class="p-4 border-t border-accent/20 bg-black/40">
-                             <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
-                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                             <button id="add-player-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-accent hover:text-black hover:border-accent hover:shadow-[0_0_15px_rgba(41,182,246,0.3)] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mb-2">
+                                  <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-black/20 transition-colors">
                                      <i class="fas fa-plus text-[10px]"></i>
                                   </div>
-                                  ADD PLAYERS
+                                  ADD PLAYER
                              </button>
-                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
-                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-accent hover:text-black hover:border-accent hover:shadow-[0_0_15px_rgba(41,182,246,0.3)] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                                  <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-black/20 transition-colors">
                                      <i class="fas fa-robot text-[10px]"></i>
                                   </div>
                                   ADD BOT
@@ -811,6 +811,7 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     private handleAddBot(): void {
+        // Bots not allowed in tournament
         if (this.activeMode === 'tournament') {
             new ErrorModal("BOTS CANNOT BE ADDED IN TOURNAMENT MODE.").render();
             return;
