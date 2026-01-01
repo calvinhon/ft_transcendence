@@ -25,5 +25,17 @@ RUN npm prune --production
 # Ensure database directory exists
 RUN mkdir -p /app/database
 
-# Use built TypeScript if available, otherwise fallback to JavaScript
+# Database files will be created by the application if they don't exist
+
+# Install su-exec for entrypoint script
+RUN apk add --no-cache su-exec
+
+# Copy entrypoint script
+COPY ./packages/common/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 3000
+
+# Entrypoint handles user switching
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]

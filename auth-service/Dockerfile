@@ -25,8 +25,17 @@ RUN npm prune --production
 # Create and set permissions for database directory
 RUN mkdir -p /app/database && chown -R node:node /app/database
 
-# Switch to non-root user
-USER node
+# Database files will be created by the application if they don't exist
 
-# Start using compiled JavaScript
+# Install su-exec for entrypoint script
+RUN apk add --no-cache su-exec
+
+# Copy entrypoint script
+COPY ./packages/common/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 3000
+
+# Entrypoint handles user switching
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/server.js"]
