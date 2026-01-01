@@ -290,8 +290,6 @@ export class SettingsPage extends AbstractComponent {
 
     private showError(msg: string) {
         this.error = msg;
-        // Try to insert error banner at top of form without re-rendering
-        // Or just alert
         new ErrorModal(msg.toUpperCase()).render();
     }
 
