@@ -1,6 +1,7 @@
 // auth-service/src/services/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import axios from 'axios';
 import { User, DatabaseUser } from '../types';
 import { getQuery, runQuery } from '../utils/database';
 
@@ -9,10 +10,24 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await runQuery(
-      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+      'INSERT INTO users (username, email, password_hash, last_login) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
       [username, email, hashedPassword]
     );
 
+    try {
+      // Add a profile for the user in the user database.
+      console.log('Attempting to create a user profile for the new user');
+      let profile = await axios.get(`http://user-service:3000/profile/${result.lastID}`, { timeout: 5000 });
+      if (profile.status === 200)
+        console.log('User profile ready for update');
+
+      console.log('Attempting to update the user profile for the new user');
+      profile = await axios.put(`http://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000 });
+      if (profile.status === 200)
+        console.log('User profile ready');
+    } catch (err: any) {
+      console.log('Something went wrong:', err.message);
+    }
     return { userId: (result as any).lastID };
   }
 

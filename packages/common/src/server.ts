@@ -107,7 +107,7 @@ export async function createServer(
 // Shared configuration utility
 export function createServiceConfig(serviceName: string, defaultPort: number = 3000): ServiceConfig {
   return {
-    port: parseInt(process.env.PORT || defaultPort.toString(), 10),
+    port: parseInt(defaultPort.toString(), 10),
     host: process.env.HOST || '0.0.0.0',
     serviceName,
     cors: {

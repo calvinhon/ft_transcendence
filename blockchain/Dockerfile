@@ -14,6 +14,4 @@ COPY scripts ./scripts
 
 RUN mkdir -p /app/data /app/deployments
 
-EXPOSE 8545
-
 CMD ["tail", "-f", "/dev/null"]
