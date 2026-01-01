@@ -130,8 +130,8 @@ services:
   blockchain-service:
     build: ./blockchain-service
     container_name: blockchain-service
-    ports:
-      - "3005:3000"
+    #ports:
+    #  - "3005:3000"
     environment:
       - PORT=3000
       - SERVICE_NAME=blockchain-service

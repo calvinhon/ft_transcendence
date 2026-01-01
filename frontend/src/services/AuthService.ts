@@ -122,8 +122,31 @@ export class AuthService {
                 return true;
             }
 
-            // Backend didn't return user but said valid - no user data available
-            console.warn("AuthService: Backend says valid but no user data");
+            //Hoach edited
+            // Backend says valid but no user data - check localStorage for stored user
+            if (data.valid) {
+                console.log("AuthService: Backend says valid, checking localStorage...");
+                const storedUser = localStorage.getItem('user');
+                console.log("AuthService: Stored user in localStorage:", storedUser ? "found" : "not found");
+                if (storedUser) {
+                    try {
+                        const user = JSON.parse(storedUser);
+                        console.log("AuthService: Using stored user data for", user.username);
+                        App.getInstance().currentUser = user;
+                        return true;
+                    } catch (e) {
+                        console.warn("AuthService: Failed to parse stored user data", e);
+                    }
+                } else {
+                    console.log("AuthService: No stored user data in localStorage");
+                }
+            } else {
+                console.log("AuthService: Backend says session is not valid");
+            }
+            //Hoach edit ended
+
+            // Backend didn't return user and no stored user data available
+            console.warn("AuthService: Backend says valid but no user data available");
             return false;
         } catch (e: any) {
             console.error("AuthService: Verify failed or timed out:", e.message || e);
