@@ -5,6 +5,10 @@ import { randomBytes } from 'crypto';
 import { getQuery, runQuery } from '../../utils/database';
 
 let googleSecrets: any = null;
+// Hoach edited - Add secret caching for 42 School and GitHub OAuth
+let fortyTwoSecrets: any = null;
+let githubSecrets: any = null;
+// Hoach edit ended
 
 function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: { success: boolean, user?: any, error?: string }): void {
 	const messageData = data.success
@@ -31,25 +35,64 @@ function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: {
 }
 
 export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { provider: string } }>, reply: FastifyReply): Promise<void> {
-	// Check for invalid provider
-	if (request.query.provider !== 'Google')
+	// Hoach edited - Support multiple OAuth providers
+	const { provider } = request.query;
+	const supportedProviders = ['Google', '42', 'GitHub'];
+	if (!supportedProviders.includes(provider))
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
 
-	// Use secrets cache if available (check clientID to determine if populated)
-	if (!googleSecrets) {
-		try {
-			const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
-			const secrets = vaultResponse.data.data.data;
-			if (!secrets || !secrets.Client_ID || !secrets.Client_Secret || !secrets.Callback_URL)
-				throw new Error('Vault response missing secrets');
-			googleSecrets = { clientID: secrets.Client_ID as string, clientSecret: secrets.Client_Secret as string, clientCallbackURL: secrets.Callback_URL as string };
-		} catch (err: any) {
-			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
+	// Get secrets for the requested provider
+	let secrets: any = null;
+	let vaultPath: string = '';
+	
+	if (provider === 'Google') {
+		if (!googleSecrets) {
+			try {
+				const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+				const data = vaultResponse.data.data.data;
+				if (!data || !data.Client_ID || !data.Client_Secret || !data.Callback_URL)
+					throw new Error('Vault response missing Google secrets');
+				googleSecrets = { clientID: data.Client_ID as string, clientSecret: data.Client_Secret as string, clientCallbackURL: data.Callback_URL as string };
+			} catch (err: any) {
+				return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
+			}
 		}
+		secrets = googleSecrets;
+		vaultPath = 'Google_API';
+	} else if (provider === '42') {
+		if (!fortyTwoSecrets) {
+			try {
+				const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/42_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+				const data = vaultResponse.data.data.data;
+				if (!data || !data.UID || !data.SECRET || !data.CALLBACK_URL)
+					throw new Error('Vault response missing 42 secrets');
+				fortyTwoSecrets = { clientID: data.UID as string, clientSecret: data.SECRET as string, clientCallbackURL: data.CALLBACK_URL as string };
+			} catch (err: any) {
+				return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
+			}
+		}
+		secrets = fortyTwoSecrets;
+		vaultPath = '42_API';
+	} else if (provider === 'GitHub') {
+		if (!githubSecrets) {
+			try {
+				const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/GitHub_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+				const data = vaultResponse.data.data.data;
+				if (!data || !data.Client_ID || !data.Client_Secret || !data.Callback_URL)
+					throw new Error('Vault response missing GitHub secrets');
+				githubSecrets = { clientID: data.Client_ID as string, clientSecret: data.Client_Secret as string, clientCallbackURL: data.Callback_URL as string };
+			} catch (err: any) {
+				return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
+			}
+		}
+		secrets = githubSecrets;
+		vaultPath = 'GitHub_API';
 	}
+	// Hoach edit ended
 
 	// Create state token to prevent CSRF attacks
-	const state = randomBytes(16).toString('hex');
+	const randomState = randomBytes(16).toString('hex');
+	const state = `${provider}:${randomState}`;
 
 	// Create the state cookie
 	reply.setCookie('oauth_state', state, {
@@ -59,44 +102,139 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 		maxAge: 180
 	});
 
-	// Create API Sign In redirect
-	return reply.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
-		client_id: googleSecrets.clientID,
-		redirect_uri: googleSecrets.clientCallbackURL,
-		scope: 'openid profile email',
-		response_type: 'code',
-		state: state
-	}).toString()}`);
+	// Hoach edited - Generate OAuth URL based on provider
+	let authUrl: string;
+	if (provider === 'Google') {
+		authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+			client_id: secrets.clientID,
+			redirect_uri: secrets.clientCallbackURL,
+			scope: 'openid profile email',
+			response_type: 'code',
+			state: state
+		}).toString()}`;
+	} else if (provider === '42') {
+		authUrl = `https://api.intra.42.fr/oauth/authorize?${new URLSearchParams({
+			client_id: secrets.clientID,
+			redirect_uri: secrets.clientCallbackURL,
+			scope: 'public',
+			response_type: 'code',
+			state: state
+		}).toString()}`;
+	} else if (provider === 'GitHub') {
+		authUrl = `https://github.com/login/oauth/authorize?${new URLSearchParams({
+			client_id: secrets.clientID,
+			redirect_uri: secrets.clientCallbackURL,
+			scope: 'user:email',
+			response_type: 'code',
+			state: state
+		}).toString()}`;
+	} else {
+		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
+	}
+	// Hoach edit ended
+
+	return reply.redirect(authUrl);
 }
 
-export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring: { code: string, state: string, provider: string } }>, reply: FastifyReply): Promise<void> {
-	const { code, state, provider } = request.query;
+export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring: { code: string, state: string } }>, reply: FastifyReply): Promise<void> {
+	const { code, state: fullState } = request.query;
 
-	if (!code || !state)
+	if (!code || !fullState)
 		return generateOAuthPopupResponse(reply, 400, { success: false, error: 'Missing code or state' });
-	if (provider !== 'Google')
+
+	// Parse provider from state (format: "provider:randomState")
+	const [provider, randomState] = fullState.split(':');
+	if (!provider || !randomState)
+		return generateOAuthPopupResponse(reply, 400, { success: false, error: 'Invalid state format' });
+
+	// Hoach edited - Support multiple OAuth providers
+	const supportedProviders = ['Google', '42', 'GitHub'];
+	if (!supportedProviders.includes(provider))
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
-	if (request.cookies.oauth_state !== state)
+	// Hoach edit ended
+	if (request.cookies.oauth_state !== fullState)
 		return generateOAuthPopupResponse(reply, 403, { success: false, error: 'Invalid State' });
 
 	let userData: { email: string, name: string, picture: string } = { email: '', name: '', picture: '' };
 
+	// Hoach edited - Get secrets for the provider
+	let secrets: any = null;
+	if (provider === 'Google') {
+		secrets = googleSecrets;
+	} else if (provider === '42') {
+		secrets = fortyTwoSecrets;
+	} else if (provider === 'GitHub') {
+		secrets = githubSecrets;
+	}
+	// Hoach edit ended
+
 	try {
-		const response = await axios.post('https://oauth2.googleapis.com/token', {
-			code,
-			client_id: googleSecrets.clientID,
-			client_secret: googleSecrets.clientSecret,
-			redirect_uri: googleSecrets.clientCallbackURL,
-			grant_type: 'authorization_code'
-		});
+		// Hoach edited - Handle token exchange and user data retrieval for different providers
+		if (provider === 'Google') {
+			const response = await axios.post('https://oauth2.googleapis.com/token', {
+				code,
+				client_id: secrets.clientID,
+				client_secret: secrets.clientSecret,
+				redirect_uri: secrets.clientCallbackURL,
+				grant_type: 'authorization_code'
+			});
 
-		const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1], 'base64').toString());
+			const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1], 'base64').toString());
 
-		userData = {
-			email: userInfo.email,
-			name: userInfo.name || userInfo.given_name || 'Google User',
-			picture: userInfo.picture
-		};
+			userData = {
+				email: userInfo.email,
+				name: userInfo.name || userInfo.given_name || 'Google User',
+				picture: userInfo.picture
+			};
+		} else if (provider === '42') {
+			const response = await axios.post('https://api.intra.42.fr/oauth/token', {
+				grant_type: 'authorization_code',
+				client_id: secrets.clientID,
+				client_secret: secrets.clientSecret,
+				code: code,
+				redirect_uri: secrets.clientCallbackURL
+			});
+
+			const userResponse = await axios.get('https://api.intra.42.fr/v2/me', {
+				headers: { 'Authorization': `Bearer ${response.data.access_token}` }
+			});
+
+			userData = {
+				email: userResponse.data.email,
+				name: userResponse.data.displayname || userResponse.data.login || '42 User',
+				picture: userResponse.data.image?.link || ''
+			};
+		} else if (provider === 'GitHub') {
+			const response = await axios.post('https://github.com/login/oauth/access_token', {
+				client_id: secrets.clientID,
+				client_secret: secrets.clientSecret,
+				code: code,
+				redirect_uri: secrets.clientCallbackURL
+			}, {
+				headers: { 'Accept': 'application/json' }
+			});
+
+			const userResponse = await axios.get('https://api.github.com/user', {
+				headers: { 'Authorization': `Bearer ${response.data.access_token}` }
+			});
+
+			// Get user email if not public
+			let email = userResponse.data.email;
+			if (!email) {
+				const emailsResponse = await axios.get('https://api.github.com/user/emails', {
+					headers: { 'Authorization': `Bearer ${response.data.access_token}` }
+				});
+				const primaryEmail = emailsResponse.data.find((e: any) => e.primary);
+				email = primaryEmail ? primaryEmail.email : userResponse.data.login + '@github.com';
+			}
+
+			userData = {
+				email: email,
+				name: userResponse.data.name || userResponse.data.login || 'GitHub User',
+				picture: userResponse.data.avatar_url || ''
+			};
+		}
+		// Hoach edit ended
 	} catch (error: any) {
 		console.log(`Failed data retrieval: ${error.message}: ${error.data}`);
 		return generateOAuthPopupResponse(reply, 500, { success: false, error: 'Error encountered during credential exchange' });
@@ -127,8 +265,8 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 				console.log(store);
 				userData.name += Math.random().toString();
 			}
-			//Hoach edited
-			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, ?)', [userData.name, userData.email, 'Google']);
+			//Hoach edited - Use dynamic provider instead of hardcoded Google
+			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, ?)', [userData.name, userData.email, provider]);
 			//Hoach edit ended
 			user = await getQuery('SELECT * FROM users WHERE email = ?', [userData.email]);
 			console.log(user ? 'User was created successfully.' : 'User was not created.');
@@ -149,7 +287,9 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			console.log('Attempting to update the user profile for the new user');
 			profile = await axios.put(`http://user-service:3000/profile/${user.id}`, {
 				displayName: userData.name,
-				bio: 'External user connected through Google',
+				// Hoach edited - Use dynamic provider name in bio
+				bio: `External user connected through ${provider}`,
+				// Hoach edit ended
 				avatarUrl: userData.picture || null
 			}, { timeout: 5000 });
 			if (profile.status === 200)
