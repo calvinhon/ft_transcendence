@@ -5,6 +5,8 @@ import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, Tournament
 import { FriendService, Friend } from "../services/FriendService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import Chart from 'chart.js/auto';
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 export class ProfilePage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -638,7 +640,7 @@ export class ProfilePage extends AbstractComponent {
                 // Reload profile/friends list to get updated status/online state
                 await this.loadProfile(this.profile.userId);
             } else {
-                alert('Failed to add friend');
+                new ErrorModal('FAILED TO ADD FRIEND').render();
             }
         });
 
@@ -647,15 +649,23 @@ export class ProfilePage extends AbstractComponent {
             const currentUser = AuthService.getInstance().getCurrentUser();
             if (!currentUser) return;
 
-            if (confirm(`Remove ${this.profile.username} from friends?`)) {
-                const success = await FriendService.getInstance().removeFriend(currentUser.userId, this.profile.userId);
-                if (success) {
-                    // Reload profile to update status
-                    await this.loadProfile(this.profile.userId);
-                } else {
-                    alert('Failed to remove friend');
-                }
-            }
+            const profileId = this.profile.userId;
+            const profileName = this.profile.username;
+
+            new ConfirmationModal(
+                `REMOVE ${profileName.toUpperCase()} FROM FRIENDS?`,
+                async () => {
+                    const success = await FriendService.getInstance().removeFriend(currentUser.userId, profileId);
+                    if (success) {
+                        // Reload profile to update status
+                        await this.loadProfile(profileId);
+                    } else {
+                        new ErrorModal('FAILED TO REMOVE FRIEND').render();
+                    }
+                },
+                () => { },
+                'destructive'
+            ).render();
         });
     }
 

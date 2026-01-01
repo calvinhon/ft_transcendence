@@ -7,6 +7,7 @@ import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 import { WebGLService } from "../services/WebGLService";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 const SNAP_THRESHOLD = 200; // Distance to snap rather than lerp. Higher = smoother for fast objects.
 
@@ -482,7 +483,16 @@ export class GamePage extends AbstractComponent {
 
                 overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
                 overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
-                    if (confirm("Quit game?")) this.exitGame();
+                    const modalTarget = this.is3DMode
+                        ? document.body
+                        : document.getElementById('modal-container');
+
+                    new ConfirmationModal(
+                        "QUIT GAME? CURRENT PROGRESS WILL BE RECORDED.",
+                        () => this.exitGame(),
+                        () => { },
+                        'destructive'
+                    ).render(modalTarget as HTMLElement);
                 });
             }
         } else {

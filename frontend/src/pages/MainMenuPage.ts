@@ -7,6 +7,8 @@ import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import { WebGLService } from "../services/WebGLService";
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 interface Player {
     id: number;
@@ -794,10 +796,15 @@ export class MainMenuPage extends AbstractComponent {
             // Logout Button
             const logoutBtn = target.closest('#logout-btn');
             if (logoutBtn) {
-                if (confirm('Are you sure you want to logout?')) {
-                    AuthService.getInstance().logout();
-                    App.getInstance().router.navigateTo('/login');
-                }
+                new ConfirmationModal(
+                    'ARE YOU SURE YOU WANT TO LOGOUT?',
+                    () => {
+                        AuthService.getInstance().logout();
+                        App.getInstance().router.navigateTo('/login');
+                    },
+                    () => { },
+                    'warning'
+                ).render();
                 return;
             }
         };
@@ -805,7 +812,7 @@ export class MainMenuPage extends AbstractComponent {
 
     private handleAddBot(): void {
         if (this.activeMode === 'tournament') {
-            alert("Bots cannot be added in Tournament mode.");
+            new ErrorModal("BOTS CANNOT BE ADDED IN TOURNAMENT MODE.").render();
             return;
         }
 
@@ -815,7 +822,7 @@ export class MainMenuPage extends AbstractComponent {
             const bot2 = existing.find(p => p.userId === -2);
 
             if (bot1 && bot2) {
-                alert("Maximum of 2 bots allowed.");
+                new ErrorModal("MAXIMUM OF 2 BOTS ALLOWED.").render();
                 return;
             }
 
@@ -851,14 +858,14 @@ export class MainMenuPage extends AbstractComponent {
                     this.campaignPlayer = player;
                     this.renderContent();
                 } else {
-                    alert("Only the Host can play Campaign Mode.");
+                    new ErrorModal("ONLY THE HOST CAN PLAY CAMPAIGN MODE.").render();
                 }
             });
             // Early return to wait for promise/prevent render before check
             return;
         } else if (target === 'tournament') {
             if (player.isBot) {
-                alert("Bots cannot be added to Tournament mode.");
+                new ErrorModal("BOTS CANNOT BE ADDED TO TOURNAMENT MODE.").render();
                 return;
             }
             if (this.tournamentPlayers.length < 8 && !isInTournament) {
@@ -867,7 +874,7 @@ export class MainMenuPage extends AbstractComponent {
         } else if (target === 'team1') {
             // Check bot limit
             if (player.isBot && this.arcadeTeam1.some(p => p.isBot)) {
-                alert("Only 1 Bot allowed per team.");
+                new ErrorModal("ONLY 1 BOT ALLOWED PER TEAM.").render();
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
@@ -878,12 +885,12 @@ export class MainMenuPage extends AbstractComponent {
             } else if (isOnTeam2) {
                 console.warn(`Player ${player.username} is already on Team 2`);
             } else if (this.arcadeTeam1.length >= limit) {
-                alert(`Team 1 is full (Max ${limit})`);
+                new ErrorModal(`TEAM 1 IS FULL (MAX ${limit}).`).render();
             }
         } else if (target === 'team2') {
             // Check bot limit
             if (player.isBot && this.arcadeTeam2.some(p => p.isBot)) {
-                alert("Only 1 Bot allowed per team.");
+                new ErrorModal("ONLY 1 BOT ALLOWED PER TEAM.").render();
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
@@ -894,7 +901,7 @@ export class MainMenuPage extends AbstractComponent {
             } else if (isOnTeam1) {
                 console.warn(`Player ${player.username} is already on Team 1`);
             } else if (this.arcadeTeam2.length >= limit) {
-                alert(`Team 2 is full (Max ${limit})`);
+                new ErrorModal(`TEAM 2 IS FULL (MAX ${limit}).`).render();
             }
         }
         this.renderContent();
@@ -941,7 +948,7 @@ export class MainMenuPage extends AbstractComponent {
 
         if (this.activeMode === 'campaign') {
             if (!this.campaignPlayer) {
-                alert("Assign a pilot first");
+                new ErrorModal("ASSIGN A PILOT FIRST.").render();
                 return;
             }
             // Map single player to team logic with avatar
@@ -1017,7 +1024,7 @@ export class MainMenuPage extends AbstractComponent {
         } else if (this.activeMode === 'arcade') {
             // Validate Teams
             if (this.arcadeTeam1.length === 0 || this.arcadeTeam2.length === 0) {
-                alert("Both teams must have at least one player!");
+                new ErrorModal("BOTH TEAMS MUST HAVE AT LEAST ONE PLAYER!").render();
                 return;
             }
 
@@ -1041,7 +1048,7 @@ export class MainMenuPage extends AbstractComponent {
         } else {
             // Tournament logic
             if (![4, 8].includes(this.tournamentPlayers.length)) {
-                alert("Need 4 or 8 players for tournament");
+                new ErrorModal("NEED 4 OR 8 PLAYERS FOR TOURNAMENT.").render();
                 return;
             }
             const modal = new TournamentAliasModal(
@@ -1062,7 +1069,7 @@ export class MainMenuPage extends AbstractComponent {
 
                         App.getInstance().router.navigateTo('/tournament');
                     } catch (e) {
-                        alert("Failed to create tournament: " + e);
+                        new ErrorModal("FAILED TO CREATE TOURNAMENT: " + e).render();
                     }
                 },
                 () => { }

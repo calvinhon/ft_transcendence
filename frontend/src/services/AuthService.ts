@@ -2,6 +2,7 @@ import { Api } from '../core/Api';
 import { App } from '../core/App';
 import { User } from '../types';
 import { LocalPlayerService } from './LocalPlayerService';
+import { ErrorModal } from "../components/ErrorModal";
 
 export class AuthService {
     private static instance: AuthService;
@@ -256,7 +257,7 @@ export class AuthService {
         );
 
         if (!popup) {
-            alert("Popup blocked! Please allow popups for this site.");
+            new ErrorModal("POPUP BLOCKED! PLEASE ALLOW POPUPS FOR THIS SITE.").render();
             return;
         }
 
@@ -267,7 +268,7 @@ export class AuthService {
                 App.getInstance().router.navigateTo('/');
             } else {
                 console.error("OAuth failed:", authData?.error);
-                alert("Authentication failed: " + (authData?.error || "Unknown error"));
+                new ErrorModal("AUTHENTICATION FAILED: " + (authData?.error || "UNKNOWN ERROR")).render();
             }
         } catch (error) {
             console.error("OAuth error:", error);
@@ -340,8 +341,10 @@ export class AuthService {
             }, window.location.origin);
             window.close();
         } else {
-            alert("Authentication failed: " + error);
-            window.location.href = '/login';
+            const modal = new ErrorModal("AUTHENTICATION FAILED: " + error.toUpperCase(), () => {
+                window.location.href = '/login';
+            });
+            modal.render();
         }
     }
 

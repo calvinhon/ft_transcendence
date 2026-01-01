@@ -4,6 +4,8 @@ import { AuthService } from "../services/AuthService";
 import { UserProfile } from "../services/ProfileService";
 import { Api } from "../core/Api";
 import { WebGLService } from "../services/WebGLService";
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 export class SettingsPage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -194,14 +196,16 @@ export class SettingsPage extends AbstractComponent {
         this.$('#toggle-3d-mode')?.addEventListener('click', () => {
             const webglService = WebGLService.getInstance();
             const newValue = !webglService.is3DModeEnabled();
-            webglService.set3DModeEnabled(newValue);
 
-            // Show reload prompt
-            if (confirm('3D Mode changed. Reload page to apply changes?')) {
-                window.location.reload();
-            } else {
-                this.refresh();
-            }
+            new ConfirmationModal(
+                newValue ? 'ENABLE 3D MODE? PAGE WILL RELOAD.' : 'DISABLE 3D MODE? PAGE WILL RELOAD.',
+                () => {
+                    webglService.set3DModeEnabled(newValue);
+                    window.location.reload();
+                },
+                () => { },
+                'neutral'
+            ).render();
         });
     }
 
@@ -288,7 +292,7 @@ export class SettingsPage extends AbstractComponent {
         this.error = msg;
         // Try to insert error banner at top of form without re-rendering
         // Or just alert
-        alert(msg); // Fallback for MVP simplicity to avoid wiping form
+        new ErrorModal(msg.toUpperCase()).render();
     }
 
     private refresh(): void {
