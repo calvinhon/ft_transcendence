@@ -164,10 +164,12 @@ test_error_handling() {
 test_ai_vs_player() {
     echo -e "${YELLOW}Running Test 9: AI vs Player Game${NC}"
     
+    # Hoach edited - Updated to use HTTPS endpoint through nginx proxy
     # Start a game with AI opponent via API
-    local response=$(curl -s -X POST http://localhost:3002/games \
+    local response=$(curl -sk -X POST https://localhost/api/game/games \
         -H "Content-Type: application/json" \
         -d '{"mode": "ai", "difficulty": "medium"}' 2>/dev/null)
+    # Hoach edit ended
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 9 "AI vs Player Game" "PASS"
@@ -182,13 +184,15 @@ test_ai_vs_player() {
 test_learning_adaptation() {
     echo -e "${YELLOW}Running Test 10: Learning/Adaptation${NC}"
     
+    # Hoach edited - Updated AI detection patterns to match actual implementation
     local ai_files=$(find "$PROJECT_ROOT/game-service/src" -type f -name "*.ts" 2>/dev/null)
     
     # Check if AI has adaptive behavior (difficulty adjustment, speed variation, etc)
-    if echo "$ai_files" | xargs grep -l "difficulty\|speed.*=\|aiSpeed\|calculateAI" 2>/dev/null | grep -q .; then
+    if echo "$ai_files" | xargs grep -l "difficulty\|aiDifficulty\|paddleSpeed\|calculateAI" 2>/dev/null | grep -q .; then
         log_result 10 "Learning/Adaptation" "PASS"
         return 0
     fi
+    # Hoach edit ended
     
     log_result 10 "Learning/Adaptation" "FAIL"
     return 1
@@ -200,7 +204,7 @@ test_performance_testing() {
     
     # Check AI response time
     local start=$(date +%s%N)
-    curl -s -X GET http://localhost:3002/health > /dev/null
+    curl -sk -X GET https://localhost/api/game/health > /dev/null
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

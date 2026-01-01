@@ -59,6 +59,9 @@ export async function initializeDatabase(): Promise<void> {
 
     // Ensure all columns exist (migration logic from Develop)
     await ensureColumnExists(db, 'user_profiles', 'campaign_level', 'INTEGER DEFAULT 1');
+    //Hoach edited
+    await ensureColumnExists(db, 'user_profiles', 'is_custom_avatar', 'INTEGER DEFAULT 0');
+    //Hoach edit ended
 
     const gameStatsColumns = [
       'games_played INTEGER DEFAULT 0',

@@ -5,6 +5,7 @@
 # Points: 10 (Major)
 # Framework: Fastify (Node.js)
 # Date: December 5, 2025
+# UPDATED: Migrated to HTTPS endpoints through nginx proxy for production validation
 
 set -e
 
@@ -45,20 +46,19 @@ log_result() {
 test_service_startup() {
     echo -e "${YELLOW}Running Test 1: Service Startup${NC}"
     
-    # Check if all services are responding (works both in Docker and host)
+    # Check if all services are responding through nginx proxy
     local services=("auth" "game" "tournament" "user")
-    local ports=("3001" "3002" "3003" "3004")
     local all_running=true
     
-    for i in "${!services[@]}"; do
-        local service="${services[$i]}"
-        local port="${ports[$i]}"
-        # Try localhost first (host), then service name (Docker)
-        if ! curl -s --max-time 2 http://localhost:$port/health > /dev/null 2>&1; then
+    # Hoach edited - Migrated to HTTPS endpoints through nginx proxy
+    for service in "${services[@]}"; do
+        # Use nginx proxy endpoints instead of direct ports
+        if ! curl -sk --max-time 5 https://localhost/api/$service/health > /dev/null 2>&1; then
             all_running=false
             break
         fi
     done
+    # Hoach edit ended
     
     if [ "$all_running" = true ]; then
         log_result 1 "Service Startup" "PASS"
@@ -73,19 +73,20 @@ test_service_startup() {
 test_health_checks() {
     echo -e "${YELLOW}Running Test 2: Health Check Endpoints${NC}"
     
-    local services=("auth:3001" "game:3002" "tournament:3003" "user:3004")
+    # Hoach edited - Migrated to HTTPS endpoints through nginx proxy
+    local services=("auth" "game" "tournament" "user")
     local all_healthy=true
     
     for service in "${services[@]}"; do
-        IFS=':' read -r name port <<< "$service"
-        # Try localhost first (host), fallback to service name (Docker)
-        local response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:$port/health 2>/dev/null)
+        # Check health endpoint through nginx proxy
+        local response=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 5 https://localhost/api/$service/health 2>/dev/null)
         
         if [ "$response" != "200" ]; then
             all_healthy=false
-            echo "  ⚠ $name returned HTTP $response"
+            echo "  ⚠ $service returned HTTP $response"
         fi
     done
+    # Hoach edit ended
     
     if [ "$all_healthy" = true ]; then
         log_result 2 "Health Check Endpoints" "PASS"
@@ -100,10 +101,12 @@ test_health_checks() {
 test_cors_configuration() {
     echo -e "${YELLOW}Running Test 3: CORS Configuration${NC}"
     
-    local response=$(curl -s -X OPTIONS http://localhost:3001/health \
-        -H "Origin: http://localhost:5173" \
+    # Hoach edited - Updated CORS test to use HTTPS endpoint
+    local response=$(curl -sk -X OPTIONS https://localhost/api/auth/health \
+        -H "Origin: https://localhost" \
         -H "Access-Control-Request-Method: GET" \
         -i 2>/dev/null | grep -i "Access-Control-Allow-Origin")
+    # Hoach edit ended
     
     if [ -n "$response" ]; then
         log_result 3 "CORS Configuration" "PASS"
@@ -118,7 +121,9 @@ test_cors_configuration() {
 test_http_headers() {
     echo -e "${YELLOW}Running Test 4: HTTP Headers Security${NC}"
 
-    local response=$(curl -s -i http://localhost:3001/health 2>/dev/null)
+    # Hoach edited - Updated HTTP headers test to use HTTPS endpoint
+    local response=$(curl -sk -i https://localhost/api/auth/health 2>/dev/null)
+    # Hoach edit ended
     local has_security_headers=true
 
     # Check for common security headers (at least one should be present)
@@ -143,7 +148,7 @@ test_http_headers() {
 test_request_parsing() {
     echo -e "${YELLOW}Running Test 5: Request Parsing${NC}"
     
-    local response=$(curl -s -X POST http://localhost:3001/auth/test \
+    local response=$(curl -sk -X POST https://localhost/api/auth/test \
         -H "Content-Type: application/json" \
         -d '{"test": "data"}' 2>/dev/null)
     
@@ -160,7 +165,7 @@ test_request_parsing() {
 test_response_formatting() {
     echo -e "${YELLOW}Running Test 6: Response Formatting${NC}"
     
-    local response=$(curl -s http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -sk https://localhost/api/auth/health 2>/dev/null)
     
     # Check if response is valid JSON using python3
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -176,12 +181,12 @@ test_response_formatting() {
 test_middleware_chain() {
     echo -e "${YELLOW}Running Test 7: Middleware Chain${NC}"
     
-    local response=$(curl -s -X POST http://localhost:3001/auth/register \
+    local response=$(curl -sk -X POST https://localhost/api/auth/register \
         -H "Content-Type: application/json" \
         -d '{"username": "test", "email": "test@test.com", "password": "Test123!"}' 2>/dev/null)
     
     # Response should contain either success or validation error (not 500)
-    local status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3001/auth/register \
+    local status=$(curl -sk -o /dev/null -w "%{http_code}" -X POST https://localhost/api/auth/register \
         -H "Content-Type: application/json" \
         -d '{"username": "test", "email": "test@test.com", "password": "Test123!"}' 2>/dev/null)
     
@@ -199,7 +204,7 @@ test_error_handling() {
     echo -e "${YELLOW}Running Test 8: Error Handling${NC}"
     
     # Request to non-existent endpoint
-    local status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/nonexistent 2>/dev/null)
+    local status=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/auth/nonexistent 2>/dev/null)
     
     if [ "$status" = "404" ]; then
         log_result 8 "Error Handling" "PASS"
@@ -214,7 +219,7 @@ test_error_handling() {
 test_content_negotiation() {
     echo -e "${YELLOW}Running Test 9: Content Negotiation${NC}"
     
-    local response=$(curl -s -H "Accept: application/json" http://localhost:3001/health 2>/dev/null)
+    local response=$(curl -sk -H "Accept: application/json" https://localhost/api/auth/health 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 9 "Content Negotiation" "PASS"
@@ -229,10 +234,10 @@ test_content_negotiation() {
 test_route_registration() {
     echo -e "${YELLOW}Running Test 10: Route Registration${NC}"
     
-    local auth_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null)
-    local game_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002/health 2>/dev/null)
-    local tournament_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3003/health 2>/dev/null)
-    local user_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3004/health 2>/dev/null)
+    local auth_ok=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/auth/health 2>/dev/null)
+    local game_ok=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/game/health 2>/dev/null)
+    local tournament_ok=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/tournament/health 2>/dev/null)
+    local user_ok=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/api/user/health 2>/dev/null)
     
     if [ "$auth_ok" = "200" ] && [ "$game_ok" = "200" ] && [ "$tournament_ok" = "200" ] && [ "$user_ok" = "200" ]; then
         log_result 10 "Route Registration" "PASS"
@@ -247,7 +252,7 @@ test_route_registration() {
 test_performance_response_time() {
     echo -e "${YELLOW}Running Test 11: Performance - Response Time${NC}"
     
-    local time=$(curl -s -o /dev/null -w "%{time_total}" http://localhost:3001/health 2>/dev/null)
+    local time=$(curl -sk -o /dev/null -w "%{time_total}" https://localhost/api/auth/health 2>/dev/null)
     
     # Response should be under 1 second
     if (( $(echo "$time < 1" | bc -l 2>/dev/null || echo 0) )); then
@@ -265,8 +270,10 @@ test_graceful_shutdown() {
     
     # Verify services are still responding (they handle SIGTERM gracefully)
     local services_ok=0
-    for port in 3001 3002 3003 3004; do
-        if curl -s --max-time 2 http://localhost:$port/health > /dev/null 2>&1; then
+    local services=("auth" "game" "tournament" "user")
+    
+    for service in "${services[@]}"; do
+        if curl -sk --max-time 2 https://localhost/api/$service/health > /dev/null 2>&1; then
             ((services_ok++))
         fi
     done
