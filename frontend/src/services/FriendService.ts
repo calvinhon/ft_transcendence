@@ -21,7 +21,7 @@ export class FriendService {
 
     public async addFriend(userId: number, friendId: number): Promise<boolean> {
         try {
-            await Api.post('/api/users/friends/add', { userId, friendId });
+            await Api.post('/api/user/friends/add', { userId, friendId });
             return true;
         } catch (e) {
             console.error('Failed to add friend', e);
@@ -31,7 +31,7 @@ export class FriendService {
 
     public async removeFriend(userId: number, friendId: number): Promise<boolean> {
         try {
-            await Api.post('/api/users/friends/remove', { userId, friendId });
+            await Api.post('/api/user/friends/remove', { userId, friendId });
             return true;
         } catch (e) {
             console.error('Failed to remove friend', e);
@@ -41,7 +41,7 @@ export class FriendService {
 
     public async getFriends(userId: number): Promise<Friend[]> {
         try {
-            const res = await Api.get(`/api/users/friends/${userId}`);
+            const res = await Api.get(`/api/user/friends/${userId}`);
             return res.data || [];
         } catch (e) {
             console.error('Failed to fetch friends', e);
