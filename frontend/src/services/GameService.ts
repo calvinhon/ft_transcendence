@@ -396,5 +396,9 @@ export class GameService {
             this.ws = null;
         }
         this.gameStateCallbacks = [];
+        this.isPaused = false;
+        this.currentGameState = 'unknown';
+        this.pendingJoinPayload = null;
+        this.keys = {}; // Clear stuck keys
     }
 }
