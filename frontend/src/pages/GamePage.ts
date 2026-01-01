@@ -25,7 +25,7 @@ export class GamePage extends AbstractComponent {
 
     getHtml(): string {
         return `
-            <div id="game-screen" class="screen active w-full h-full bg-black p-2 border-[4px] border-accent box-border flex flex-col">
+            <div id="game-screen" class="screen active relative w-full h-full bg-black p-2 border-[4px] border-accent box-border flex flex-col">
                 <!-- Top Bar (HUD) -->
                 <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative z-20">
                     <!-- Left Player -->
@@ -80,6 +80,7 @@ export class GamePage extends AbstractComponent {
         if (setup.settings.use3D && canUse3D) {
             console.log("3D Mode Enabled: Switching to Babylon Renderer");
             this.is3DMode = true;
+            document.body.setAttribute('data-3d-game', 'true'); // Signal for modals
             if (canvas) canvas.style.display = 'none'; // Hide 2D Canvas
             const screen = this.$('#game-screen');
             if (screen) {
@@ -468,7 +469,8 @@ export class GamePage extends AbstractComponent {
             if (!existingOverlay) {
                 const overlay = document.createElement('div');
                 overlay.id = overlayId;
-                overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[10000] text-white font-pixel'; // fixed and high z-index
+
+                // Add content (RESTORED)
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
                     <div class="flex flex-col gap-4 items-center">
@@ -478,8 +480,23 @@ export class GamePage extends AbstractComponent {
                     <p class="mt-6 text-[8px] text-gray-500 font-pixel tracking-widest uppercase">Press 'P' to Resume</p>
                 `;
 
-                // Append to body to ensure visibility over 3D canvas
+                if (this.is3DMode) {
+                    // In 3D Mode, the game is full-screen 3D. Pause menu should be a HUD on the screen glass.
+                    overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[9999] text-white font-pixel';
+                    document.body.appendChild(overlay);
+                } else {
+                    // In 2D Mode (Classic), the game might be projected onto a 3D monitor (HtmlMesh).
+                    // We must append to #game-screen so it lives INSIDE the HtmlMesh and appears on the monitor.
+                    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-[50] text-white font-pixel';
+
+                    const gameScreen = this.$('#game-screen');
+                    if (gameScreen) {
+                        gameScreen.appendChild(overlay);
+                    } else {
+                        // Fallback if screen not found (unlikely)
                 document.body.appendChild(overlay);
+                    }
+                }
 
                 overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
                 overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
@@ -530,8 +547,11 @@ export class GamePage extends AbstractComponent {
 
 
     onDestroy(): void {
+        // Clean up 3D game mode signal
+        document.body.removeAttribute('data-3d-game');
+
         window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
-        window.removeEventListener('keyup', this.handleKeyUp, { capture: true }); // Fixed cleanup
+        window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
 
         // Restore Babylon camera state if we were in 2D mode (re-enable tilt)
         if (!this.is3DMode && WebGLService.getInstance().is3DModeEnabled()) {
