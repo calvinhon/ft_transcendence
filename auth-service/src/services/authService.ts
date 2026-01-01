@@ -81,7 +81,9 @@ export class AuthService {
       [user.id, resetToken, expiresAt.toISOString()]
     );
 
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+    // Hoach edited SECURITY FIX: Use HTTPS for password reset links to prevent MITM attacks
+    const resetLink = `https://localhost/reset-password?token=${resetToken}`;
+    // Hoach edit ended
 
     return { resetToken, resetLink };
   }

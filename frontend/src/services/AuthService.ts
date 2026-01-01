@@ -125,9 +125,7 @@ export class AuthService {
             //Hoach edited
             // Backend says valid but no user data - check localStorage for stored user
             if (data.valid) {
-                console.log("AuthService: Backend says valid, checking localStorage...");
                 const storedUser = localStorage.getItem('user');
-                console.log("AuthService: Stored user in localStorage:", storedUser ? "found" : "not found");
                 if (storedUser) {
                     try {
                         const user = JSON.parse(storedUser);
@@ -137,11 +135,7 @@ export class AuthService {
                     } catch (e) {
                         console.warn("AuthService: Failed to parse stored user data", e);
                     }
-                } else {
-                    console.log("AuthService: No stored user data in localStorage");
                 }
-            } else {
-                console.log("AuthService: Backend says session is not valid");
             }
             //Hoach edit ended
 
