@@ -1,4 +1,3 @@
-
 import {
     Scene, Vector3, MeshBuilder, StandardMaterial, Color3,
     GlowLayer, PointLight, TrailMesh, Mesh, DynamicTexture
@@ -8,7 +7,7 @@ import { BabylonWrapper } from "../core/BabylonWrapper";
 // Coordinate Mapping Constants
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
-const ARENA_WIDTH = 10;
+const ARENA_WIDTH = 15;
 const ARENA_HEIGHT = (GAME_HEIGHT / GAME_WIDTH) * ARENA_WIDTH; // Maintain aspect ratio
 const PADDLE_WIDTH_3D = 0.2; // Visual width in 3D
 const BALL_SIZE_3D = 0.2;
@@ -18,6 +17,7 @@ export class ThreeDGameRenderer {
     private ballMesh!: Mesh;
     private paddleMeshes: Map<string, Mesh> = new Map();
     private powerupMesh!: Mesh;
+    private powerupLight!: PointLight;
     private arenaMesh!: Mesh;
     private glowLayer: GlowLayer;
 
@@ -35,19 +35,14 @@ export class ThreeDGameRenderer {
 
         // Add global glow
         // Check if one already exists to avoid duplication errors
-        const existingGlow = this.scene.effectLayers.find(e => e instanceof GlowLayer);
-        if (existingGlow) {
-            this.glowLayer = existingGlow as GlowLayer;
-            this.glowLayer.intensity = 0.3;
-        } else {
-            this.glowLayer = new GlowLayer("gameGlow", this.scene);
-            this.glowLayer.intensity = 0.3;
-        }
+        this.glowLayer = this.scene.effectLayers.find(e => e instanceof GlowLayer) || new GlowLayer("gameGlow", this.scene);
+        this.glowLayer.intensity = 0.4;
+        this.resize();
     }
 
     private createArena(): void {
         // Floor with Dynamic Grid Texture
-        const ground = MeshBuilder.CreateGround("game_ground", { width: ARENA_WIDTH, height: ARENA_HEIGHT, subdivisions: 32 }, this.scene);
+        const ground = MeshBuilder.CreateGround("game_ground", { width: ARENA_WIDTH, height: ARENA_HEIGHT }, this.scene);
         const groundMat = new StandardMaterial("game_groundMat", this.scene);
 
         // Create Grid Texture
@@ -85,7 +80,7 @@ export class ThreeDGameRenderer {
 
         // Boundaries (Top/Bottom)
         const borderMat = new StandardMaterial("game_borderMat", this.scene);
-        borderMat.emissiveColor = Color3.FromHexString("#77e6ff");
+        borderMat.emissiveColor = Color3.FromHexString("#111111");
 
         const topBorder = MeshBuilder.CreateBox("game_borderTop", { width: ARENA_WIDTH, height: 0.1, depth: 0.1 }, this.scene);
         topBorder.position.z = ARENA_HEIGHT / 2 + 0.05; // Offset by half depth to align inner face
@@ -99,7 +94,7 @@ export class ThreeDGameRenderer {
         const centerLine = MeshBuilder.CreateGround("game_centerLine", { width: 0.05, height: ARENA_HEIGHT }, this.scene);
         centerLine.position.y = 0.01; // Slightly above ground
         const centerMat = new StandardMaterial("game_centerMat", this.scene);
-        centerMat.emissiveColor = new Color3(0.2, 0.2, 0.2);
+        centerMat.emissiveColor = new Color3(0.1, 0.1, 0.1);
         centerLine.material = centerMat;
 
         // Lighting Exclusions:
@@ -119,7 +114,7 @@ export class ThreeDGameRenderer {
         // Light attached to ball
         const light = new PointLight("game_ballLight", new Vector3(0, 0.5, 0), this.scene);
         light.parent = this.ballMesh;
-        light.intensity = 1.5; // Brighter
+        light.intensity = 2.5; // Brighter
         light.diffuse = Color3.White();
         light.range = 8; // Wider range to light up grid
 
@@ -132,11 +127,18 @@ export class ThreeDGameRenderer {
     }
 
     private createPowerup(): void {
-        this.powerupMesh = MeshBuilder.CreateTorus("game_powerup", { diameter: 0.8, thickness: 0.2 }, this.scene);
+        this.powerupMesh = MeshBuilder.CreateSphere("game_powerup", { diameter: 0.8 }, this.scene);
         const mat = new StandardMaterial("game_powerupMat", this.scene);
         mat.emissiveColor = Color3.Yellow();
         this.powerupMesh.material = mat;
         this.powerupMesh.isVisible = false;
+
+        // Add Light
+        this.powerupLight = new PointLight("game_powerupLight", new Vector3(0, 0.5, 0), this.scene);
+        this.powerupLight.parent = this.powerupMesh;
+        this.powerupLight.intensity = 1.0;
+        this.powerupLight.diffuse = Color3.Yellow();
+        this.powerupLight.range = 8; // Wider range
 
         // Pulse animation handled in update
     }
@@ -176,6 +178,7 @@ export class ThreeDGameRenderer {
             if (!mesh) {
                 mesh = MeshBuilder.CreateBox("game_paddle_" + key, { width: PADDLE_WIDTH_3D, height: 0.2, depth: 1 }, this.scene);
                 const mat = new StandardMaterial("game_paddleMat_" + key, this.scene);
+
                 const pColor = Color3.FromHexString(color);
                 mat.emissiveColor = pColor;
                 mat.diffuseColor = pColor;
@@ -200,7 +203,7 @@ export class ThreeDGameRenderer {
         if (paddles.team1 && paddles.team1.length > 0) {
             paddles.team1.forEach((p: any, i: number) => {
                 const colors = ['#77e6ff', '#77ff77', '#ffff77'];
-                processPaddle(p, `t1-${i}`, colors[i % 3]);
+                processPaddle(p, `t1 - ${i} `, colors[i % 3]);
             });
         } else if (paddles.player1) {
             processPaddle(paddles.player1, 'p1', '#77e6ff');
@@ -209,7 +212,7 @@ export class ThreeDGameRenderer {
         if (paddles.team2 && paddles.team2.length > 0) {
             paddles.team2.forEach((p: any, i: number) => {
                 const colors = ['#ff7777', '#ff77e6', '#aa77ff'];
-                processPaddle(p, `t2-${i}`, colors[i % 3]);
+                processPaddle(p, `t2 - ${i} `, colors[i % 3]);
             });
         } else if (paddles.player2) {
             processPaddle(paddles.player2, 'p2', '#ff77e6');
@@ -235,14 +238,55 @@ export class ThreeDGameRenderer {
             // Pulse
             const scale = 1 + Math.sin(Date.now() / 200) * 0.2;
             this.powerupMesh.scaling.setAll(scale);
+            this.powerupLight.setEnabled(true);
         } else {
             this.powerupMesh.isVisible = false;
+            if (this.powerupLight) this.powerupLight.setEnabled(false);
         }
     }
 
     public resize(): void {
-        // Handled by engine
+        // Calculate camera radius to make ARENA_WIDTH fill the screen width
+        // tan(FOV/2) = (VisibleHeight / 2) / Distance
+        // VisibleHeight = Distance * 2 * tan(FOV/2)
+        // AspectRatio = VisibleWidth / VisibleHeight
+        // VisibleWidth = AspectRatio * VisibleHeight
+        // We want VisibleWidth >= ARENA_WIDTH + padding
+
+        if (!this.scene.activeCamera) return;
+
+        const engine = this.scene.getEngine();
+        const aspectRatio = engine.getAspectRatio(this.scene.activeCamera);
+        const fov = 1; // We use fixed FOV
+        const padding = 1.1; // 10% padding
+
+        // Required Visible Height if limited by Width
+        // VisibleWidth = ARENA_WIDTH * padding
+        // VisibleHeight = VisibleWidth / aspectRatio
+        // Distance = VisibleHeight / (2 * tan(fov/2))
+
+        // However, we also need to check if height is the limiting factor (ARENA_HEIGHT)
+        // We want the whole arena visible.
+
+        const requiredWidth = ARENA_WIDTH * padding;
+        const requiredHeight = ARENA_HEIGHT * padding;
+
+        const distForWidth = (requiredWidth / aspectRatio) / (2 * Math.tan(fov / 2));
+        const distForHeight = requiredHeight / (2 * Math.tan(fov / 2));
+
+        const distance = Math.max(distForWidth, distForHeight);
+
+        // Update Camera Radius
+        // We need to access the camera. In standalone, we might need a reference or find it.
+        const camera = this.scene.activeCamera as any;
+        if (camera && camera.radius) {
+            camera.radius = distance;
+            // Ensure strict top-down
+            camera.beta = 0.01;
+            camera.alpha = -Math.PI / 2;
+        }
     }
+
 
     public dispose(): void {
         const wrapper = BabylonWrapper.getInstance();
