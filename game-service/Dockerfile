@@ -25,9 +25,5 @@ RUN npm prune --production
 # Ensure database directory exists
 RUN mkdir -p /app/database
 
-# Database files will be created by the application if they don't exist
-
-EXPOSE 3000
-
 # Start using compiled JavaScript
 CMD ["node", "dist/server.js"]

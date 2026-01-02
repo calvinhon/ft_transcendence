@@ -25,6 +25,4 @@ RUN mkdir -p /app/database
 # Database files will be created by the application if they don't exist
 COPY ./tournament-service/database/ ./database/
 
-EXPOSE 3000
-
 CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]
