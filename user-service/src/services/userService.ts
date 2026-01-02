@@ -16,11 +16,19 @@ export class UserService {
       await promisifyDbRun(db, 'INSERT INTO user_profiles (user_id) VALUES (?)', [userId]);
       profile = await promisifyDbGet<UserProfile>(db, query, [userId]);
     }
+
+    // Set default avatar if missing
+    if (profile && !profile.avatar_url && profile.username) {
+      const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.username)}&background=0A0A0A&color=29B6F6`;
+      await promisifyDbRun(db, 'UPDATE user_profiles SET avatar_url = ? WHERE user_id = ?', [defaultAvatar, userId]);
+      profile.avatar_url = defaultAvatar;
+    }
+
     return profile!;
   }
 
   static async updateProfile(userId: number, updates: UpdateProfileBody): Promise<void> {
-    const { displayName, avatarUrl, bio, country, preferredLanguage, themePreference } = updates;
+    const { displayName, avatarUrl, bio, country, preferredLanguage, themePreference, customAvatar } = updates;
     await promisifyDbRun(db, `UPDATE user_profiles SET
        display_name = COALESCE(?, display_name),
        avatar_url = COALESCE(?, avatar_url),
@@ -28,7 +36,8 @@ export class UserService {
        country = COALESCE(?, country),
        preferred_language = COALESCE(?, preferred_language),
        theme_preference = COALESCE(?, theme_preference),
+       is_custom_avatar = COALESCE(?, is_custom_avatar),
        updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = ?`, [displayName, avatarUrl, bio, country, preferredLanguage, themePreference, userId]);
+       WHERE user_id = ?`, [displayName, avatarUrl, bio, country, preferredLanguage, themePreference, customAvatar, userId]);
   }
 }

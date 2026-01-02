@@ -7,6 +7,7 @@ export interface UserProfile {
     userId: number;
     username: string;
     avatarUrl: string | null;
+    customAvatar: number;
     bio: string | null;
     country: string | null;
     campaignLevel?: number;
@@ -36,6 +37,7 @@ export interface RecentGame {
     score: string;
     date: string;
     gameMode: string;
+    teammates?: string;
 }
 
 export interface TournamentRanking {
@@ -60,6 +62,19 @@ export class ProfileService {
     }
 
     public async getUserProfile(userId: number): Promise<UserProfile | null> {
+        if (userId <= 0) {
+            const name = userId === 0 ? "Al-Ien" : `BOT ${Math.abs(userId)}`;
+            return {
+                id: userId,
+                userId: userId,
+                username: name,
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=333333&color=ffffff`,
+                customAvatar: 0,
+                bio: "Automated Opponent Logic Unit",
+                country: "CORE",
+                createdAt: new Date().toISOString()
+            };
+        }
         try {
             const data = await Api.get(`/api/user/profile/${userId}`);
             if (!data) return null;
@@ -85,6 +100,7 @@ export class ProfileService {
                     return `User ${data.user_id}`;
                 })(),
                 avatarUrl: data.avatar_url,
+                customAvatar: data.is_custom_avatar,
                 bio: data.bio,
                 country: data.country,
                 campaignLevel: data.campaign_level,
@@ -131,13 +147,33 @@ export class ProfileService {
                 else result = 'loss';
 
                 // Opponent Name Logic (simplified port)
+                const getBotName = (id: number) => {
+                    if (id === 0) return "Al-Ien";
+                    if (id < 0) return `BOT ${Math.abs(id)}`;
+                    return `User ${id}`;
+                };
+
                 let opponent = 'Unknown';
                 if (g.game_mode === 'tournament' && g.tournament_match_id) {
                     opponent = isPlayer1 ? g.player2_name : g.player1_name;
-                    if (!opponent) opponent = (g.player2_id === 0 || g.player1_id === 0) ? 'AI' : 'Opponent';
+                    if (!opponent) opponent = (g.player2_id <= 0 || g.player1_id <= 0) ? 'AI' : 'Opponent';
                 } else {
-                    opponent = isPlayer1 ? (g.player2_name || (g.player2_id === 0 ? 'AI' : `User ${g.player2_id}`))
-                        : (g.player1_name || (g.player1_id === 0 ? 'AI' : `User ${g.player1_id}`));
+                    opponent = isPlayer1 ? (g.player2_name || getBotName(g.player2_id))
+                        : (g.player1_name || getBotName(g.player1_id));
+                }
+
+                let teammates = '';
+                if (g.game_mode === 'arcade') {
+                    const myTeam = isPlayer1 ? g.player1_name : g.player2_name;
+                    if (myTeam && myTeam.includes('&')) {
+                        // Current user is one of them, we want the OTHER(s)
+                        const parts = myTeam.split('&').map((s: string) => s.trim());
+                        // Try to find current user's profile to get their name
+                        const currentUser = AuthService.getInstance().getCurrentUser();
+                        const myName = currentUser?.username;
+
+                        teammates = parts.filter((p: string) => p !== myName).join(' & ');
+                    }
                 }
 
                 return {
@@ -146,7 +182,8 @@ export class ProfileService {
                     result: result,
                     score: `${myScore}-${oppScore}`,
                     date: g.finished_at || g.started_at,
-                    gameMode: g.game_mode || 'general'
+                    gameMode: g.game_mode || 'general',
+                    teammates: teammates || undefined
                 };
             });
         } catch (e) {

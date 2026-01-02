@@ -161,15 +161,15 @@ export class PongGame {
       }
 
       if (shouldActivateAI) {
-		let now = Date.now();
-		let lagAI = 1000;
-		if (this.gameSettings.aiDifficulty === 'medium')
-			lagAI = 600;
-		if (this.gameSettings.aiDifficulty === 'hard')
-			lagAI = 300;
-		if (now - this.ai.lastBallUpdate >= lagAI) {
-       	 this.ai.updateBallPosition(this.ball.x, this.ball.y);this.ai.lastBallUpdate = now;
-		}
+        let now = Date.now();
+        let lagAI = 1000;
+        if (this.gameSettings.aiDifficulty === 'medium')
+          lagAI = 600;
+        if (this.gameSettings.aiDifficulty === 'hard')
+          lagAI = 300;
+        if (now - this.ai.lastBallUpdate >= lagAI) {
+          this.ai.updateBallPosition(this.ball.x, this.ball.y); this.ai.lastBallUpdate = now;
+        }
         this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
       }
 
@@ -248,9 +248,13 @@ export class PongGame {
     if (direction === 'up' && paddle.y > 0) {
       paddle.y = Math.max(0, paddle.y - paddleSpeed);
       logger.gameDebug(this.gameId, `Paddle moved UP from ${oldY} to ${paddle.y}`);
-    } else if (direction === 'down' && paddle.y < 500) {
-      paddle.y = Math.min(500, paddle.y + paddleSpeed);
-      logger.gameDebug(this.gameId, `Paddle moved DOWN from ${oldY} to ${paddle.y}`);
+    } else if (direction === 'down') {
+      const paddleHeight = paddle.height || 100;
+      const maxY = 600 - paddleHeight;
+      if (paddle.y < maxY) {
+        paddle.y = Math.min(maxY, paddle.y + paddleSpeed);
+        logger.gameDebug(this.gameId, `Paddle moved DOWN from ${oldY} to ${paddle.y}`);
+      }
     }
 
     // Sync to player1/player2 paddles for rendering compatibility

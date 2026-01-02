@@ -201,7 +201,7 @@ export class GamePhysics {
 
       // Check if the crossing point is within the paddle's y-range
       // Add a buffer (ball radius approx 5-10px) to prevent vertical tunneling at edges
-      const tolerance = 10;
+      const tolerance = 2;
       if (crossY >= paddle.y - tolerance && crossY <= paddle.y + paddleHeight + tolerance) {
         // Adjust ball position
         const offset = side === 'left' ? 1 : -1;

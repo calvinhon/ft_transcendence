@@ -5,6 +5,8 @@ import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 
+const SNAP_THRESHOLD = 200; // Distance to snap rather than lerp. Higher = smoother for fast objects.
+
 export class GamePage extends AbstractComponent {
     private renderer: GameRenderer | null = null;
     private p1Ids: number[] = [];
@@ -13,6 +15,7 @@ export class GamePage extends AbstractComponent {
     private isRecording: boolean = false; // Lock to prevent double recording
     private isPaused: boolean = false;
     private animationFrameId: number | null = null;
+    private startTime: Date | null = null;
 
     getHtml(): string {
         return `
@@ -26,7 +29,7 @@ export class GamePage extends AbstractComponent {
                     </div>
 
                     <!-- Center Status -->
-                    <div class="flex-1 flex items-center justify-center font-pixel text-xs text-text-muted">
+                    <div class="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-text-muted">
                         <span id="game-status-text">INITIALIZING...</span>
                     </div>
 
@@ -39,13 +42,6 @@ export class GamePage extends AbstractComponent {
 
                 <!-- Canvas Container -->
                 <div class="game-container flex-1 w-full border border-accent relative bg-black overflow-hidden">
-                    <!-- Overlay Controls -->
-                    <div class="absolute top-4 right-4 flex gap-2 z-20">
-                         <button id="exit-btn" class="w-8 h-8 border border-white text-white hover:bg-red-500 hover:border-red-500 flex items-center justify-center cursor-pointer">
-                            <i class="fas fa-stop"></i>
-                        </button>
-                    </div>
-
                     <canvas id="game-canvas" class="w-full h-full block"></canvas>
                 </div>
             </div>
@@ -75,13 +71,19 @@ export class GamePage extends AbstractComponent {
         window.addEventListener('keydown', this.handleKeyDown);
         window.addEventListener('keyup', this.handleKeyUp);
 
-        this.$('#exit-btn')?.addEventListener('click', () => {
-            this.exitGame();
-        });
+        // Sanitize teams to ensure usernames are present
+        const getName = (p: any) => {
+            if (p.username) return p.username;
+            if (p.isBot || p.userId <= 0) return `BOT ${Math.abs(p.userId) || 1}`;
+            return `User ${p.userId}`;
+        };
+
+        const sanitizedTeam1 = setup.team1.map((p: any) => ({ ...p, username: getName(p) }));
+        const sanitizedTeam2 = setup.team2.map((p: any) => ({ ...p, username: getName(p) }));
 
         // Store IDs for loop if needed, but GameService handles it now
-        this.p1Ids = setup.team1.map(p => p.userId);
-        this.p2Ids = setup.team2.map(p => p.userId);
+        this.p1Ids = sanitizedTeam1.map((p: any) => p.userId);
+        this.p2Ids = sanitizedTeam2.map((p: any) => p.userId);
 
         console.log("Game IDs:", this.p1Ids, this.p2Ids);
 
@@ -95,11 +97,11 @@ export class GamePage extends AbstractComponent {
             difficulty: setup.settings.difficulty,
             scoreToWin: setup.settings.scoreToWin,
             campaignLevel: setup.campaignLevel
-        } as any, setup.team1, setup.team2);
+        } as any, sanitizedTeam1, sanitizedTeam2);
 
         // HUD Names and Avatars
-        const p1Name = setup.team1.map(p => p.username).join(', ') || 'PLAYER 1';
-        const p2Name = setup.team2.map(p => p.username).join(', ') || 'PLAYER 2';
+        const p1Name = sanitizedTeam1.map((p: any) => p.username).join(', ') || 'PLAYER 1';
+        const p2Name = sanitizedTeam2.map((p: any) => p.username).join(', ') || 'PLAYER 2';
 
         const p1El = this.$('#p1-name');
         const p2El = this.$('#p2-name');
@@ -119,13 +121,19 @@ export class GamePage extends AbstractComponent {
         let visualState: any = null;
         let targetState: any = null;
 
-        const LERP_FACTOR = 0.3; // Adjust for smoothness (0.1 = slow/smooth, 0.5 = snappy)
-        const SNAP_THRESHOLD = 50; // Pixels distance to trigger instant snap (e.g. respawn)
+        let lastUpdateTime = performance.now();
+        const DECAY = 60; // Catch-up speed (higher = faster/tighter. 60 reduces visual gap significantly)
 
-        const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor;
+        const lerp = (start: number, target: number, dt: number) => {
+            return target + (start - target) * Math.exp(-DECAY * dt);
+        };
 
         const updateLoop = () => {
             if (!this.renderer || !targetState) return;
+
+            const now = performance.now();
+            const dt = (now - lastUpdateTime) / 1000;
+            lastUpdateTime = now;
 
             if (!visualState) {
                 visualState = JSON.parse(JSON.stringify(targetState));
@@ -133,7 +141,6 @@ export class GamePage extends AbstractComponent {
 
             // Interpolate Ball
             if (targetState.ball && visualState.ball) {
-                // NaN Protection: If visual state is corrupted, snap immediately
                 if (isNaN(visualState.ball.x) || isNaN(visualState.ball.y)) {
                     visualState.ball.x = targetState.ball.x;
                     visualState.ball.y = targetState.ball.y;
@@ -141,36 +148,31 @@ export class GamePage extends AbstractComponent {
 
                 const dist = Math.sqrt(Math.pow(targetState.ball.x - visualState.ball.x, 2) + Math.pow(targetState.ball.y - visualState.ball.y, 2));
 
-                // NaN Protection: If distance calculation failed
                 if (isNaN(dist)) {
                     visualState.ball.x = targetState.ball.x;
                     visualState.ball.y = targetState.ball.y;
                 } else if (dist > SNAP_THRESHOLD || targetState.ball.frozen) {
-                    // Snap if distance is too large (teleport/respawn) or ball is frozen
                     visualState.ball.x = targetState.ball.x;
                     visualState.ball.y = targetState.ball.y;
                 } else {
-                    visualState.ball.x = lerp(visualState.ball.x, targetState.ball.x, LERP_FACTOR);
-                    visualState.ball.y = lerp(visualState.ball.y, targetState.ball.y, LERP_FACTOR);
+                    visualState.ball.x = lerp(visualState.ball.x, targetState.ball.x, dt);
+                    visualState.ball.y = lerp(visualState.ball.y, targetState.ball.y, dt);
                 }
             }
 
             // Interpolate Paddles
             if (visualState.paddles && targetState.paddles) {
-                // Helper to sync paddle arrays
                 const syncPaddles = (targetArr: any[], visualArr: any[]) => {
                     if (!targetArr || !visualArr) return;
                     targetArr.forEach((tPaddle, i) => {
                         if (!visualArr[i]) visualArr[i] = { ...tPaddle };
-                        // Sync Size (Powerups)
                         visualArr[i].height = tPaddle.height;
                         visualArr[i].width = tPaddle.width;
 
-                        // Snap if large move
                         if (Math.abs(tPaddle.y - visualArr[i].y) > SNAP_THRESHOLD) {
                             visualArr[i].y = tPaddle.y;
                         } else {
-                            visualArr[i].y = lerp(visualArr[i].y, tPaddle.y, LERP_FACTOR);
+                            visualArr[i].y = lerp(visualArr[i].y, tPaddle.y, dt);
                         }
                     });
                 };
@@ -178,20 +180,19 @@ export class GamePage extends AbstractComponent {
                 syncPaddles(targetState.paddles.team1, visualState.paddles.team1);
                 syncPaddles(targetState.paddles.team2, visualState.paddles.team2);
 
-                // Sync Single Player paddles
                 if (targetState.paddles.player1 && visualState.paddles.player1) {
-                    visualState.paddles.player1.height = targetState.paddles.player1.height; // Sync size
+                    visualState.paddles.player1.height = targetState.paddles.player1.height;
                     if (Math.abs(targetState.paddles.player1.y - visualState.paddles.player1.y) > SNAP_THRESHOLD)
                         visualState.paddles.player1.y = targetState.paddles.player1.y;
                     else
-                        visualState.paddles.player1.y = lerp(visualState.paddles.player1.y, targetState.paddles.player1.y, LERP_FACTOR);
+                        visualState.paddles.player1.y = lerp(visualState.paddles.player1.y, targetState.paddles.player1.y, dt);
                 }
                 if (targetState.paddles.player2 && visualState.paddles.player2) {
-                    visualState.paddles.player2.height = targetState.paddles.player2.height; // Sync size
+                    visualState.paddles.player2.height = targetState.paddles.player2.height;
                     if (Math.abs(targetState.paddles.player2.y - visualState.paddles.player2.y) > SNAP_THRESHOLD)
                         visualState.paddles.player2.y = targetState.paddles.player2.y;
                     else
-                        visualState.paddles.player2.y = lerp(visualState.paddles.player2.y, targetState.paddles.player2.y, LERP_FACTOR);
+                        visualState.paddles.player2.y = lerp(visualState.paddles.player2.y, targetState.paddles.player2.y, dt);
                 }
             }
 
@@ -232,7 +233,13 @@ export class GamePage extends AbstractComponent {
                     // First state received
                     targetState = state;
                     visualState = JSON.parse(JSON.stringify(state));
+                    this.startTime = new Date();
                     updateLoop();
+                }
+
+                // --- Tracking Start Time ---
+                if (state && (state.gameState === 'playing' || state.type === 'gameStart') && !this.startTime) {
+                    this.startTime = new Date();
                 } else {
                     targetState = state;
                     // If loop stopped (e.g. resumed from pause), restart it
@@ -265,8 +272,13 @@ export class GamePage extends AbstractComponent {
 
                 // Compute winnerId from scores if not provided
                 let winnerId = state.winnerId;
-                if (!winnerId) { // p1Score !== p2Score condition removed to handle draws if needed or non-score wins
-                    winnerId = p1Score >= p2Score ? this.p1Ids[0] : this.p2Ids[0];
+                if (winnerId === undefined || winnerId === null) {
+                    // Handle draws: if scores are equal, winnerId = 0
+                    if (p1Score === p2Score) {
+                        winnerId = 0;
+                    } else {
+                        winnerId = p1Score > p2Score ? this.p1Ids[0] : this.p2Ids[0];
+                    }
                 }
 
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
@@ -300,6 +312,11 @@ export class GamePage extends AbstractComponent {
                     } catch (err) {
                         console.error("Frontend tournament record failed:", err);
                     }
+                } else if (setup.mode === 'arcade' || setup.mode === 'campaign') {
+                    // ARCADE & CAMPAIGN Match History Recording
+                    // Handled by Backend GameScoring service automatically.
+                    // Frontend manual save caused duplicate entries (and incorrect "Bot 1" naming).
+                    console.log('Arcade/Campaign match finished. Saving handled by backend.');
                 }
 
                 // Add Auto-Return Timer UI
@@ -394,9 +411,18 @@ export class GamePage extends AbstractComponent {
                 overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40 text-white font-pixel';
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
-                    <p class="text-xs text-gray-500">PRESS 'P' TO RESUME</p>
+                    <div class="flex flex-col gap-4 items-center">
+                        <button id="pause-resume-btn" class="px-8 py-2 border border-accent hover:bg-accent/20 text-sm">RESUME</button>
+                        <button id="pause-quit-btn" class="px-8 py-2 border border-red-500 text-red-500 hover:bg-red-500/20 text-sm">QUIT GAME</button>
+                    </div>
+                    <p class="mt-6 text-[8px] text-gray-500 font-pixel tracking-widest uppercase">Press 'P' to Resume</p>
                 `;
                 container.appendChild(overlay);
+
+                overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
+                overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
+                    if (confirm("Quit game?")) this.exitGame();
+                });
             }
         } else {
             if (existingOverlay) {

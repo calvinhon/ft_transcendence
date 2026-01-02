@@ -26,8 +26,8 @@ services:
       context: .
       dockerfile: ./auth-service/Dockerfile
     container_name: auth
-    ports:
-      - "3001:3000"
+    expose:
+      - 3001
     volumes:
       - ./auth-service/database:/app/database
     environment:
@@ -47,8 +47,8 @@ services:
       context: .
       dockerfile: ./game-service/Dockerfile
     container_name: game
-    ports:
-      - "3002:3000"
+    expose:
+      - 3002
     volumes:
       - ./game-service/database:/app/database
     environment:
@@ -63,8 +63,8 @@ services:
       context: .
       dockerfile: ./tournament-service/Dockerfile
     container_name: tournament
-    ports:
-      - "3003:3000"
+    expose:
+      - 3003
     volumes:
       - ./tournament-service/database:/app/database
     environment:
@@ -79,8 +79,8 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     container_name: user
-    ports:
-      - "3004:3000"
+    expose:
+      - 3004
     volumes:
       - ./user-service/database:/app/database
       - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
@@ -94,8 +94,8 @@ services:
   blockchain:
     build: ./blockchain
     container_name: blockchain
-    ports:
-      - "8545:8545"
+    expose:
+      - 8545
     command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
       - hardhat-data:/app/data
@@ -109,7 +109,7 @@ services:
         - curl -fsS http://127.0.0.1:8545 || exit 1
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 50
 
   blockchain-deploy:
     build: ./blockchain

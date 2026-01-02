@@ -5,9 +5,11 @@ import { TournamentAliasModal } from "../components/TournamentAliasModal";
 import { LoginModal } from "../components/LoginModal";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
+import { LocalPlayerService } from "../services/LocalPlayerService";
 
 interface Player {
     id: number;
+    userId: number;      // Actual numeric ID for backend
     username: string;
     isBot?: boolean;
     alias?: string;
@@ -93,6 +95,7 @@ export class MainMenuPage extends AbstractComponent {
             const all = LocalPlayerService.getInstance().getAllParticipants();
             this.availablePlayers = all.map(p => ({
                 id: p.id,
+                userId: p.id, // Fixed: Use p.id (which is numeric)
                 username: p.username,
                 isBot: p.isBot,
                 avatarUrl: p.avatarUrl // CRITICAL: Preserve avatarUrl
@@ -195,6 +198,7 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
 
                         <!-- AI Difficulty -->
+                        ${this.activeMode !== 'tournament' ? `
                         <div>
                              <div class="text-lg mb-3 text-accent/80 flex justify-between">
                                 <span>AI Difficulty</span>
@@ -205,6 +209,7 @@ export class MainMenuPage extends AbstractComponent {
                                 ${this.renderDifficultyButton('hard', 'HARD')}
                             </div>
                         </div>
+                        ` : ''}
 
                         <!-- Paddle Speed -->
                         <div>
@@ -258,6 +263,13 @@ export class MainMenuPage extends AbstractComponent {
                     <div class="flex-1 p-4 relative overflow-y-auto custom-scrollbar">
                         ${this.renderMiddlePaneContent()}
                     </div>
+
+                    <!-- Logout Zone (Moved from Right Column) -->
+                    <div id="logout-zone" class="p-4 border-t border-accent/20 bg-black/40 group cursor-pointer hover:bg-red-500/10 transition-colors">
+                        <div class="w-full py-4 border-2 border-dashed border-red-500/20 text-red-500/50 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest">
+                            <i class="fas fa-sign-out-alt group-hover:scale-110 transition-transform"></i> DRAG HERE TO LOGOUT
+                        </div>
+                    </div>
                 </div>
 
                 <!-- RIGHT COLUMN: HOST PROFILE + AVAILABLE PLAYERS -->
@@ -294,6 +306,7 @@ export class MainMenuPage extends AbstractComponent {
                                   </div>
                                   ADD BOT
                              </button>` : ''}
+                             
                         </div>
                     </div>
                 </div>
@@ -514,6 +527,24 @@ export class MainMenuPage extends AbstractComponent {
     }
 
     public onMounted(): void {
+        // Sync Host Avatar from Backend
+        const currentUser = AuthService.getInstance().getCurrentUser();
+        if (currentUser) {
+            import('../services/ProfileService').then(async ({ ProfileService }) => {
+                try {
+                    const profile = await ProfileService.getInstance().getUserProfile(currentUser.userId);
+                    if (profile && profile.avatarUrl) {
+                        // Update in LocalPlayerService
+                        LocalPlayerService.getInstance().updateLocalPlayer(currentUser.userId, { avatarUrl: profile.avatarUrl });
+                        // Force re-render after update
+                        this.renderContent();
+                    }
+                } catch (e) {
+                    console.warn('Failed to sync host avatar', e);
+                }
+            });
+        }
+
         // Force refresh UI to ensure latest campaign level is shown
         this.renderContent();
 
@@ -593,6 +624,14 @@ export class MainMenuPage extends AbstractComponent {
                 if (zone.id === 'tournament-zone') targetType = 'tournament';
                 if (zone.id === 'team-1-zone') targetType = 'team1';
                 if (zone.id === 'team-2-zone') targetType = 'team2';
+
+                if (zone.id === 'logout-zone') {
+                    const lp = LocalPlayerService.getInstance().getLocalPlayers().find(p => p.userId === userId);
+                    if (lp) {
+                        LocalPlayerService.getInstance().removeLocalPlayer(lp.id);
+                    }
+                    return;
+                }
 
                 if (targetType) {
                     this.assignPlayer(userId, targetType);
@@ -719,7 +758,7 @@ export class MainMenuPage extends AbstractComponent {
             if (scoreBtn) {
                 const action = scoreBtn.dataset.action;
                 let current = this.settings.scoreToWin || 5;
-                if (action === 'inc') current = Math.min(21, current + 1);
+                if (action === 'inc') current = Math.min(11, current + 1);
                 if (action === 'dec') current = Math.max(1, current - 1);
                 this.settings.scoreToWin = current;
                 this.renderContent();
@@ -753,23 +792,16 @@ export class MainMenuPage extends AbstractComponent {
 
         import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
             const existing = LocalPlayerService.getInstance().getLocalPlayers();
+            const bot1 = existing.find(p => p.userId === -1);
+            const bot2 = existing.find(p => p.userId === -2);
 
-            // Limit bots to 2
-            const botCount = existing.filter(p => p.isBot).length;
-            if (botCount >= 2) {
+            if (bot1 && bot2) {
                 alert("Maximum of 2 bots allowed.");
                 return;
             }
 
-            // Find next available bot name
-            let botIndex = 1;
-            while (existing.some(p => p.username === `BOT ${botIndex}`)) {
-                botIndex++;
-            }
-            const botName = `BOT ${botIndex}`;
-
-            // Create pseudo-random ID for bot
-            const botId = Math.floor(Math.random() * 1000000) + 100000;
+            const botId = !bot1 ? -1 : -2;
+            const botName = !bot1 ? "BOT 1" : "BOT 2";
 
             LocalPlayerService.getInstance().addLocalPlayer({
                 id: botId.toString(),
@@ -814,6 +846,11 @@ export class MainMenuPage extends AbstractComponent {
                 this.tournamentPlayers.push(player);
             }
         } else if (target === 'team1') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam1.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
@@ -821,6 +858,11 @@ export class MainMenuPage extends AbstractComponent {
                 console.warn(`Player ${player.username} is already on Team 2`);
             }
         } else if (target === 'team2') {
+            // Check bot limit
+            if (player.isBot && this.arcadeTeam2.some(p => p.isBot)) {
+                alert("Only 1 Bot allowed per team.");
+                return;
+            }
             // CRITICAL: Check BOTH teams to prevent duplicate
             if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
@@ -947,16 +989,16 @@ export class MainMenuPage extends AbstractComponent {
             }
 
             setup.team1 = this.arcadeTeam1.map(p => ({
-                userId: p.id,
+                userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot,
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 
             setup.team2 = this.arcadeTeam2.map(p => ({
-                userId: p.id,
+                userId: p.userId, // Fixed: Use numeric userId
                 username: p.username,
-                isBot: p.isBot,
+                isBot: p.isBot || (p.userId <= 0), // Ensure bot flag
                 avatarUrl: p.avatarUrl
             })) as any;
 

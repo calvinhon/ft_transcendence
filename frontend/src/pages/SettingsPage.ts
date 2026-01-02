@@ -106,13 +106,6 @@ export class SettingsPage extends AbstractComponent {
                                 placeholder="Unknown">
                         </div>
                         
-                        <!-- Password Confirmation -->
-                        <div class="pt-4 border-t border-white/10">
-                            <label class="block text-xs text-red-500 mb-1">CONFIRM PASSWORD (REQUIRED)</label>
-                            <input type="password" id="input-password" 
-                                class="w-full bg-black border border-red-900/50 p-2 text-white focus:border-red-500 outline-none font-mono text-sm"
-                                placeholder="Enter password to save changes">
-                        </div>
                     </div>
                 </div>
 
@@ -247,46 +240,27 @@ export class SettingsPage extends AbstractComponent {
         const bio = (this.$('#input-bio') as HTMLTextAreaElement).value;
         const country = (this.$('#input-country') as HTMLInputElement).value;
         const avatarUrl = (this.$('#input-avatar') as HTMLInputElement).value;
-        const password = (this.$('#input-password') as HTMLInputElement).value;
-
-        const response = await (await fetch(`/api/auth/profile/oauth/${this.profile?.userId}`, { method: 'GET', credentials: 'include' })).json();
-        if (!response.data.oauth_provider && !password) {
-            this.error = "PASSWORD REQUIRED TO SAVE CHANGES";
-            this.refresh();
-            // NOTE: Refreshing wipes input! This is bad UX.
-            // Ideally we just update the error div text.
-            // But AbstractComponent usually re-renders.
-            // I should modify refresh to NOT re-render if inputs are dirty? or manually restore?
-            // For now, I'll alert() or just set innerHTML of error div if exists.
-            // Actually, I should fix the UX later. For MVP, re-render is annoying but functional if I don't wipe too much.
-            // Wait, re-render Wipes everything.
-            // I will manually inject error message into DOM without full re-render.
-            this.showError("PASSWORD REQUIRED TO SAVE CHANGES");
-            return;
-        }
+        const customAvatar = avatarUrl !== this.profile.avatarUrl ? 1 : this.profile.customAvatar;
 
         // Visual Feedback
         const btn = this.$('#save-btn') as HTMLButtonElement;
         if (btn) {
             btn.disabled = true;
-            btn.innerText = "VERIFYING...";
+            btn.innerText = "SAVING...";
         }
 
         try {
             const user = AuthService.getInstance().getCurrentUser();
             if (!user) throw new Error("Not logged in");
 
-            // 1. Verify Password via Login
-            await AuthService.getInstance().login(user.username, password);
-            // Note: Login updates session/token. This works.
-
-            if (btn) btn.innerText = "SAVING...";
+            // Direct update without password verification
 
             const updates = {
                 displayName,
                 bio,
                 country,
-                avatarUrl
+                avatarUrl,
+                customAvatar
             };
 
             const res = await Api.put(`/api/user/profile/${user.userId}`, updates);
