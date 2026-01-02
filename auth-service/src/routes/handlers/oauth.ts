@@ -90,7 +90,9 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			grant_type: 'authorization_code'
 		});
 
-		const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1], 'base64').toString());
+		//Hoach edited: Fix base64url decoding for JWT payload
+		const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
+		//Hoach edit ended
 
 		userData = {
 			email: userInfo.email,

@@ -20,6 +20,9 @@ services:
     env_file:
       - .env
     mem_limit: 256m
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - transcendence-network
 
