@@ -25,5 +25,8 @@ RUN npm prune --production
 # Ensure database directory exists
 RUN mkdir -p /app/database
 
+# Switch to non-root user
+USER node
+
 # Use built TypeScript if available, otherwise fallback to JavaScript
 CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]

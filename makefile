@@ -236,32 +236,32 @@ ensure-database-folders:
 	@echo "✅ Database folders, .env file, and vault permissions ensured"
 
 open:
-	@echo "🌐 Opening browser at http://localhost:80 ..."
+	@echo "🌐 Opening browser at https://localhost:8443 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
-		open http://localhost:80; \
+		open https://localhost:8443; \
 	elif echo "$(OS)" | grep -q "MINGW\|MSYS"; then \
 		if command -v firefox >/dev/null 2>&1; then \
-			start firefox http://localhost:80; \
+			start firefox https://localhost:8443; \
 		else \
-			start http://localhost:80; \
+			start https://localhost:8443; \
 		fi \
 	elif grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then \
 		echo "🪟 Detected WSL environment, using Windows browser..."; \
 		if command -v wslview >/dev/null 2>&1; then \
-			wslview http://localhost:80 2>/dev/null || \
+			wslview https://localhost:8443 2>/dev/null || \
 			(echo "⚠️  wslview failed, trying cmd.exe fallback..." && \
-			cmd.exe /c start http://localhost:80 2>/dev/null || \
-			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
-			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."); \
+			cmd.exe /c start https://localhost:8443 2>/dev/null || \
+			powershell.exe -c "Start-Process 'https://localhost:8443'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."); \
 		else \
-			cmd.exe /c start http://localhost:80 2>/dev/null || \
-			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
-			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+			cmd.exe /c start https://localhost:8443 2>/dev/null || \
+			powershell.exe -c "Start-Process 'https://localhost:8443'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
 		fi \
 	elif command -v xdg-open >/dev/null 2>&1; then \
-		xdg-open http://localhost:80; \
+		xdg-open https://localhost:8443; \
 	else \
-		echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+		echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
 	fi
 
 stop:

@@ -25,5 +25,8 @@ RUN npm prune --production
 # Ensure database directory exists
 RUN mkdir -p /app/database
 
+# Switch to non-root user
+USER node
+
 # Start using compiled JavaScript
 CMD ["node", "dist/server.js"]
