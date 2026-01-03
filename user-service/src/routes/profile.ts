@@ -29,6 +29,11 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     const { userId } = request.params;
     const updates = request.body;
 
+    // Enforce 16 char limit for display name
+    if (updates.displayName && updates.displayName.length > 16) {
+      return reply.status(400).send({ error: 'Display name must be 16 characters or less' });
+    }
+
     try {
       await UserService.updateProfile(parseInt(userId), updates);
       reply.send({ message: 'Profile updated successfully' });

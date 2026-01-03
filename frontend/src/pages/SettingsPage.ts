@@ -90,7 +90,7 @@ export class SettingsPage extends AbstractComponent {
                     <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">DISPLAY NAME</label>
-                            <input type="text" id="input-displayname" value="${p.username}" 
+                            <input type="text" id="input-displayname" value="${p.username}" maxlength="16"
                                 class="w-full bg-black border border-white/30 p-2 text-white focus:border-accent outline-none font-mono text-sm">
                         </div>
 

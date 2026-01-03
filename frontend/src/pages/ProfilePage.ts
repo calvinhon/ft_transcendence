@@ -575,15 +575,27 @@ export class ProfilePage extends AbstractComponent {
                 this.isFriend = false;
             }
 
-            // 3. Check Online Status for the Profile being viewed
-            // We fetch all online users and check if this user is in the list
-            const onlineUsers = await friendService.getOnlineUsers();
-            const isProfileOnline = onlineUsers.includes(userId);
+            // 3. Check Online Status (LOCAL ONLY REFACTOR)
+            // User requested that "Online" means "Logged in LOCALLY on this device/window"
+            // So we ignore the backend "onlineUsers" list (which includes remote connections)
+            // and only check LocalPlayerService.
 
-            // Update friends list status based on online users
+            const localPlayerService = LocalPlayerService.getInstance();
+            const localPlayers = localPlayerService.getLocalPlayers();
+
+
+            // Helper to check if a ID is "locally online"
+            const isLocallyOnline = (targetId: number) => {
+                if (currentUser && currentUser.userId === targetId) return true;
+                return localPlayers.some(lp => lp.userId === targetId);
+            };
+
+            const isProfileOnline = isLocallyOnline(userId);
+
+            // Update friends list status based on LOCAL players only
             this.friends = this.friends.map(f => ({
                 ...f,
-                isOnline: onlineUsers.includes(f.userId)
+                isOnline: isLocallyOnline(f.userId)
             }));
 
             // Start constructing the 'status' object even if not a friend, so renderOnlineStatus works
