@@ -580,6 +580,12 @@ export class ProfilePage extends AbstractComponent {
             const onlineUsers = await friendService.getOnlineUsers();
             const isProfileOnline = onlineUsers.includes(userId);
 
+            // Update friends list status based on online users
+            this.friends = this.friends.map(f => ({
+                ...f,
+                isOnline: onlineUsers.includes(f.userId)
+            }));
+
             // Start constructing the 'status' object even if not a friend, so renderOnlineStatus works
             if (!this.friendStatus) {
                 this.friendStatus = {

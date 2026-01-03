@@ -5,7 +5,7 @@ import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocke
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
 import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
-import { onlineUsers } from './modules/online-users';
+import { getOnlineUsers } from './modules/online-users';
 
 const logger = createLogger('GAME-SERVICE');
 
@@ -140,11 +140,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get currently online users
   fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      // Map keys to array of objects
-      const users: any[] = [];
-      for (const [id, data] of onlineUsers.entries()) {
-        users.push({ userId: id, username: data.username });
-      }
+      const users = getOnlineUsers();
       sendSuccess(reply, users);
     } catch (error) {
       logger.error('Error getting online users:', error);
