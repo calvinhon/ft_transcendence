@@ -11,6 +11,8 @@ const serverOptions = {
 };
 
 async function start(): Promise<void> {
+  const { initializeDatabase } = await import('./database');
+  await initializeDatabase();
   const server = await createServer(serverConfig, routes, serverOptions);
   await server.start();
 }

@@ -345,40 +345,41 @@ export class GamePage extends AbstractComponent {
 
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
 
-                // --- TOURNAMENT LOGIC ---
+                // --- GAME RECORDING ---
+                // Backend handles game data save.
+                // Frontend MUST notify tournament service for bracket updates (via nginx proxy).
                 if (setup.mode === 'tournament' && setup.tournamentId && setup.tournamentMatchId) {
+                    // Scores are in game-engine order: player1 = left paddle, player2 = right paddle
+                    // CHECK FOR SWAP: If current P1 (Left) is NOT the tournament's P1, we must swap scores.
+                    const originalP1Id = Number(setup.tournamentPlayer1Id);
+                    const currentP1Id = Number(this.p1Ids[0]);
+
                     let finalScore1 = p1Score;
                     let finalScore2 = p2Score;
-                    let recordWinner = winnerId;
 
-                    // If Team 1 user isn't the original Player 1, they swapped sides!
-                    if (setup.tournamentPlayer1Id && setup.team1[0].userId !== setup.tournamentPlayer1Id) {
-                        console.log("Detecting players swapped, swapping scores for tournament record");
+                    console.log(`Frontend: Checking for swap. Orig: ${originalP1Id}, Curr: ${currentP1Id}`);
+
+                    if (!isNaN(originalP1Id) && currentP1Id !== originalP1Id) {
+                        console.log("Frontend: Detected Player Swap. Swapping scores for tournament record.", { originalP1Id, currentP1Id });
                         finalScore1 = p2Score;
                         finalScore2 = p1Score;
-                        // Winner ID is likely correct from backend, but if it was based on P1/P2 slot...
-                        // Backend winnerId corresponds to User ID, so it should be correct regardless of slot.
                     }
 
-                    // Manually record to tournament service with CORRECT scores
-                    // Note: This relies on TournamentService being imported
                     const { TournamentService } = await import('../services/TournamentService');
                     try {
                         await TournamentService.getInstance().recordMatchResult(
                             setup.tournamentId.toString(),
                             setup.tournamentMatchId.toString(),
-                            recordWinner,
-                            finalScore1,
-                            finalScore2
+                            winnerId,
+                            finalScore1, // Score for Original P1
+                            finalScore2  // Score for Original P2
                         );
+                        console.log('Frontend: Tournament match result recorded:', { winnerId, finalScore1, finalScore2 });
                     } catch (err) {
-                        console.error("Frontend tournament record failed:", err);
+                        console.error("Frontend: Failed to record tournament result:", err);
                     }
                 } else if (setup.mode === 'arcade' || setup.mode === 'campaign') {
-                    // ARCADE & CAMPAIGN Match History Recording
-                    // Handled by Backend GameScoring service automatically.
-                    // Frontend manual save caused duplicate entries (and incorrect "Bot 1" naming).
-                    console.log('Arcade/Campaign match finished. Saving handled by backend.');
+                    console.log('Arcade/Campaign match finished. Backend handles save.');
                 }
 
                 // Add Auto-Return Timer UI
@@ -494,7 +495,7 @@ export class GamePage extends AbstractComponent {
                         gameScreen.appendChild(overlay);
                     } else {
                         // Fallback if screen not found (unlikely)
-                document.body.appendChild(overlay);
+                        document.body.appendChild(overlay);
                     }
                 }
 

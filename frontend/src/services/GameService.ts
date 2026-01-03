@@ -100,6 +100,8 @@ export class GameService {
                 },
                 team1Players: t1,
                 team2Players: t2,
+                tournamentId: settings.tournamentId,
+                tournamentMatchId: settings.tournamentMatchId
             };
         }
 

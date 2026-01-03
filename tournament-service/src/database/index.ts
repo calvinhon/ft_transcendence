@@ -11,7 +11,10 @@ export const db = connection.getDb();
 /**
  * Initialize database tables for production
  */
-async function initializeTables(): Promise<void> {
+/**
+ * Initialize database tables for production
+ */
+export async function initializeDatabase(): Promise<void> {
   // Create tournaments table
   await promisifyDbRun(db, `
     CREATE TABLE IF NOT EXISTS tournaments (

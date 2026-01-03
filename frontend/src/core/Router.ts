@@ -2,9 +2,14 @@ import { AbstractComponent } from "../components/AbstractComponent";
 
 type RouteHandler = () => Promise<AbstractComponent>;
 
+interface RouteOptions {
+    requiresAuth?: boolean;
+}
+
 interface Route {
     path: string;
     handler: RouteHandler;
+    options?: RouteOptions;
 }
 
 export class Router {
@@ -29,8 +34,8 @@ export class Router {
         });
     }
 
-    public addRoute(path: string, handler: RouteHandler): void {
-        this.routes.push({ path, handler });
+    public addRoute(path: string, handler: RouteHandler, options?: RouteOptions): void {
+        this.routes.push({ path, handler, options });
     }
 
     public navigateTo(path: string): void {
@@ -42,7 +47,6 @@ export class Router {
         const path = window.location.pathname;
 
         // Simple exact match for now
-        // TODO: Add regex support if needed
         let route = this.routes.find(r => r.path === path);
 
         // 404 Fallback - show ErrorPage for unknown routes
@@ -59,6 +63,26 @@ export class Router {
             this.appContainer.innerHTML = this.currentComponent.getHtml();
             this.currentComponent.onMounted();
             return;
+        }
+
+        // Auth Guard
+        if (route.options?.requiresAuth) {
+            // Need to import AuthService dynamically or assume global/singleton access works if imported at top
+            // Since Router is in core, and AuthService in services, we can import AuthService.
+            // But to avoid circular deps if AuthService uses Router (it does: App.router), 
+            // we should access it via App or dynamic import.
+            // However, AuthService.ts imports App, which imports Router. 
+            // Router importing AuthService might be circular: Router -> AuthService -> App -> Router.
+            // Safe bet: Dynamic import or depend on global state if necessary, 
+            // OR checks are done via a passed callback. But plan said AuthService.
+            // Let's try dynamic import of AuthService to be safe.
+            const { AuthService } = await import('../services/AuthService');
+            if (!AuthService.getInstance().getCurrentUser()) {
+                console.warn(`[Router] Access denied to ${path}. Redirecting to /login`);
+                history.replaceState(null, '', '/login');
+                // Restart routing for /login
+                return this.handleRoute();
+            }
         }
 
         // Cleanup old component

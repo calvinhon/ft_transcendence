@@ -198,6 +198,8 @@ export class TournamentBracketPage extends AbstractComponent {
                     gameSettings = { ...gameSettings, ...parsed.settings };
                 }
             }
+            // Enforce 2D for Tournament
+            (gameSettings as any).use3D = false;
         } catch (e) {
             console.warn("Failed to load settings for tournament match", e);
         }

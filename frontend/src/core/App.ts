@@ -51,12 +51,12 @@ export class App {
         this.router.addRoute('/tournament', async () => {
             const { TournamentBracketPage } = await import('../pages/TournamentBracketPage');
             return new TournamentBracketPage();
-        });
+        }, { requiresAuth: true });
 
         this.router.addRoute('/main-menu', async () => {
             const { MainMenuPage } = await import('../pages/MainMenuPage');
             return new MainMenuPage();
-        });
+        }, { requiresAuth: true });
 
         this.router.addRoute('/login', async () => {
             const { LoginPage } = await import('../pages/LoginPage');
@@ -71,17 +71,17 @@ export class App {
         this.router.addRoute('/match-details', async () => {
             const { MatchDetailsPage } = await import('../pages/MatchDetailsPage');
             return new MatchDetailsPage();
-        });
+        }, { requiresAuth: true });
 
         this.router.addRoute('/game', async () => {
             const { GamePage } = await import('../pages/GamePage');
             return new GamePage();
-        });
+        }, { requiresAuth: true });
 
         this.router.addRoute('/profile', async () => {
             const { ProfilePage } = await import('../pages/ProfilePage');
             return new ProfilePage();
-        });
+        }, { requiresAuth: true });
 
         this.router.addRoute('/oauth/callback', async () => {
             const { OAuthCallbackPage } = await import('../pages/OAuthCallbackPage');
@@ -91,26 +91,11 @@ export class App {
         this.router.addRoute('/settings', async () => {
             const { SettingsPage } = await import('../pages/SettingsPage');
             return new SettingsPage();
-        });
+        }, { requiresAuth: true });
 
-        // Global Navigation Interceptor
-        const originalNavigate = this.router.navigateTo.bind(this.router);
-        this.router.navigateTo = (path: string) => {
-
-            const publicPaths = ['/login', '/register'];
-
-            // If trying to access private route without user, redirect login
-            // Using getCurrentUser() handles both token and cookie-based sessions (after checkSession)
-            if (!publicPaths.includes(path) && !AuthService.getInstance().getCurrentUser()) {
-                // But wait, if we are already at /login (implicit), don't loop. 
-                // The router logic handles the render. But explicit navigation needs check.
-                if (window.location.pathname !== '/login') {
-                    originalNavigate('/login');
-                }
-                return;
-            }
-            originalNavigate(path);
-        };
+        // Global Navigation Interceptor - REMOVED
+        // The Router now handles route guards internally via handleRoute().
+        // This prevents double verification/conflicts.
     }
 
     public async start(): Promise<StartState> {

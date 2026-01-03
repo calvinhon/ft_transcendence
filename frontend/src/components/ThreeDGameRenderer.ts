@@ -7,7 +7,7 @@ import { BabylonWrapper } from "../core/BabylonWrapper";
 // Coordinate Mapping Constants
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
-const ARENA_WIDTH = 15;
+const ARENA_WIDTH = 10;
 const ARENA_HEIGHT = (GAME_HEIGHT / GAME_WIDTH) * ARENA_WIDTH; // Maintain aspect ratio
 const PADDLE_WIDTH_3D = 0.2; // Visual width in 3D
 const BALL_SIZE_3D = 0.2;
@@ -20,6 +20,7 @@ export class ThreeDGameRenderer {
     private powerupLight!: PointLight;
     private arenaMesh!: Mesh;
     private glowLayer: GlowLayer;
+    private countdownEl: HTMLElement | null = null;
 
     // Trail cache
     private ballTrail: TrailMesh | null = null;
@@ -114,9 +115,9 @@ export class ThreeDGameRenderer {
         // Light attached to ball
         const light = new PointLight("game_ballLight", new Vector3(0, 0.5, 0), this.scene);
         light.parent = this.ballMesh;
-        light.intensity = 2.5; // Brighter
+        light.intensity = 2; // Brighter
         light.diffuse = Color3.White();
-        light.range = 8; // Wider range to light up grid
+        light.range = 4; // Wider range to light up grid
 
         // Trail
         this.ballTrail = new TrailMesh("game_ballTrail", this.ballMesh, this.scene, 0.1, 20, true);
@@ -127,7 +128,7 @@ export class ThreeDGameRenderer {
     }
 
     private createPowerup(): void {
-        this.powerupMesh = MeshBuilder.CreateSphere("game_powerup", { diameter: 0.8 }, this.scene);
+        this.powerupMesh = MeshBuilder.CreateSphere("game_powerup", { diameter: 0.5 }, this.scene);
         const mat = new StandardMaterial("game_powerupMat", this.scene);
         mat.emissiveColor = Color3.Yellow();
         this.powerupMesh.material = mat;
@@ -173,7 +174,7 @@ export class ThreeDGameRenderer {
             // Y (2D) is Top-Left corner of paddle. 
             // Z (3D) Center = (Y + H/2) mapped
             const centerY2D = p.y + (p.height || 100) / 2;
-            const worldZ = -((centerY2D / GAME_HEIGHT) * ARENA_HEIGHT - ARENA_HEIGHT / 2);
+            let worldZ = -((centerY2D / GAME_HEIGHT) * ARENA_HEIGHT - ARENA_HEIGHT / 2);
 
             if (!mesh) {
                 mesh = MeshBuilder.CreateBox("game_paddle_" + key, { width: PADDLE_WIDTH_3D, height: 0.2, depth: 1 }, this.scene);
@@ -188,15 +189,27 @@ export class ThreeDGameRenderer {
             }
 
             mesh.position.x = worldX;
-            mesh.position.z = worldZ;
+            mesh.position.x = worldX;
+            // mesh.position.z = worldZ; // Moved after clamping
 
             // Dynamic Scaling for Powerups:
             // Backend width/height (2D) -> 3D Scaling
             // Initial depth was 1. So worldH gives exactly the scale factor needed.
+            // Dynamic Scaling
             if (mesh.scaling.z !== worldH) {
                 mesh.scaling.z = worldH;
             }
 
+            // Clamp Position to avoid clipping details
+            const halfH = worldH / 2;
+            const limit = ARENA_HEIGHT / 2;
+
+            if (worldZ + halfH > limit) {
+                worldZ = limit - halfH;
+            } else if (worldZ - halfH < -limit) {
+                worldZ = -limit + halfH;
+            }
+            mesh.position.z = worldZ;
             activeIds.add(key);
         };
 
@@ -243,6 +256,35 @@ export class ThreeDGameRenderer {
             this.powerupMesh.isVisible = false;
             if (this.powerupLight) this.powerupLight.setEnabled(false);
         }
+
+        // Countdown Overlay
+        if (gameState.gameState === 'countdown' && gameState.countdownValue !== undefined) {
+            if (!this.countdownEl) {
+                this.countdownEl = document.createElement('div');
+                this.countdownEl.style.cssText = `
+                     position: fixed;
+                     top: 50%;
+                     left: 50%;
+                     transform: translate(-50%, -50%);
+                     font-family: 'VCR OSD Mono', monospace;
+                     font-size: 120px;
+                     color: white;
+                     text-shadow: 0 0 20px white;
+                     color: white;
+                     text-shadow: 0 0 20px white;
+                     z-index: 2000;
+                     pointer-events: none;
+                 `;
+                document.body.appendChild(this.countdownEl);
+            }
+            const text = gameState.countdownValue > 0 ? gameState.countdownValue.toString() : 'GO!';
+            this.countdownEl.innerText = text;
+        } else {
+            if (this.countdownEl) {
+                this.countdownEl.remove();
+                this.countdownEl = null;
+            }
+        }
     }
 
     public resize(): void {
@@ -257,8 +299,8 @@ export class ThreeDGameRenderer {
 
         const engine = this.scene.getEngine();
         const aspectRatio = engine.getAspectRatio(this.scene.activeCamera);
-        const fov = 1; // We use fixed FOV
-        const padding = 1.1; // 10% padding
+        const fov = 0.6; // We use fixed FOV
+        const padding = 1.5; // Increased padding for visibility
 
         // Required Visible Height if limited by Width
         // VisibleWidth = ARENA_WIDTH * padding
@@ -299,5 +341,9 @@ export class ThreeDGameRenderer {
         this.powerupMesh.dispose();
         if (this.ballTrail) this.ballTrail.dispose();
         if (this.glowLayer) this.glowLayer.dispose();
+        if (this.countdownEl) {
+            this.countdownEl.remove();
+            this.countdownEl = null;
+        }
     }
 }

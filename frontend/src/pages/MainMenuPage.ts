@@ -115,7 +115,13 @@ export class MainMenuPage extends AbstractComponent {
             this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
             this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
 
-            this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+            // Update active players from availablePlayers to catch changes (like avatars)
+            const syncPlayer = (p: Player) => this.availablePlayers.find(ap => ap.id === p.id) || p;
+
+            if (this.campaignPlayer) this.campaignPlayer = syncPlayer(this.campaignPlayer);
+            this.arcadeTeam1 = this.arcadeTeam1.map(syncPlayer);
+            this.arcadeTeam2 = this.arcadeTeam2.map(syncPlayer);
+            this.tournamentPlayers = this.tournamentPlayers.map(syncPlayer);
 
             // Auto-assign host to campaign if not set
             if (this.activeMode === 'campaign' && !this.campaignPlayer) {

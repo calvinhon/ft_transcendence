@@ -2,20 +2,56 @@
 import { db } from './database';
 import { GameRecord } from './types';
 import { createLogger } from '@ft-transcendence/common';
+import { notifyTournamentService } from './tournament-notifier';
 
 const logger = createLogger('GAME-SERVICE');
+
+// Cache for player names to reduce HTTP calls
+const playerNameCache = new Map<number, { name: string; expiry: number }>();
+const CACHE_TTL = 60000; // 1 minute cache
 
 export class GameHistoryService {
   // Fetch raw game history from database
   async getGameHistory(userId: string): Promise<GameRecord[]> {
     return new Promise<GameRecord[]>((resolve, reject) => {
+      // Search for userId in player columns OR inside the team JSON arrays
+      // We look for "userId":123 or just 123 in the array, but standard is objects with userId
+      // To be safe and simple for SQLite JSON text search without json_each (if not enabled):
+      // We check if the ID appears as a value. 
+      // Like patterns: '%"userId":' || userId || ',%'  OR '%"userId":' || userId || '}%'
+      // Or simply look for the ID if we assume it's unique enough (risky). 
+      // Better: assume standard format [{"userId":1, ...}, ...]
+
+      const idPattern = `%"userId":${userId}%`;
+      const idPattern2 = `%,${userId},%`; // For array of numbers [1, 2]
+      const idPattern3 = `[${userId},%`; // Start of array
+      const idPattern4 = `%,${userId}]%`; // End of array
+      const idPattern5 = `[${userId}]%`; // Single item array
+
       db.all(
         `SELECT g.*
          FROM games g
-         WHERE g.player1_id = ? OR g.player2_id = ?
+         WHERE g.player1_id = ? 
+            OR g.player2_id = ?
+            OR (g.game_mode = 'arcade' AND (
+                 g.team1_players LIKE ? OR 
+                 g.team1_players LIKE ? OR 
+                 g.team1_players LIKE ? OR 
+                 g.team1_players LIKE ? OR 
+                 g.team1_players LIKE ? OR 
+                 g.team2_players LIKE ? OR 
+                 g.team2_players LIKE ? OR 
+                 g.team2_players LIKE ? OR 
+                 g.team2_players LIKE ? OR 
+                 g.team2_players LIKE ? 
+            ))
          ORDER BY g.started_at DESC
          LIMIT 50`,
-        [userId, userId],
+        [
+          userId, userId,
+          idPattern, idPattern2, idPattern3, idPattern4, idPattern5,
+          idPattern, idPattern2, idPattern3, idPattern4, idPattern5
+        ],
         (err: Error | null, games: GameRecord[]) => {
           if (err) {
             logger.error('Database error fetching game history:', err);
@@ -49,115 +85,152 @@ export class GameHistoryService {
         `INSERT INTO games (player1_id, player2_id, player1_score, player2_score, winner_id, game_mode, status, finished_at, team1_players, team2_players, tournament_id, tournament_match_id)
          VALUES (?, ?, ?, ?, ?, ?, 'finished', datetime('now'), ?, ?, ?, ?)`,
         [player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players || null, team2Players || null, tournamentId || null, tournamentMatchId || null],
-        function (this: any, err: Error | null) {
+        async function (this: any, err: Error | null) {
           if (err) {
             logger.error('Database error saving game:', err);
             reject(err);
           } else {
-            logger.info(`Game saved with ID: ${this.lastID}`);
+            const gameId = this.lastID;
+            logger.info(`Game saved with ID: ${gameId}`);
 
             // Notify Tournament Service if applicable and NOT skipped
             if (tournamentId && tournamentMatchId && !skipTournamentNotification) {
-              const http = require('http');
-              const postData = JSON.stringify({
+              await notifyTournamentService(gameId, tournamentId, {
                 matchId: tournamentMatchId,
                 winnerId: winnerId,
                 player1Score: player1Score,
                 player2Score: player2Score
               });
-
-              const req = http.request({
-                hostname: 'tournament-service',
-                port: 3000,
-                path: '/api/matches/result',
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Content-Length': Buffer.byteLength(postData)
-                }
-              }, (res: any) => {
-                logger.info(`Tournament service notified: ${res.statusCode}`);
-              });
-
-              req.on('error', (e: Error) => {
-                logger.error(`Problem notifying tournament service: ${e.message}`);
-              });
-
-              req.write(postData);
-              req.end();
             }
 
-            resolve({ gameId: this.lastID });
+            resolve({ gameId });
           }
         }
       );
     });
   }
 
-  // Enrich games with player names from user service
+  /**
+   * Enrich games with player names using batch lookup.
+   * Uses caching to minimize HTTP calls.
+   */
   async enrichGamesWithPlayerNames(games: GameRecord[]): Promise<GameRecord[]> {
-    const enrichedGames: GameRecord[] = [];
+    if (games.length === 0) return [];
 
     logger.info(`Enriching ${games.length} games with player names`);
 
+    // Collect all unique player IDs
+    const playerIds = new Set<number>();
+    const teamPlayerData = new Map<number, string>(); // userId -> username from team data
+
     for (const game of games) {
-      const enrichedGame = { ...game };
+      if (game.player1_id != null) playerIds.add(game.player1_id);
+      if (game.player2_id != null) playerIds.add(game.player2_id);
+      if (game.winner_id != null) playerIds.add(game.winner_id);
 
-      try {
-        // Use stored team data if available (for arcade multi-player names)
-        if (game.game_mode === 'arcade' && (game.team1_players || game.team2_players)) {
-          try {
-            if (game.team1_players) {
-              const t1 = JSON.parse(game.team1_players);
-              const names: string[] = [];
-              for (const p of t1) {
-                const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
-                const name = p.username || await this.fetchPlayerName(id);
-                if (name) names.push(name);
-              }
-              if (names.length > 0) enrichedGame.player1_name = names.join(' & ');
-            }
-            if (game.team2_players) {
-              const t2 = JSON.parse(game.team2_players);
-              const names: string[] = [];
-              for (const p of t2) {
-                const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
-                const name = p.username || await this.fetchPlayerName(id);
-                if (name) names.push(name);
-              }
-              if (names.length > 0) enrichedGame.player2_name = names.join(' & ');
-            }
-          } catch (e) {
-            logger.warn('Error parsing team players JSON:', e);
-          }
-        }
-
-        // Fallback to individual fetch if name not set
-        if (!enrichedGame.player1_name && game.player1_id !== undefined && game.player1_id !== null) {
-          enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
-        }
-
-        if (!enrichedGame.player2_name && game.player2_id !== undefined && game.player2_id !== null) {
-          enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
-        }
-      } catch (fetchError) {
-        logger.warn('Could not fetch player names:', fetchError);
-        enrichedGame.player1_name = `User${game.player1_id}`;
-        enrichedGame.player2_name = `User${game.player2_id}`;
-      }
-
-      enrichedGames.push(enrichedGame);
+      // Extract usernames from stored team data
+      this.extractTeamPlayerNames(game.team1_players, teamPlayerData);
+      this.extractTeamPlayerNames(game.team2_players, teamPlayerData);
     }
 
-    return enrichedGames;
+    // Batch fetch all player names (respecting cache)
+    const playerNames = await this.batchFetchPlayerNames(Array.from(playerIds), teamPlayerData);
+
+    // Apply names to games
+    return games.map(game => ({
+      ...game,
+      player1_name: playerNames.get(game.player1_id) ?? `User ${game.player1_id}`,
+      player2_name: playerNames.get(game.player2_id) ?? `User ${game.player2_id}`,
+      winner_name: game.winner_id != null ? playerNames.get(game.winner_id) : undefined
+    }));
+  }
+
+  /**
+   * Enrich a single game - delegates to batch method for consistency
+   */
+  async enrichGameWithPlayerNames(game: GameRecord): Promise<GameRecord> {
+    const enriched = await this.enrichGamesWithPlayerNames([game]);
+    return enriched[0];
+  }
+
+  /**
+   * Extract player names from team JSON data
+   */
+  private extractTeamPlayerNames(teamJson: string | undefined, target: Map<number, string>): void {
+    if (!teamJson) return;
+    try {
+      const team = JSON.parse(teamJson);
+      for (const p of team) {
+        const userId = typeof p === 'number' ? p : (p.userId || p.id || 0);
+        const username = typeof p === 'number' ? undefined : p.username;
+        if (userId && username) {
+          target.set(userId, username);
+        }
+      }
+    } catch (e) { /* ignore parse errors */ }
+  }
+
+  /**
+   * Batch fetch player names with caching
+   */
+  private async batchFetchPlayerNames(
+    playerIds: number[],
+    teamData: Map<number, string>
+  ): Promise<Map<number, string>> {
+    const result = new Map<number, string>();
+    const now = Date.now();
+    const idsToFetch: number[] = [];
+
+    for (const id of playerIds) {
+      // Check team data first
+      if (teamData.has(id)) {
+        result.set(id, teamData.get(id)!);
+        continue;
+      }
+
+      // Check cache
+      const cached = playerNameCache.get(id);
+      if (cached && cached.expiry > now) {
+        result.set(id, cached.name);
+        continue;
+      }
+
+      // Handle special IDs
+      if (id === 0) {
+        result.set(id, 'Al-Ien');
+        continue;
+      }
+      if (id < 0) {
+        result.set(id, `BOT ${Math.abs(id)}`);
+        continue;
+      }
+      if (id >= 100000) {
+        result.set(id, 'BOT');
+        continue;
+      }
+
+      idsToFetch.push(id);
+    }
+
+    // Fetch remaining IDs in parallel (limited concurrency)
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
+      const batch = idsToFetch.slice(i, i + BATCH_SIZE);
+      const names = await Promise.all(batch.map(id => this.fetchPlayerName(id)));
+
+      for (let j = 0; j < batch.length; j++) {
+        const id = batch[j];
+        const name = names[j];
+        result.set(id, name);
+        playerNameCache.set(id, { name, expiry: now + CACHE_TTL });
+      }
+    }
+
+    return result;
   }
 
   // Fetch player name from user service or auth service
   private async fetchPlayerName(userId: number): Promise<string> {
-    if (userId === 0) return 'Al-Ien';
-    if (userId < 0) return `BOT ${Math.abs(userId)}`;
-    // Heuristic: IDs >= 100000 are legacy ephemeral/bot IDs
-    if (userId >= 100000) return 'BOT';
     try {
       // Try User Service for Display Name
       const userResponse = await fetch(`http://user-service:3000/profile/${userId}`);
@@ -175,7 +248,7 @@ export class GameHistoryService {
       const authResponse = await fetch(`http://auth-service:3000/auth/profile/${userId}`);
       if (authResponse.ok) {
         const authData = await authResponse.json() as any;
-        if (authData.data && authData.data.username) return authData.data.username; // Response wrapped in data
+        if (authData.data && authData.data.username) return authData.data.username;
         if (authData.username) return authData.username;
       }
 
@@ -206,50 +279,6 @@ export class GameHistoryService {
         }
       );
     });
-  }
-
-  // Enrich single game with player names
-  async enrichGameWithPlayerNames(game: GameRecord): Promise<GameRecord> {
-    const enrichedGame = { ...game };
-    try {
-      // Use stored team data if available (for arcade multi-player names)
-      if (game.game_mode === 'arcade' && (game.team1_players || game.team2_players)) {
-        try {
-          if (game.team1_players) {
-            const t1 = JSON.parse(game.team1_players);
-            const names: string[] = [];
-            for (const p of t1) {
-              const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
-              const name = p.username || await this.fetchPlayerName(id);
-              if (name) names.push(name);
-            }
-            if (names.length > 0) enrichedGame.player1_name = names.join(' & ');
-          }
-          if (game.team2_players) {
-            const t2 = JSON.parse(game.team2_players);
-            const names: string[] = [];
-            for (const p of t2) {
-              const id = typeof p === 'number' ? p : (p.userId || p.id || 0);
-              const name = p.username || await this.fetchPlayerName(id);
-              if (name) names.push(name);
-            }
-            if (names.length > 0) enrichedGame.player2_name = names.join(' & ');
-          }
-        } catch (e) {
-          logger.warn('Error parsing team players JSON:', e);
-        }
-      }
-
-      if (!enrichedGame.player1_name && game.player1_id !== undefined && game.player1_id !== null) enrichedGame.player1_name = await this.fetchPlayerName(game.player1_id);
-      if (!enrichedGame.player2_name && game.player2_id !== undefined && game.player2_id !== null) enrichedGame.player2_name = await this.fetchPlayerName(game.player2_id);
-      if (game.winner_id !== undefined && game.winner_id !== null) enrichedGame.winner_name = await this.fetchPlayerName(game.winner_id);
-    } catch (fetchError) {
-      logger.warn('Could not fetch player names:', fetchError);
-      enrichedGame.player1_name = `User${game.player1_id}`;
-      enrichedGame.player2_name = `User${game.player2_id}`;
-      enrichedGame.winner_name = `User${game.winner_id}`;
-    }
-    return enrichedGame;
   }
 
   // Fetch game events

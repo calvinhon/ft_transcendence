@@ -64,21 +64,6 @@ export class AuthService {
         }
     }
 
-    public async forgotPassword(email: string): Promise<{ success: boolean, error?: string }> {
-        try {
-            const response = await Api.post('/api/auth/forgot-password', { email });
-            if (response.success) {
-                return { success: true };
-            }
-            return { success: false, error: response.error || 'Failed to send reset email' };
-        } catch (e: any) {
-            console.error("Forgot password failed", e);
-            return { success: false, error: e.message || 'Network error' };
-        }
-    }
-
-
-
     public logout(): void {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -141,7 +126,6 @@ export class AuthService {
             //Hoach edit ended
 
             // Backend didn't return user and no stored user data available
-            console.warn("AuthService: Backend says valid but no user data available");
             return false;
         } catch (e: any) {
             console.error("AuthService: Verify failed or timed out:", e.message || e);
