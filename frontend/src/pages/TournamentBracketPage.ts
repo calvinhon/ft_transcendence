@@ -104,6 +104,10 @@ export class TournamentBracketPage extends AbstractComponent {
                 } finally {
                     this.recordingInProgress = false;
                 }
+            } else if (sessionStorage.getItem(recordedKey)) {
+                // Key exists, so it was already recorded. Restore message.
+                this.blockchainMessage = 'Rankings recorded on blockchain';
+                this.blockchainMessageType = 'success';
             }
         } catch (err) {
             console.error('Failed to load tournament participants for blockchain', err);

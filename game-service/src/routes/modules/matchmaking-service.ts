@@ -99,15 +99,46 @@ export class MatchmakingService {
 
     // Determine Player 1 & Player 2 based on Team Assignments
     // Logic:
-    // - If requestor (data.userId) is in Team 1, they are Player 1. Opponent (Player 2).
-    // - If requestor (data.userId) is in Team 2, they are Player 2. Opponent (Player 1).
+    // - If requestor (data.userId) is in Team 1, they are Player 1.
+    // - If requestor (data.userId) is in Team 2, they are Player 2.
+    // - If requestor is in NEITHER (Spectator/Host of local match), we must pick the REAL players from the teams.
 
     let finalPlayer1 = player1;
     let finalPlayer2 = player2;
 
+    const isRequestorInTeam1 = data.team1Players?.some(p => (typeof p === 'number' ? p : p.userId) === data.userId);
     const isRequestorInTeam2 = data.team2Players?.some(p => (typeof p === 'number' ? p : p.userId) === data.userId);
 
-    if (isRequestorInTeam2) {
+    if (!isRequestorInTeam1 && !isRequestorInTeam2) {
+      // HOST MODE: Requestor is not playing.
+      // We need to create dummy players for BOTH Player 1 and Player 2 using actual team data.
+      logger.info(`Host mode detected. Requestor ${data.userId} is not in either team.`);
+
+      if (data.team1Players && data.team1Players.length > 0) {
+        const p1Data = data.team1Players[0];
+        const p1Id = typeof p1Data === 'number' ? p1Data : p1Data.userId;
+        const p1Name = typeof p1Data === 'number' ? `Player ${p1Id}` : p1Data.username;
+
+        logger.info(`Host not in match. Creating dummy Player 1: ${p1Name} (${p1Id})`);
+        finalPlayer1 = createDummyPlayer(p1Id, p1Name);
+        finalPlayer1.socket = socket; // Share socket for control
+      }
+
+      if (data.team2Players && data.team2Players.length > 0) {
+        const p2Data = data.team2Players[0];
+        const p2Id = typeof p2Data === 'number' ? p2Data : p2Data.userId;
+        const p2Name = typeof p2Data === 'number' ? `Player ${p2Id}` : p2Data.username;
+        const p2IsBot = typeof p2Data !== 'number' && p2Data.isBot;
+
+        logger.info(`Host not in match. Creating dummy Player 2: ${p2Name} (${p2Id}), bot: ${p2IsBot}`);
+        if (p2IsBot) {
+          finalPlayer2 = createBotPlayer();
+        } else {
+          finalPlayer2 = createDummyPlayer(p2Id, p2Name);
+          finalPlayer2.socket = socket; // Share socket
+        }
+      }
+    } else if (isRequestorInTeam2) {
       // SWAP: Requestor becomes Player 2, Opponent becomes Player 1
       logger.info(`Requestor ${data.username} is in Team 2. Swapping slots.`);
       finalPlayer2 = player1;

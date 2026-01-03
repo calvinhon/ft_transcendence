@@ -33,7 +33,7 @@ export class GameHistoryService {
          FROM games g
          WHERE g.player1_id = ? 
             OR g.player2_id = ?
-            OR (g.game_mode = 'arcade' AND (
+            OR ((g.game_mode = 'arcade' OR g.game_mode = 'tournament') AND (
                  g.team1_players LIKE ? OR 
                  g.team1_players LIKE ? OR 
                  g.team1_players LIKE ? OR 

@@ -15,14 +15,15 @@ export class GameBroadcaster {
     this.player2 = player2;
   }
 
-  broadcastGameState(ball: Ball, paddles: Paddles, scores: Scores, gameState: 'countdown' | 'playing' | 'finished', countdownValue?: number, powerup?: Powerup): void {
-    const gameStateMessage: GameState = {
+  broadcastGameState(ball: Ball, paddles: Paddles, scores: Scores, gameState: 'countdown' | 'playing' | 'finished', countdownValue?: number, powerup?: Powerup, winnerId?: number): void {
+    const gameStateMessage: GameState & { winnerId?: number } = {
       type: 'gameState',
       ball,
       paddles,
       scores,
       gameState,
-      powerup
+      powerup,
+      winnerId
     };
 
     // Add countdown value if in countdown state

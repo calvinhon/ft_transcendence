@@ -290,8 +290,30 @@ export class PongGame {
     this.stateManager.endGame();
     activeGames.delete(this.gameId);
 
+    // Calculate winner immediately for UI
+    const winner = this.scoring.getWinner();
+    const winnerId = winner ? winner.winnerId : null;
+
+    logger.game(this.gameId, `Game Ended. Immediate Broadcast. Winner: ${winnerId}`);
+
+    // Broadcast FINISHED state immediately so UI updates instantly (no delay)
+    // We pass winnerId so frontend knows who won right away
+    this.broadcaster.broadcastGameState(
+      this.ball,
+      this.paddles,
+      this.scoring.getScores(),
+      'finished',
+      undefined,
+      this.physics.powerup,
+      winnerId || undefined
+    );
+
+    // Then save to DB (async)
     await this.scoring.saveGameResult();
-    this.scoring.broadcastGameEnd();
+
+    // We do NOT need to call scoring.broadcastGameEnd() anymore as we sent the state above.
+    // However, for safety/legacy clients, we can leave it or remove it. 
+    // The frontend handles 'finished' state now.
 
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
   }

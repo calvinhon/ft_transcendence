@@ -231,11 +231,13 @@ export class ThreeDGameRenderer {
             processPaddle(paddles.player2, 'p2', '#ff77e6');
         }
 
-        // Cleanup inactive paddles
-        for (const [key, mesh] of this.paddleMeshes) {
-            if (!activeIds.has(key)) {
-                mesh.dispose();
-                this.paddleMeshes.delete(key);
+        // Cleanup inactive paddles ONLY if game is not finished
+        if (gameState.gameState !== 'finished' && gameState.type !== 'gameEnd') {
+            for (const [key, mesh] of this.paddleMeshes) {
+                if (!activeIds.has(key)) {
+                    mesh.dispose();
+                    this.paddleMeshes.delete(key);
+                }
             }
         }
 

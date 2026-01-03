@@ -62,7 +62,7 @@ export class MatchService {
    */
   static async checkRoundCompletion(tournamentId: number, round: number): Promise<void> {
     const roundMatches = await dbAll<TournamentMatch>(
-      'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ?',
+      'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ? ORDER BY match_number',
       [tournamentId, round]
     );
 
@@ -139,10 +139,10 @@ export class MatchService {
         continue;
       }
 
-	  let rank = 1;
+      let rank = 1;
       const eliminationRound = lastMatch.round;
       if (participant.user_id !== winnerId)
-      	rank = totalRounds - eliminationRound + 2;
+        rank = totalRounds - eliminationRound + 2;
       await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [rank, participant.id]);
     }
 

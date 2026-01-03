@@ -75,7 +75,6 @@ export class GamePage extends AbstractComponent {
         }
 
         // Toggle Renderer
-        // Toggle Renderer
         const canUse3D = WebGLService.getInstance().is3DModeEnabled();
         if (setup.settings.use3D && canUse3D) {
             console.log("3D Mode Enabled: Switching to Babylon Renderer");
@@ -393,14 +392,22 @@ export class GamePage extends AbstractComponent {
 
                     const overlay = document.createElement('div');
                     overlay.id = 'game-over-overlay';
-                    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 text-white font-pixel';
+                    if (this.is3DMode) {
+                        // In 3D mode, append to body and use fixed positioning
+                        overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[9999] text-white font-pixel';
+                        document.body.appendChild(overlay);
+                    } else {
+                        // In 2D mode, append to game container
+                        overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 text-white font-pixel';
+                        container.appendChild(overlay);
+                    }
+
                     overlay.innerHTML = `
                         <h1 class="text-4xl mb-4 text-neon-blue">GAME OVER</h1>
                         <p class="text-xl mb-8">WINNER: ${winnerName.toUpperCase()}</p>
                         <p class="text-sm text-gray-400">Returning to menu in <span id="return-countdown">5</span>...</p>
                         <button id="return-now-btn" class="mt-4 px-6 py-2 border border-accent hover:bg-accent/20">RETURN NOW</button>
                     `;
-                    container.appendChild(overlay);
 
                     let seconds = 5;
                     const countEl = overlay.querySelector('#return-countdown');
@@ -532,6 +539,10 @@ export class GamePage extends AbstractComponent {
         const overlay = document.getElementById('pause-overlay');
         if (overlay) overlay.remove();
 
+        // Remove Game Over Overlay
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        if (gameOverOverlay) gameOverOverlay.remove();
+
         let nextRoute = '/';
         if (setup && (setup.mode === 'tournament' || setup.tournamentId)) {
             nextRoute = '/tournament';
@@ -577,6 +588,10 @@ export class GamePage extends AbstractComponent {
             this.floatingHud.remove();
             this.floatingHud = null;
         }
+
+        // Remove Game Over Overlay
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        if (gameOverOverlay) gameOverOverlay.remove();
 
         // Ensure renderer cleanup if not already done via exitGame
         if (this.renderer && typeof (this.renderer as any).dispose === 'function') {
