@@ -1,10 +1,12 @@
 // auth-service/src/routes/handlers/logout.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { sendSuccess } from '../../utils/responses';
+import { sendSuccess, createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('AUTH-SERVICE');
 
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
-    // Clear the JWT cookie
+    // Clear the session cookie
     reply.clearCookie('token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -14,7 +16,7 @@ export async function logoutHandler(request: FastifyRequest, reply: FastifyReply
 
     sendSuccess(reply, {}, 'Logged out successfully');
   } catch (error: any) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error);
     sendSuccess(reply, {}, 'Logged out successfully'); // Always succeed on logout
   }
 }

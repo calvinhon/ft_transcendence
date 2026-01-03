@@ -4,12 +4,12 @@ import { addOnlineUser } from './online-users';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
+import { activeConnections } from './friend-service';
 
 export function handleWebSocketMessage(socket: any, message: Buffer | string): void {
   try {
     const data = JSON.parse(message.toString()) as WebSocketMessage;
-    logger.ws('Received WebSocket message:', data);
-    logger.ws('Message type:', data.type);
+    // logger.ws('Received WebSocket message:', data.type); // Reduce noise
 
     switch (data.type) {
       case 'userConnect':
@@ -24,11 +24,11 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         matchmakingService.handleJoinBotGame(socket, data as JoinGameMessage);
         break;
       case 'movePaddle':
-        logger.ws('Processing movePaddle');
+        // logger.ws('Processing movePaddle'); // Very noisy
         GameHandlers.handleMovePaddle(socket, data as MovePaddleMessage);
         break;
       case 'input':
-        logger.ws('Processing input');
+        // logger.ws('Processing input'); // Noisy
         GameHandlers.handleInput(socket, data as InputMessage);
         break;
       case 'pause':
@@ -48,11 +48,16 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
 }
 
 function handleUserConnect(socket: any, data: any): void {
-  logger.ws('Processing userConnect');
+  logger.ws(`Processing userConnect for ${data.username} (${data.userId})`);
   // Track user as online when they connect with authentication
   addOnlineUser(data.userId, data.username, socket);
 
-  // Check if this is a game mode request (arcade or coop)
+  // Track in FriendService for online status checks
+  activeConnections.add(data.userId);
+  // Store userId on socket object for cleanup on close
+  (socket as any).userId = data.userId;
+
+  // Check if this is a game mode request (arcade or campaign)
   if (data.gameMode) {
     logger.info('Game mode detected:', data.gameMode);
 
@@ -93,4 +98,10 @@ function handleUserConnect(socket: any, data: any): void {
 
 export function handleWebSocketClose(socket: any): void {
   matchmakingService.handleDisconnect(socket);
+
+  // Remove from FriendService online tracking
+  if ((socket as any).userId) {
+    activeConnections.delete((socket as any).userId);
+    logger.ws(`User ${(socket as any).userId} disconnected (cleaned up)`);
+  }
 }

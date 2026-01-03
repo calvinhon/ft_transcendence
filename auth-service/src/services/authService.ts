@@ -1,30 +1,37 @@
 // auth-service/src/services/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { FastifyInstance } from 'fastify';
-import { User, DatabaseUser, JWTPayload } from '../types';
+import axios from 'axios';
+import { User, DatabaseUser } from '../types';
 import { getQuery, runQuery } from '../utils/database';
 
 export class AuthService {
-  constructor(private fastify: FastifyInstance) {}
-
-  async register(username: string, email: string, password: string): Promise<{ userId: number; token: string }> {
+  async register(username: string, email: string, password: string): Promise<{ userId: number }> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await runQuery(
-      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+      'INSERT INTO users (username, email, password_hash, last_login) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
       [username, email, hashedPassword]
     );
 
-    const token = this.fastify.jwt.sign({
-      userId: (result as any).lastID,
-      username
-    } as JWTPayload, { expiresIn: '24h' });
+    try {
+      // Add a profile for the user in the user database.
+      console.log('Attempting to create a user profile for the new user');
+      let profile = await axios.get(`http://user-service:3000/profile/${result.lastID}`, { timeout: 5000 });
+      if (profile.status === 200)
+        console.log('User profile ready for update');
 
-    return { userId: (result as any).lastID, token };
+      console.log('Attempting to update the user profile for the new user');
+      profile = await axios.put(`http://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000 });
+      if (profile.status === 200)
+        console.log('User profile ready');
+    } catch (err: any) {
+      console.log('Something went wrong:', err.message);
+    }
+    return { userId: (result as any).lastID };
   }
 
-  async login(identifier: string, password: string): Promise<{ user: User; token: string }> {
+  async login(identifier: string, password: string): Promise<User> {
     const user = await getQuery<DatabaseUser>(
       'SELECT id, username, email, password_hash FROM users WHERE username = ? OR email = ?',
       [identifier, identifier]
@@ -45,18 +52,10 @@ export class AuthService {
       [user.id]
     );
 
-    const token = this.fastify.jwt.sign({
-      userId: user.id,
-      username: user.username
-    } as JWTPayload, { expiresIn: '24h' });
-
     return {
-      user: {
-        userId: user.id,
-        username: user.username,
-        email: user.email
-      },
-      token
+      userId: user.id,
+      username: user.username,
+      email: user.email
     };
   }
 
@@ -78,14 +77,6 @@ export class AuthService {
     };
   }
 
-  async verifyToken(token: string): Promise<JWTPayload> {
-    try {
-      return this.fastify.jwt.verify(token) as JWTPayload;
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
-  }
-
   async createPasswordResetToken(email: string): Promise<{ resetToken: string; resetLink: string }> {
     const user = await getQuery<{ id: number; email: string }>(
       'SELECT id, email FROM users WHERE email = ?',
@@ -105,7 +96,9 @@ export class AuthService {
       [user.id, resetToken, expiresAt.toISOString()]
     );
 
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+    // Hoach edited SECURITY FIX: Use HTTPS for password reset links to prevent MITM attacks
+    const resetLink = `https://localhost/reset-password?token=${resetToken}`;
+    // Hoach edit ended
 
     return { resetToken, resetLink };
   }

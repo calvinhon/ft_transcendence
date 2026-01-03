@@ -1,101 +1,208 @@
+# Docker Compose - Combined Configuration
+# Use profiles to control which services start:
+# - Default: Core services only (fast development)
+# - Full profile: All services including SSR (--profile full)
+# UPDATED: Added health checks for improved container orchestration reliability
+
 services:
-  nginx:
-    build: ./frontend
+  vault:
+    build: ./vault
+    container_name: vault
     ports:
-      - "80:80"
+      - "8200:8200"
     volumes:
-      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - auth-service
-      - game-service
-      - tournament-service
-      - user-service
-      - hardhat-node
-    mem_limit: 128m
+      - ./vault/config:/vault/config
+      - ./vault/data:/vault/data
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_ADDR=https://127.0.0.1:8200
+    env_file:
+      - .env
+    mem_limit: 256m
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - transcendence-network
 
   auth-service:
-    build: ./auth-service
-    ports:
-      - "3001:3000"
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    container_name: auth
+    expose:
+      - "3000"
     volumes:
       - ./auth-service/database:/app/database
     environment:
-      - PORT=3000
-      - SERVICE_NAME=auth-service
       - NODE_ENV=development
+      - VAULT_ADDR=https://vault:8200
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    env_file:
+      - .env
     mem_limit: 256m
     networks:
       - transcendence-network
 
   game-service:
-    build: ./game-service
-    ports:
-      - "3002:3000"
+    build:
+      context: .
+      dockerfile: ./game-service/Dockerfile
+    container_name: game
+    expose:
+      - "3000"
     volumes:
       - ./game-service/database:/app/database
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=game-service
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
   tournament-service:
-    build: ./tournament-service
-    ports:
-      - "3003:3000"
+    build:
+      context: .
+      dockerfile: ./tournament-service/Dockerfile
+    container_name: tournament
+    expose:
+      - "3000"
     volumes:
       - ./tournament-service/database:/app/database
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=tournament-service
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
   user-service:
-    build: ./user-service
-    ports:
-      - "3004:3000"
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    container_name: user
+    expose:
+      - "3000"
     volumes:
       - ./user-service/database:/app/database
-    environment:
-      - PORT=3000
-      - SERVICE_NAME=user-service
+      - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
     mem_limit: 256m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 
-  hardhat-node:
+  blockchain:
     build: ./blockchain
-    container_name: hardhat-node
-    ports:
-      - "8545:8545"
+    container_name: blockchain
+    expose:
+      - "8545"
+    command: ["npx", "hardhat", "node", "--hostname", "0.0.0.0", "--port", "8545"]
     volumes:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
-      - ./blockchain/artifacts:/app/artifacts
-    env_file:
-      - .env
-    mem_limit: 1g
     networks:
       - transcendence-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:8545 || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 50
+
+  blockchain-deploy:
+    build: ./blockchain
+    depends_on:
+      blockchain:
+        condition: service_healthy
+    working_dir: /app
+    volumes: 
+      - ./blockchain/scripts:/app/scripts
+      - ./blockchain/contracts:/app/contracts
+      - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
+    command: "npx hardhat run scripts/deploy.ts --network docker"
+    networks:
+      - transcendence-network
+
+  blockchain-service:
+    build: ./blockchain-service
+    container_name: blockchain-service
+    expose:
+      - "3000"
+    volumes:
+      - ./blockchain/artifacts:/app/artifacts
+      - ./blockchain/deployments:/app/deployments
+    env_file:
+      - .env
+    depends_on:
+      blockchain:
+        condition: service_healthy
+      blockchain-deploy:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/ || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - transcendence-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - auth-service
+      - user-service
+      - game-service
+      - tournament-service
+      - blockchain-service
+    mem_limit: 128m
+    networks:
+      - transcendence-network
+
+  ssr-service:
+    build:
+      context: .
+      dockerfile: ./ssr-service/Dockerfile
+    container_name: ssr
+    expose:
+      - "3000"
+    mem_limit: 256m
+    networks:
+      - transcendence-network
 
 networks:
   transcendence-network:
     driver: bridge
 
 volumes:
-  auth-db:
-  games-db:
-  tournaments-db:
-  users-db:
   hardhat-data:

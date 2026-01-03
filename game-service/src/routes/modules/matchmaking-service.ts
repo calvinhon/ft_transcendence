@@ -1,14 +1,17 @@
-// game-service/src/routes/modules/matchmaking-service.ts
 import { GamePlayer, JoinGameMessage } from './types';
 import { matchmakingQueue } from './matchmaking-queue';
 import { gameCreator } from './game-creator';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+import { createBotPlayer, createDummyPlayer } from './utils';
+import { activeGames } from './game-logic';
+
+const logger = createLogger('GAME-SERVICE');
 
 // Main matchmaking service that orchestrates the matchmaking process
 export class MatchmakingService {
   // Handle regular matchmaking (waiting queue)
   async handleJoinGame(socket: any, data: JoinGameMessage): Promise<void> {
-    logger.matchmaking('handleJoinGame called with:', data);
+    logger.info('handleJoinGame called with:', data);
 
     const player: GamePlayer = {
       userId: data.userId,
@@ -33,7 +36,7 @@ export class MatchmakingService {
 
   // Handle direct bot game creation
   async handleJoinBotGame(socket: any, data: JoinGameMessage): Promise<void> {
-    logger.matchmaking('handleJoinBotGame called with:', data);
+    logger.info('handleJoinBotGame called with:', data);
 
     const player1: GamePlayer = {
       userId: data.userId,
@@ -43,14 +46,39 @@ export class MatchmakingService {
 
     let player2: GamePlayer;
 
-    // Check if this is a tournament match with two real players
-    if (data.gameSettings?.gameMode === 'tournament' && data.player2Id && data.player2Id !== 0) {
-      // Tournament match: player2 is also a real player (local)
-      logger.matchmaking('Creating tournament match with player2 ID:', data.player2Id);
-      player2 = gameCreator.createDummyPlayer(data.player2Id, data.player2Name || `Player ${data.player2Id}`);
+    // Check if this is a tournament or arcade match with two real players (local)
+    const isLocalMultiplayer = (data.gameSettings?.gameMode === 'tournament' || data.gameSettings?.gameMode === 'arcade');
+    let secondPlayerId = data.player2Id;
+
+    let secondPlayerName = data.player2Name;
+
+    // Check team players for details
+    if (data.team2Players && data.team2Players.length > 0) {
+      const teamPlayer = data.team2Players[0];
+
+      // Use team player ID if main ID is missing
+      if (!secondPlayerId) {
+        secondPlayerId = teamPlayer.userId;
+      }
+
+      // Use team player name if main name is missing
+      if (!secondPlayerName) {
+        secondPlayerName = teamPlayer.username;
+      }
+
+      // override name if it is a bot
+      if (teamPlayer.isBot) {
+        secondPlayerName = "AI";
+      }
+    }
+
+    if (isLocalMultiplayer && secondPlayerId && secondPlayerId !== 0) {
+      // Local match: player2 is also a real player
+      logger.info('Creating local match with player2 ID:', secondPlayerId);
+      player2 = createDummyPlayer(secondPlayerId, secondPlayerName || `Player ${secondPlayerId}`);
     } else {
       // Regular bot match
-      player2 = gameCreator.createBotPlayer();
+      player2 = createBotPlayer();
     }
 
     await this.createAndStartGame(player1, player2, data.gameSettings, {
@@ -64,6 +92,15 @@ export class MatchmakingService {
   // Handle player disconnection
   handleDisconnect(socket: any): void {
     matchmakingQueue.removePlayer(socket);
+
+    // Check if player was in an active game
+    for (const [gameId, game] of activeGames) {
+      // Check if socket belongs to player 1 or 2
+      if (game.player1.socket === socket || game.player2.socket === socket) {
+        game.forceEndGame('Player disconnected');
+        break; // Assuming one game per socket
+      }
+    }
   }
 
   // Helper method to create and start a game
@@ -96,7 +133,7 @@ export class MatchmakingService {
 
   // Helper method to create a bot game for timeout scenarios
   private async createBotGame(player: GamePlayer, data: JoinGameMessage): Promise<void> {
-    const player2 = gameCreator.createBotPlayer();
+    const player2 = createBotPlayer();
 
     await this.createAndStartGame(player, player2, data.gameSettings, {
       team1Players: data.team1Players,

@@ -1,5 +1,7 @@
 # FT_TRANSCENDENCE - Multiplayer Pong Platform
 
+**Status:** 105/125 Points ✅ | 120/120 Tests Passing ✅ | Production Ready
+
 A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, and blockchain integration.
 
 ## 🎮 Game Features
@@ -15,68 +17,124 @@ A full-stack multiplayer Pong game platform built with microservices architectur
 - **Achievements**: Unlockable achievements and milestones
 - **Statistics Tracking**: Comprehensive match history and performance metrics
 - **Leaderboards**: Global rankings and tournament standings
-
 - **Match History**: Detailed records of all games played
 
 ## 🎯 Game Modes
 
+### 1. Campaign Mode
+- **Progressive Difficulty**: 21 levels with increasing challenge
+- **Achievement Unlocks**: Earn rewards as you advance
+- **Statistics Tracking**: Performance metrics and progress visualization
 
 ### 2. Quick Match (PVP)
+- **Instant Matchmaking**: Find opponents quickly
+- **Real-time Gameplay**: WebSocket-powered synchronization
 - **Match Statistics**: Detailed performance analytics
 
 ### 3. Tournament Mode
 - **Create Tournaments**: Host custom tournaments with configurable settings
+- **Bracket System**: Automated tournament progression
+- **Blockchain Verification**: Tournament results recorded on blockchain
+- **Prize Distribution**: Winner rewards and recognition
+
 ### 4. Bot Training
 - **AI Opponents**: Practice against computer-controlled players
+- **Difficulty Levels**: Adjustable bot difficulty for skill development
+- **Training Metrics**: Performance analysis against AI
 
-### Frontend Architecture (`/frontend`)
-│   ├── app.ts              # Main application controller (1953 lines)
-│   ├── router.ts           # Client-side routing
-│   ├── game.ts             # Core game logic (3495 lines)
-│   ├── tournament.ts       # Tournament UI logic (1409 lines)
-│   ├── leaderboard.ts      # Leaderboard functionality
-│   ├── profile.ts          # User profile management
-│   └── ai-player.ts        # AI/bot opponent logic
-├── css/
-└── index.html              # Main HTML template
-```
-- **State Management**: Centralized state for user data and game status
-- **WebSocket Client**: Real-time communication with game servers
+## 🏗️ Architecture
+
+### Microservices Architecture
+The platform consists of 8 independent microservices, each handling specific business domains:
+
+#### Frontend Service (`/frontend`)
+- **Port**: 80 (Nginx reverse proxy)
+- **Technology**: TypeScript, HTML5 Canvas, WebSockets
+- **Features**:
+  - Responsive web interface
+  - Real-time game rendering
+  - Client-side routing
+  - WebSocket communication
 
 #### Auth Service (`/auth-service`)
 - **Port**: 3001
 - **Database**: SQLite (`auth.db`)
-  - Password hashing and security
+- **Features**:
+  - User authentication and registration
+  - Password hashing with bcrypt
+  - Session management
   - Profile management
 
 #### Game Service (`/game-service`)
 - **Port**: 3002
 - **Database**: SQLite (`games.db`)
 - **Features**:
-  - Real-time match hosting
+  - Real-time match hosting and management
   - WebSocket game state synchronization
-  - Bot opponent management
-  - Match result recording
+  - Bot opponent AI logic
+  - Match result recording and statistics
 
 #### User Service (`/user-service`)
 - **Port**: 3003
 - **Database**: SQLite (`users.db`)
 - **Features**:
-  - Extended user profiles
-  - Achievement system
-  - Friend relationships
-  - Statistics tracking
+  - Extended user profiles and avatars
+  - Achievement system and progression tracking
+  - Friend relationships and social features
+  - Comprehensive statistics and leaderboards
+  - GDPR compliance and data management
 
 #### Tournament Service (`/tournament-service`)
 - **Port**: 3004
 - **Database**: SQLite (`tournaments.db`)
 - **Features**:
+  - Tournament creation and management
+  - Automated bracket generation
   - Match result processing
-  - Blockchain integration
-- **nginx Configuration**: Routes requests to appropriate services
-- **WebSocket Proxy**: Handles real-time connections
-- **Smart Contracts**: Tournament result recording
-- **Hardhat Framework**: Development and testing environment
+  - Blockchain integration for result verification
+
+#### SSR Service (`/ssr-service`)
+- **Port**: 3005
+- **Technology**: Node.js, Fastify, Handlebars
+- **Features**:
+  - Server-side rendering for SEO
+  - Dynamic page generation
+  - Performance optimization
+
+#### Blockchain Service (`/blockchain`)
+- **Port**: 8545 (Hardhat network)
+- **Technology**: Solidity, Hardhat, ethers.js
+- **Features**:
+  - Smart contract deployment
+  - Tournament result verification
+  - Immutable record keeping
+
+#### Vault Service (`/vault`)
+- **Port**: 8200
+- **Technology**: HashiCorp Vault
+- **Features**:
+  - Centralized secrets management
+  - Secure credential storage
+  - Dynamic secret generation
+
+### Infrastructure Components
+- **Nginx Reverse Proxy**: Load balancing and request routing with WAF protection
+- **WebSocket Proxy**: Real-time communication handling
+- **Docker Compose**: Container orchestration and service management
+
+### Shared Utilities Package (`/packages/common`)
+- **Package**: `@ft-transcendence/common`
+- **Technology**: TypeScript, Jest (testing)
+- **Features**:
+  - Consolidated response utilities (`sendSuccess`, `sendError`)
+  - Standardized health check responses
+  - Unified database access patterns with SQLite
+  - Shared server bootstrap and configuration
+  - Consistent logging across all services
+  - Common middleware and validation functions
+  - Comprehensive test coverage (22 tests passing)
+
+## 🚀 Getting Started
 
 ### Prerequisites
 - Docker and Docker Compose
@@ -89,64 +147,97 @@ A full-stack multiplayer Pong game platform built with microservices architectur
 git clone https://github.com/calvinhon/ft_transcendence.git
 cd ft_transcendence
 
+# 🔥 IMPORTANT: Fresh Clone Setup (prevents database schema errors)
+# Remove any stale database files first
+docker compose down -v --remove-orphans
+rm -rf auth-service/database/*.db
+rm -rf game-service/database/*.db
+rm -rf user-service/database/*.db
+rm -rf tournament-service/database/*.db
+
 # Start all services
+make start
+
+# Wait 2-3 minutes for services to initialize
+# Then verify with:
+curl http://localhost  # Should show web interface
+docker compose ps     # All containers should show "Up (healthy)"
 ```
 
-# Install dependencies for each service
-npm install
+### Verify Services Are Running
+```bash
+# Quick health check
+curl http://localhost/api/auth/health
 
-# Or use the makefile for convenience
+# Expected: {"status":"ok"}
+```
 
-### Auth Service Database
-- **users**: User accounts, credentials, JWT tokens
-- **profiles**: Extended user information
-
-### Game Service Database
-- **matches**: Game sessions and results
-- **game_states**: Real-time game state snapshots
-
-### User Service Database
-- **tournaments**: Tournament metadata
-- **tournament_participants**: Tournament registrations
 ### Available Scripts
 ```bash
-# Start all services
-make up
+# ⚡ Fast dev mode (core only, NO 2GB images, ~15s)
+make dev
 
-# Stop all services
-make down
+# 📊 Full stack with all services (~2-3 min)
+make full
+
+# Quick start (legacy, all services, ~30-60s)
+make start
+
+# Restart services (no rebuild, ~10s)
+make restart
+
+# Force rebuild (dependency changes, ~5-7 min)
+make rebuild
+
+# Stop services
+make stop
 
 # View logs
 make logs
 
-make test
+# Maintenance commands
+make clean                  # Remove all containers/volumes
+make clean-dev              # Clean node_modules and build artifacts
 
-# Clean up
-make clean
+# Check status
+make ps
+
+# Run comprehensive test suite (120 tests)
+cd tester && ./run-all-tests.sh
+
+# See all commands
+make help
 ```
-
-### Code Organization
-- **Frontend**: Modular TypeScript with separation of concerns
-- **Backend**: Microservices with clear API boundaries
-- **Database**: SQLite for simplicity and portability
-- **Testing**: Unit tests for critical components
-
-## 🎯 Gameplay Flow
-
-1. **Registration/Login**: User creates account or logs in
-2. **Mode Selection**: Choose Campaign, Quick Match, or Tournament
-3. **Matchmaking**: System finds opponent or creates bot
-4. **Gameplay**: Real-time Pong with WebSocket synchronization
-5. **Results**: Match outcomes recorded and statistics updated
-6. **Progression**: Campaign levels, achievements, and rankings updated
 
 ## 🔐 Security Features
 
-- **JWT Authentication**: Secure token-based authentication
 - **Password Hashing**: bcrypt for secure password storage
+- **WAF Protection**: ModSecurity for SQL injection/XSS prevention
+- **Vault Integration**: Centralized secrets management
 - **CORS Configuration**: Proper cross-origin request handling
 - **Input Validation**: Comprehensive request validation
-- **Rate Limiting**: Protection against abuse
+- **GDPR Compliance**: Data privacy and user rights
+
+## 🧪 Testing Infrastructure
+
+- **120 Tests**: Comprehensive coverage across all modules
+- **10 Test Suites**: One per major module/feature
+- **100% Containerized**: Zero host dependencies except Docker
+- **CI/CD Ready**: GitHub Actions compatible
+- **Fast Execution**: Complete suite in ~2 minutes
+- **Documentation**: See `tester/QUICK_TEST_GUIDE.md`
+
+### Test Coverage
+- ✅ Backend Framework & APIs
+- ✅ Database Operations
+- ✅ Blockchain Integration
+- ✅ AI Opponent Logic
+- ✅ Statistics & Dashboards
+- ✅ Microservices Architecture
+- ✅ Server-Side Pong
+- ✅ Security (WAF & Vault)
+- ✅ GDPR Compliance
+- ✅ SSR Integration
 
 ## 📈 Performance
 
@@ -169,4 +260,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Built with**: TypeScript, Node.js, Fastify, SQLite, Docker, WebSockets, HTML5 Canvas
+**Built with**: TypeScript, Node.js, Fastify, SQLite, Docker, WebSockets, HTML5 Canvas, Solidity, Hardhat

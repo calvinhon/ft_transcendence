@@ -1,0 +1,22 @@
+# Exclude vault data from Docker build context
+vault/data/
+
+# Exclude node_modules from all services
+**/node_modules/
+
+# Exclude build artifacts
+**/.next/
+**/build/
+
+# Exclude development files
+**/.git/
+**/.env*
+**/README.md
+**/package-lock.json
+
+# Keep only necessary files for building
+!packages/
+!**/package.json
+!**/tsconfig.json
+!**/src/
+!**/database/

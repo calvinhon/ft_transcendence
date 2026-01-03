@@ -17,11 +17,23 @@ export interface Ball {
   dx: number;
   dy: number;
   frozen?: boolean; // Optional: freeze ball movement during countdown
+  lastHitter?: 'player1' | 'player2'; // Tracks who last hit the ball for powerup attribution
 }
 
 export interface Paddle {
   x: number;
   y: number;
+  vy?: number; // Vertical velocity for "flick" mechanics
+  height?: number;
+  originalHeight?: number;
+  powerupExpires?: number;
+}
+
+export interface Powerup {
+  x: number;
+  y: number;
+  active: boolean;
+  radius: number;
 }
 
 export interface Paddles {
@@ -40,6 +52,7 @@ export interface GameState {
   type: 'gameState';
   ball: Ball;
   paddles: Paddles;
+  powerup?: Powerup;
   scores: Scores;
   gameState: 'countdown' | 'playing' | 'finished';
   countdownValue?: number; // Only present when gameState is 'countdown'
@@ -51,7 +64,7 @@ export interface WebSocketMessage {
 }
 
 export interface GameSettings {
-  gameMode: 'coop' | 'arcade' | 'tournament';
+  gameMode: 'campaign' | 'arcade' | 'tournament';
   aiDifficulty: 'easy' | 'medium' | 'hard';
   ballSpeed: 'slow' | 'medium' | 'fast';
   paddleSpeed: 'slow' | 'medium' | 'fast';
@@ -80,8 +93,9 @@ export interface JoinGameMessage extends WebSocketMessage {
 export interface MovePaddleMessage extends WebSocketMessage {
   type: 'movePaddle';
   direction: 'up' | 'down';
-  playerId?: number; // 1 for team1/left, 2 for team2/right
+  playerId?: number; // For campaign mode - actual database player ID
   paddleIndex?: number; // Index of paddle in team (0, 1, 2)
+  side?: 'left' | 'right'; // For tournament/arcade - position-based control
 }
 
 export interface InputMessage extends WebSocketMessage {
@@ -102,6 +116,7 @@ export interface GameRecord {
   winner_id?: number;
   player1_name?: string;
   player2_name?: string;
+  winner_name?: string;
   game_mode?: string;
   team1_players?: string;
   team2_players?: string;

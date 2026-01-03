@@ -1,70 +1,39 @@
-// App entry point and initialization
-import { Router } from './router';
-import { handleHostLogin, handleHostRegister } from './host-auth';
-import { setupLocalPlayerRegisterModal } from './local-player';
-import { AuthManager } from './auth';
-import { GameManager } from './game';
-import { ProfileManager } from './profile';
-import { TournamentManager } from './tournament';
+import '@fortawesome/fontawesome-free/css/all.css';
+import { App } from './core/App';
+import { BabylonWrapper } from './core/BabylonWrapper';
+import { PresenceService } from './services/PresenceService';
+import { WebGLService } from './services/WebGLService';
 
-console.log('🚀 [MAIN] main.ts executing... BUILD VERSION 3.0 - PROFILE FIX');
+// console.log("🚀 [MAIN] Booting System...");
 
-// GUARD: Prevent multiple initializations
-if ((window as any).__appInitialized) {
-  console.error('⚠️⚠️⚠️ main.ts already executed! Preventing duplicate initialization.');
-  throw new Error('Application already initialized');
-}
-(window as any).__appInitialized = true;
+const app = App.getInstance();
+app.start()
+    .then(() => {
+        console.log("App started with user session");
+        // Connect presence WebSocket for online status tracking
+        PresenceService.getInstance().connect();
+    })
+    .catch(() => {
+        console.log("App started without user session");
+    })
+    .finally(() => {
+        // Initialize BabylonWrapper only if 3D mode is enabled
+        const webglService = WebGLService.getInstance();
 
-// Initialize managers - SINGLETON pattern
-if (!(window as any).authManager) {
-  console.log('✅ [MAIN] Creating AuthManager');
-  (window as any).authManager = new AuthManager();
-} else {
-  console.warn('⚠️ [MAIN] AuthManager already exists, skipping');
-}
+        if (webglService.is3DModeEnabled()) {
+            console.log("[MAIN] 3D Mode enabled - Initializing BabylonJS");
+            document.body.classList.add('babylon-3d-mode');
+            // Increase font size for better readability on 3D monitor
+            document.documentElement.style.fontSize = '24px';
+            BabylonWrapper.getInstanceIfEnabled();
+        } else {
+            console.log("[MAIN] 3D Mode disabled - Running in 2D mode");
+            document.body.classList.remove('babylon-3d-mode');
+            // Reset to default font size
+            document.documentElement.style.fontSize = '';
+        }
 
-if (!(window as any).gameManager) {
-  console.log('✅ [MAIN] Creating GameManager');
-  (window as any).gameManager = new GameManager();
-} else {
-  console.warn('⚠️ [MAIN] GameManager already exists, skipping');
-}
-
-if (!(window as any).profileManager) {
-  console.log('✅ [MAIN] Creating ProfileManager');
-  (window as any).profileManager = new ProfileManager();
-} else {
-  console.warn('⚠️ [MAIN] ProfileManager already exists, skipping');
-}
-
-if (!(window as any).tournamentManager) {
-  console.log('✅ [MAIN] Creating TournamentManager');
-  (window as any).tournamentManager = new TournamentManager();
-} else {
-  console.warn('⚠️ [MAIN] TournamentManager already exists, skipping');
-}
-
-// ...initialize app, bind UI, etc...
-import { App } from './app';
-
-// FORCE recreation if window.app exists but is not a valid App instance
-const existingApp = (window as any).app;
-if (existingApp && existingApp.constructor && existingApp.constructor.name === 'App') {
-  console.log('✅ [MAIN] Valid App instance already exists, skipping');
-} else {
-  if (existingApp) {
-    console.warn('⚠️ [MAIN] Invalid window.app detected (likely from development tools), clearing and recreating...');
-    console.warn('Type:', typeof existingApp);
-    console.warn('Constructor:', existingApp?.constructor?.name);
-    // Clear the invalid app reference
-    delete (window as any).app;
-  } else {
-    console.log('✅ [MAIN] Creating App');
-  }
-  const app = new App();
-  (window as any).app = app;
-  setupLocalPlayerRegisterModal(app);
-}
-
-console.log('🏁 [MAIN] main.ts initialization complete');
+        // Expose for debugging
+        (window as any).app = app;
+        (window as any).webglService = webglService;
+    });

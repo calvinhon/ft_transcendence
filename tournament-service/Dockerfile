@@ -2,26 +2,27 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
+# Copy shared common package tarball
+COPY ./packages/common/ft-transcendence-common-1.0.0.tgz ./
 
-# Install ALL dependencies (including devDependencies for TypeScript compilation)
-RUN npm install
+# Copy package files
+COPY ./tournament-service/package*.json ./
+COPY ./tournament-service/tsconfig.json ./
+
+# Install dependencies and common package from tarball (include dev deps so TypeScript is available for build)
+RUN npm install ./ft-transcendence-common-1.0.0.tgz --include=dev && npm install --include=dev
 
 # Copy source code
-COPY src/ ./src/
+COPY ./tournament-service/src/ ./src/
 
-# Build TypeScript
 RUN npm run build
 
-# Remove devDependencies after build
 RUN npm prune --production
 
-# Copy database directory
-COPY database/ ./database/
+# Ensure database directory exists
+RUN mkdir -p /app/database
 
-EXPOSE 3000
+# Database files will be created by the application if they don't exist
+COPY ./tournament-service/database/ ./database/
 
-# Use built TypeScript if available, otherwise fallback to JavaScript
 CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]

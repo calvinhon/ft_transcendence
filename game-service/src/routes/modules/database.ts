@@ -1,18 +1,18 @@
 // game-service/src/routes/modules/database.ts
-import * as sqlite3 from 'sqlite3';
-import * as path from 'path';
-import { logger } from './logger';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, createLogger } from '@ft-transcendence/common';
 
-const dbPath = path.join(__dirname, '../../../database/games.db');
+const dbConfig = createDatabaseConfig('game-service', 'games');
+const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('GAME-SERVICE-DB');
 
-// Initialize database
-export const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    logger.error('Error opening database:', err);
-  } else {
-    logger.db('Connected to Games SQLite database');
+// For backward compatibility, export the db directly
+export const db: any = connection.getDb();
+
+// Initialize database tables
+async function initializeDatabase(): Promise<void> {
+  try {
     // Create games table with support for arcade mode and tournament tracking
-    db.run(`
+    await promisifyDbRun(db, `
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         player1_id INTEGER NOT NULL,
@@ -23,7 +23,7 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         finished_at DATETIME,
         winner_id INTEGER,
-        game_mode TEXT DEFAULT 'coop',
+        game_mode TEXT DEFAULT 'campaign',
         team1_players TEXT,
         team2_players TEXT,
         tournament_id INTEGER,
@@ -32,52 +32,53 @@ export const db = new sqlite3.Database(dbPath, (err) => {
     `);
 
     // Migrate existing database: Add new columns if they don't exist
-    db.all("PRAGMA table_info(games)", (err, columns: any[]) => {
+    // Using raw db.all/run here to preserve original logic flow
+    db.all("PRAGMA table_info(games)", (err: any, columns: any[]) => {
       if (!err && columns) {
         const columnNames = columns.map(col => col.name);
 
         // Add game_mode column if it doesn't exist
         if (!columnNames.includes('game_mode')) {
-          logger.db('Adding game_mode column...');
-          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'coop'", (err) => {
+          logger.info('Adding game_mode column...');
+          db.run("ALTER TABLE games ADD COLUMN game_mode TEXT DEFAULT 'campaign'", (err: any) => {
             if (err) logger.error('Failed to add game_mode column:', err);
-            else logger.db('game_mode column added');
+            else logger.info('game_mode column added');
           });
         }
 
         // Add team1_players column if it doesn't exist
         if (!columnNames.includes('team1_players')) {
-          logger.db('Adding team1_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err) => {
+          logger.info('Adding team1_players column...');
+          db.run("ALTER TABLE games ADD COLUMN team1_players TEXT", (err: any) => {
             if (err) logger.error('Failed to add team1_players column:', err);
-            else logger.db('team1_players column added');
+            else logger.info('team1_players column added');
           });
         }
 
         // Add team2_players column if it doesn't exist
         if (!columnNames.includes('team2_players')) {
-          logger.db('Adding team2_players column...');
-          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err) => {
+          logger.info('Adding team2_players column...');
+          db.run("ALTER TABLE games ADD COLUMN team2_players TEXT", (err: any) => {
             if (err) logger.error('Failed to add team2_players column:', err);
-            else logger.db('team2_players column added');
+            else logger.info('team2_players column added');
           });
         }
 
         // Add tournament_id column if it doesn't exist
         if (!columnNames.includes('tournament_id')) {
-          logger.db('Adding tournament_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err) => {
+          logger.info('Adding tournament_id column...');
+          db.run("ALTER TABLE games ADD COLUMN tournament_id INTEGER", (err: any) => {
             if (err) logger.error('Failed to add tournament_id column:', err);
-            else logger.db('tournament_id column added');
+            else logger.info('tournament_id column added');
           });
         }
 
         // Add tournament_match_id column if it doesn't exist
         if (!columnNames.includes('tournament_match_id')) {
-          logger.db('Adding tournament_match_id column...');
-          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err) => {
+          logger.info('Adding tournament_match_id column...');
+          db.run("ALTER TABLE games ADD COLUMN tournament_match_id INTEGER", (err: any) => {
             if (err) logger.error('Failed to add tournament_match_id column:', err);
-            else logger.db('tournament_match_id column added');
+            else logger.info('tournament_match_id column added');
           });
         }
       }
@@ -93,5 +94,30 @@ export const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY (game_id) REFERENCES games (id)
       )
     `);
+
+    // Friends Table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS friends (
+        user_id INTEGER NOT NULL,
+        friend_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, friend_id),
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (friend_id) REFERENCES users (id)
+      )
+    `, (err: any) => {
+      if (err) logger.error('Error creating friends table:', err);
+      else logger.info('Friends table ready');
+    });
+
+  } catch (error) {
+    logger.error('Error initializing game-service database:', error);
+    throw error;
   }
+}
+
+// Initialize the database
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
 });

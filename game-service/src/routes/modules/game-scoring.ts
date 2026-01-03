@@ -1,7 +1,9 @@
 // game-service/src/routes/modules/game-scoring.ts
 import { GamePlayer, Scores } from './types';
 import { db } from './database';
-import { logger } from './logger';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
 
 export class GameScoring {
   private gameId: number;
@@ -16,6 +18,7 @@ export class GameScoring {
     this.player2 = player2;
     this.maxScore = maxScore;
     this.scores = { player1: 0, player2: 0 };
+    logger.info(`[${gameId}] GameScoring initialized with maxScore: ${this.maxScore}`);
   }
 
   scorePoint(scorer: 'player1' | 'player2'): boolean {
@@ -25,7 +28,14 @@ export class GameScoring {
       this.scores.player2++;
     }
 
-    logger.game(this.gameId, `Point scored! Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
+    logger.info(`[${this.gameId}] Point scored! Current scores: Player1=${this.scores.player1}, Player2=${this.scores.player2}`);
+
+    // Log detailed event for Dashboard
+    this.logEvent('goal', {
+      scorer: scorer,
+      newScore: { ...this.scores },
+      timestamp: Date.now()
+    });
 
     // Check if game is finished
     return this.isGameFinished();
@@ -41,14 +51,26 @@ export class GameScoring {
     const winnerId = this.scores.player1 > this.scores.player2 ? this.player1.userId : this.player2.userId;
     const winnerName = winnerId === this.player1.userId ? this.player1.username : this.player2.username;
 
-    logger.game(this.gameId, `Winner: ${winnerName}`);
+    logger.info(`[${this.gameId}] Winner: ${winnerName}`);
 
     return { winnerId, winnerName };
   }
 
-  saveGameResult(): void {
+  saveGameResult(aborted: boolean = false): void {
     const winner = this.getWinner();
-    const winnerId = winner ? winner.winnerId : null;
+    let winnerId: number | null = winner ? winner.winnerId : null;
+
+    // Explicitly handle aborted games
+    if (aborted && !winnerId) {
+      if (this.scores.player1 > this.scores.player2) {
+        winnerId = this.player1.userId;
+      } else if (this.scores.player2 > this.scores.player1) {
+        winnerId = this.player2.userId;
+      } else {
+        // Scores are tied (including 0-0). No winner.
+        winnerId = null;
+      }
+    }
 
     db.run(
       'UPDATE games SET player1_score = ?, player2_score = ?, status = ?, finished_at = CURRENT_TIMESTAMP, winner_id = ? WHERE id = ?',
@@ -57,7 +79,7 @@ export class GameScoring {
         if (err) {
           logger.error(`Database update error:`, err);
         } else {
-          logger.game(this.gameId, 'Game recorded in database');
+          logger.info(`[${this.gameId}] Game recorded in database (Aborted: ${aborted}, WinnerID: ${winnerId}, Scores: ${this.scores.player1}-${this.scores.player2})`);
         }
       }
     );
@@ -74,16 +96,14 @@ export class GameScoring {
       gameId: this.gameId
     };
 
-    logger.game(this.gameId, 'Sending endGame message to players');
+    logger.info(`[${this.gameId}] Sending endGame message to players`);
 
     if (this.player1.socket.readyState === 1) { // WebSocket.OPEN
       this.player1.socket.send(JSON.stringify(endMessage));
-      logger.game(this.gameId, `End message sent to ${this.player1.username}`);
     }
 
     if (this.player2.socket.readyState === 1) { // WebSocket.OPEN
       this.player2.socket.send(JSON.stringify(endMessage));
-      logger.game(this.gameId, `End message sent to ${this.player2.username}`);
     }
   }
 
@@ -93,5 +113,17 @@ export class GameScoring {
 
   resetScores(): void {
     this.scores = { player1: 0, player2: 0 };
+  }
+
+  private logEvent(type: string, data: any): void {
+    db.run(
+      'INSERT INTO game_events (game_id, event_type, event_data) VALUES (?, ?, ?)',
+      [this.gameId, type, JSON.stringify(data)],
+      (err: Error | null) => {
+        if (err) {
+          logger.error(`Failed to log event ${type}:`, err);
+        }
+      }
+    );
   }
 }

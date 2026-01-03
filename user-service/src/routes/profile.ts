@@ -3,7 +3,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from '../services/userService';
 import { UpdateProfileBody } from '../types';
 import { db } from '../database';
-import { promisifyDbRun } from '../utils/database';
+import { promisifyDbRun } from '@ft-transcendence/common';
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
   // Get user profile
@@ -15,8 +15,9 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     try {
       const profile = await UserService.getOrCreateProfile(parseInt(userId));
       reply.send(profile);
-    } catch (err) {
-      reply.status(500).send({ error: 'Database error' });
+    } catch (err: any) {
+      console.error('Profile Fetch Error:', err);
+      reply.status(500).send({ error: `Database error: ${err.message}` });
     }
   });
 
@@ -49,7 +50,7 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
       lost?: number;
       [key: string]: any;
     };
-  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number; [key: string]: any; } }>, reply: FastifyReply) => {
+  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number;[key: string]: any; } }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
 

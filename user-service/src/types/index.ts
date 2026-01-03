@@ -1,7 +1,8 @@
-// user-service/src/routes/types.ts
+// user-service/src/types/index.ts
 export interface UserProfile {
   id: number;
   user_id: number;
+  username: string; // From auth service
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -33,20 +34,6 @@ export interface UserAchievement {
   reward_points: number;
 }
 
-export interface GameStats {
-  wins: number;
-  losses: number;
-  total_games: number;
-  winRate: number;
-}
-
-export interface LeaderboardUser extends UserProfile {
-  wins: number;
-  losses: number;
-  total_games: number;
-  winRate: number;
-}
-
 export interface OnlineUser {
   user_id: number | string;
   username: string;
@@ -58,18 +45,15 @@ export interface OnlineUser {
 
 export interface UpdateProfileBody {
   displayName?: string;
+  avatarUrl?: string; // Add this
   bio?: string;
   country?: string;
   preferredLanguage?: string;
   themePreference?: string;
+  customAvatar?: number
 }
 
 export interface SearchQuery {
   query: string;
-  limit?: string;
-}
-
-export interface LeaderboardQuery {
-  type?: 'wins' | 'games' | 'winrate';
   limit?: string;
 }

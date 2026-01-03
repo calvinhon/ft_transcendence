@@ -1,74 +1,52 @@
 // auth-service/src/utils/database.ts
-import sqlite3 from 'sqlite3';
-import path from 'path';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, ensureColumnExists, createLogger } from '@ft-transcendence/common';
 
-const dbPath = path.join(__dirname, '../../database/auth.db');
+const dbConfig = createDatabaseConfig('auth-service', 'auth', { lazyLoad: true });
+const connection = createDatabaseConnection(dbConfig);
+const logger = createLogger('AUTH-SERVICE-DB');
 
-let db: sqlite3.Database | null = null;
-
-function getDatabase(): sqlite3.Database {
+// For backward compatibility, create a getter that matches the original getDatabase pattern
+let db: any = null;
+function getDatabase(): any {
   if (!db) {
-    db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('Error opening database:', err);
-      } else {
-        console.log('Connected to SQLite database');
-        initializeDatabase();
-      }
-    });
+    db = connection.getDb();
   }
   return db;
 }
 
-function initializeDatabase(): void {
-  const database = getDatabase();
-  database.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
-    )
-  `);
+async function initializeDatabase(): Promise<void> {
+  try {
+    // Initialize database connection
+    db = connection.getDb();
 
-  // Create password reset tokens table
-  database.run(`
-    CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      expires_at DATETIME NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      used BOOLEAN DEFAULT FALSE,
-      FOREIGN KEY (user_id) REFERENCES users (id)
-    )
-  `);
+    // Create users table
+    await promisifyDbRun(getDatabase(), `
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT,
+        oauth_provider TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME
+      )
+    `);
+  } catch (error) {
+    logger.error('Error initializing auth-service database:', error);
+    throw error;
+  }
 }
 
+// Initialize the database
+initializeDatabase().catch((error) => {
+  logger.error('Failed to initialize database:', error);
+  process.exit(1);
+});
+
 export function runQuery<T = any>(query: string, params: any[] = []): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const database = getDatabase();
-    database.run(query, params, function(this: sqlite3.RunResult, err: Error | null) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(this as T);
-      }
-    });
-  });
+  return promisifyDbRun(getDatabase(), query, params) as Promise<T>;
 }
 
 export function getQuery<T = any>(query: string, params: any[] = []): Promise<T | undefined> {
-  return new Promise((resolve, reject) => {
-    const database = getDatabase();
-    database.get(query, params, (err: Error | null, row: T | undefined) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(row);
-      }
-    });
-  });
+  return promisifyDbGet<T>(getDatabase(), query, params);
 }

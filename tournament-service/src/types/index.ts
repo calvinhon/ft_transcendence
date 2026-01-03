@@ -4,8 +4,6 @@
 export interface Tournament {
   id: number;
   name: string;
-  description: string | null;
-  max_participants: number;
   current_participants: number;
   status: 'open' | 'active' | 'finished' | 'full';
   created_by: number;
@@ -40,8 +38,6 @@ export interface TournamentMatch {
 
 export interface CreateTournamentBody {
   name: string;
-  description?: string;
-  maxParticipants?: number;
   createdBy: number;
 }
 

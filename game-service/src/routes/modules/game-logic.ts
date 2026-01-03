@@ -48,7 +48,7 @@ export class PongGame {
     const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
 
     // Initialize game components
-    this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode);
+    this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode, this.gameSettings.powerupsEnabled);
     this.ai = new GameAI(this.gameSettings.aiDifficulty, this.gameSettings.gameMode, paddleSpeed);
     this.stateManager = new GameStateManager(gameId, player1, player2);
     this.scoring = new GameScoring(gameId, player1, player2, this.gameSettings.scoreToWin);
@@ -73,8 +73,8 @@ export class PongGame {
 
     // Initialize paddles based on game mode
     this.paddles = {
-      player1: { x: 50, y: 250 },
-      player2: { x: 750, y: 250 }
+      player1: { x: 50, y: 250, height: 100, originalHeight: 100 },
+      player2: { x: 750, y: 250, height: 100, originalHeight: 100 }
     };
 
     if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
@@ -89,7 +89,9 @@ export class PongGame {
       for (let i = 0; i < team1Count; i++) {
         this.paddles.team1.push({
           x: 50,
-          y: team1Spacing * (i + 1) - 50 // Center each paddle in its section
+          y: team1Spacing * (i + 1) - 50, // Center each paddle in its section
+          height: 100,
+          originalHeight: 100
         });
       }
 
@@ -97,7 +99,9 @@ export class PongGame {
       for (let i = 0; i < team2Count; i++) {
         this.paddles.team2.push({
           x: 750,
-          y: team2Spacing * (i + 1) - 50
+          y: team2Spacing * (i + 1) - 50,
+          height: 100,
+          originalHeight: 100
         });
       }
 
@@ -131,7 +135,7 @@ export class PongGame {
 
   startCountdown(): void {
     this.stateManager.startCountdown(
-      () => this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue()),
+      () => this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue(), this.physics.powerup),
       () => {
         this.physics.unfreezeBall(this.ball);
         this.startGameLoop();
@@ -141,21 +145,32 @@ export class PongGame {
 
   startGameLoop(): void {
     this.stateManager.startGameLoop(() => {
-      // Check if AI control is needed based on game mode
       let shouldActivateAI = false;
 
-      if (this.gameSettings.gameMode === 'coop') {
-        // In coop mode, check if player2 is a bot
-        shouldActivateAI = this.player2.userId === 0;
+      if (this.gameSettings.gameMode === 'campaign') {
+        shouldActivateAI = true;
       } else if (this.gameSettings.gameMode === 'arcade' || this.gameSettings.gameMode === 'tournament') {
-        // In team modes, check if there are any bot players in team2
-        shouldActivateAI = Boolean(this.gameSettings.team2Players &&
+        // In team modes, check if there are any bot players in EITHER team
+        const hasTeam1Bots = Boolean(this.gameSettings.team1Players &&
+          this.gameSettings.team1Players.some(player => player.isBot === true));
+
+        const hasTeam2Bots = Boolean(this.gameSettings.team2Players &&
           this.gameSettings.team2Players.some(player => player.isBot === true));
+
+        shouldActivateAI = hasTeam1Bots || hasTeam2Bots;
       }
 
       if (shouldActivateAI) {
-        this.ai.updateBallPosition(this.ball.x, this.ball.y);
-        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team2Players);
+        let now = Date.now();
+        let lagAI = 1000;
+        if (this.gameSettings.aiDifficulty === 'medium')
+          lagAI = 600;
+        if (this.gameSettings.aiDifficulty === 'hard')
+          lagAI = 300;
+        if (now - this.ai.lastBallUpdate >= lagAI) {
+          this.ai.updateBallPosition(this.ball.x, this.ball.y); this.ai.lastBallUpdate = now;
+        }
+        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
       }
 
       const result = this.physics.updateBall(this.ball, this.paddles, this.gameId);
@@ -170,12 +185,12 @@ export class PongGame {
           // Reset ball after a delay
           setTimeout(() => {
             this.physics.unfreezeBall(this.ball);
-            this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+            this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
           }, 1000);
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
     });
   }
 
@@ -188,21 +203,68 @@ export class PongGame {
       this.gameSettings.gameMode,
       paddleSpeed,
       this.gameId,
-      paddleIndex
+      paddleIndex,
+      this.player1.userId,
+      this.player2.userId
     );
 
     if (moved) {
-      // Sync tournament paddles
+      // Sync tournament paddles - team arrays are the source of truth, sync TO player1/player2 paddles
       if (this.gameSettings.gameMode === 'tournament') {
         if (playerId === this.player1.userId && this.paddles.team1 && this.paddles.team1[0]) {
-          this.paddles.team1[0].y = this.paddles.player1.y;
+          this.paddles.player1.y = this.paddles.team1[0].y;
         } else if (playerId === this.player2.userId && this.paddles.team2 && this.paddles.team2[0]) {
-          this.paddles.team2[0].y = this.paddles.player2.y;
+          this.paddles.player2.y = this.paddles.team2[0].y;
         }
       }
 
-      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState());
+      this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
     }
+  }
+
+  movePaddleBySide(side: 'left' | 'right', direction: 'up' | 'down', paddleIndex?: number): void {
+    const paddleSpeed = this.getPaddleSpeedValue(this.gameSettings.paddleSpeed);
+    const team = side === 'left' ? 'team1' : 'team2';
+    const index = paddleIndex ?? 0;
+
+    logger.gameDebug(this.gameId, `Moving ${side} paddle (${team}[${index}]) ${direction}`);
+
+    // Check if this paddle is controlled by a BOT
+    const teamPlayers = side === 'left' ? this.gameSettings.team1Players : this.gameSettings.team2Players;
+    if (teamPlayers && teamPlayers[index] && teamPlayers[index].isBot) {
+      // Ignore user input for Bot paddles
+      return;
+    }
+
+    const teamPaddles = this.paddles[team as keyof Paddles] as any[];
+    if (!teamPaddles || !teamPaddles[index]) {
+      logger.gameDebug(this.gameId, `No paddle found at ${team}[${index}]`);
+      return;
+    }
+
+    const paddle = teamPaddles[index];
+    const oldY = paddle.y;
+
+    if (direction === 'up' && paddle.y > 0) {
+      paddle.y = Math.max(0, paddle.y - paddleSpeed);
+      logger.gameDebug(this.gameId, `Paddle moved UP from ${oldY} to ${paddle.y}`);
+    } else if (direction === 'down') {
+      const paddleHeight = paddle.height || 100;
+      const maxY = 600 - paddleHeight;
+      if (paddle.y < maxY) {
+        paddle.y = Math.min(maxY, paddle.y + paddleSpeed);
+        logger.gameDebug(this.gameId, `Paddle moved DOWN from ${oldY} to ${paddle.y}`);
+      }
+    }
+
+    // Sync to player1/player2 paddles for rendering compatibility
+    if (side === 'left' && index === 0) {
+      this.paddles.player1.y = paddle.y;
+    } else if (side === 'right' && index === 0) {
+      this.paddles.player2.y = paddle.y;
+    }
+
+    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), undefined, this.physics.powerup);
   }
 
   pauseGame(): void {
@@ -234,6 +296,20 @@ export class PongGame {
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
   }
 
+  forceEndGame(reason?: string): void {
+    logger.game(this.gameId, `Force Ending Game: ${reason}`);
+    this.stateManager.endGame(); // Stops loop
+    activeGames.delete(this.gameId);
+
+    // Save with aborted flag = true
+    this.scoring.saveGameResult(true);
+
+    // Optionally broadcast end to remaining players
+    this.scoring.broadcastGameEnd();
+
+    logger.game(this.gameId, `Game force-ended and removed from active games.`);
+  }
+
   // Getters for external access
   get isPaused(): boolean {
     return this.stateManager.isGamePaused();
@@ -245,6 +321,6 @@ export class PongGame {
 
   // Compatibility method for matchmaking
   broadcastGameState(): void {
-    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue());
+    this.broadcaster.broadcastGameState(this.ball, this.paddles, this.scoring.getScores(), this.stateManager.getGameState(), this.stateManager.getCountdownValue(), this.physics.powerup);
   }
 }

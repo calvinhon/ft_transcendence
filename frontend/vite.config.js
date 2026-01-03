@@ -1,20 +1,19 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  build: {
-    outDir: 'dist',
-    rollupOptions: {
-      input: './index.html'
-    }
-  },
   server: {
-    host: '0.0.0.0',
-    port: 3000,
+    host: true,
+    port: 5173,
+    hmr: {
+      clientPort: 5173,
+    },
     proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
-      }
-    }
-  }
-})
+      "/api": {
+        target: "http://localhost:80",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  assetsInclude: ["**/*.ttf"],
+});

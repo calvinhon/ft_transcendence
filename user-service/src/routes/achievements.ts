@@ -2,7 +2,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../database';
 import { Achievement, UserAchievement } from '../types';
-import { handleDatabaseError, promisifyDbGet, promisifyDbRun, promisifyDbAll } from '../utils/database';
+import { promisifyDbGet, promisifyDbRun, promisifyDbAll } from '@ft-transcendence/common';
 
 export async function setupAchievementRoutes(fastify: FastifyInstance): Promise<void> {
   // Get all achievements

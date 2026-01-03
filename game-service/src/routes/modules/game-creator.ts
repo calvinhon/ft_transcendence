@@ -2,8 +2,10 @@
 import { GamePlayer, GameSettings } from './types';
 import { db } from './database';
 import { PongGame, activeGames } from './game-logic';
-import { logger } from './logger';
-import { createBotPlayer, createDummyPlayer, isSocketOpen } from './utils';
+import { createLogger } from '@ft-transcendence/common';
+
+const logger = createLogger('GAME-SERVICE');
+import { isSocketOpen } from './utils';
 
 // Handles game creation in database and active games management
 export class GameCreator {
@@ -19,32 +21,38 @@ export class GameCreator {
       tournamentMatchId?: number;
     } = {}
   ): Promise<{ gameId: number; game: PongGame }> {
-    const gameMode = gameSettings?.gameMode || 'coop';
-    const team1Players = options.team1Players ? JSON.stringify(options.team1Players) : null;
-    const team2Players = options.team2Players ? JSON.stringify(options.team2Players) : null;
+    const gameMode = gameSettings?.gameMode || 'campaign';
+    const getPlayerIds = (players: any[] | undefined) => {
+      if (!players) return null;
+      return JSON.stringify(players.map(p => typeof p === 'number' ? p : p.userId));
+    };
+
+    const team1Players = getPlayerIds(options.team1Players);
+    const team2Players = getPlayerIds(options.team2Players);
     const tournamentId = options.tournamentId || null;
     const tournamentMatchId = options.tournamentMatchId || null;
 
     // Include team player data in game settings
     const fullGameSettings: GameSettings = {
-      gameMode: gameSettings?.gameMode || 'coop',
+      gameMode: gameSettings?.gameMode || 'campaign',
       aiDifficulty: gameSettings?.aiDifficulty || 'medium',
       ballSpeed: gameSettings?.ballSpeed || 'medium',
       paddleSpeed: gameSettings?.paddleSpeed || 'medium',
       powerupsEnabled: gameSettings?.powerupsEnabled || false,
       accelerateOnHit: gameSettings?.accelerateOnHit || false,
-      scoreToWin: gameSettings?.scoreToWin || 5,
+      scoreToWin: typeof gameSettings?.scoreToWin !== 'undefined' ? Number(gameSettings.scoreToWin) : 5,
       team1PlayerCount: gameSettings?.team1PlayerCount,
       team2PlayerCount: gameSettings?.team2PlayerCount,
       team1Players: options.team1Players,
-      team2Players: options.team2Players
+      team2Players: options.team2Players,
+
     };
 
     return new Promise((resolve, reject) => {
       db.run(
         'INSERT INTO games (player1_id, player2_id, game_mode, team1_players, team2_players, tournament_id, tournament_match_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [player1.userId, player2.userId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId],
-        function(this: any, err: Error | null) {
+        function (this: any, err: Error | null) {
           if (err) {
             logger.error('Failed to create game in database:', err);
             reject(err);
@@ -52,10 +60,11 @@ export class GameCreator {
           }
 
           const gameId = this.lastID!;
+          logger.matchmaking('Game settings scoreToWin:', fullGameSettings.scoreToWin);
           const game = new PongGame(player1, player2, gameId, fullGameSettings);
           activeGames.set(gameId, game);
 
-          logger.matchmaking('Created game:', gameId, 'for players:', player1.username, 'vs', player2.username);
+          logger.game('Created game:', gameId, 'for players:', player1.username, 'vs', player2.username);
           resolve({ gameId, game });
         }
       );
@@ -77,13 +86,13 @@ export class GameCreator {
     // Send to player1
     if (isSocketOpen(player1.socket)) {
       player1.socket.send(JSON.stringify(startMessage));
-      logger.matchmaking('Sent gameStart to:', player1.username);
+      logger.game('Sent gameStart to:', player1.username);
     }
 
     // Send to player2 (only if not a bot)
     if (player2.userId !== 0 && isSocketOpen(player2.socket)) {
       player2.socket.send(JSON.stringify(startMessage));
-      logger.matchmaking('Sent gameStart to:', player2.username);
+      logger.game('Sent gameStart to:', player2.username);
     }
 
     // Send initial game state after a short delay
@@ -95,6 +104,7 @@ export class GameCreator {
     }, 100);
   }
 
+  /*
   // Create a dummy bot player
   createBotPlayer(): GamePlayer {
     return createBotPlayer();
@@ -104,6 +114,7 @@ export class GameCreator {
   createDummyPlayer(userId: number, username: string): GamePlayer {
     return createDummyPlayer(userId, username);
   }
+  */
 }
 
 // Global instance
