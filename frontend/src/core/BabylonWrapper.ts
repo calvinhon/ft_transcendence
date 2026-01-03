@@ -1,4 +1,4 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, HemisphericLight, CubicEase, SSAO2RenderingPipeline, LensRenderingPipeline, QuarticEase } from "@babylonjs/core";
+import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, CubicEase, SSAO2RenderingPipeline, LensRenderingPipeline, QuarticEase } from "@babylonjs/core";
 import { AbstractMesh, AppendSceneAsync } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { HtmlMeshRenderer, HtmlMesh, FitStrategy } from "@babylonjs/addons";
@@ -275,6 +275,34 @@ export class BabylonWrapper {
         this.animateCameraTo(targetRadius, targetPos, targetFov, this.loreCameraState.alpha, this.loreCameraState.beta, 1500);
     }
 
+    public async panToTV(): Promise<void> {
+        const tvMesh = this.getTVMesh();
+        if (!tvMesh) {
+            console.warn("TV_Mesh not found");
+            return;
+        }
+
+        const targetPos = new Vector3(1.2056, 1.0864, 0.0801);
+        console.log("Panning to TV Mesh:", tvMesh.name, "at", targetPos);
+
+        // Use user-verified values from debug session
+        const targetRadius = 1.1;
+        const targetFov = 0.6;
+        const targetAlpha = -3.3197;
+        const targetBeta = 1.4772;
+
+        this.animateCameraTo(targetRadius, targetPos, targetFov, targetAlpha, targetBeta, 1500);
+    }
+
+    public getTVMesh(): AbstractMesh | null {
+        // Try exact name first, then loose search
+        let mesh = this.scene.getMeshByName("TV_Mesh");
+        if (!mesh) {
+            mesh = this.scene.meshes.find(m => m.name.includes("TV_Mesh")) || null;
+        }
+        return mesh;
+    }
+
     public async panToMonitor(): Promise<void> {
         if (!this.defaultCameraState) return;
 
@@ -296,16 +324,6 @@ export class BabylonWrapper {
     public enterGameMode(): void {
         this.isGameMode = true;
 
-        // Hide Office Environment
-        this.scene.meshes.forEach(m => {
-            if (!m.name.startsWith("game_")) {
-                m.isVisible = false;
-            }
-        });
-
-        // Top Down Camera Position for Game
-        const targetPos = Vector3.Zero();
-
         // Save current state to restore later
         if (!this.defaultCameraState) {
             this.defaultCameraState = {
@@ -319,6 +337,8 @@ export class BabylonWrapper {
         // Stop existing animations
         this.scene.stopAnimation(this.camera);
         this.camera.detachControl();
+
+        // Unlimit camera for animation
         this.camera.lowerRadiusLimit = null;
         this.camera.upperRadiusLimit = null;
         this.camera.lowerBetaLimit = null;
@@ -327,59 +347,43 @@ export class BabylonWrapper {
         // Ensure Up vector is correct
         this.camera.upVector = new Vector3(0, 1, 0);
 
-        // Animate to Game View
-        this.animateCameraTo(
-            14,
-            targetPos,
-            0.6,
-            -Math.PI / 2,
-            0.01,
-            1500,
-            () => {
-                this.camera.radius = 14;
-                this.camera.alpha = -Math.PI / 2;
-                this.camera.beta = 0.01;
-                this.camera.target = Vector3.Zero();
-            }
-        );
+        // Transition to TV instead of hiding office
+        this.panToTV();
 
         // Adjust Lighting
         if (this.screenLight) this.screenLight.setEnabled(false);
 
-        // Add Game Light if needed
+        // Add Game Light if needed - positioned at TV
         let gameLight = this.scene.getLightByName("gameLight");
+        const tvMesh = this.getTVMesh();
+
         if (!gameLight) {
-            gameLight = new HemisphericLight("gameLight", new Vector3(0, 1, 0), this.scene);
-            gameLight.intensity = 0.4;
+            gameLight = new PointLight("gameLight", Vector3.Zero(), this.scene);
+            gameLight.intensity = 0.8;
+            (gameLight as PointLight).range = 10;
         }
+
+        if (tvMesh) {
+            // Position light in front of TV
+            const pos = tvMesh.getAbsolutePosition().clone();
+            pos.z -= 2; // Offset in front
+            (gameLight as PointLight).position = pos;
+        } else {
+            (gameLight as PointLight).position = new Vector3(0, 5, 0);
+        }
+
         gameLight.setEnabled(true);
     }
 
     public exitGameMode(): void {
         this.isGameMode = false;
-        // Restore Office Environment
-        this.scene.meshes.forEach(m => {
-            // Don't show game meshes
-            if (!m.name.startsWith("game_")) {
-                m.isVisible = true;
-            }
-            // Specific hides from loadModel
-            if (m.name.toLowerCase().includes("glowing screen")) m.isVisible = false;
-            // Triggers are invisible by default
-            if (m.name.includes("Trigger")) m.visibility = 0;
-        });
-
-        // Show HTML Mesh
-        if (this.htmlMesh) {
-            this.htmlMesh.setEnabled(true);
-        }
 
         // Restore Lighting
         if (this.screenLight) this.screenLight.setEnabled(true);
         const gameLight = this.scene.getLightByName("gameLight");
         if (gameLight) gameLight.setEnabled(false);
 
-        // Turn off Game Meshes (cleanup should handle this, but safety net)
+        // Turn off Game Meshes
         this.scene.meshes.forEach(m => {
             if (m.name.startsWith("game_")) {
                 m.dispose();
