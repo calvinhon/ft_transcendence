@@ -85,12 +85,6 @@ export class GamePage extends AbstractComponent {
             if (screen) {
                 screen.classList.remove('bg-black');
                 screen.classList.add('bg-transparent');
-
-                // If using HtmlMeshProjector (Babylon), we might want to hide the screen container 
-                // BUT if we hide it, HtmlMesh might not find content. 
-                // Actually HtmlMesh clones or moves content.
-                // In 3D mode, the GAME is rendered by Babylon meshes, NOT HtmlMesh. 
-                // So we can hide the 2D UI container.
                 screen.style.display = 'none';
             }
             this.renderer = new ThreeDGameRenderer() as any;
@@ -128,18 +122,6 @@ export class GamePage extends AbstractComponent {
         this.p2Ids = sanitizedTeam2.map((p: any) => p.userId);
 
         console.log("Game IDs:", this.p1Ids, this.p2Ids);
-
-        const service = GameService.getInstance();
-        service.connect({
-            mode: setup.mode,
-            ballSpeed: setup.settings.ballSpeed,
-            paddleSpeed: setup.settings.paddleSpeed,
-            powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
-            accumulateOnHit: setup.settings.accumulateOnHit,
-            difficulty: setup.settings.difficulty,
-            scoreToWin: setup.settings.scoreToWin,
-            campaignLevel: setup.campaignLevel
-        } as any, sanitizedTeam1, sanitizedTeam2);
 
         // HUD Names and Avatars
         const p1Name = sanitizedTeam1.map((p: any) => p.username).join(', ') || 'PLAYER 1';
@@ -254,7 +236,7 @@ export class GamePage extends AbstractComponent {
                 this.animationFrameId = requestAnimationFrame(updateLoop);
             }
         };
-
+        const service = GameService.getInstance();
         service.onGameState(async (state) => {
             // Handle Non-GameState Events strictly
             if (state.type === 'gamePaused') {
@@ -286,8 +268,7 @@ export class GamePage extends AbstractComponent {
 
                 targetState = state;
 
-                // Update Score DOM (with null checks)
-                // Update Score DOM (with fallback for nested scores object)
+                // Update Score DOM 
                 const lScore = state.leftScore !== undefined ? state.leftScore : (state.scores?.player1 ?? 0);
                 const rScore = state.rightScore !== undefined ? state.rightScore : (state.scores?.player2 ?? 0);
 
@@ -324,8 +305,6 @@ export class GamePage extends AbstractComponent {
                 // Prevent multiple recordings/overlays
                 if (this.isRecording) return;
                 this.isRecording = true;
-
-                // Save Game Result (ALL modes now)
 
                 // Scores are in state.scores.player1 and state.scores.player2
                 const p1Score = state.scores?.player1 ?? state.player1Score ?? 0;
@@ -441,6 +420,17 @@ export class GamePage extends AbstractComponent {
                 }
             }
         });
+
+        service.connect({
+            mode: setup.mode,
+            ballSpeed: setup.settings.ballSpeed,
+            paddleSpeed: setup.settings.paddleSpeed,
+            powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
+            accumulateOnHit: setup.settings.accumulateOnHit,
+            difficulty: setup.settings.difficulty,
+            scoreToWin: setup.settings.scoreToWin,
+            campaignLevel: setup.campaignLevel
+        } as any, sanitizedTeam1, sanitizedTeam2);
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
@@ -478,7 +468,6 @@ export class GamePage extends AbstractComponent {
                 const overlay = document.createElement('div');
                 overlay.id = overlayId;
 
-                // Add content (RESTORED)
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
                     <div class="flex flex-col gap-4 items-center">

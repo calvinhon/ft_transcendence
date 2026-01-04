@@ -1,5 +1,3 @@
-
-
 // Backend uses fixed 800x600 canvas. We scale to actual canvas size.
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
@@ -81,11 +79,6 @@ export class GameRenderer {
         if (gameState.countdownValue !== undefined && gameState.gameState === 'countdown') {
             this.drawCountdown(gameState.countdownValue, width, height);
         }
-
-        // Game over is now handled by GamePage overlay, not canvas
-        // if (gameState.gameState === 'finished') {
-        //     this.drawGameOver(gameState, width, height);
-        // }
     }
 
     private drawBorder(w: number, h: number): void {
@@ -119,7 +112,7 @@ export class GameRenderer {
             return;
         }
 
-        // Create cache
+        // Create cache to allow for better performance by not having to draw the grid every frame
         this.gridCanvas = document.createElement('canvas');
         this.gridCanvas.width = w;
         this.gridCanvas.height = h;
@@ -256,11 +249,11 @@ export class GameRenderer {
 
         // Left Controls
         ctx.textAlign = 'left';
-        ctx.fillText('TEAM 1: Q/A (P1) | W/S (P2) | E/D (P3)', 20, y);
+        ctx.fillText('TEAM 1: Q/A (P1) | W/S (P2)', 20, y);
 
         // Right Controls
         ctx.textAlign = 'right';
-        ctx.fillText('TEAM 2: U/J (P1) | I/K (P2) | O/L (P3)', w - 20, y);
+        ctx.fillText('TEAM 2: U/J (P1) | I/K (P2)', w - 20, y);
 
         ctx.restore();
     }
@@ -292,7 +285,6 @@ export class GameRenderer {
         ctx.shadowBlur = 10; // Optimized for performance
         ctx.fillStyle = color;
 
-        // Square Ball for Retro Feel
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 
         ctx.shadowBlur = 0;
@@ -403,33 +395,7 @@ export class GameRenderer {
         ctx.shadowBlur = 0;
     }
 
-    // Game over is now handled by GamePage HTML overlay for better flexibility
-    // private drawGameOver(gameState: any, w: number, h: number): void {
-    //     const ctx = this.ctx;
-    //     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    //     ctx.fillRect(0, 0, w, h);
-    //
-    //     ctx.shadowColor = '#ffffff';
-    //     ctx.shadowBlur = 20;
-    //     ctx.fillStyle = '#ffffff';
-    //     ctx.font = 'bold 60px "VCR OSD Mono", monospace';
-    //     ctx.textAlign = 'center';
-    //     ctx.textBaseline = 'middle';
-    //
-    //     const scores = gameState.scores;
-    //     let winnerText = "GAME OVER";
-    //     if (scores.player1 > scores.player2) winnerText = "PLAYER 1 WINS";
-    //     if (scores.player2 > scores.player1) winnerText = "PLAYER 2 WINS";
-    //
-    //     ctx.fillText(winnerText, w / 2, h / 2);
-    //
-    //     ctx.font = '20px "PixelCode", monospace';
-    //     ctx.fillText("PRESS EXIT TO RETURN", w / 2, h / 2 + 60);
-    //
-    //     ctx.shadowBlur = 0;
-    // }
     public dispose(): void {
         window.removeEventListener('resize', () => this.resize());
-        // Clean up any other cache or events if necessary
     }
 }

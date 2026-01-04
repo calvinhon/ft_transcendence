@@ -183,13 +183,11 @@ export class GameService {
     }
 
     public handleKeyDown(key: string): void {
-
         this.keys[key] = true;
         this.lastKeyPressTime[key] = Date.now();
     }
 
     public handleKeyUp(key: string): void {
-
         this.keys[key] = false;
     }
 

@@ -61,8 +61,6 @@ export class ThreeDGameRenderer {
         // Check if one already exists to avoid duplication errors
         this.glowLayer = this.scene.effectLayers.find(e => e instanceof GlowLayer) || new GlowLayer("gameGlow", this.scene);
         this.glowLayer.intensity = 0.4;
-
-        // Removed resize() calling camera updates to avoid conflict with panToTV
     }
 
     private createArena(): void {
@@ -170,8 +168,6 @@ export class ThreeDGameRenderer {
         this.powerupLight.intensity = 1.0;
         this.powerupLight.diffuse = Color3.Yellow();
         this.powerupLight.range = 8; // Wider range
-
-        // Pulse animation handled in update
     }
 
     public render(gameState: any, _gameMode: string = 'campaign'): void {
@@ -319,9 +315,6 @@ export class ThreeDGameRenderer {
             }
         }
     }
-
-    // Removed resize() as it conflicts with BabylonWrapper camera handling
-
 
     public dispose(): void {
         const wrapper = BabylonWrapper.getInstance();
