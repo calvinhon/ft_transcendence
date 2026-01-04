@@ -142,6 +142,9 @@ services:
     command: "npx hardhat run scripts/deploy.ts --network docker"
     networks:
       - transcendence-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   blockchain-service:
     build: ./blockchain-service
