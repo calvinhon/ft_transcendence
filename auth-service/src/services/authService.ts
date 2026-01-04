@@ -5,6 +5,8 @@ import axios from 'axios';
 import { User, DatabaseUser } from '../types';
 import { getQuery, runQuery } from '../utils/database';
 
+let sessionSecret: any = null;
+
 export class AuthService {
   async register(username: string, email: string, password: string): Promise<{ userId: number }> {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -14,15 +16,27 @@ export class AuthService {
       [username, email, hashedPassword]
     );
 
+    if (!sessionSecret) {
+      try {
+        const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Server_Session`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+        const secrets = vaultResponse.data.data.data;
+        if (!secrets || !secrets.Secret)
+          throw new Error('Vault response missing secrets');
+        sessionSecret = secrets.Secret;
+      } catch (err: any) {
+        console.log("Failed server_session credentials: ", err.message );
+      }
+    }
+
     try {
       // Add a profile for the user in the user database.
       console.log('Attempting to create a user profile for the new user');
-      let profile = await axios.get(`http://user-service:3000/profile/${result.lastID}`, { timeout: 5000 });
+      let profile = await axios.get(`http://user-service:3000/profile/${result.lastID}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
       if (profile.status === 200)
         console.log('User profile ready for update');
 
       console.log('Attempting to update the user profile for the new user');
-      profile = await axios.put(`http://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000 });
+      profile = await axios.put(`http://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
       if (profile.status === 200)
         console.log('User profile ready');
     } catch (err: any) {
@@ -37,7 +51,7 @@ export class AuthService {
       [identifier, identifier]
     );
 
-    if (!user) {
+    if (!user || !user.password_hash) {
       throw new Error('Invalid credentials');
     }
 

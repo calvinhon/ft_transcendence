@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { getQuery, runQuery } from '../../utils/database';
 
 let googleSecrets: any = null;
+let sessionSecret: any = null;
 
 function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: { success: boolean, user?: any, error?: string }): void {
 	const messageData = data.success
@@ -35,7 +36,7 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 	if (request.query.provider !== 'Google')
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
 
-	// Use secrets cache if available (check clientID to determine if populated)
+	// Use secrets cache if available
 	if (!googleSecrets) {
 		try {
 			const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Google_API`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
@@ -56,7 +57,7 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 		path: '/',
 		secure: true,
 		httpOnly: true,
-		maxAge: 180
+		maxAge: 120
 	});
 
 	// Create API Sign In redirect
@@ -80,6 +81,18 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		return generateOAuthPopupResponse(reply, 403, { success: false, error: 'Invalid State' });
 
 	let userData: { email: string, name: string, picture: string } = { email: '', name: '', picture: '' };
+
+	if (!sessionSecret) {
+		try {
+			const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Server_Session`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+			const secrets = vaultResponse.data.data.data;
+			if (!secrets || !secrets.Secret)
+				throw new Error('Vault response missing secrets');
+			sessionSecret = secrets.Secret;
+		} catch (err: any) {
+			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
+		}
+	}
 
 	try {
 		const response = await axios.post('https://oauth2.googleapis.com/token', {
@@ -109,15 +122,22 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		if (!user.oauth_provider)
 			return generateOAuthPopupResponse(reply, 409, { success: false, error: 'Email is already in use' });
 		try {
-			const response = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000 });
+			const response = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 			if (!response.data.is_custom_avatar && userData.picture) {
-				const profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture, is_custom_avatar: 0 }, { timeout: 5000 });
+				const profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture, is_custom_avatar: 0 }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 				if (profile.status === 200)
 					console.log('Updated the image of the user');
 			}
 		} catch (err) {
 			console.log('Image update for existing user failed');
 		}
+
+		if (!request.session.authenticated) {
+			request.session.userId = Number(user.userId);
+			request.session.authenticated = true;
+			await request.session.save();
+		}
+
 		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email } });
 	} else { // register the new user
 		try {
@@ -139,21 +159,25 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		try {
 			// Add a profile for the user in the user database.
 			console.log('Attempting to create a user profile for the new user');
-			let profile = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000 });
+			let profile = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+
 			if (profile.status === 200)
 				console.log('User profile ready for update');
 
 			console.log('Attempting to update the user profile for the new user');
-			profile = await axios.put(`http://user-service:3000/profile/${user.id}`, {
-				displayName: userData.name,
-				bio: 'External user connected through Google',
-				avatarUrl: userData.picture || null
-			}, { timeout: 5000 });
+			profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { displayName: userData.name, bio: 'External user connected through Google', avatarUrl: userData.picture || null }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 			if (profile.status === 200)
 				console.log('User profile ready');
 		} catch (err: any) {
 			console.log('Something went wrong');
 		}
+
+		if (!request.session.authenticated) {
+			request.session.userId = Number(user.userId);
+			request.session.authenticated = true;
+			await request.session.save();
+		}
+
 		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email } });
 	}
 }
