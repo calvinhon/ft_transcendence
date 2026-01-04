@@ -246,6 +246,37 @@ make help
 - **Caching**: Strategic caching for frequently accessed data
 - **Containerization**: Efficient resource utilization with Docker
 
+## 🔧 Troubleshooting
+
+### Database Permission Issues (When Switching Hosts)
+
+**Problem**: When moving the project between different computers or users, you may encounter database permission errors like:
+```
+Error: SQLITE_CANTOPEN: unable to open database file
+Error: EACCES: permission denied
+```
+
+**Cause**: SQLite database files retain ownership from the previous host system. Docker containers may create files owned by root or other users.
+
+**Solution**: Run the ownership fix command before starting services:
+```bash
+make fix-ownership
+```
+
+This command:
+- Sets proper permissions (664) on all `.db` files
+- Fixes ownership issues when switching between hosts
+- Is automatically run during `make dev` and `make clean-start`
+
+**Prevention**: Always run `make fix-ownership` after cloning or moving the project to a new system.
+
+### Common Issues
+
+- **Port conflicts**: Ensure ports 8080, 8443, and 8200 are available
+- **Docker issues**: Run `make clean-start` for a complete reset
+- **SSL certificate errors**: The project uses self-signed certificates for development
+- **Service startup failures**: Check logs with `make logs`
+
 ## 🤝 Contributing
 
 1. Fork the repository

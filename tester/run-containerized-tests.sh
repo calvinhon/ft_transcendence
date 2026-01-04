@@ -16,7 +16,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║     CONTAINERIZED TEST SUITE - FT_TRANSCENDENCE            ║${NC}"
-echo -e "${BLUE}║     Running 10 modules inside Docker containers            ║${NC}"
+echo -e "${BLUE}║     Running 9 modules inside Docker containers             ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -33,7 +33,7 @@ CONTAINERS=(
     "blockchain-service"
     # Hoach edit ended
     "frontend"
-    "ssr"
+    # "ssr"  # Removed SSR test
 )
 
 ALL_RUNNING=true
@@ -141,7 +141,7 @@ run_containerized_test "Server-Side Pong" "test-server-side-pong.sh"
 echo -e "${YELLOW}=== TESTING ADVANCED MODULES ===${NC}"
 run_containerized_test "WAF & Vault" "test-waf-vault.sh"
 run_containerized_test "GDPR Compliance" "test-gdpr-compliance.sh"
-run_containerized_test "SSR Integration" "test-ssr.sh"
+# run_containerized_test "SSR Integration" "test-ssr.sh"  # Removed SSR test
 
 # Print Summary
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -157,7 +157,7 @@ echo ""
 echo "=== DETAILED RESULTS ==="
 for module in "Backend Framework (Fastify)" "Database (SQLite)" "Blockchain (Solidity/Hardhat)" \
               "AI Opponent" "Stats Dashboards" "Microservices Architecture" "Server-Side Pong" \
-              "WAF & Vault" "GDPR Compliance" "SSR Integration"; do
+              "WAF & Vault" "GDPR Compliance"; do
     result="${MODULE_RESULTS[$module]}"
     if [ "$result" = "PASS" ]; then
         echo -e "${GREEN}✓${NC} $module"

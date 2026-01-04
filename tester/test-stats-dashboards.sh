@@ -51,7 +51,7 @@ setup_test_user() {
     local email="stats_test_${timestamp}@example.com"
     
     # Create test user
-    local register_response=$(curl -sk -X POST https://localhost/api/auth/register \
+    local register_response=$(curl -sk -X POST https://localhost:8443/api/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"${username}\",\"email\":\"${email}\",\"password\":\"TestPass123!\"}" 2>/dev/null)
     
@@ -79,7 +79,7 @@ test_dashboard_endpoint() {
     
     # Hoach edited - Updated to use HTTPS endpoint through nginx proxy
     # Try localhost first (host), works with wrapper script replacement in Docker
-    local response=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 2 https://localhost/api/game/stats 2>/dev/null)
+    local response=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 2 https://localhost:8443/api/game/stats 2>/dev/null)
     # Hoach edit ended
     
     if [ "$response" = "200" ] || [ "$response" = "401" ] || [ "$response" = "404" ]; then
@@ -96,7 +96,7 @@ test_game_history_api() {
     echo -e "${YELLOW}Running Test 2: Game History API${NC}"
     
     # Hoach edited - Changed from leaderboard to game history API, using HTTPS endpoint
-    local response=$(curl -sk https://localhost/api/game/history/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/game/history/${TEST_USER_ID} 2>/dev/null)
     # Hoach edit ended
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -112,7 +112,7 @@ test_game_history_api() {
 test_user_profile_stats() {
     echo -e "${YELLOW}Running Test 3: User Profile Stats${NC}"
     
-    local response=$(curl -sk https://localhost/api/user/profile/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/user/profile/${TEST_USER_ID} 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 3 "User Profile Stats" "PASS"
@@ -127,7 +127,7 @@ test_user_profile_stats() {
 test_game_statistics() {
     echo -e "${YELLOW}Running Test 4: Game Statistics${NC}"
     
-    local response=$(curl -sk https://localhost/api/game/stats/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/game/stats/${TEST_USER_ID} 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 4 "Game Statistics" "PASS"
@@ -142,7 +142,7 @@ test_game_statistics() {
 test_winloss_ratio() {
     echo -e "${YELLOW}Running Test 5: Win/Loss Ratio${NC}"
     
-    local response=$(curl -sk https://localhost/api/game/stats/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/game/stats/${TEST_USER_ID} 2>/dev/null)
     
     # Check if valid JSON response exists (win/loss data is computed from games)
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -158,7 +158,7 @@ test_winloss_ratio() {
 test_ranking_system() {
     echo -e "${YELLOW}Running Test 6: Ranking System${NC}"
     
-    local response=$(curl -sk https://localhost/api/tournament/user/${TEST_USER_ID}/rankings 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/tournament/user/${TEST_USER_ID}/rankings 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 6 "Ranking System" "PASS"
@@ -173,7 +173,7 @@ test_ranking_system() {
 test_historical_data() {
     echo -e "${YELLOW}Running Test 7: Historical Data${NC}"
     
-    local response=$(curl -sk "https://localhost/api/game/history/${TEST_USER_ID}" 2>/dev/null)
+    local response=$(curl -sk "https://localhost:8443/api/game/history/${TEST_USER_ID}" 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Historical Data" "PASS"
@@ -188,7 +188,7 @@ test_historical_data() {
 test_performance_metrics() {
     echo -e "${YELLOW}Running Test 8: Performance Metrics${NC}"
     
-    local response=$(curl -sk https://localhost/api/game/stats/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/game/stats/${TEST_USER_ID} 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 8 "Performance Metrics" "PASS"
@@ -236,7 +236,7 @@ test_realtime_updates() {
 test_data_export() {
     echo -e "${YELLOW}Running Test 11: Data Export${NC}"
     
-    local response=$(curl -sk -X GET "https://localhost/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
+    local response=$(curl -sk -X GET "https://localhost:8443/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
     
     if [ -n "$response" ]; then
         log_result 11 "Data Export" "PASS"
@@ -252,7 +252,7 @@ test_caching_strategy() {
     echo -e "${YELLOW}Running Test 12: Caching Strategy${NC}"
     
     # Check if stats endpoint responds (caching is implemented via HTTP headers by Fastify)
-    local response=$(curl -sk --max-time 2 https://localhost/api/game/stats/${TEST_USER_ID} 2>/dev/null)
+    local response=$(curl -sk --max-time 2 https://localhost:8443/api/game/stats/${TEST_USER_ID} 2>/dev/null)
     
     if [ -n "$response" ] && echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Caching Strategy" "PASS"

@@ -60,7 +60,7 @@ test_data_export() {
     echo -e "${YELLOW}Running Test 2: Data Export Functionality${NC}"
     
     # Hoach edited - Updated to use HTTPS endpoint with user ID
-    local response=$(curl -sk -X GET "https://localhost/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
+    local response=$(curl -sk -X GET "https://localhost:8443/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
     # Hoach edit ended
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
@@ -77,7 +77,7 @@ test_data_deletion() {
     echo -e "${YELLOW}Running Test 3: Data Deletion Request${NC}"
     
     # Hoach edited - Updated to use HTTPS endpoint with user ID
-    local response=$(curl -sk -X POST "https://localhost/api/user/gdpr/delete/${TEST_USER_ID}" \
+    local response=$(curl -sk -X POST "https://localhost:8443/api/user/gdpr/delete/${TEST_USER_ID}" \
         -H "Content-Type: application/json" \
         -d '{}' 2>/dev/null)
     # Hoach edit ended
@@ -96,7 +96,7 @@ test_user_anonymization() {
     echo -e "${YELLOW}Running Test 4: User Data Anonymization${NC}"
     
     # Hoach edited - Updated to use HTTPS endpoint with user ID
-    local response=$(curl -sk -X POST "https://localhost/api/user/gdpr/anonymize/${TEST_USER_ID}" \
+    local response=$(curl -sk -X POST "https://localhost:8443/api/user/gdpr/anonymize/${TEST_USER_ID}" \
         -H "Content-Type: application/json" \
         -d '{}' 2>/dev/null)
     # Hoach edit ended
@@ -142,7 +142,7 @@ test_audit_trail() {
 test_data_portability() {
     echo -e "${YELLOW}Running Test 7: Data Portability${NC}"
     
-    local response=$(curl -sk -X GET "https://localhost/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
+    local response=$(curl -sk -X GET "https://localhost:8443/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 7 "Data Portability" "PASS"
@@ -202,7 +202,7 @@ test_gdpr_response_time() {
     echo -e "${YELLOW}Running Test 11: Response Time for GDPR Requests${NC}"
     
     local start=$(date +%s%N)
-    curl -sk -X GET "https://localhost/api/user/gdpr/export/${TEST_USER_ID}" > /dev/null 2>&1
+    curl -sk -X GET "https://localhost:8443/api/user/gdpr/export/${TEST_USER_ID}" > /dev/null 2>&1
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     
@@ -221,7 +221,7 @@ test_secure_data_transmission() {
     echo -e "${YELLOW}Running Test 12: Secure Data Transmission${NC}"
     
     # Check if user service is accessible
-    local response=$(curl -sk https://localhost/api/user/health 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/user/health 2>/dev/null)
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then
         log_result 12 "Secure Data Transmission" "PASS"

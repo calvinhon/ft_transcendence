@@ -38,7 +38,7 @@ docker compose ps
 # All services should show "Up" status
 
 # 5. Verify frontend is accessible
-curl -k https://localhost 2>&1 | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
+curl -k https://localhost:8443 2>&1 | grep -q "DOCTYPE" && echo "✅ Frontend Ready"
 # Note: Using -k flag to skip SSL verification (self-signed certificate is normal for local dev)
 ```
 
@@ -70,7 +70,7 @@ curl -s http://localhost:3003/health  # Tournament Service
 URL: http://localhost
 Browser: Chrome, Firefox, Safari (recommend Firefox)
 Resolution: 1920x1080 (for best display)
-Network: Local or via HTTPS at https://localhost (if HTTPS configured)
+Network: Local or via HTTPS at https://localhost:8443 (if HTTPS configured)
 ```
 
 ### 1. Authentication & Security Module
@@ -143,7 +143,7 @@ Network: Local or via HTTPS at https://localhost (if HTTPS configured)
 #### Feature: HTTPS/TLS Security
 
 **Steps:**
-1. Open https://localhost in browser
+1. Open https://localhost:8443 in browser
 2. Browser will show certificate warning (self-signed)
 3. Click "Advanced" → "Accept Risk and Continue"
 4. **Expected:** Access granted, notice "🔒 Secure" in address bar
@@ -157,16 +157,16 @@ Network: Local or via HTTPS at https://localhost (if HTTPS configured)
 **Terminal Verification:**
 ```bash
 # 1. Check HTTPS is working (use GET instead of HEAD)
-curl -k -s https://localhost 2>&1 | head -1
+curl -k -s https://localhost:8443 2>&1 | head -1
 # Expected: <!DOCTYPE html>
 
 # 2. Register a test user
-curl -s -X POST https://localhost/register \
+curl -s -X POST https://localhost:8443/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@test.com","password":"TestPass123!"}'
 
 # 3. Verify HTTP-only cookies by logging in via HTTPS
-curl -k -s -c /tmp/cookies.txt -X POST https://localhost/login \
+curl -k -s -c /tmp/cookies.txt -X POST https://localhost:8443/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"TestPass123!"}'
 
@@ -487,7 +487,7 @@ curl -s -X POST http://localhost:8545 \
 
 **SSL/TLS Certificate Handling:**
 - Frontend (nginx): Uses self-signed HTTPS certificate
-  - Use `-k` flag with curl to skip verification: `curl -k https://localhost`
+  - Use `-k` flag with curl to skip verification: `curl -k https://localhost:8443`
   - This is normal for local development
   
 - Internal Services (port 3001-3004): Use HTTP internally
@@ -508,13 +508,13 @@ curl -s -X POST http://localhost:8545 \
 **If curl commands fail with SSL error:**
 ```bash
 # Frontend test - use -k flag
-curl -k https://localhost
+curl -k https://localhost:8443
 
 # Check if jq is available (optional for pretty-printing)
 which jq || echo "jq not installed - curl output will be raw JSON"
 
 # Curl works fine without jq:
-curl -k -s https://localhost | head -1
+curl -k -s https://localhost:8443 | head -1
 ```
 
 ### Health Check & Service Verification
@@ -558,7 +558,7 @@ curl -s http://localhost:3003/health
 
 # Frontend Health
 echo "=== Frontend ==="
-curl -s http://localhost:80 | head -1
+curl -s http://localhost:8080 | head -1
 
 # With jq for pretty printing (if installed):
 # curl -s http://localhost:3001/health | jq .
@@ -570,7 +570,7 @@ curl -s http://localhost:80 | head -1
 
 ```bash
 # Method 1: HTTPS via nginx (recommended for security)
-curl -k -s -X POST https://localhost/register \
+curl -k -s -X POST https://localhost:8443/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
@@ -604,7 +604,7 @@ curl -s -X POST http://localhost:3001/register \
 
 ```bash
 # Method 1: HTTPS via nginx (recommended - sets HttpOnly cookie via secure channel)
-curl -k -s -c /tmp/cookies.txt -X POST https://localhost/login \
+curl -k -s -c /tmp/cookies.txt -X POST https://localhost:8443/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
@@ -637,7 +637,7 @@ cat /tmp/cookies.txt | grep -i "httponly"
 # Should output something like: #HttpOnly_localhost     FALSE   /       FALSE   <timestamp>      token   <JWT_TOKEN>
 
 # Save token from login response for next requests (alternative to cookies)
-TOKEN=$(curl -k -s -X POST https://localhost/login \
+TOKEN=$(curl -k -s -X POST https://localhost:8443/login \
   -H "Content-Type: application/json" \
   -d '{"username":"terminaluser","password":"SecurePass123!"}' | grep -o '"data":{"user":{"userId":[^}]*}' | grep -o '"userId":[0-9]*')
 

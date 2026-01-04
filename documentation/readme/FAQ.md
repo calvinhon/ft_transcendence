@@ -172,7 +172,7 @@ The `/api/` prefix in the nginx configuration routes requests to the appropriate
 
 #### How SPAs Work:
 ```
-1. User visits https://localhost
+1. User visits https://localhost:8443
 2. Server sends single HTML page + JavaScript bundle
 3. JavaScript handles all subsequent navigation
 4. API calls fetch data dynamically
@@ -217,7 +217,7 @@ class Router {
 
 **1. Navigation Without Reloads:**
 ```
-1. Open https://localhost in Firefox
+1. Open https://localhost:8443 in Firefox
 2. Click navigation links: Home → Game → Tournament → Profile
 3. Notice: No page refresh, instant transitions
 4. Check Network tab: No new HTML requests
@@ -234,7 +234,7 @@ class Router {
 
 **3. Direct URL Access:**
 ```
-1. Type https://localhost/game directly in address bar
+1. Type https://localhost:8443/game directly in address bar
 2. Press Enter
 3. Game page loads directly (no redirect to home)
 4. Browser back button works correctly
@@ -1110,8 +1110,8 @@ paddle = paddles[team][0];
    - Easier debugging (can inspect traffic easily)
 
 3. **Docker Simplicity**:
-   - Port 80 is the standard HTTP port (no need to specify `:8080`)
-   - Access via `http://localhost` instead of `http://localhost:8080`
+   - Port 8080 is used for HTTP (standard non-privileged port)
+   - Access via `http://localhost:8080` instead of `http://localhost:80`
 
 4. **Security Already Implemented**:
    - **HTTP-only cookies** (prevents XSS attacks)

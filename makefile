@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild ensure-database-folders help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild ensure-database-folders fix-ownership help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -26,11 +26,13 @@ help:
 	@echo "  make purge              - 🔥 PURGE: Stop/remove ALL project containers + images"
 	@echo "  make nuke               - 🔥 NUKE: Stop all containers + prune + delete ALL images"
 	@echo "  make ps                 - Show container status"
+	@echo "  make fix-ownership      - 🔧 OWNERSHIP: Fix database file permissions when switching hosts"
 	@echo "  make test               - Show test documentation"
 	@echo ""
 	@echo "💡 Quick dev cycle: 'make dev' → code → 'make restart'"
 	@echo "💡 Fresh start: 'make clean-start' (removes everything)"
 	@echo "💡 Architecture: Microservices with SQLite (no external DB needed)"
+	@echo "💡 Database issues? Run 'make fix-ownership' when switching hosts"
 	@echo ""
 
 # Dev mode - quick development start with cached builds
@@ -41,7 +43,7 @@ dev: check-docker check-compose ensure-database-folders
 	@echo "🚀 Starting all services for development (uses build cache)..."
 	docker compose up -d --build --force-recreate
 	@$(MAKE) open
-	@echo "✅ All services started! Visit http://localhost"
+	@echo "✅ All services started! Visit http://localhost:8443"
 
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
 clean-start: check-docker check-compose clean-dev clean ensure-database-folders
@@ -188,6 +190,22 @@ ensure-database-folders:
 		touch .env; \
 		echo "✅ .env file created"; \
 	fi
+	@echo "🔧 Fixing database file ownership..."
+	@find auth-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find game-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find tournament-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find user-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find vault/data -type f -exec chmod 664 {} \; 2>/dev/null || true
+
+fix-ownership:
+	@echo "🔧 Fixing database file ownership and permissions..."
+	@echo "This fixes permission issues when moving between different hosts/users"
+	@find auth-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find game-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find tournament-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find user-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
+	@find vault/data -type f -exec chmod 664 {} \; 2>/dev/null || true
+	@echo "✅ Database file permissions fixed"
 	@echo "🔐 Setting vault permissions..."
 	@if [ -d vault/data ]; then \
 		if [ -f vault/data/vault.db ] || [ -d vault/data/raft ]; then \
@@ -285,17 +303,17 @@ health:
 	@echo "🏥 Checking service health..."
 	@echo ""
 	@echo "🔍 Frontend (HTTPS):"
-	@curl -sk https://localhost 2>&1 | grep -q "DOCTYPE" && echo "  ✅ Frontend responding" || echo "  ❌ Frontend not responding"
+	@curl -sk https://localhost:8443 2>&1 | grep -q "DOCTYPE" && echo "  ✅ Frontend responding" || echo "  ❌ Frontend not responding"
 	@echo ""
 	@echo "🔍 Microservices (HTTPS via Nginx):"
 	@echo "  Auth Service:"
-	@curl -sk https://localhost/api/auth/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/auth/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Game Service:"
-	@curl -sk https://localhost/api/game/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/game/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  User Service:"
-	@curl -sk https://localhost/api/user/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/user/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Tournament Service:"
-	@curl -sk https://localhost/api/tournament/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/tournament/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo ""
 	@echo "📦 Database Check:"
 	@echo "  Auth DB: $(shell [ -f auth-service/database/auth.db ] && echo '✅ Exists' || echo '❌ Missing')"

@@ -95,7 +95,7 @@ test_user_creation() {
     # Hoach edited - Updated to use HTTPS endpoint through nginx proxy
     # Attempt to register a user with properly formatted JSON
     local timestamp=$(date +%s)
-    local response=$(curl -sk -X POST https://localhost/api/auth/register \
+    local response=$(curl -sk -X POST https://localhost:8443/api/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"dbtest_${timestamp}\",\"email\":\"dbtest_${timestamp}@example.com\",\"password\":\"SecurePass123!\"}" 2>/dev/null)
     # Hoach edit ended
@@ -143,7 +143,7 @@ test_query_performance() {
     # Hoach edited - Updated to use HTTPS endpoint
     # Test query performance via API
     local start_time=$(date +%s%N)
-    local response=$(curl -sk --max-time 2 https://localhost/api/auth/health 2>/dev/null)
+    local response=$(curl -sk --max-time 2 https://localhost:8443/api/auth/health 2>/dev/null)
     local end_time=$(date +%s%N)
     # Hoach edit ended
     
@@ -163,12 +163,12 @@ test_database_constraints() {
     
     # Test constraints by trying to create duplicate user
     local timestamp=$(date +%s)
-    local response1=$(curl -sk -X POST https://localhost/api/auth/register \
+    local response1=$(curl -sk -X POST https://localhost:8443/api/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     
     # Try same username again - should fail due to constraint
-    local response2=$(curl -sk -X POST https://localhost/api/auth/register \
+    local response2=$(curl -sk -X POST https://localhost:8443/api/auth/register \
         -H "Content-Type: application/json" \
         -d "{\"username\":\"constraint_test_$timestamp\",\"email\":\"test2_$timestamp@example.com\",\"password\":\"Test123!\"}" 2>/dev/null)
     
