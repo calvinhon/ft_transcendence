@@ -170,7 +170,7 @@ export class PongGame {
         if (now - this.ai.lastBallUpdate >= lagAI) {
           this.ai.updateBallPosition(this.ball.x, this.ball.y); this.ai.lastBallUpdate = now;
         }
-        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players);
+        this.ai.moveBotPaddle(this.paddles, this.gameId, this.gameSettings.team1Players, this.gameSettings.team2Players, this.physics.powerup);
       }
 
       const result = this.physics.updateBall(this.ball, this.paddles, this.gameId);
