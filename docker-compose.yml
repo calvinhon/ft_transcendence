@@ -145,9 +145,6 @@ services:
       - 8.8.4.4
     networks:
       - transcendence-network
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
 
   blockchain-service:
     build: ./blockchain-service
