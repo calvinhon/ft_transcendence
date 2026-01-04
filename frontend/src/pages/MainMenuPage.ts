@@ -946,6 +946,7 @@ export class MainMenuPage extends AbstractComponent {
                 accumulateOnHit: this.settings.accumulateOnHit,
                 difficulty: this.settings.aiDifficulty,
                 scoreToWin: this.settings.scoreToWin || 5,
+                ballSpeed: this.settings.ballSpeed,
                 use3D: this.activeMode === 'arcade' ? this.settings.use3D : false
             },
             team1: [],
