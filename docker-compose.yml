@@ -1,7 +1,6 @@
 # Docker Compose - Combined Configuration
 # Use profiles to control which services start:
 # - Default: Core services only (fast development)
-# - Full profile: All services including SSR (--profile full)
 # UPDATED: Added health checks for improved container orchestration reliability
 
 services:
