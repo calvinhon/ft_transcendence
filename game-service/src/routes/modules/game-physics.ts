@@ -230,7 +230,7 @@ export class GamePhysics {
     const hitPos = (ball.y - paddle.y) / (paddle.height || 110);
     const angle = side === 'left'
       ? (hitPos - 0.5) * Math.PI / 2
-      : Math.PI + (hitPos - 0.5) * Math.PI / 2;
+      : Math.PI - (hitPos - 0.5) * Math.PI / 2;
 
     const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
     let newSpeed = currentSpeed;
