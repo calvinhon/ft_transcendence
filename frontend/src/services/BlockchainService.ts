@@ -27,9 +27,8 @@ export class BlockchainService {
         }
 
         try {
-            // Server-side call: tournament-service computes ranks and calls blockchain-service internally.
-            // Keep signature for compatibility with existing callers.
-            const res = await Api.post(`/api/tournament/tournaments/${tournamentId}/blockchain/record`, {});
+            const payload = { tournamentId, players, ranks };
+            const res = await Api.post(`${this.baseURL}/record`, payload);
 
             const success = !!(res && (res.ok === true || res.ok === 'true'));
             const txHash = res?.txHash || res?.transactionHash || undefined;
