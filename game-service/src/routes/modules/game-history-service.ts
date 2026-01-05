@@ -48,6 +48,55 @@ export class GameHistoryService {
     return new Promise((resolve, reject) => {
       const { player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId, skipTournamentNotification } = params;
 
+      // IDEMPOTENCY CHECK: Prevent duplicate tournament match results
+      if (tournamentMatchId) {
+        db.get(
+          `SELECT id FROM games WHERE tournament_match_id = ? LIMIT 1`,
+          [tournamentMatchId],
+          (err: Error | null, existingGame: any) => {
+            if (err) {
+              logger.error('Error checking for existing tournament match:', err);
+              reject(err);
+              return;
+            }
+            
+            if (existingGame) {
+              logger.warn(`Duplicate submission detected for tournament match ${tournamentMatchId}, game already exists: ${existingGame.id}`);
+              resolve({ gameId: existingGame.id }); // Return existing game ID
+              return;
+            }
+            
+            // No duplicate, proceed with insertion
+            this.insertGame(params, resolve, reject);
+          }
+        );
+      } else {
+        // Non-tournament game, insert normally
+        this.insertGame(params, resolve, reject);
+      }
+    });
+  }
+
+  // Helper method to insert game record
+  private insertGame(
+    params: {
+      player1Id: number;
+      player2Id: number;
+      player1Score: number;
+      player2Score: number;
+      winnerId: number;
+      gameMode: string;
+      team1Players?: string;
+      team2Players?: string;
+      tournamentId?: number;
+      tournamentMatchId?: number;
+      skipTournamentNotification?: boolean;
+    },
+    resolve: (value: { gameId: number }) => void,
+    reject: (reason?: any) => void
+  ): void {
+    const { player1Id, player2Id, player1Score, player2Score, winnerId, gameMode, team1Players, team2Players, tournamentId, tournamentMatchId, skipTournamentNotification } = params;
+
       db.run(
         `INSERT INTO games (player1_id, player2_id, player1_score, player2_score, winner_id, game_mode, status, finished_at, team1_players, team2_players, tournament_id, tournament_match_id)
          VALUES (?, ?, ?, ?, ?, ?, 'finished', datetime('now'), ?, ?, ?, ?)`,
@@ -94,7 +143,6 @@ export class GameHistoryService {
           }
         }
       );
-    });
   }
 
   // Enrich games with player names from user service

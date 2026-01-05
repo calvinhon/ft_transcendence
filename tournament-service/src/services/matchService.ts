@@ -30,8 +30,11 @@ export class MatchService {
       throw new Error('Match not found');
     }
 
+    // IDEMPOTENCY CHECK: Prevent replay attacks
     if (match.status !== 'pending') {
-      throw new Error('Match has already been completed');
+      logger.warn(`Duplicate match result submission detected for match ${matchId}. Status: ${match.status}`);
+      // Return existing match instead of throwing error (idempotent behavior)
+      return match;
     }
 
     // Validate winner is one of the players

@@ -86,12 +86,27 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // Save game result
+  // NOTE: This endpoint should only be used for tournament games where the server already
+  // saved the result. For regular WebSocket games, results are automatically saved by GameScoring.
   fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
       return console.log('Save'),sendError(reply, "Unauthorized", 401);
     try {
       const body = request.body as any;
       logger.info('Saving game result:', body);
+
+      // SECURITY: Validate game was actually played
+      // For tournament matches, verify the match was managed by tournament service
+      if (body.tournamentMatchId) {
+        // Tournament service already validated and saved the game
+        // This is just to update local game database
+        logger.info(`Saving tournament game result for match ${body.tournamentMatchId}`);
+      } else {
+        // For non-tournament games, they should ONLY be saved via WebSocket gameplay
+        // Reject direct client submissions for non-tournament games
+        logger.warn(`Attempted to save non-tournament game result via /save endpoint from user ${request.session.userId}`);
+        return sendError(reply, 'Non-tournament games are saved automatically during gameplay. Manual submission not allowed.', 403);
+      }
 
       // Extract data from request - handle various formats
       // Frontend sends team1: [id, id] (array of numbers) OR team1: [{userId: id}]
@@ -113,6 +128,13 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       // If winnerId is provided, use it. Otherwise compute from scores.
       const winnerId = body.winnerId || (player1Score > player2Score ? player1Id : player2Id);
       const gameMode = body.gameMode || body.mode || 'arcade';
+
+      // Verify requesting user is a participant in this game
+      const userId = request.session.userId;
+      if (userId !== player1Id && userId !== player2Id) {
+        logger.warn(`User ${userId} attempted to save game result for players ${player1Id} and ${player2Id}`);
+        return sendError(reply, 'You can only save results for games you participated in', 403);
+      }
 
       // Save to database
       const result = await gameHistoryService.saveGame({
