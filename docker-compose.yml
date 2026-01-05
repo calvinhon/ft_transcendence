@@ -7,7 +7,6 @@ services:
   vault:
     build: ./vault
     container_name: vault
-    user: "${UID:-1000}:${GID:-1000}"
     ports:
       - "8200:8200"
     volumes:
@@ -101,6 +100,8 @@ services:
     volumes:
       - ./user-service/database:/app/database
       - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
+    depends_on:
+      - auth-service
     mem_limit: 256m
     healthcheck:
       test:

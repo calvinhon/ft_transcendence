@@ -195,13 +195,13 @@ ensure-database-folders:
 	@find game-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
 	@find tournament-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
 	@find user-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find vault/data -type f -exec chmod 664 {} \; 2>/dev/null || true
+	@find vault/data -type f -exec chmod 600 {} \; 2>/dev/null || true
 	@echo "🔐 Setting ownership to current user (no sudo needed)..."
-	@chown -R $$(whoami):$$(whoami) auth-service/database 2>/dev/null || echo "⚠️  Could not change ownership for auth-service/database (may need manual fix)"
-	@chown -R $$(whoami):$$(whoami) game-service/database 2>/dev/null || echo "⚠️  Could not change ownership for game-service/database (may need manual fix)"
-	@chown -R $$(whoami):$$(whoami) tournament-service/database 2>/dev/null || echo "⚠️  Could not change ownership for tournament-service/database (may need manual fix)"
-	@chown -R $$(whoami):$$(whoami) user-service/database 2>/dev/null || echo "⚠️  Could not change ownership for user-service/database (may need manual fix)"
-	@chown -R $$(whoami):$$(whoami) vault/data 2>/dev/null || echo "⚠️  Could not change ownership for vault/data (may need manual fix)"
+	@chown -R $$(whoami):$$(id -gn) auth-service/database 2>/dev/null || echo "⚠️  Could not change ownership for auth-service/database (may need manual fix)"
+	@chown -R $$(whoami):$$(id -gn) game-service/database 2>/dev/null || echo "⚠️  Could not change ownership for game-service/database (may need manual fix)"
+	@chown -R $$(whoami):$$(id -gn) tournament-service/database 2>/dev/null || echo "⚠️  Could not change ownership for tournament-service/database (may need manual fix)"
+	@chown -R $$(whoami):$$(id -gn) user-service/database 2>/dev/null || echo "⚠️  Could not change ownership for user-service/database (may need manual fix)"
+	@chown -R $$(whoami):$$(id -gn) vault/data 2>/dev/null || echo "⚠️  Could not change ownership for vault/data (may need manual fix)"
 	@echo "✅ Database folders, permissions, and ownership ensured"
 
 open:
