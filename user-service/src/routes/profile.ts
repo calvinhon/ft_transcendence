@@ -6,7 +6,7 @@ import { UpdateProfileBody } from '../types';
 import { db } from '../database';
 import { promisifyDbRun, sendError } from '@ft-transcendence/common';
 
-let serverSecret : any = null;
+let serverSecret: any = null;
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
 
@@ -26,8 +26,8 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
 
     const serverCheck = request.headers['x-microservice-secret'];
 
-    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
-        return console.log('Profile Get'),sendError(reply, "Unauthorized", 401);
+    if (serverCheck !== serverSecret && (!request.session || !request.session.userId))
+      return console.log('Profile Get'), sendError(reply, "Unauthorized", 401);
 
     try {
       const profile = await UserService.getOrCreateProfile(parseInt(userId));
@@ -46,10 +46,16 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     const { userId } = request.params;
     const updates = request.body;
 
+    // Enforce 16 char limit for display name
+    if (updates.displayName && updates.displayName.length > 16) {
+      return reply.status(400).send({ error: 'Display name must be 16 characters or less' });
+    }
+
+
     const serverCheck = request.headers['x-microservice-secret'];
 
-    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
-        return console.log('Profile Put'),sendError(reply, "Unauthorized", 401);
+    if (serverCheck !== serverSecret && (!request.session || !request.session.userId))
+      return console.log('Profile Put'), sendError(reply, "Unauthorized", 401);
 
     try {
       await UserService.updateProfile(parseInt(userId), updates);

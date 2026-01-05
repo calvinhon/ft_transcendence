@@ -21,7 +21,7 @@ function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: {
 	<body>
 		<script>
 			if (window.opener) {
-				window.opener.postMessage(${jsonMessage}, window.location.origin);
+				window.opener.postMessage(${jsonMessage}, '*');
 				window.close();
 			} else {
 				document.body.innerHTML = '${data.success ? "Success" : "Error: " + (data.error || "Unknown")}';
@@ -109,7 +109,7 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 
 		userData = {
 			email: userInfo.email,
-			name: userInfo.name || userInfo.given_name || 'Google User',
+			name: (userInfo.name || userInfo.given_name || 'Google User').substring(0, 16),
 			picture: userInfo.picture
 		};
 	} catch (error: any) {

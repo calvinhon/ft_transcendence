@@ -51,7 +51,7 @@ export class PongGame {
     this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode, this.gameSettings.powerupsEnabled);
     this.ai = new GameAI(this.gameSettings.aiDifficulty, this.gameSettings.gameMode, paddleSpeed);
     this.stateManager = new GameStateManager(gameId, player1, player2);
-    this.scoring = new GameScoring(gameId, player1, player2, this.gameSettings.scoreToWin);
+    this.scoring = new GameScoring(gameId, player1, player2, this.gameSettings.scoreToWin, this.gameSettings.team1Players, this.gameSettings.team2Players);
     this.broadcaster = new GameBroadcaster(gameId, player1, player2);
 
     // Initialize game objects
@@ -286,23 +286,45 @@ export class PongGame {
     }
   }
 
-  endGame(): void {
+  async endGame(): Promise<void> {
     this.stateManager.endGame();
     activeGames.delete(this.gameId);
 
-    this.scoring.saveGameResult();
-    this.scoring.broadcastGameEnd();
+    // Calculate winner immediately for UI
+    const winner = this.scoring.getWinner();
+    const winnerId = winner ? winner.winnerId : null;
+
+    logger.game(this.gameId, `Game Ended. Immediate Broadcast. Winner: ${winnerId}`);
+
+    // Broadcast FINISHED state immediately so UI updates instantly (no delay)
+    // We pass winnerId so frontend knows who won right away
+    this.broadcaster.broadcastGameState(
+      this.ball,
+      this.paddles,
+      this.scoring.getScores(),
+      'finished',
+      undefined,
+      this.physics.powerup,
+      winnerId || undefined
+    );
+
+    // Then save to DB (async)
+    await this.scoring.saveGameResult();
+
+    // We do NOT need to call scoring.broadcastGameEnd() anymore as we sent the state above.
+    // However, for safety/legacy clients, we can leave it or remove it. 
+    // The frontend handles 'finished' state now.
 
     logger.game(this.gameId, `Game removed from active games. Active games count: ${activeGames.size}`);
   }
 
-  forceEndGame(reason?: string): void {
+  async forceEndGame(reason?: string): Promise<void> {
     logger.game(this.gameId, `Force Ending Game: ${reason}`);
     this.stateManager.endGame(); // Stops loop
     activeGames.delete(this.gameId);
 
     // Save with aborted flag = true
-    this.scoring.saveGameResult(true);
+    await this.scoring.saveGameResult(true);
 
     // Optionally broadcast end to remaining players
     this.scoring.broadcastGameEnd();

@@ -48,40 +48,104 @@ export class MatchmakingService {
 
     // Check if this is a tournament or arcade match with two real players (local)
     const isLocalMultiplayer = (data.gameSettings?.gameMode === 'tournament' || data.gameSettings?.gameMode === 'arcade');
-    let secondPlayerId = data.player2Id;
 
-    let secondPlayerName = data.player2Name;
+    // Find the opponent (who is NOT the requestor)
+    let opponentId: number | undefined;
+    let opponentName: string | undefined;
+    let opponentIsBot: boolean = false;
 
-    // Check team players for details
-    if (data.team2Players && data.team2Players.length > 0) {
-      const teamPlayer = data.team2Players[0];
-
-      // Use team player ID if main ID is missing
-      if (!secondPlayerId) {
-        secondPlayerId = teamPlayer.userId;
+    // Helper to check a team for the opponent
+    const findOpponentInTeam = (players: any[] | undefined) => {
+      if (!players) return;
+      for (const p of players) {
+        const pId = typeof p === 'number' ? p : p.userId;
+        if (pId !== data.userId) {
+          opponentId = pId;
+          opponentName = typeof p === 'number' ? undefined : p.username;
+          opponentIsBot = typeof p !== 'number' && p.isBot;
+          return true; // Found
+        }
       }
+      return false;
+    };
 
-      // Use team player name if main name is missing
-      if (!secondPlayerName) {
-        secondPlayerName = teamPlayer.username;
-      }
-
-      // override name if it is a bot
-      if (teamPlayer.isBot) {
-        secondPlayerName = "AI";
-      }
+    // Check both teams
+    if (!findOpponentInTeam(data.team1Players)) {
+      findOpponentInTeam(data.team2Players);
     }
 
-    if (isLocalMultiplayer && secondPlayerId && secondPlayerId !== 0) {
-      // Local match: player2 is also a real player
-      logger.info('Creating local match with player2 ID:', secondPlayerId);
-      player2 = createDummyPlayer(secondPlayerId, secondPlayerName || `Player ${secondPlayerId}`);
+    // Fallback if no opponent found (should exist for 1v1, but maybe default to Team 2 slot if empty?)
+    if (!opponentId && data.player2Id) {
+      opponentId = data.player2Id;
+      opponentName = data.player2Name;
+    }
+
+    if (opponentIsBot) {
+      opponentName = "AI";
+    }
+
+    if (isLocalMultiplayer && opponentId && opponentId !== 0 && !opponentIsBot) {
+      // Local match: opponent is also a real player
+      logger.info('Creating local match with opponent ID:', opponentId);
+      player2 = createDummyPlayer(opponentId, opponentName || `Player ${opponentId}`);
     } else {
       // Regular bot match
       player2 = createBotPlayer();
+      // If we found specific bot info (like from a save), maybe apply it? 
+      // For now createBotPlayer defaults to ID < 0.
+      // If the opponent ID was positive (e.g. 100000+), we might want to respect that?
+      // But standard bots usually get fresh IDs or negative IDs.
     }
 
-    await this.createAndStartGame(player1, player2, data.gameSettings, {
+    // Determine Player 1 & Player 2 based on Team Assignments
+    // Logic:
+    // - If requestor (data.userId) is in Team 1, they are Player 1.
+    // - If requestor (data.userId) is in Team 2, they are Player 2.
+    // - If requestor is in NEITHER (Spectator/Host of local match), we must pick the REAL players from the teams.
+
+    let finalPlayer1 = player1;
+    let finalPlayer2 = player2;
+
+    const isRequestorInTeam1 = data.team1Players?.some(p => (typeof p === 'number' ? p : p.userId) === data.userId);
+    const isRequestorInTeam2 = data.team2Players?.some(p => (typeof p === 'number' ? p : p.userId) === data.userId);
+
+    if (!isRequestorInTeam1 && !isRequestorInTeam2) {
+      // HOST MODE: Requestor is not playing.
+      // We need to create dummy players for BOTH Player 1 and Player 2 using actual team data.
+      logger.info(`Host mode detected. Requestor ${data.userId} is not in either team.`);
+
+      if (data.team1Players && data.team1Players.length > 0) {
+        const p1Data = data.team1Players[0];
+        const p1Id = typeof p1Data === 'number' ? p1Data : p1Data.userId;
+        const p1Name = typeof p1Data === 'number' ? `Player ${p1Id}` : p1Data.username;
+
+        logger.info(`Host not in match. Creating dummy Player 1: ${p1Name} (${p1Id})`);
+        finalPlayer1 = createDummyPlayer(p1Id, p1Name);
+        finalPlayer1.socket = socket; // Share socket for control
+      }
+
+      if (data.team2Players && data.team2Players.length > 0) {
+        const p2Data = data.team2Players[0];
+        const p2Id = typeof p2Data === 'number' ? p2Data : p2Data.userId;
+        const p2Name = typeof p2Data === 'number' ? `Player ${p2Id}` : p2Data.username;
+        const p2IsBot = typeof p2Data !== 'number' && p2Data.isBot;
+
+        logger.info(`Host not in match. Creating dummy Player 2: ${p2Name} (${p2Id}), bot: ${p2IsBot}`);
+        if (p2IsBot) {
+          finalPlayer2 = createBotPlayer();
+        } else {
+          finalPlayer2 = createDummyPlayer(p2Id, p2Name);
+          finalPlayer2.socket = socket; // Share socket
+        }
+      }
+    } else if (isRequestorInTeam2) {
+      // SWAP: Requestor becomes Player 2, Opponent becomes Player 1
+      logger.info(`Requestor ${data.username} is in Team 2. Swapping slots.`);
+      finalPlayer2 = player1;
+      finalPlayer1 = player2;
+    }
+
+    await this.createAndStartGame(finalPlayer1, finalPlayer2, data.gameSettings, {
       team1Players: data.team1Players,
       team2Players: data.team2Players,
       tournamentId: data.tournamentId,

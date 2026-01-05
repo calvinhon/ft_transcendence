@@ -2,6 +2,7 @@ import { Api } from '../core/Api';
 import { App } from '../core/App';
 import { User } from '../types';
 import { LocalPlayerService } from './LocalPlayerService';
+import { ErrorModal } from "../components/ErrorModal";
 
 export class AuthService {
     private static instance: AuthService;
@@ -62,21 +63,6 @@ export class AuthService {
             throw e;
         }
     }
-
-    public async forgotPassword(email: string): Promise<{ success: boolean, error?: string }> {
-        try {
-            const response = await Api.post('/api/auth/forgot-password', { email });
-            if (response.success) {
-                return { success: true };
-            }
-            return { success: false, error: response.error || 'Failed to send reset email' };
-        } catch (e: any) {
-            console.error("Forgot password failed", e);
-            return { success: false, error: e.message || 'Network error' };
-        }
-    }
-
-
 
     public logout(): void {
         localStorage.removeItem('token');
@@ -140,7 +126,6 @@ export class AuthService {
             //Hoach edit ended
 
             // Backend didn't return user and no stored user data available
-            console.warn("AuthService: Backend says valid but no user data available");
             return false;
         } catch (e: any) {
             console.error("AuthService: Verify failed or timed out:", e.message || e);
@@ -256,7 +241,7 @@ export class AuthService {
         );
 
         if (!popup) {
-            alert("Popup blocked! Please allow popups for this site.");
+            new ErrorModal("POPUP BLOCKED! PLEASE ALLOW POPUPS FOR THIS SITE.").render();
             return;
         }
 
@@ -267,7 +252,7 @@ export class AuthService {
                 App.getInstance().router.navigateTo('/');
             } else {
                 console.error("OAuth failed:", authData?.error);
-                alert("Authentication failed: " + (authData?.error || "Unknown error"));
+                new ErrorModal("AUTHENTICATION FAILED: " + (authData?.error || "UNKNOWN ERROR")).render();
             }
         } catch (error) {
             console.error("OAuth error:", error);
@@ -342,8 +327,10 @@ export class AuthService {
             }, window.location.origin);
             window.close();
         } else {
-            alert("Authentication failed: " + error);
-            window.location.href = '/login';
+            const modal = new ErrorModal("AUTHENTICATION FAILED: " + error.toUpperCase(), () => {
+                window.location.href = '/login';
+            });
+            modal.render();
         }
     }
 

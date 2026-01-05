@@ -18,7 +18,7 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.27",
     "@types/sqlite3": "^3.1.11",
     "rimraf": "^5.0.0",
     "ts-node-dev": "^2.0.0",

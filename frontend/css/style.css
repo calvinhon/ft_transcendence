@@ -26,7 +26,7 @@
 @layer base {
   html {
     font-family: "PixelCode", monospace;
-    color: #ffffff;
+    color: #c8e6f7;
   }
 
   html,
@@ -34,9 +34,9 @@
     height: 100%;
     background-color: transparent;
     overflow: hidden;
-    /* Phosphor Glow */
-    text-shadow: 0 0 2px rgba(135, 206, 235, 0.5),
-      0 0 5px rgba(135, 206, 235, 0.3);
+    /* Phosphor Glow - Updated for Romulus */
+    text-shadow: 0 0 2px rgba(41, 182, 246, 0.3),
+      0 0 4px rgba(41, 182, 246, 0.15);
   }
 
   /* CRT Scanline & Vignette Overlay */
@@ -56,7 +56,6 @@
       /* Vignette */
         radial-gradient(circle, rgba(0, 150, 0, 0) 60%, rgba(0, 0, 0, 0.6) 100%);
     background-size: 100% 4px, 100% 100%;
-    /* Optional: Subtle flicker animation could go here */
     opacity: 0.6;
   }
 
@@ -87,10 +86,10 @@
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #111;
+    background: #0a0f14;
   }
   ::-webkit-scrollbar-thumb {
-    background: #185574;
+    background: #1a4a6e;
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #29b6f6;

@@ -1,6 +1,5 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, PowerEase, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, HemisphericLight } from "@babylonjs/core";
+import { Engine, Scene, ArcRotateCamera, Vector3, Color4, Animation, EasingFunction, GlowLayer, PointLight, Color3, PointerEventTypes, CreateBox, CubicEase, SSAO2RenderingPipeline, LensRenderingPipeline, QuarticEase } from "@babylonjs/core";
 import { AbstractMesh, AppendSceneAsync } from "@babylonjs/core";
-// import { CreateBox } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
 import { HtmlMeshRenderer, HtmlMesh, FitStrategy } from "@babylonjs/addons";
 import { WebGLService } from "../services/WebGLService";
@@ -14,8 +13,11 @@ export class BabylonWrapper {
     private glowLayer: GlowLayer | null = null;
     private screenLight: PointLight | null = null;
     private isLoreView: boolean = false;
+    private active2DGame: boolean = false;
     private defaultCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
     private loreCameraState: { radius: number, alpha: number, beta: number, target: Vector3 } | null = null;
+    private isAnimating: boolean = false;
+    private isGameMode: boolean = false;
 
     // Camera Zoom Limits
     private readonly ZOOM_MIN = 0.4;
@@ -25,29 +27,45 @@ export class BabylonWrapper {
         const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
         canvas.width = innerWidth;
         canvas.height = innerHeight;
-        this.engine = new Engine(canvas);
+        this.engine = new Engine(canvas, true);
         this.scene = new Scene(this.engine);
         this.scene.clearColor = new Color4(0, 0, 0, 0);
-        // this.scene.createDefaultLight();
-        const ambientLight = new HemisphericLight("ambient", new Vector3(0, 1, 0), this.scene);
-        ambientLight.intensity = 0.03; // Very dim base light
+        this.camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.2, 2, Vector3.Zero(), this.scene);
 
-        // Start with a flatter angle (closer to 90deg/PI*0.5)
-        const camera = new ArcRotateCamera("camera", -Math.PI * 1.5, Math.PI * 0.2, 2, Vector3.Zero(), this.scene);
+        // Post Processing Effects
+        if (WebGLService.getInstance().isPostProcessingEnabled()) {
+            // Ambient Occlusion (contact shadows)
+            new SSAO2RenderingPipeline("ssaoPipeline", this.scene, {
+                ssaoRatio: 0.8,
+                blurRatio: 1,
+                combineRatio: 1.0
+            });
+            this.scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssaoPipeline", this.camera);
 
-        // Restrict controls: Disable rotation (inputs 0 and 1) but keep zoom (input 2)
-        camera.attachControl(canvas, true);
-        camera.inputs.removeByType("ArcRotateCameraPointersInput"); // Ensure manual rotation is disabled
-        // Remove default wheel input so we can handle it globally (even over HtmlMesh)
-        camera.inputs.removeByType("ArcRotateCameraMouseWheelInput");
-        // We'll re-add a custom pointer input if needed, but for now just disabling the default drag-to-rotate.
+            // Depth of field
+            var parameters = {
+                edge_blur: 1.0,
+                chromatic_aberration: 1.0,
+                distortion: 1.0,
+                grain_amount: 1.0,
+                dof_focus_distance: 0.5,
+                dof_aperture: 1.0,
+                dof_pentagon: true,
+                dof_gain: 1.0,
+                dof_threshold: 1.0,
+                dof_darken: 0.01
+            };
+            new LensRenderingPipeline("lensEffect", parameters, this.scene, 1.0);
+            this.scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("lensEffect", this.camera);
 
-        // We'll re-add a custom pointer input if needed, but for now just disabling the default drag-to-rotate.
+            // Fog
+            this.scene.fogMode = Scene.FOGMODE_EXP2;
+            this.scene.fogDensity = 0.1;
+            this.scene.fogColor = new Color3(0, 0, 0);
+        }
 
-        camera.lowerRadiusLimit = this.ZOOM_MIN;
-        camera.upperRadiusLimit = this.ZOOM_MAX;
-        camera.wheelPrecision = 100;
-        this.camera = camera;
+        this.camera.lowerRadiusLimit = this.ZOOM_MIN;
+        this.camera.upperRadiusLimit = this.ZOOM_MAX;
         (window as any).scene = this.scene;
 
         // Register loaders dynamically to support importing mesh later
@@ -79,8 +97,6 @@ export class BabylonWrapper {
      * Destroys the BabylonJS instance and cleans up resources
      */
     public destroy(): void {
-        console.log("[BabylonWrapper] Destroying instance...");
-
         // Stop render loop
         this.engine.stopRenderLoop();
 
@@ -114,29 +130,23 @@ export class BabylonWrapper {
 
         // Clear singleton
         BabylonWrapper.instance = null as any;
-
-        console.log("[BabylonWrapper] Instance destroyed");
     }
 
     private setupScene(): void {
         new HtmlMeshRenderer(this.scene);
+
         // Create Camera hotspots (hotspots for left/right navigation)
-        // Create Camera hotspots (Sized for Z=0.5)
-        // At Z=0.5, with FOV~0.8 (default), plane height is ~0.42, width ~0.75 (16:9)
-        // We make them wide enough to catch clumsy clicks
         const leftTrigger = CreateBox("leftInteractionTrigger", { width: 0.4, height: 0.6, depth: 0.05 }, this.scene);
         leftTrigger.parent = this.camera;
-        // Position slightly left of center. If width is 0.4, centered at -0.4: range is -0.6 to -0.2.
-        // Screen edge is around -0.375. So this covers the left ~20% and off-screen.
         leftTrigger.position = new Vector3(-0.4, 0, 0.5);
-        leftTrigger.visibility = 0; // Invisible
+        leftTrigger.visibility = 0;
         leftTrigger.isPickable = true;
 
         // Right Trigger
         const rightTrigger = CreateBox("rightInteractionTrigger", { width: 0.4, height: 0.6, depth: 0.05 }, this.scene);
         rightTrigger.parent = this.camera;
         rightTrigger.position = new Vector3(0.4, 0, 0.5);
-        rightTrigger.visibility = 0; // Invisible
+        rightTrigger.visibility = 0;
         rightTrigger.isPickable = true;
 
         this.loadModel();
@@ -154,10 +164,8 @@ export class BabylonWrapper {
         this.scene.onBeforeRenderObservable.add(() => {
             time += this.engine.getDeltaTime() * 0.001;
 
-            // Animate Screen Light (Flicker)
             if (this.screenLight) {
-                // Base 0.8, fast flicker mixed with slow pulse
-                const flicker = (Math.random() - 0.5) * 0.1; // +/- 0.05
+                const flicker = (Math.random() - 0.5) * 0.1;
                 this.screenLight.intensity = 0.8 + Math.sin(time * 8) * 0.05 + flicker;
             }
         });
@@ -171,17 +179,25 @@ export class BabylonWrapper {
 
         // Global wheel listener for zoom (works over HtmlMesh too)
         window.addEventListener("wheel", (e) => {
-            // Prevent default page scrolling if any
-            // e.preventDefault(); // Optional: might block scroll in modals if not careful.
-            // But usually we want zoom. Let's try aggressive zoom.
+            if (this.isGameMode || this.isAnimating) return; // Disable zoom in game mode
 
-            const sensitivity = 0.001; // Adjust as needed
+            const sensitivity = 0.001;
             const delta = e.deltaY;
 
-            // Only zoom if using default camera state (Monitor view) or Lore view? 
-            // Usually we want zoom in both, subject to limits.
-
-            this.camera.radius += delta * sensitivity;
+            const targetRadius = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, this.camera.radius + delta * sensitivity));
+            const quarticEase = new QuarticEase();
+            quarticEase.setEasingMode(EasingFunction.EASINGMODE_EASEOUT);
+            Animation.CreateAndStartAnimation(
+                "cameraZoom",
+                this.camera,
+                "radius",
+                60,
+                20,
+                this.camera.radius,
+                targetRadius,
+                Animation.ANIMATIONLOOPMODE_CONSTANT,
+                quarticEase,
+            );
 
             // Manual Clamp
             if (this.camera.radius < this.camera.lowerRadiusLimit!) {
@@ -198,28 +214,20 @@ export class BabylonWrapper {
 
         });
 
-        // Mouse follow effect (Tilt)
         let targetAlpha = this.camera.alpha;
         let targetBeta = this.camera.beta;
 
-        // Use window instead of canvas to capture movement even over iFrames/HtmlMesh
         window.addEventListener("mousemove", (e) => {
+            if (this.isGameMode || this.active2DGame || this.isAnimating) return;
             const rect = canvas.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 2 - 1; // -1 to 1
-            const y = ((e.clientY - rect.top) / rect.height) * 2 - 1; // -1 to 1
-
-            // Dynamic Tilt Intensity based on Zoom (Radius)
-            // When close (0.3), we need more tilt (e.g., 0.3) to see corners.
-            // When far (1.5), we need less tilt (e.g., 0.05) as we see everything.
+            const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
             const minRadius = 0.1;
             const maxRadius = 1.5;
             const minTilt = 0.01;
-            const maxTilt = 0.3;
+            const maxTilt = 0.5;
 
-            // Clamp radius for calculation just in case
             const currentRadius = Math.max(minRadius, Math.min(maxRadius, this.camera.radius));
-
-            // Linear interpolation: higher radius -> lower tilt
             const t = (currentRadius - minRadius) / (maxRadius - minRadius);
             const tiltIntensity = maxTilt * (1 - t) + minTilt * t;
 
@@ -228,16 +236,15 @@ export class BabylonWrapper {
                 targetAlpha = currentState.alpha + x * -tiltIntensity;
                 targetBeta = currentState.beta + y * -tiltIntensity;
             }
+            this.camera.alpha += (targetAlpha - this.camera.alpha) * 0.5;
+            this.camera.beta += (targetBeta - this.camera.beta) * 0.5;
         });
 
-        // Consolidate Pointer logic for Triggers
         this.scene.onPointerObservable.add((pointerInfo) => {
-            // Click handling
             if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
                 const pickInfo = pointerInfo.pickInfo;
                 if (pickInfo?.hit && pickInfo.pickedMesh) {
                     const meshName = pickInfo.pickedMesh.name;
-                    // console.log("CLICK: Picked mesh:", meshName, "(isLoreView:", this.isLoreView, ")");
 
                     if (meshName === "leftInteractionTrigger" && !this.isLoreView) {
                         this.panToLore();
@@ -246,12 +253,6 @@ export class BabylonWrapper {
                     }
                 }
             }
-        });
-
-        this.scene.onBeforeRenderObservable.add(() => {
-            // Lerp camera alpha/beta for smooth follow
-            this.camera.alpha += (targetAlpha - this.camera.alpha) * 0.1;
-            this.camera.beta += (targetBeta - this.camera.beta) * 0.1;
         });
     }
 
@@ -264,21 +265,45 @@ export class BabylonWrapper {
 
         this.isLoreView = true;
 
-        // Defined a good position to view the newspaper (NEWS_NEWS_0)
         const targetPos = newspaper.getAbsolutePosition();
-        const targetRadius = 0.6; // Zoome out slightly (was 0.35)
+        const targetRadius = 0.6;
         const targetFov = 0.6;
-
-        // Set lore base state for tilt
-        // Set lore base state for tilt
         this.loreCameraState = {
             radius: targetRadius,
-            alpha: -Math.PI * 1.25, // Adjusted by user
-            beta: Math.PI * 0.5, // Adjusted by user
+            alpha: -Math.PI * 1.25,
+            beta: Math.PI * 0.5,
             target: targetPos
         };
 
         this.animateCameraTo(targetRadius, targetPos, targetFov, this.loreCameraState.alpha, this.loreCameraState.beta, 1500);
+    }
+
+    public async panToTV(): Promise<void> {
+        const tvMesh = this.getTVMesh();
+        if (!tvMesh) {
+            console.warn("TV_Mesh not found");
+            return;
+        }
+
+        const targetPos = new Vector3(1.2056, 1.0864, 0.0801);
+        console.log("Panning to TV Mesh:", tvMesh.name, "at", targetPos);
+
+        // Use user-verified values from debug session
+        const targetRadius = 1.1;
+        const targetFov = 0.6;
+        const targetAlpha = -3.3197;
+        const targetBeta = 1.4772;
+
+        this.animateCameraTo(targetRadius, targetPos, targetFov, targetAlpha, targetBeta, 1500);
+    }
+
+    public getTVMesh(): AbstractMesh | null {
+        // Try exact name first, then loose search
+        let mesh = this.scene.getMeshByName("TV_Mesh");
+        if (!mesh) {
+            mesh = this.scene.meshes.find(m => m.name.includes("TV_Mesh")) || null;
+        }
+        return mesh;
     }
 
     public async panToMonitor(): Promise<void> {
@@ -295,9 +320,102 @@ export class BabylonWrapper {
         );
     }
 
+    public set2DGameActive(active: boolean): void {
+        this.active2DGame = active;
+    }
+
+    public enterGameMode(): void {
+        this.isGameMode = true;
+
+        // Save current state to restore later
+        if (!this.defaultCameraState) {
+            this.defaultCameraState = {
+                radius: this.camera.radius,
+                alpha: this.camera.alpha,
+                beta: this.camera.beta,
+                target: this.camera.target.clone()
+            };
+        }
+
+        // Stop existing animations
+        this.scene.stopAnimation(this.camera);
+        this.camera.detachControl();
+
+        // Unlimit camera for animation
+        this.camera.lowerRadiusLimit = null;
+        this.camera.upperRadiusLimit = null;
+        this.camera.lowerBetaLimit = null;
+        this.camera.upperBetaLimit = null;
+
+        // Ensure Up vector is correct
+        this.camera.upVector = new Vector3(0, 1, 0);
+
+        // Transition to TV instead of hiding office
+        this.panToTV();
+
+        // Adjust Lighting
+        if (this.screenLight) this.screenLight.setEnabled(false);
+
+        // Add Game Light if needed - positioned at TV
+        let gameLight = this.scene.getLightByName("gameLight");
+        const tvMesh = this.getTVMesh();
+
+        if (!gameLight) {
+            gameLight = new PointLight("gameLight", Vector3.Zero(), this.scene);
+            gameLight.intensity = 0.8;
+            (gameLight as PointLight).range = 10;
+        }
+
+        if (tvMesh) {
+            // Position light in front of TV
+            const pos = tvMesh.getAbsolutePosition().clone();
+            pos.z -= 2; // Offset in front
+            (gameLight as PointLight).position = pos;
+        } else {
+            (gameLight as PointLight).position = new Vector3(0, 5, 0);
+        }
+
+        gameLight.setEnabled(true);
+    }
+
+    public exitGameMode(): void {
+        this.isGameMode = false;
+
+        // Restore Lighting
+        if (this.screenLight) this.screenLight.setEnabled(true);
+        const gameLight = this.scene.getLightByName("gameLight");
+        if (gameLight) gameLight.setEnabled(false);
+
+        // Turn off Game Meshes
+        this.scene.meshes.forEach(m => {
+            if (m.name.startsWith("game_")) {
+                m.dispose();
+            }
+        });
+
+        // Animate back to Monitor
+        if (this.defaultCameraState) {
+            this.animateCameraTo(
+                this.defaultCameraState.radius,
+                this.defaultCameraState.target,
+                0.6,
+                this.defaultCameraState.alpha,
+                this.defaultCameraState.beta,
+                1500
+            );
+        }
+    }
+
+    public getScene(): Scene {
+        return this.scene;
+    }
+
+    public getCamera(): ArcRotateCamera {
+        return this.camera;
+    }
+
     private async loadModel(): Promise<void> {
         try {
-            console.log("Loading model low_poly_90s_office_cubicle.glb...");
             await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
 
             // Find the glowing screen mesh
@@ -307,7 +425,6 @@ export class BabylonWrapper {
                 console.warn("'glowing screen' mesh not found, trying fallback.");
                 this.createHtmlMesh(null);
             } else {
-                // console.log("Found glowing screen mesh:", screenMesh.name);
                 this.createHtmlMesh(screenMesh);
             }
         } catch (error) {
@@ -318,7 +435,6 @@ export class BabylonWrapper {
 
     private createHtmlMesh(parentMesh: AbstractMesh | null): void {
         const appElement = document.getElementById("app");
-        console.log(appElement);
         if (!appElement) return;
 
         this.htmlMesh = new HtmlMesh(this.scene, "appHtmlMesh", {
@@ -360,7 +476,6 @@ export class BabylonWrapper {
         } else {
             // Target the monitor but start from a distance and animate in
             const finalRadius = 0.7;
-            // const targetPos = parentMesh.absolutePosition.clone();
             const targetPos = this.htmlMesh.absolutePosition.clone();
 
             // Set initial state
@@ -375,29 +490,9 @@ export class BabylonWrapper {
                 target: targetPos.clone()
             };
 
-            // Lock controls during animation to prevent interference
-            this.camera.detachControl();
-
             // Animate zoom
-            this.animateCameraTo(finalRadius, targetPos, 0.6, this.camera.alpha, this.camera.beta, 2500, () => {
-                // Restore controls and limits
-                this.camera.attachControl(this.engine.getRenderingCanvas(), true);
-                // Ensure rotation inputs are still removed if that was the plan
-                this.camera.inputs.removeByType("ArcRotateCameraPointersInput");
-
-                this.camera.inputs.removeByType("ArcRotateCameraPointersInput");
-
-                this.camera.lowerRadiusLimit = this.ZOOM_MIN;
-                this.camera.upperRadiusLimit = this.ZOOM_MAX;
-            });
-
-            this.createTriggers(parentMesh);
+            this.animateCameraTo(finalRadius, targetPos, 0.6, this.defaultCameraState.alpha, this.defaultCameraState.beta, 2500);
         }
-    }
-
-    private createTriggers(_monitorMesh: AbstractMesh): void {
-        // We are now using screen-fixed camera triggers created in setupScene.
-        // This method can be kept for backward compatibility or future object-relative triggers.
     }
 
     /**
@@ -405,8 +500,8 @@ export class BabylonWrapper {
      * Useful for cinematic transitions and cutscenes.
      */
     public animateCameraTo(targetRadius: number, targetPos: Vector3, targetFov: number, targetAlpha: number, targetBeta: number, duration: number = 2000, onComplete?: () => void) {
-        const ease = new PowerEase(15);
-        ease.setEasingMode(EasingFunction.EASINGMODE_EASEOUT);
+        const ease = new CubicEase();
+        ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
         const frames = 60;
         const totalFrames = (duration / 1000) * frames;
@@ -450,6 +545,10 @@ export class BabylonWrapper {
         ]);
         fovAnim.setEasingFunction(ease);
 
-        this.scene.beginDirectAnimation(this.camera, [radiusAnim, alphaAnim, betaAnim, targetAnim, fovAnim], 0, totalFrames, false, 1, onComplete);
+        this.isAnimating = true;
+        this.scene.beginDirectAnimation(this.camera, [radiusAnim, alphaAnim, betaAnim, targetAnim, fovAnim], 0, totalFrames, false, 1, () => {
+            this.isAnimating = false;
+            onComplete?.();
+        });
     }
 }

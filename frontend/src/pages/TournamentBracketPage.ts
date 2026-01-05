@@ -104,6 +104,10 @@ export class TournamentBracketPage extends AbstractComponent {
                 } finally {
                     this.recordingInProgress = false;
                 }
+            } else if (sessionStorage.getItem(recordedKey)) {
+                // Key exists, so it was already recorded. Restore message.
+                this.blockchainMessage = 'Rankings recorded on blockchain';
+                this.blockchainMessageType = 'success';
             }
         } catch (err) {
             console.error('Failed to load tournament participants for blockchain', err);
@@ -198,6 +202,8 @@ export class TournamentBracketPage extends AbstractComponent {
                     gameSettings = { ...gameSettings, ...parsed.settings };
                 }
             }
+            // Enforce 2D for Tournament
+            (gameSettings as any).use3D = false;
         } catch (e) {
             console.warn("Failed to load settings for tournament match", e);
         }
@@ -249,6 +255,9 @@ export class TournamentBracketPage extends AbstractComponent {
                         ${this.renderBracket()}
                     </div>
 
+                    <!-- Next Match Section -->
+                     ${!this.tournament.winnerId ? this.renderNextMatchSection() : ''}
+
                     <!-- Winner / Actions -->
                     ${this.tournament.winnerId ? `
                         <div class="mt-8 p-6 border border-green-500 bg-green-900/20 text-center">
@@ -296,7 +305,7 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     private renderMatchCard(match: any): string {
-        const isReady = match.player1Id !== 0 && match.player2Id !== 0 && match.status !== 'completed';
+
         const isCompleted = match.status === 'completed';
 
         return `
@@ -314,13 +323,7 @@ export class TournamentBracketPage extends AbstractComponent {
                     </div>
                 </div>
 
-                ${isReady ? `
-                <div class="mt-3 pt-2 border-t border-white/10 text-center">
-                     <button class="match-play-btn text-xs bg-accent text-black px-3 py-1 font-bold hover:bg-white w-full" data-match-id="${match.matchId}">
-                        PLAY MATCH
-                    </button>
-                </div>
-                ` : ''}
+
                 
                 <div class="absolute top-0 right-0 p-1">
                     <span class="text-[10px] text-gray-600">#${match.matchId}</span>
@@ -338,5 +341,74 @@ export class TournamentBracketPage extends AbstractComponent {
     private isBot(id: number): boolean {
         const p = this.tournament?.players.find(pl => pl.id === id);
         return !!p?.isBot || id === 0;
+    }
+
+    private renderNextMatchSection(): string {
+        if (!this.tournament || !this.tournament.matches) return '';
+
+        // Sorting matches by ID usually works for chronological order in simple brackets
+        const sorted = [...this.tournament.matches].sort((a, b) => Number(a.matchId) - Number(b.matchId));
+
+        // Find the first match that is NOT completed and has two valid players assigned
+        const nextMatch = sorted.find(m =>
+            m.status !== 'completed' &&
+            m.player1Id !== 0 &&
+            m.player2Id !== 0
+        );
+
+        if (!nextMatch) {
+            // No ready match found.
+            // Check if tournament is actually over?
+            if (this.tournament.winnerId) return ''; // Winner section handles this
+
+            // Otherwise, we are waiting for results from other branches
+            return `
+                 <div class="mt-8 p-6 border border-yellow-500/50 bg-yellow-900/10 text-center">
+                    <h2 class="text-2xl text-yellow-500 font-vcr mb-2">AWAITING RESULTS</h2>
+                    <p class="text-gray-400 font-pixel text-sm">WAITING FOR PREVIOUS ROUNDS TO COMPLETE...</p>
+                    <div class="mt-4 w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </div>
+            `;
+        }
+
+        // We have a next match!
+        return `
+            <div class="mt-8 p-1 bg-accent animate-pulse-slow">
+                <div class="bg-black p-6 text-center border border-white/10 relative overflow-hidden group">
+                     <!-- Background Glitch Effect -->
+                    <div class="absolute inset-0 bg-[url('/assets/grid.png')] opacity-10 pointer-events-none"></div>
+                    
+                    <h2 class="text-3xl text-white font-vcr mb-6 text-shadow-neon relative z-10">NEXT MATCHUP</h2>
+                    
+                    <div class="flex items-center justify-center gap-12 mb-8 relative z-10">
+                        <!-- P1 -->
+                        <div class="flex flex-col items-center gap-2">
+                             <div class="w-16 h-16 border-2 border-accent rounded-full bg-gray-900 flex items-center justify-center text-xl text-accent">
+                                ${(this.getPlayerName(nextMatch.player1Id)![0] || '?').toUpperCase()}
+                             </div>
+                             <span class="text-xl font-bold text-white">${this.getPlayerName(nextMatch.player1Id)}</span>
+                             ${this.isBot(nextMatch.player1Id) ? '<span class="text-[10px] text-accent font-pixel">[BOT]</span>' : ''}
+                        </div>
+
+                        <div class="text-2xl font-vcr text-purple-500">VS</div>
+
+                         <!-- P2 -->
+                        <div class="flex flex-col items-center gap-2">
+                             <div class="w-16 h-16 border-2 border-red-500 rounded-full bg-gray-900 flex items-center justify-center text-xl text-red-500">
+                                ${(this.getPlayerName(nextMatch.player2Id)![0] || '?').toUpperCase()}
+                             </div>
+                             <span class="text-xl font-bold text-white">${this.getPlayerName(nextMatch.player2Id)}</span>
+                             ${this.isBot(nextMatch.player2Id) ? '<span class="text-[10px] text-red-500 font-pixel">[BOT]</span>' : ''}
+                        </div>
+                    </div>
+
+                    <button class="match-play-btn relative px-12 py-4 bg-accent text-black font-vcr font-bold text-xl hover:bg-white hover:scale-105 transition-all shadow-[0_0_20px_rgba(41,182,246,0.6)] z-10" data-match-id="${nextMatch.matchId}">
+                        START MATCH
+                    </button>
+                    
+                    <div class="mt-4 text-xs text-gray-500 font-pixel">MATCH ID: ${nextMatch.matchId} • ROUND ${nextMatch.round}</div>
+                </div>
+            </div>
+        `;
     }
 }

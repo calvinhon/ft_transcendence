@@ -100,6 +100,8 @@ export class GameService {
                 },
                 team1Players: t1,
                 team2Players: t2,
+                tournamentId: settings.tournamentId,
+                tournamentMatchId: settings.tournamentMatchId
             };
         }
 
@@ -181,13 +183,11 @@ export class GameService {
     }
 
     public handleKeyDown(key: string): void {
-
         this.keys[key] = true;
         this.lastKeyPressTime[key] = Date.now();
     }
 
     public handleKeyUp(key: string): void {
-
         this.keys[key] = false;
     }
 
@@ -396,5 +396,9 @@ export class GameService {
             this.ws = null;
         }
         this.gameStateCallbacks = [];
+        this.isPaused = false;
+        this.currentGameState = 'unknown';
+        this.pendingJoinPayload = null;
+        this.keys = {}; // Clear stuck keys
     }
 }

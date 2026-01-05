@@ -164,6 +164,37 @@ export class MatchDetailsPage extends AbstractComponent {
             const res = await Api.get(`/api/game/${id}`);
             if (res.error) throw new Error(res.error);
             this.gameData = res.data; // Fixed: Backend wraps in {data: ...}
+
+            // --- Parse Team Data for Display Names (Arcade/Tournament) ---
+            if (this.gameData.game_mode === 'arcade' || this.gameData.game_mode === 'tournament') {
+                try {
+                    const parseTeam = (json: string | undefined) => {
+                        if (!json) return [];
+                        try { return JSON.parse(json); } catch (e) { return []; }
+                    };
+
+                    const team1 = parseTeam(this.gameData.team1_players);
+                    const team2 = parseTeam(this.gameData.team2_players);
+
+                    const getName = (p: any) => {
+                        if (!p) return 'Unknown';
+                        if (typeof p === 'string') return p; // if just names
+                        if (Number(p.userId || p.id) === 0) return 'AI';
+                        if ((p.userId || p.id) < 0) return `BOT ${Math.abs(p.userId || p.id)}`;
+                        return p.username || `User ${p.userId || p.id}`;
+                    };
+
+                    if (team1.length > 0) {
+                        this.gameData.player1_name = team1.map(getName).join(' & ');
+                    }
+                    if (team2.length > 0) {
+                        this.gameData.player2_name = team2.map(getName).join(' & ');
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse team names for match details", e);
+                }
+            }
+
             console.log("Game Data Loaded:", this.gameData);
 
             // Fetch Events

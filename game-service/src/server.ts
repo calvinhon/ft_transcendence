@@ -9,7 +9,7 @@ import { createServer, createServiceConfig, sessionSecret } from '@ft-transcende
 const serverConfig = createServiceConfig('GAME-SERVICE', 3000);
 
 const serverOptions = {
-  healthCheckModules: ['websocket', 'game-history', 'game-stats', 'online-users', 'friend-service'],
+  healthCheckModules: ['websocket', 'game-history', 'game-stats', 'online-users'],
   corsPlugin: cors,
   corsConfig: { origin: true }
 };

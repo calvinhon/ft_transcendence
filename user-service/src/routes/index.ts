@@ -6,11 +6,15 @@ import { setupSearchRoutes } from './search';
 import gdprRoutes from './gdpr';
 
 
+import { friendRoutes } from './friends';
+
 export default async function routes(fastify: FastifyInstance): Promise<void> {
   // Setup all route modules
   await setupProfileRoutes(fastify);
-  await setupAchievementRoutes(fastify);
+  // Achievements removed
+  // await setupAchievementRoutes(fastify); 
   await setupSearchRoutes(fastify);
   await gdprRoutes(fastify);
 
+  fastify.register(friendRoutes, { prefix: '/friends' });
 }

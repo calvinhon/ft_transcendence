@@ -7,10 +7,7 @@ export interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
-  preferred_language: string;
-  theme_preference: string;
-  notification_settings: string;
-  privacy_settings: string;
+
   created_at: string;
   updated_at: string;
 }
@@ -48,8 +45,7 @@ export interface UpdateProfileBody {
   avatarUrl?: string; // Add this
   bio?: string;
   country?: string;
-  preferredLanguage?: string;
-  themePreference?: string;
+
   customAvatar?: number
 }
 

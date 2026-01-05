@@ -14,4 +14,6 @@ export interface GameSettings {
     powerups?: boolean;
     accumulateOnHit?: boolean;
     campaignLevel?: number;
+    tournamentId?: number;
+    tournamentMatchId?: number;
 }

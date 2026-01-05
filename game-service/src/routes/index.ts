@@ -5,7 +5,7 @@ import { handleWebSocketMessage, handleWebSocketClose } from './modules/websocke
 import { gameHistoryService } from './modules/game-history-service';
 import { gameStatsService } from './modules/game-stats-service';
 import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
-import { onlineUsers } from './modules/friend-service';
+import { getOnlineUsers } from './modules/online-users';
 
 const logger = createLogger('GAME-SERVICE');
 
@@ -35,7 +35,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { userId: string };
   }>('/history/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('History'),sendError(reply, "Unauthorized", 401);
+      return console.log('History'), sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
       const games = await gameHistoryService.getGameHistory(userId);
@@ -52,7 +52,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { gameId: string };
   }>('/:gameId', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('Game ID'),sendError(reply, "Unauthorized", 401);
+      return console.log('Game ID'), sendError(reply, "Unauthorized", 401);
     try {
       const { gameId } = request.params;
       const game = await gameHistoryService.getGameDetails(parseInt(gameId));
@@ -74,7 +74,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { gameId: string };
   }>('/:gameId/events', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('Game ID Events'),sendError(reply, "Unauthorized", 401);
+      return console.log('Game ID Events'), sendError(reply, "Unauthorized", 401);
     try {
       const { gameId } = request.params;
       const events = await gameHistoryService.getGameEvents(parseInt(gameId));
@@ -88,7 +88,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Save game result
   fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('Save'),sendError(reply, "Unauthorized", 401);
+      return console.log('Save'), sendError(reply, "Unauthorized", 401);
     try {
       const body = request.body as any;
       logger.info('Saving game result:', body);
@@ -141,7 +141,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     Params: { userId: string };
   }>('/stats/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('Stats'),sendError(reply, "Unauthorized", 401);
+      return console.log('Stats'), sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
       const stats = await gameStatsService.getGameStats(userId);
@@ -155,13 +155,9 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get currently online users
   fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
-      return console.log('Online'),sendError(reply, "Unauthorized", 401);
+      return console.log('Online'), sendError(reply, "Unauthorized", 401);
     try {
-      // Map keys to array of objects
-      const users: any[] = [];
-      for (const [id, data] of onlineUsers.entries()) {
-        users.push({ userId: id, username: data.username });
-      }
+      const users = getOnlineUsers();
       sendSuccess(reply, users);
     } catch (error) {
       logger.error('Error getting online users:', error);
@@ -169,54 +165,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-  // Friends Routes
-  fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.session || !request.session.userId)
-      return console.log('Add Friends'),sendError(reply, "Unauthorized", 401);
-    try {
-      const { userId, friendId } = request.body as any;
-      if (!userId || !friendId) {
-        return sendError(reply, 'Missing userId or friendId', 400);
-      }
 
-      const { friendService } = await import('./modules/friend-service');
-      await friendService.addFriend(userId, friendId);
-      sendSuccess(reply, { success: true });
-    } catch (error) {
-      logger.error('Error adding friend', error);
-      sendError(reply, 'Failed to add friend', 500);
-    }
-  });
-
-  fastify.post('/friends/remove', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.session || !request.session.userId)
-      return console.log('Remove Friends'),sendError(reply, "Unauthorized", 401);
-    try {
-      const { userId, friendId } = request.body as any;
-      if (!userId || !friendId) return sendError(reply, 'Missing userId or friendId', 400);
-
-      const { friendService } = await import('./modules/friend-service');
-      await friendService.removeFriend(userId, friendId);
-      sendSuccess(reply, { success: true });
-    } catch (error) {
-      logger.error('Error removing friend', error);
-      sendError(reply, 'Failed to remove friend', 500);
-    }
-  });
-
-  fastify.get<{ Params: { userId: string } }>('/friends/:userId', async (request, reply) => {
-    if (!request.session || !request.session.userId)
-      return console.log('Friends'),sendError(reply, "Unauthorized", 401);
-    try {
-      const { userId } = request.params;
-      const { friendService } = await import('./modules/friend-service');
-      const friends = await friendService.getFriends(parseInt(userId));
-      sendSuccess(reply, friends);
-    } catch (error) {
-      logger.error('Error fetching friends', error);
-      sendError(reply, 'Failed to fetch friends', 500);
-    }
-  });
 
 
 }

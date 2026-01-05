@@ -13,15 +13,20 @@ const serverOptions = {
 };
 
 async function start(): Promise<void> {
-  const server = await createServer(serverConfig, async (fastify) => {
-    // Register additional plugins
-    await fastify.register(sessionSecret);
+  try {
+    const server = await createServer(serverConfig, async (fastify) => {
+      // Register additional plugins
+      await fastify.register(sessionSecret);
 
-    // Register routes
-    await authRoutes(fastify);
-  }, serverOptions);
+      // Register routes
+      await authRoutes(fastify);
+    }, serverOptions);
 
-  await server.start();
+    await server.start();
+  } catch (error) {
+    console.error('Failed to start AUTH-SERVICE:', error);
+    process.exit(1);
+  }
 }
 
 // Start the server if this file is run directly

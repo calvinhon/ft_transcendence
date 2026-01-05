@@ -22,13 +22,17 @@ export class GameCreator {
     } = {}
   ): Promise<{ gameId: number; game: PongGame }> {
     const gameMode = gameSettings?.gameMode || 'campaign';
-    const getPlayerIds = (players: any[] | undefined) => {
+    const getPlayerData = (players: any[] | undefined) => {
       if (!players) return null;
-      return JSON.stringify(players.map(p => typeof p === 'number' ? p : p.userId));
+      // Store full player data (userId, username, isBot) for history enrichment
+      return JSON.stringify(players.map(p => {
+        if (typeof p === 'number') return { userId: p };
+        return { userId: p.userId, username: p.username, isBot: p.isBot };
+      }));
     };
 
-    const team1Players = getPlayerIds(options.team1Players);
-    const team2Players = getPlayerIds(options.team2Players);
+    const team1Players = getPlayerData(options.team1Players);
+    const team2Players = getPlayerData(options.team2Players);
     const tournamentId = options.tournamentId || null;
     const tournamentMatchId = options.tournamentMatchId || null;
 

@@ -5,6 +5,8 @@ import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, Tournament
 import { FriendService, Friend } from "../services/FriendService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import Chart from 'chart.js/auto';
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 export class ProfilePage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -573,10 +575,28 @@ export class ProfilePage extends AbstractComponent {
                 this.isFriend = false;
             }
 
-            // 3. Check Online Status for the Profile being viewed
-            // We fetch all online users and check if this user is in the list
-            const onlineUsers = await friendService.getOnlineUsers();
-            const isProfileOnline = onlineUsers.includes(userId);
+            // 3. Check Online Status (LOCAL ONLY REFACTOR)
+            // User requested that "Online" means "Logged in LOCALLY on this device/window"
+            // So we ignore the backend "onlineUsers" list (which includes remote connections)
+            // and only check LocalPlayerService.
+
+            const localPlayerService = LocalPlayerService.getInstance();
+            const localPlayers = localPlayerService.getLocalPlayers();
+
+
+            // Helper to check if a ID is "locally online"
+            const isLocallyOnline = (targetId: number) => {
+                if (currentUser && currentUser.userId === targetId) return true;
+                return localPlayers.some(lp => lp.userId === targetId);
+            };
+
+            const isProfileOnline = isLocallyOnline(userId);
+
+            // Update friends list status based on LOCAL players only
+            this.friends = this.friends.map(f => ({
+                ...f,
+                isOnline: isLocallyOnline(f.userId)
+            }));
 
             // Start constructing the 'status' object even if not a friend, so renderOnlineStatus works
             if (!this.friendStatus) {
@@ -638,7 +658,7 @@ export class ProfilePage extends AbstractComponent {
                 // Reload profile/friends list to get updated status/online state
                 await this.loadProfile(this.profile.userId);
             } else {
-                alert('Failed to add friend');
+                new ErrorModal('FAILED TO ADD FRIEND').render();
             }
         });
 
@@ -647,15 +667,23 @@ export class ProfilePage extends AbstractComponent {
             const currentUser = AuthService.getInstance().getCurrentUser();
             if (!currentUser) return;
 
-            if (confirm(`Remove ${this.profile.username} from friends?`)) {
-                const success = await FriendService.getInstance().removeFriend(currentUser.userId, this.profile.userId);
-                if (success) {
-                    // Reload profile to update status
-                    await this.loadProfile(this.profile.userId);
-                } else {
-                    alert('Failed to remove friend');
-                }
-            }
+            const profileId = this.profile.userId;
+            const profileName = this.profile.username;
+
+            new ConfirmationModal(
+                `REMOVE ${profileName.toUpperCase()} FROM FRIENDS?`,
+                async () => {
+                    const success = await FriendService.getInstance().removeFriend(currentUser.userId, profileId);
+                    if (success) {
+                        // Reload profile to update status
+                        await this.loadProfile(profileId);
+                    } else {
+                        new ErrorModal('FAILED TO REMOVE FRIEND').render();
+                    }
+                },
+                () => { },
+                'destructive'
+            ).render();
         });
     }
 

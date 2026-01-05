@@ -6,6 +6,9 @@ import { LoginModal } from "../components/LoginModal";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
+import { WebGLService } from "../services/WebGLService";
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 interface Player {
     id: number;
@@ -25,6 +28,7 @@ interface GameSettings {
     powerups: boolean;
     accumulateOnHit: boolean;
     scoreToWin: number;
+    use3D?: boolean;
 }
 
 export class MainMenuPage extends AbstractComponent {
@@ -38,7 +42,8 @@ export class MainMenuPage extends AbstractComponent {
         aiDifficulty: 'medium',
         powerups: true,
         accumulateOnHit: false,
-        scoreToWin: 5
+        scoreToWin: 5,
+        use3D: false
     };
 
     // Mode Specific State
@@ -110,7 +115,13 @@ export class MainMenuPage extends AbstractComponent {
             this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
             this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
 
-            this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+            // Update active players from availablePlayers to catch changes (like avatars)
+            const syncPlayer = (p: Player) => this.availablePlayers.find(ap => ap.id === p.id) || p;
+
+            if (this.campaignPlayer) this.campaignPlayer = syncPlayer(this.campaignPlayer);
+            this.arcadeTeam1 = this.arcadeTeam1.map(syncPlayer);
+            this.arcadeTeam2 = this.arcadeTeam2.map(syncPlayer);
+            this.tournamentPlayers = this.tournamentPlayers.map(syncPlayer);
 
             // Auto-assign host to campaign if not set
             if (this.activeMode === 'campaign' && !this.campaignPlayer) {
@@ -229,6 +240,7 @@ export class MainMenuPage extends AbstractComponent {
                                     ${this.settings.powerups ? '<div class="w-4 h-4 bg-accent"></div>' : ''}
                                 </div>
                             </label>
+
                             <label class="flex justify-between items-center cursor-pointer group">
                                 <span class="text-lg group-hover:text-accent transition-colors">Accelerate on Hit</span>
                                 <div class="relative w-6 h-6 border border-accent flex items-center justify-center setting-toggle" data-setting="accumulateOnHit">
@@ -247,6 +259,18 @@ export class MainMenuPage extends AbstractComponent {
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Global Settings (Non-Gameplay) -->
+                    ${this.activeMode === 'arcade' && WebGLService.getInstance().is3DModeEnabled() ? `
+                    <div class="border border-accent p-4 -mt-4 mb-4 bg-black/50">
+                        <label class="flex justify-between items-center cursor-pointer group">
+                            <span class="text-sm tracking-wider text-gray-300 group-hover:text-accent transition-colors">ENABLE 3D GAMEPLAY MODE</span>
+                            <div class="relative w-6 h-6 border border-accent flex items-center justify-center setting-toggle" data-setting="use3D">
+                                ${this.settings.use3D ? '<div class="w-4 h-4 bg-accent"></div>' : ''}
+                            </div>
+                        </label>
+                    </div>
+                    ` : ''}
 
 
                      <button id="play-btn" class="w-full py-5 bg-accent text-black font-bold text-2xl tracking-[0.2em] hover:bg-white hover:shadow-[0_0_15px_rgba(41,182,246,0.5)] transition-all">
@@ -265,8 +289,8 @@ export class MainMenuPage extends AbstractComponent {
                     </div>
 
                     <!-- Logout Zone (Moved from Right Column) -->
-                    <div id="logout-zone" class="p-4 border-t border-accent/20 bg-black/40 group cursor-pointer hover:bg-red-500/10 transition-colors">
-                        <div class="w-full py-4 border-2 border-dashed border-red-500/20 text-red-500/50 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest">
+                    <div id="logout-zone" class="p-4 border-t border-red-900/30 bg-red-900/5 group cursor-pointer transition-all hover:bg-red-900/20">
+                        <div class="w-full py-4 border-2 border-dashed border-red-900/50 text-red-700 group-hover:border-red-500 group-hover:text-red-500 transition-all flex items-center justify-center gap-2 font-bold text-[10px] tracking-widest opacity-70 group-hover:opacity-100">
                             <i class="fas fa-sign-out-alt group-hover:scale-110 transition-transform"></i> DRAG HERE TO LOGOUT
                         </div>
                     </div>
@@ -294,14 +318,14 @@ export class MainMenuPage extends AbstractComponent {
                         </div>
                         
                         <div class="p-4 border-t border-accent/20 bg-black/40">
-                             <button id="add-player-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
-                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                             <button id="add-player-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-accent hover:text-black hover:border-accent hover:shadow-[0_0_15px_rgba(41,182,246,0.3)] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mb-2">
+                                  <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-black/20 transition-colors">
                                      <i class="fas fa-plus text-[10px]"></i>
                                   </div>
-                                  ADD PLAYERS
+                                  ADD PLAYER
                              </button>
-                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-4 border-2 border-dashed border-white/20 text-gray-500 hover:border-accent hover:text-accent hover:bg-accent/5 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group mt-2">
-                                  <div class="w-6 h-6 rounded-full border border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                             ${this.activeMode !== 'tournament' ? `<button id="add-bot-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-accent hover:text-black hover:border-accent hover:shadow-[0_0_15px_rgba(41,182,246,0.3)] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-widest group">
+                                  <div class="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-black/20 transition-colors">
                                      <i class="fas fa-robot text-[10px]"></i>
                                   </div>
                                   ADD BOT
@@ -693,8 +717,11 @@ export class MainMenuPage extends AbstractComponent {
             // Toggles
             const toggle = target.closest('.setting-toggle');
             if (toggle) {
-                const setting = toggle.getAttribute('data-setting') as 'powerups' | 'accumulateOnHit';
-                this.settings[setting] = !this.settings[setting];
+                const setting = toggle.getAttribute('data-setting') as keyof GameSettings;
+                if (setting === 'use3D' || setting === 'powerups' || setting === 'accumulateOnHit') {
+                    // Toggle boolean settings
+                    (this.settings as any)[setting] = !this.settings[setting];
+                }
                 this.renderContent();
                 return;
             }
@@ -775,18 +802,24 @@ export class MainMenuPage extends AbstractComponent {
             // Logout Button
             const logoutBtn = target.closest('#logout-btn');
             if (logoutBtn) {
-                if (confirm('Are you sure you want to logout?')) {
-                    AuthService.getInstance().logout();
-                    App.getInstance().router.navigateTo('/login');
-                }
+                new ConfirmationModal(
+                    'ARE YOU SURE YOU WANT TO LOGOUT?',
+                    () => {
+                        AuthService.getInstance().logout();
+                        App.getInstance().router.navigateTo('/login');
+                    },
+                    () => { },
+                    'warning'
+                ).render();
                 return;
             }
         };
     }
 
     private handleAddBot(): void {
+        // Bots not allowed in tournament
         if (this.activeMode === 'tournament') {
-            alert("Bots cannot be added in Tournament mode.");
+            new ErrorModal("BOTS CANNOT BE ADDED IN TOURNAMENT MODE.").render();
             return;
         }
 
@@ -796,7 +829,7 @@ export class MainMenuPage extends AbstractComponent {
             const bot2 = existing.find(p => p.userId === -2);
 
             if (bot1 && bot2) {
-                alert("Maximum of 2 bots allowed.");
+                new ErrorModal("MAXIMUM OF 2 BOTS ALLOWED.").render();
                 return;
             }
 
@@ -832,14 +865,14 @@ export class MainMenuPage extends AbstractComponent {
                     this.campaignPlayer = player;
                     this.renderContent();
                 } else {
-                    alert("Only the Host can play Campaign Mode.");
+                    new ErrorModal("ONLY THE HOST CAN PLAY CAMPAIGN MODE.").render();
                 }
             });
             // Early return to wait for promise/prevent render before check
             return;
         } else if (target === 'tournament') {
             if (player.isBot) {
-                alert("Bots cannot be added to Tournament mode.");
+                new ErrorModal("BOTS CANNOT BE ADDED TO TOURNAMENT MODE.").render();
                 return;
             }
             if (this.tournamentPlayers.length < 8 && !isInTournament) {
@@ -848,26 +881,34 @@ export class MainMenuPage extends AbstractComponent {
         } else if (target === 'team1') {
             // Check bot limit
             if (player.isBot && this.arcadeTeam1.some(p => p.isBot)) {
-                alert("Only 1 Bot allowed per team.");
+                new ErrorModal("ONLY 1 BOT ALLOWED PER TEAM.").render();
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            if (this.arcadeTeam1.length < 2 && !isOnTeam1 && !isOnTeam2) {
+            // Limit to 2 players per team for Arcade (up to 2v2)
+            const limit = 2;
+            if (this.arcadeTeam1.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam1.push(player);
             } else if (isOnTeam2) {
                 console.warn(`Player ${player.username} is already on Team 2`);
+            } else if (this.arcadeTeam1.length >= limit) {
+                new ErrorModal(`TEAM 1 IS FULL (MAX ${limit}).`).render();
             }
         } else if (target === 'team2') {
             // Check bot limit
             if (player.isBot && this.arcadeTeam2.some(p => p.isBot)) {
-                alert("Only 1 Bot allowed per team.");
+                new ErrorModal("ONLY 1 BOT ALLOWED PER TEAM.").render();
                 return;
             }
             // CRITICAL: Check BOTH teams to prevent duplicate
-            if (this.arcadeTeam2.length < 2 && !isOnTeam1 && !isOnTeam2) {
+            // Limit to 2 players per team for Arcade (up to 2v2)
+            const limit = 2;
+            if (this.arcadeTeam2.length < limit && !isOnTeam1 && !isOnTeam2) {
                 this.arcadeTeam2.push(player);
             } else if (isOnTeam1) {
                 console.warn(`Player ${player.username} is already on Team 1`);
+            } else if (this.arcadeTeam2.length >= limit) {
+                new ErrorModal(`TEAM 2 IS FULL (MAX ${limit}).`).render();
             }
         }
         this.renderContent();
@@ -904,7 +945,9 @@ export class MainMenuPage extends AbstractComponent {
                 powerupsEnabled: this.settings.powerups,
                 accumulateOnHit: this.settings.accumulateOnHit,
                 difficulty: this.settings.aiDifficulty,
-                scoreToWin: this.settings.scoreToWin || 5
+                scoreToWin: this.settings.scoreToWin || 5,
+                ballSpeed: this.settings.ballSpeed,
+                use3D: this.activeMode === 'arcade' ? this.settings.use3D : false
             },
             team1: [],
             team2: [],
@@ -913,7 +956,7 @@ export class MainMenuPage extends AbstractComponent {
 
         if (this.activeMode === 'campaign') {
             if (!this.campaignPlayer) {
-                alert("Assign a pilot first");
+                new ErrorModal("ASSIGN A PILOT FIRST.").render();
                 return;
             }
             // Map single player to team logic with avatar
@@ -978,13 +1021,18 @@ export class MainMenuPage extends AbstractComponent {
             // Ensure compatibility with backend field names if they differ
             setup.settings.aiDifficulty = setup.settings.difficulty;
 
+            // Enforce 3D Setting availability (Only Arcade)
+            // if (this.activeMode !== 'arcade') {
+            //     setup.settings.use3D = false;
+            // }
+
             GameStateService.getInstance().setSetup(setup as any);
             App.getInstance().router.navigateTo('/game');
 
         } else if (this.activeMode === 'arcade') {
             // Validate Teams
             if (this.arcadeTeam1.length === 0 || this.arcadeTeam2.length === 0) {
-                alert("Both teams must have at least one player!");
+                new ErrorModal("BOTH TEAMS MUST HAVE AT LEAST ONE PLAYER!").render();
                 return;
             }
 
@@ -1008,7 +1056,7 @@ export class MainMenuPage extends AbstractComponent {
         } else {
             // Tournament logic
             if (![4, 8].includes(this.tournamentPlayers.length)) {
-                alert("Need 4 or 8 players for tournament");
+                new ErrorModal("NEED 4 OR 8 PLAYERS FOR TOURNAMENT.").render();
                 return;
             }
             const modal = new TournamentAliasModal(
@@ -1029,7 +1077,7 @@ export class MainMenuPage extends AbstractComponent {
 
                         App.getInstance().router.navigateTo('/tournament');
                     } catch (e) {
-                        alert("Failed to create tournament: " + e);
+                        new ErrorModal("FAILED TO CREATE TOURNAMENT: " + e).render();
                     }
                 },
                 () => { }
