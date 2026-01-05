@@ -4,6 +4,7 @@ import tournamentCrudRoutes from './crud';
 import tournamentParticipantRoutes from './participants';
 import tournamentMatchRoutes from './matches';
 import tournamentUserRoutes from './user';
+import tournamentBlockchainRoutes from './blockchain';
 import { createLogger } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
@@ -19,4 +20,6 @@ export default async function tournamentRoutes(fastify: FastifyInstance): Promis
   console.log('🏆 [TOURNAMENT-INDEX] Match routes registered');
   await tournamentUserRoutes(fastify);
   logger.info('🏆 [TOURNAMENT-INDEX] User routes registered');
+  await tournamentBlockchainRoutes(fastify);
+  logger.info('🏆 [TOURNAMENT-INDEX] Blockchain routes registered');
 }

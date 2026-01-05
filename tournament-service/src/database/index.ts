@@ -1,5 +1,5 @@
 // tournament-service/src/database/index.ts
-import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, promisifyDbAll, ensureColumnExists, createLogger } from '@ft-transcendence/common';
+import { createDatabaseConfig, createDatabaseConnection, promisifyDbRun, promisifyDbGet, createLogger } from '@ft-transcendence/common';
 
 const dbConfig = createDatabaseConfig('tournament-service', 'tournaments', { enableTestMode: true });
 const connection = createDatabaseConnection(dbConfig);
@@ -11,7 +11,7 @@ export const db = connection.getDb();
 /**
  * Initialize database tables for production
  */
-async function initializeTables(): Promise<void> {
+export async function initializeTables(): Promise<void> {
   // Create tournaments table
   await promisifyDbRun(db, `
     CREATE TABLE IF NOT EXISTS tournaments (

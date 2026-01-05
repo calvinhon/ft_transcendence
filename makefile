@@ -41,7 +41,7 @@ dev: check-docker check-compose
 	@docker compose down --remove-orphans 2>/dev/null || true
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Starting all services for development (uses build cache)..."
-	docker compose up -d --build --force-recreate
+	docker compose up -d --build
 	@$(MAKE) open
 	@echo "✅ All services started! Visit http://localhost:8443"
 
