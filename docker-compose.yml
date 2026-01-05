@@ -118,6 +118,7 @@ services:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
     networks:
       - transcendence-network
     healthcheck:
