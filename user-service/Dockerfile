@@ -22,11 +22,16 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# Ensure database directory exists
-RUN mkdir -p /app/database
+# Install su-exec so we can drop privileges at runtime
+RUN apk add --no-cache su-exec
 
-# Switch to non-root user
-USER node
+# Ensure database directories exist in image layer
+RUN mkdir -p /app/database /app/user-database && chown -R node:node /app/database /app/user-database || true
 
-# Use built TypeScript if available, otherwise fallback to JavaScript
-CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]
+# Copy entrypoint to perform runtime initialization on mounts
+COPY ./user-service/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Do not switch to non-root here; entrypoint will drop privileges after init
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["node", "dist/server.js"]

@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild ensure-database-folders fix-ownership help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild fix-ownership help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -36,7 +36,7 @@ help:
 	@echo ""
 
 # Dev mode - quick development start with cached builds
-dev: check-docker check-compose ensure-database-folders
+dev: check-docker check-compose
 	@echo "🛑 Stopping any running containers first..."
 	@docker compose down --remove-orphans 2>/dev/null || true
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
@@ -46,7 +46,7 @@ dev: check-docker check-compose ensure-database-folders
 	@echo "✅ All services started! Visit http://localhost:8443"
 
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
-clean-start: check-docker check-compose clean-dev clean ensure-database-folders
+clean-start: check-docker check-compose clean-dev clean
 	@echo "� Clean start with fresh build (after removing images & volumes)..."
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
@@ -60,7 +60,7 @@ restart: check-docker check-compose
 	@echo "✅ Services restarted!"
 
 # Rebuild - rebuild images from scratch (no cache) but keep data volumes
-rebuild: check-docker check-compose clean-dev ensure-database-folders
+rebuild: check-docker check-compose clean-dev
 	@echo "🔨 Rebuilding and restarting services from scratch..."
 	docker compose down
 	docker compose build --no-cache
@@ -171,87 +171,6 @@ nuke: check-docker
 	@docker rmi $$(docker images -q) 2>/dev/null || true
 	@echo "💥 Docker environment completely nuked!"
 	@echo "💡 To rebuild: make clean-start"
-	@$(MAKE) ensure-database-folders
-
-# Ensure database folders and required files exist
-ensure-database-folders:
-	@echo "📁 Ensuring database folders exist for all services..."
-	@mkdir -p auth-service/database
-	@mkdir -p game-service/database
-	@mkdir -p tournament-service/database
-	@mkdir -p user-service/database
-	@mkdir -p vault/data
-	@touch auth-service/database/.gitkeep
-	@touch game-service/database/.gitkeep
-	@touch tournament-service/database/.gitkeep
-	@touch user-service/database/.gitkeep
-	@if [ ! -f .env ]; then \
-		echo "📝 Creating empty .env file..."; \
-		touch .env; \
-		echo "✅ .env file created"; \
-	fi
-	@echo "🔧 Fixing database file ownership..."
-	@find auth-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find game-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find tournament-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find user-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find vault/data -type f -exec chmod 664 {} \; 2>/dev/null || true
-
-fix-ownership:
-	@echo "🔧 Fixing database file ownership and permissions..."
-	@echo "This fixes permission issues when moving between different hosts/users"
-	@find auth-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find game-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find tournament-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find user-service/database -type f -name "*.db" -exec chmod 664 {} \; 2>/dev/null || true
-	@find vault/data -type f -exec chmod 664 {} \; 2>/dev/null || true
-	@echo "✅ Database file permissions fixed"
-	@echo "🔐 Setting vault permissions..."
-	@if [ -d vault/data ]; then \
-		if [ -f vault/data/vault.db ] || [ -d vault/data/raft ]; then \
-			if ! find vault/data -type f -o -type d >/dev/null 2>&1; then \
-				echo "🔑 Vault data exists but has wrong permissions (cannot access files)"; \
-				echo "🔑 Need sudo access to fix vault permissions..."; \
-				if sudo -n true 2>/dev/null; then \
-					echo "✅ Sudo access available, fixing permissions..."; \
-					sudo chown -R $$(whoami):$$(whoami) vault/data; \
-					echo "✅ Vault permissions fixed"; \
-				else \
-					echo "🔑 Please enter your sudo password to fix vault permissions:"; \
-					sudo chown -R $$(whoami):$$(whoami) vault/data && \
-					echo "✅ Vault permissions fixed" || \
-					(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
-				fi; \
-			else \
-				CURRENT_OWNER=$$(find vault/data -type f -o -type d | head -1 | xargs stat -c '%U' 2>/dev/null || find vault/data -type f -o -type d | head -1 | xargs stat -f '%Su' 2>/dev/null || echo "unknown"); \
-				if [ "$$CURRENT_OWNER" != "$$(whoami)" ] && [ "$$CURRENT_OWNER" != "unknown" ]; then \
-					echo "🔑 Vault data exists but has wrong permissions (owned by $$CURRENT_OWNER)"; \
-					echo "🔑 Need sudo access to fix vault permissions..."; \
-					if sudo -n true 2>/dev/null; then \
-						echo "✅ Sudo access available, fixing permissions..."; \
-						sudo chown -R $$(whoami):$$(whoami) vault/data; \
-						echo "✅ Vault permissions fixed"; \
-					else \
-						echo "🔑 Please enter your sudo password to fix vault permissions:"; \
-						sudo chown -R $$(whoami):$$(whoami) vault/data && \
-						echo "✅ Vault permissions fixed" || \
-						(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
-					fi; \
-				else \
-					echo "✅ Vault permissions are correct"; \
-				fi; \
-			fi; \
-		else \
-			if command -v chown >/dev/null 2>&1; then \
-				sudo chown -R 100:1000 vault/data 2>/dev/null || \
-				chown -R 100:1000 vault/data 2>/dev/null || \
-				echo "⚠️  Could not change vault permissions (may need sudo)"; \
-			else \
-				echo "⚠️  chown command not available"; \
-			fi; \
-		fi; \
-	fi
-	@echo "✅ Database folders, .env file, and vault permissions ensured"
 
 open:
 	@echo "🌐 Opening browser at https://localhost:8443 ..."

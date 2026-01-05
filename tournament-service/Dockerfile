@@ -19,10 +19,12 @@ RUN npm run build
 
 RUN npm prune --production
 
-# Ensure database directory exists
-RUN mkdir -p /app/database
+# Ensure database directories exist in image layer
+RUN mkdir -p /app/database /app/tournament-database && chown -R node:node /app/database /app/tournament-database || true
 
-# Database files will be created by the application if they don't exist
-COPY ./tournament-service/database/ ./database/
+# Copy entrypoint to perform runtime initialization on mounts
+COPY ./tournament-service/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-CMD ["sh", "-c", "if [ -f 'dist/server.js' ]; then node dist/server.js; else node server.js; fi"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["node", "dist/server.js"]

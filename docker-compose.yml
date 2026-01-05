@@ -33,7 +33,7 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./auth-service/database:/app/database
+      - auth-db:/app/database
     environment:
       - NODE_ENV=development
       - VAULT_ADDR=https://vault:8200
@@ -52,7 +52,7 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./game-service/database:/app/database
+      - game-db:/app/database
     mem_limit: 256m
     healthcheck:
       test:
@@ -73,7 +73,7 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./tournament-service/database:/app/database
+      - tournament-db:/app/database
     mem_limit: 256m
     healthcheck:
       test:
@@ -94,8 +94,8 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./user-service/database:/app/database
-      - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
+      - user-db:/app/database
+      - auth-db:/app/auth-database # Shared for cross-DB JOIN
     mem_limit: 256m
     healthcheck:
       test:
@@ -197,3 +197,7 @@ networks:
 
 volumes:
   hardhat-data:
+  auth-db:
+  game-db:
+  tournament-db:
+  user-db:

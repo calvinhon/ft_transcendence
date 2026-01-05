@@ -22,11 +22,12 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# Ensure database directory exists
-RUN mkdir -p /app/database
+# Ensure database directories exist in image layer
+RUN mkdir -p /app/database /app/game-database && chown -R node:node /app/database /app/game-database || true
 
-# Switch to non-root user
-USER node
+# Copy entrypoint to perform runtime initialization on mounts
+COPY ./game-service/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Start using compiled JavaScript
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "dist/server.js"]

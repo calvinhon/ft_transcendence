@@ -2,7 +2,6 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-
 # Copy shared common package tarball
 COPY ./packages/common/ft-transcendence-common-1.0.0.tgz ./
 
@@ -22,11 +21,12 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# Create and set permissions for database directory
-RUN mkdir -p /app/database && chown -R node:node /app/database
+# Ensure database directories exist in image layer
+RUN mkdir -p /app/database /app/auth-database && chown -R node:node /app/database /app/auth-database || true
 
-# Switch to non-root user
-USER node
+# Copy entrypoint to perform runtime initialization on mounts
+COPY ./auth-service/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
-# Start using compiled JavaScript
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "dist/server.js"]
