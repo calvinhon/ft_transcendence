@@ -2,8 +2,11 @@
 import { db } from './database';
 import { GameRecord } from './types';
 import { createLogger } from '@ft-transcendence/common';
+import axios from 'axios';
 
 const logger = createLogger('GAME-SERVICE');
+
+let sessionSecret: any = null;
 
 export class GameHistoryService {
   // Fetch raw game history from database
@@ -156,11 +159,24 @@ export class GameHistoryService {
   private async fetchPlayerName(userId: number): Promise<string> {
     if (userId === 0) return 'Al-Ien';
     if (userId < 0) return `BOT ${Math.abs(userId)}`;
+
+    if (!sessionSecret) {
+      try {
+        const vaultResponse = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Server_Session`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+        const secrets = vaultResponse.data.data.data;
+        if (!secrets || !secrets.Secret)
+          throw new Error('Vault response missing secrets');
+        sessionSecret = secrets.Secret;
+      } catch (err: any) {
+        console.log("Failed server_session credentials: ", err.message );
+      }
+    }
+
     // Heuristic: IDs >= 100000 are legacy ephemeral/bot IDs
     if (userId >= 100000) return 'BOT';
     try {
       // Try User Service for Display Name
-      const userResponse = await fetch(`http://user-service:3000/profile/${userId}`);
+      const userResponse = await fetch(`http://user-service:3000/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
       if (userResponse.ok) {
         const userData = await userResponse.json() as any;
         if (userData.display_name && userData.display_name !== 'undefined') {
@@ -172,7 +188,7 @@ export class GameHistoryService {
       }
 
       // Fallback to Auth Service for Username
-      const authResponse = await fetch(`http://auth-service:3000/auth/profile/${userId}`);
+      const authResponse = await fetch(`http://auth-service:3000/auth/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
       if (authResponse.ok) {
         const authData = await authResponse.json() as any;
         if (authData.data && authData.data.username) return authData.data.username; // Response wrapped in data

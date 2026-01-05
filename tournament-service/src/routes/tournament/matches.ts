@@ -13,6 +13,8 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
   }>('/matches/result', async (request: FastifyRequest<{
     Body: MatchResultBody;
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Matches'),sendError(reply, "Unauthorized", 401);
     try {
       const { matchId, winnerId, player1Score, player2Score } = request.body;
 
@@ -37,6 +39,8 @@ export default async function tournamentMatchRoutes(fastify: FastifyInstance): P
     Params: { tournamentId: string; matchId: string };
     Body: MatchResultBody;
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Tournaments Match'),sendError(reply, "Unauthorized", 401);
     try {
       const matchId = parseInt(request.params.matchId);
       const { winnerId, player1Score, player2Score } = request.body;

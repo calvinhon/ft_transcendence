@@ -15,6 +15,8 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
     Params: { tournamentId: string };
     Body: JoinTournamentBody;
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Tournaments Join'),sendError(reply, "Unauthorized", 401);
     try {
       const tournamentId = parseInt(request.params.tournamentId);
       const { userId } = request.body;
@@ -43,6 +45,8 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   }>('/user/:userId/rankings', async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('User Rankings'),sendError(reply, "Unauthorized", 401);
     try {
       const userId = parseInt(request.params.userId);
 
@@ -68,6 +72,8 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   }>('/tournaments/user/:userId', async (request: FastifyRequest<{
     Params: { userId: string };
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Tournaments Users'),sendError(reply, "Unauthorized", 401);
     try {
       const userId = parseInt(request.params.userId);
 
@@ -91,13 +97,15 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
   fastify.get<{
     Params: { tournamentId: string };
   }>('/tournaments/participant/:tournamentId', async (request: FastifyRequest<{ Params: { tournamentId: string } }>, reply: FastifyReply) => {
-	try {
-		const id = parseInt(request.params.tournamentId, 10);
-		if (Number.isNaN(id)) return sendError(reply, 'Invalid tournament ID', 400);
-		const participants = await ParticipantService.getTournamentParticipants(id);
-		return sendSuccess(reply, participants, 'Tournament participants retrieved successfully');
-	} catch (error) {
-		return sendError(reply, 'Failed to retrieve tournament participants', 500);
-	}
+    if (!request.session || !request.session.userId)
+        return console.log('Tournaments Participants'),sendError(reply, "Unauthorized", 401);
+    try {
+      const id = parseInt(request.params.tournamentId, 10);
+      if (Number.isNaN(id)) return sendError(reply, 'Invalid tournament ID', 400);
+      const participants = await ParticipantService.getTournamentParticipants(id);
+      return sendSuccess(reply, participants, 'Tournament participants retrieved successfully');
+    } catch (error) {
+      return sendError(reply, 'Failed to retrieve tournament participants', 500);
+    }
   })
 }

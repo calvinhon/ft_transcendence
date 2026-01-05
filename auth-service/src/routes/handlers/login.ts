@@ -27,6 +27,11 @@ export async function loginHandler(request: FastifyRequest, reply: FastifyReply)
 
     logger.info('Login successful for', identifier);
 
+    if (!request.session.authenticated) {
+      request.session.userId = Number(user.userId);
+      request.session.authenticated = true;
+      await request.session.save();
+    }
     sendSuccess(reply, {
       user
     }, 'Login successful');

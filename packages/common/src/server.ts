@@ -36,7 +36,7 @@ export class ServerBootstrap {
       ...options
     };
     this.logger = createLogger(config.serviceName);
-    this.fastify = Fastify({ logger: true });
+    this.fastify = Fastify({ logger: true, trustProxy: true });
   }
 
   async initialize(): Promise<void> {
