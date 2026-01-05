@@ -7,7 +7,7 @@ import { getQuery, runQuery } from '../../utils/database';
 let googleSecrets: any = null;
 let sessionSecret: any = null;
 
-function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: { success: boolean, user?: any, error?: string }): void {
+function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: { success: boolean, user?: any, error?: string, sessionId?: string }): void {
 	const messageData = data.success
 		? { type: 'OAUTH_SUCCESS', payload: data }
 		: { type: 'OAUTH_ERROR', error: data.error };
@@ -140,7 +140,7 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			await request.session.save();
 		}
 
-		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email } });
+		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email }, sessionId: request.session.sessionId });
 	} else { // register the new user
 		try {
 			const store = await getQuery('SELECT * FROM users WHERE username = ?', [userData.name]);
@@ -180,6 +180,6 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			await request.session.save();
 		}
 
-		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email } });
+		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email }, sessionId: request.session.sessionId });
 	}
 }

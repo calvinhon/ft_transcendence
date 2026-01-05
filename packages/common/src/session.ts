@@ -32,7 +32,7 @@ export const sessionSecret = fp(async (fastify) => {
 		cookie: {
 			path: '/',
 			httpOnly: true,
-			secure: true,
+			secure: process.env.NODE_ENV === 'production', // Only secure in production
 			maxAge: 3600000,
 			sameSite: 'lax'
 		},

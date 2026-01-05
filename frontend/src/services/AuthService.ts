@@ -263,7 +263,7 @@ export class AuthService {
         try {
             const authData = await this.waitForOAuthPopup(popup);
             if (authData && authData.success) {
-                this.handleAuthSuccess(authData.token, authData.user);
+                this.handleAuthSuccess(authData.token, authData.user, authData.sessionId);
                 App.getInstance().router.navigateTo('/');
             } else {
                 console.error("OAuth failed:", authData?.error);
@@ -283,10 +283,12 @@ export class AuthService {
                 // Security check: ensure origin matches (if needed, currently relative)
                 // if (event.origin !== window.location.origin) return;
 
+                console.log('AuthService: Received message from popup:', event.data);
                 if (event.data && event.data.type === 'OAUTH_SUCCESS') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
                     popup.close();
+                    console.log('AuthService: OAuth success payload:', event.data.payload);
                     resolve(event.data.payload);
                 } else if (event.data && event.data.type === 'OAUTH_ERROR') {
                     handled = true;
@@ -345,9 +347,22 @@ export class AuthService {
         }
     }
 
-    private handleAuthSuccess(token: string, user: User): void {
+    private async handleAuthSuccess(token: string, user: User, sessionId?: string): Promise<void> {
+        console.log('AuthService: handleAuthSuccess called with', { token: !!token, user: user?.username, sessionId: !!sessionId });
         if (token) localStorage.setItem('token', token);
         if (user) localStorage.setItem('user', JSON.stringify(user));
+        if (sessionId) {
+            console.log('AuthService: Establishing session for userId:', user.userId);
+            // Establish session in main window
+            try {
+                const response = await Api.post('/api/auth/establish-session', { userId: user.userId });
+                console.log('AuthService: Session established successfully:', response);
+            } catch (error) {
+                console.error('AuthService: Failed to establish session:', error);
+            }
+        } else {
+            console.log('AuthService: No sessionId provided, skipping session establishment');
+        }
         App.getInstance().currentUser = user;
     }
 }
