@@ -17,6 +17,12 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     if (passwordError) return sendError(reply, passwordError, 400);
     const result = await authService.register(username, email, password);
 
+    if (!request.session.authenticated) {
+      request.session.userId = Number(result.userId);
+      request.session.authenticated = true;
+      await request.session.save();
+    }
+
     sendSuccess(reply, { user: { userId: result.userId, username } }, 'User registered successfully', 201);
   } catch (error: any) {
     if (error.message?.includes('UNIQUE constraint failed')) {

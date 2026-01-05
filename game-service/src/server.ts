@@ -1,8 +1,10 @@
 // game-service/src/server.ts
+import '@fastify/cookie';
+import '@fastify/session';
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import gameRoutes from './routes';
-import { createServer, createServiceConfig } from '@ft-transcendence/common';
+import { createServer, createServiceConfig, sessionSecret } from '@ft-transcendence/common';
 
 const serverConfig = createServiceConfig('GAME-SERVICE', 3000);
 
@@ -16,6 +18,7 @@ async function start(): Promise<void> {
   const server = await createServer(serverConfig, async (fastify) => {
     // Register additional plugins
     await fastify.register(websocket);
+    await fastify.register(sessionSecret);
 
     // Register routes
     await fastify.register(gameRoutes);

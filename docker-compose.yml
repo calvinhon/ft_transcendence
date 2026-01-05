@@ -4,6 +4,19 @@
 # UPDATED: Added health checks for improved container orchestration reliability
 
 services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    expose:
+      - '6379'
+    networks:
+      - transcendence-network
+    healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
   vault:
     build: ./vault
     container_name: vault
@@ -36,10 +49,12 @@ services:
       - auth-db:/app/database
     environment:
       - NODE_ENV=development
-      - VAULT_ADDR=https://vault:8200
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
     env_file:
       - .env
+    restart: on-failure
+    depends_on:
+      - redis
+      - vault
     mem_limit: 256m
     networks:
       - transcendence-network
@@ -53,6 +68,9 @@ services:
       - "3000"
     volumes:
       - game-db:/app/database
+    env_file:
+      - .env
+    restart: on-failure
     mem_limit: 256m
     healthcheck:
       test:
@@ -74,6 +92,9 @@ services:
       - "3000"
     volumes:
       - tournament-db:/app/database
+    env_file:
+      - .env
+    restart: on-failure
     mem_limit: 256m
     healthcheck:
       test:
@@ -96,6 +117,9 @@ services:
     volumes:
       - user-db:/app/database
       - auth-db:/app/auth-database # Shared for cross-DB JOIN
+    env_file:
+      - .env
+    restart: on-failure
     mem_limit: 256m
     healthcheck:
       test:
@@ -119,6 +143,8 @@ services:
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
       - ./blockchain/artifacts:/app/artifacts
+    env_file:
+      - .env
     networks:
       - transcendence-network
     healthcheck:
@@ -148,7 +174,9 @@ services:
       - transcendence-network
 
   blockchain-service:
-    build: ./blockchain-service
+    build:
+      context: .
+      dockerfile: ./blockchain-service/Dockerfile
     container_name: blockchain-service
     expose:
       - "3000"
@@ -157,6 +185,7 @@ services:
       - ./blockchain/deployments:/app/deployments
     env_file:
       - .env
+    restart: on-failure
     depends_on:
       blockchain:
         condition: service_healthy
@@ -182,6 +211,8 @@ services:
     volumes:
       - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./frontend/nginx/certs:/etc/nginx/certs:ro
+    env_file:
+      - .env
     depends_on:
       - auth-service
       - user-service

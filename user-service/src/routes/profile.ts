@@ -1,16 +1,33 @@
 // user-service/src/routes/profile.ts
+import axios from 'axios';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { UserService } from '../services/userService';
 import { UpdateProfileBody } from '../types';
 import { db } from '../database';
-import { promisifyDbRun } from '@ft-transcendence/common';
+import { promisifyDbRun, sendError } from '@ft-transcendence/common';
+
+let serverSecret : any = null;
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
+
+  try {
+    const response = await axios.get(`${process.env.VAULT_ADDR}/v1/kv/data/Server_Session`, { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } });
+    console.log("Successfully retrieved server secret.");
+    serverSecret = response.data.data.data.Secret;
+  } catch (err: any) {
+    console.log("Error encounter while attempting to retrieve session secret: ", err.message);
+  }
+
   // Get user profile
   fastify.get<{
     Params: { userId: string };
   }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
     const { userId } = request.params;
+
+    const serverCheck = request.headers['x-microservice-secret'];
+
+    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
+        return console.log('Profile Get'),sendError(reply, "Unauthorized", 401);
 
     try {
       const profile = await UserService.getOrCreateProfile(parseInt(userId));
@@ -28,6 +45,11 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
   }>('/profile/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: UpdateProfileBody }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const updates = request.body;
+
+    const serverCheck = request.headers['x-microservice-secret'];
+
+    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
+        return console.log('Profile Put'),sendError(reply, "Unauthorized", 401);
 
     try {
       await UserService.updateProfile(parseInt(userId), updates);

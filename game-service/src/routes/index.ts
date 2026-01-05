@@ -13,6 +13,11 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // WebSocket connection for real-time game
   fastify.get('/ws', { websocket: true }, (connection: SocketStream, req: FastifyRequest) => {
+    if (!req.session || !req.session.userId) {
+      console.log('Web Socket');
+      handleWebSocketMessage(connection.socket, 'Unauthorized');
+      return handleWebSocketClose(connection.socket);
+    }
     logger.info('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
     logger.info('Connection from:', req.socket.remoteAddress);
 
@@ -29,6 +34,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { userId: string };
   }>('/history/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('History'),sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
       const games = await gameHistoryService.getGameHistory(userId);
@@ -44,6 +51,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { gameId: string };
   }>('/:gameId', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Game ID'),sendError(reply, "Unauthorized", 401);
     try {
       const { gameId } = request.params;
       const game = await gameHistoryService.getGameDetails(parseInt(gameId));
@@ -64,6 +73,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { gameId: string };
   }>('/:gameId/events', async (request: FastifyRequest<{ Params: { gameId: string } }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Game ID Events'),sendError(reply, "Unauthorized", 401);
     try {
       const { gameId } = request.params;
       const events = await gameHistoryService.getGameEvents(parseInt(gameId));
@@ -76,6 +87,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Save game result
   fastify.post('/save', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Save'),sendError(reply, "Unauthorized", 401);
     try {
       const body = request.body as any;
       logger.info('Saving game result:', body);
@@ -127,6 +140,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
     Params: { userId: string };
   }>('/stats/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Stats'),sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
       const stats = await gameStatsService.getGameStats(userId);
@@ -139,6 +154,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Get currently online users
   fastify.get('/online', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Online'),sendError(reply, "Unauthorized", 401);
     try {
       // Map keys to array of objects
       const users: any[] = [];
@@ -154,6 +171,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
 
   // Friends Routes
   fastify.post('/friends/add', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Add Friends'),sendError(reply, "Unauthorized", 401);
     try {
       const { userId, friendId } = request.body as any;
       if (!userId || !friendId) {
@@ -170,6 +189,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.post('/friends/remove', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Remove Friends'),sendError(reply, "Unauthorized", 401);
     try {
       const { userId, friendId } = request.body as any;
       if (!userId || !friendId) return sendError(reply, 'Missing userId or friendId', 400);
@@ -184,6 +205,8 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.get<{ Params: { userId: string } }>('/friends/:userId', async (request, reply) => {
+    if (!request.session || !request.session.userId)
+      return console.log('Friends'),sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
       const { friendService } = await import('./modules/friend-service');

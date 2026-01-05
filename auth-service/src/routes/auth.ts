@@ -9,7 +9,7 @@ import { resetPasswordHandler } from './handlers/resetPassword';
 import { verifySessionHandler } from './handlers/verify';
 import { oauthInitHandler, oauthCallbackHandler } from './handlers/oauth';
 
-async function authRoutes(fastify: FastifyInstance, opts?: unknown): Promise<void> {
+async function authRoutes(fastify: FastifyInstance): Promise<void> {
   // Register routes
   fastify.post('/register', registerHandler);
   fastify.post('/login', loginHandler);

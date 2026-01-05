@@ -8,6 +8,10 @@ const logger = createLogger('AUTH-SERVICE');
 
 export async function profileHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();
+
+  if (!request.session || !request.session.userId)
+    return console.log('ProfileHandler'),sendError(reply, "Unauthorized", 401);
+
   try {
     const { userId } = request.params as { userId: string };
     const userIdNum = parseInt(userId, 10);
@@ -30,6 +34,9 @@ export async function profileHandler(request: FastifyRequest, reply: FastifyRepl
 }
 
 export async function profileOauthIdentificationHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  if (!request.session || !request.session.userId)
+    return console.log('Oauth Check'),sendError(reply, "Unauthorized", 401);
+
   try {
     const { userId } = request.params as { userId: string };
     const userIdNum = parseInt(userId, 10);
