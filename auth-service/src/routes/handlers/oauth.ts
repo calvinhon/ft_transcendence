@@ -133,7 +133,7 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		}
 
 		if (!request.session.authenticated) {
-			request.session.userId = Number(user.userId);
+			request.session.userId = Number(user.id);
 			request.session.authenticated = true;
 			await request.session.save();
 		}
@@ -173,7 +173,7 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		}
 
 		if (!request.session.authenticated) {
-			request.session.userId = Number(user.userId);
+			request.session.userId = Number(user.id);
 			request.session.authenticated = true;
 			await request.session.save();
 		}
