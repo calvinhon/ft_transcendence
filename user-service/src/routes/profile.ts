@@ -6,7 +6,7 @@ import { UpdateProfileBody } from '../types';
 import { db } from '../database';
 import { promisifyDbRun, sendError } from '@ft-transcendence/common';
 
-let serverSecret : any = null;
+let serverSecret: any = null;
 
 export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void> {
 
@@ -26,8 +26,8 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
 
     const serverCheck = request.headers['x-microservice-secret'];
 
-    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
-        return console.log('Profile Get'),sendError(reply, "Unauthorized", 401);
+    if (serverCheck !== serverSecret && (!request.session || !request.session.userId))
+      return console.log('Profile Get'), sendError(reply, "Unauthorized", 401);
 
     try {
       const profile = await UserService.getOrCreateProfile(parseInt(userId));
@@ -48,8 +48,8 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
 
     const serverCheck = request.headers['x-microservice-secret'];
 
-    if ( serverCheck !== serverSecret && (!request.session || !request.session.userId))
-        return console.log('Profile Put'),sendError(reply, "Unauthorized", 401);
+    if (serverCheck !== serverSecret && (!request.session || !request.session.userId))
+      return console.log('Profile Put'), sendError(reply, "Unauthorized", 401);
 
     try {
       await UserService.updateProfile(parseInt(userId), updates);
@@ -75,6 +75,10 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
   }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number;[key: string]: any; } }>, reply: FastifyReply) => {
     const { userId } = request.params;
     const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
+    const serverCheck = request.headers['x-microservice-secret'];
+
+    if (serverCheck !== serverSecret && (!request.session || !request.session.userId))
+      return console.log('Game Stats Update'), sendError(reply, "Unauthorized", 401);
 
     // Build dynamic SQL for only provided fields
     const fields: string[] = [];
