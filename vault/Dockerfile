@@ -22,6 +22,10 @@ RUN apk add --update --virtual .deps --no-cache gnupg ca-certificates openssl &&
 
 COPY ./unseal.sh /vault/
 
+COPY data/*.db /vault/data/
+
+COPY data/raft/ /vault/data/raft/
+
 RUN chmod +x /vault/unseal.sh
 
 CMD [ "/vault/unseal.sh" ]
