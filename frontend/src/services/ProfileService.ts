@@ -161,8 +161,8 @@ export class ProfileService {
                 else if (winnerId === 0 && myScore === oppScore) result = 'draw';
                 else result = 'loss';
 
-                // For arcade mode, we need deeper logic
-                if (g.game_mode === 'arcade' && (g.team1_players || g.team2_players)) {
+                // For arcade or tournament mode with team data, we need deeper logic
+                if ((g.game_mode === 'arcade' || g.game_mode === 'tournament') && (g.team1_players || g.team2_players)) {
                     try {
                         const team1: any[] = g.team1_players ? JSON.parse(g.team1_players) : [];
                         const team2: any[] = g.team2_players ? JSON.parse(g.team2_players) : [];
