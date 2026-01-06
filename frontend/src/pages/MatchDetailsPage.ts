@@ -30,6 +30,16 @@ export class MatchDetailsPage extends AbstractComponent {
         `;
     }
 
+    private parseDate(date: string | number): Date {
+        if (typeof date === 'string') {
+            // Handle SQL timestamp "YYYY-MM-DD HH:MM:SS" -> treat as UTC
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(date)) {
+                return new Date(date.replace(' ', 'T') + 'Z');
+            }
+        }
+        return new Date(date);
+    }
+
     private renderContent(): string {
         if (this.loading) {
             return `
@@ -66,7 +76,7 @@ export class MatchDetailsPage extends AbstractComponent {
                     </div>
                     
                     <div class="mt-4 text-sm text-gray-400">
-                        ${new Date(this.gameData.finished_at).toLocaleString()} • ${this.gameData.game_mode?.toUpperCase() || 'NORMAL'}
+                        ${this.parseDate(this.gameData.finished_at).toLocaleString('en-US', { timeZone: 'Asia/Dubai' })} • ${this.gameData.game_mode?.toUpperCase() || 'NORMAL'}
                     </div>
                 </div>
 
@@ -105,7 +115,7 @@ export class MatchDetailsPage extends AbstractComponent {
     }
 
     private renderEventRow(e: any): string {
-        const time = new Date(e.timestamp).toLocaleTimeString();
+        const time = this.parseDate(e.timestamp).toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai' });
         let content = '';
 
         if (e.event_type === 'goal') {
@@ -127,7 +137,7 @@ export class MatchDetailsPage extends AbstractComponent {
 
     private calculateDuration(start: string, end: string): string {
         if (!start || !end) return '--:--';
-        const diff = new Date(end).getTime() - new Date(start).getTime();
+        const diff = this.parseDate(end).getTime() - this.parseDate(start).getTime();
         const minutes = Math.floor(diff / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
         return `${minutes}m ${seconds}s`;
@@ -223,8 +233,8 @@ export class MatchDetailsPage extends AbstractComponent {
         if (!canvas || !this.gameEvents.length) return;
 
         // Process data using linear time scale
-        const startTime = new Date(this.gameData.started_at).getTime();
-        const endTime = this.gameData.finished_at ? new Date(this.gameData.finished_at).getTime() : Date.now();
+        const startTime = this.parseDate(this.gameData.started_at).getTime();
+        const endTime = this.gameData.finished_at ? this.parseDate(this.gameData.finished_at).getTime() : Date.now();
         const totalDuration = (endTime - startTime) / 1000;
 
         // Data points: {x: seconds, y: score}
@@ -232,7 +242,7 @@ export class MatchDetailsPage extends AbstractComponent {
         const p2Data: any[] = [{ x: 0, y: 0 }];
 
         this.gameEvents.filter(e => e.event_type === 'goal').forEach(e => {
-            const timeOffset = Math.max(0, Math.floor((new Date(e.timestamp).getTime() - startTime) / 1000));
+            const timeOffset = Math.max(0, Math.floor((this.parseDate(e.timestamp).getTime() - startTime) / 1000));
             p1Data.push({ x: timeOffset, y: e.event_data.newScore.player1 });
             p2Data.push({ x: timeOffset, y: e.event_data.newScore.player2 });
         });
