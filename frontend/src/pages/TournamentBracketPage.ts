@@ -3,7 +3,6 @@ import { App } from "../core/App";
 import { TournamentService, Tournament } from "../services/TournamentService";
 import { GameStateService } from "../services/GameStateService";
 import { TournamentMatchModal } from "../components/TournamentMatchModal";
-import { BlockchainService } from "../services/BlockchainService";
 
 export class TournamentBracketPage extends AbstractComponent {
     private tournamentId: string | null = null;
@@ -13,8 +12,6 @@ export class TournamentBracketPage extends AbstractComponent {
     private isLoading: boolean = true; // Show loading on mount
     private blockchainMessage: string | null = null;
     private blockchainMessageType: 'success' | 'error' | null = null;
-    private blockchainEventHandler: ((e: Event) => void) | null = null;
-    private recordingInProgress: boolean = false;
 
     constructor() {
         super();
@@ -68,45 +65,14 @@ export class TournamentBracketPage extends AbstractComponent {
             this.container.removeEventListener('click', this.clickHandler);
             this.clickHandler = null;
         }
-        if (this.blockchainEventHandler) {
-            window.removeEventListener('blockchain', this.blockchainEventHandler);
-            this.blockchainEventHandler = null;
-        }
     }
 
     private async refreshData() {
         if (!this.tournamentId) return;
         try {
             this.tournament = await TournamentService.getInstance().get(String(this.tournamentId));
-            const recordedKey = `tournament_recorded_${this.tournamentId}`;
-            const participants = await TournamentService.getInstance().getParticipants();
-            if (this.tournament?.winnerId != null && !sessionStorage.getItem(recordedKey) && !this.recordingInProgress) {
-                this.recordingInProgress = true;
-                const tournamentIdNum = Number(this.tournamentId);
-                const players = participants.map(p => Number(p.id));
-                const ranks = participants.map(p => Number(p.rank));
-
-                try {
-                    const res = await BlockchainService.getInstance().recordOnBlockchain(tournamentIdNum, players, ranks);
-                    if (res.success) {
-                        sessionStorage.setItem(recordedKey, '1');
-                        this.blockchainMessage = 'Rankings recorded on blockchain';
-                        this.blockchainMessageType = 'success';
-                    } else {
-                        this.blockchainMessage = `Blockchain recording failed: ${res.error || 'unknown'}`;
-                        this.blockchainMessageType = 'error';
-                    }
-                    this.render();
-                } catch (e) {
-                    this.blockchainMessage = 'Blockchain recording failed';
-                    this.blockchainMessageType = 'error';
-                    this.render();
-                } finally {
-                    this.recordingInProgress = false;
-                }
-            } else if (sessionStorage.getItem(recordedKey)) {
-                // Key exists, so it was already recorded. Restore message.
-                this.blockchainMessage = 'Rankings recorded on blockchain';
+            if (this.tournament?.winnerId != null) {
+                this.blockchainMessage = 'Rankings are recorded on blockchain by the server';
                 this.blockchainMessageType = 'success';
             }
         } catch (err) {
@@ -128,14 +94,6 @@ export class TournamentBracketPage extends AbstractComponent {
 
             this.container?.addEventListener('click', this.clickHandler);
         }
-
-        this.blockchainEventHandler = (e: Event) => {
-            const d = (e as CustomEvent).detail;
-            this.blockchainMessage = d?.message || null;
-            this.blockchainMessageType = d?.success ? 'success' : 'error';
-            this.render();
-        };
-        window.addEventListener('blockchain', this.blockchainEventHandler);
     }
 
     public render(): void {
