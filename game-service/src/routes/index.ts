@@ -33,12 +33,14 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
   // Get game history
   fastify.get<{
     Params: { userId: string };
-  }>('/history/:userId', async (request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
+    Querystring: { limit?: string };
+  }>('/history/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Querystring: { limit?: string } }>, reply: FastifyReply) => {
     if (!request.session || !request.session.userId)
       return console.log('History'), sendError(reply, "Unauthorized", 401);
     try {
       const { userId } = request.params;
-      const games = await gameHistoryService.getGameHistory(userId);
+      const limit = Math.min(Math.max(parseInt(request.query.limit || '50', 10) || 50, 1), 100); // Clamp between 1-100
+      const games = await gameHistoryService.getGameHistory(userId, limit);
       const enrichedGames = await gameHistoryService.enrichGamesWithPlayerNames(games);
       sendSuccess(reply, enrichedGames);
     } catch (error) {
@@ -46,6 +48,7 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       sendError(reply, 'Error fetching game history', 500);
     }
   });
+
 
   // Get single game details
   fastify.get<{
