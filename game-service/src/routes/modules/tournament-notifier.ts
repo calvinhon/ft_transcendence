@@ -1,10 +1,30 @@
 // game-service/src/routes/modules/tournament-notifier.ts
 // Centralized service for notifying tournament service of match results
 
-import * as http from 'http';
+import axios from 'axios';
 import { createLogger } from '@ft-transcendence/common';
 
 const logger = createLogger('GAME-SERVICE');
+
+let serverSecret: string | null = null;
+
+async function getServerSecret(): Promise<string | null> {
+    if (serverSecret) return serverSecret;
+    try {
+        const vaultResponse = await axios.get(
+            `${process.env.VAULT_ADDR}/v1/kv/data/Server_Session`,
+            { headers: { 'X-Vault-Token': process.env.VAULT_TOKEN } }
+        );
+        const secrets = vaultResponse?.data?.data?.data;
+        const secret = secrets?.Secret;
+        if (!secret) throw new Error('Vault response missing secrets');
+        serverSecret = secret;
+        return serverSecret;
+    } catch (err: any) {
+        logger.warn('Failed to retrieve Server_Session secret from Vault', { error: err?.message });
+        return null;
+    }
+}
 
 export interface MatchResult {
     matchId: number;
@@ -22,37 +42,32 @@ export function notifyTournamentService(
     tournamentId: number,
     result: MatchResult
 ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return (async () => {
         logger.info(`[${gameId}] Notifying tournament service: tournamentId=${tournamentId}, matchId=${result.matchId}`);
+        try {
+            const secret = await getServerSecret();
+            const res = await fetch('http://tournament-service:3000/matches/result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(secret ? { 'X-Microservice-Secret': secret } : {})
+                },
+                body: JSON.stringify({
+                    matchId: result.matchId,
+                    winnerId: result.winnerId,
+                    player1Score: result.player1Score,
+                    player2Score: result.player2Score
+                })
+            });
 
-        const postData = JSON.stringify({
-            matchId: result.matchId,
-            winnerId: result.winnerId,
-            player1Score: result.player1Score,
-            player2Score: result.player2Score
-        });
-
-        const req = http.request({
-            hostname: 'tournament-service',
-            port: 3000,
-            path: '/matches/result',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                logger.warn(`[${gameId}] Tournament notify failed`, { status: res.status, body: text });
+            } else {
+                logger.info(`[${gameId}] Tournament service notified: ${res.status}`);
             }
-        }, (res) => {
-            logger.info(`[${gameId}] Tournament service notified: ${res.statusCode}`);
-            resolve();
-        });
-
-        req.on('error', (e: Error) => {
-            logger.error(`[${gameId}] Problem notifying tournament service: ${e.message}`);
-            // Don't reject - tournament notification failure shouldn't break the game flow
-            resolve();
-        });
-
-        req.write(postData);
-        req.end();
-    });
+        } catch (e: any) {
+            logger.warn(`[${gameId}] Problem notifying tournament service`, { error: e?.message });
+        }
+    })();
 }

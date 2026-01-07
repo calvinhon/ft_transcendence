@@ -51,7 +51,15 @@ export class PongGame {
     this.physics = new GamePhysics(ballSpeed, this.gameSettings.accelerateOnHit, this.gameSettings.gameMode, this.gameSettings.powerupsEnabled);
     this.ai = new GameAI(this.gameSettings.aiDifficulty, this.gameSettings.gameMode, paddleSpeed);
     this.stateManager = new GameStateManager(gameId, player1, player2);
-    this.scoring = new GameScoring(gameId, player1, player2, this.gameSettings.scoreToWin, this.gameSettings.team1Players, this.gameSettings.team2Players);
+    this.scoring = new GameScoring(
+      gameId,
+      player1,
+      player2,
+      this.gameSettings.scoreToWin,
+      this.gameSettings.team1Players,
+      this.gameSettings.team2Players,
+      this.gameSettings.tournamentPlayer1Id
+    );
     this.broadcaster = new GameBroadcaster(gameId, player1, player2);
 
     // Initialize game objects

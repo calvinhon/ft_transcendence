@@ -16,4 +16,5 @@ export interface GameSettings {
     campaignLevel?: number;
     tournamentId?: number;
     tournamentMatchId?: number;
+    tournamentPlayer1Id?: number;
 }

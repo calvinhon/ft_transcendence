@@ -96,12 +96,14 @@ export class GameService {
                     team2Players: t2,
                     team1PlayerCount: t1.length,
                     team2PlayerCount: t2.length,
-                    campaignLevel: settings.campaignLevel
+                    campaignLevel: settings.campaignLevel,
+                    tournamentPlayer1Id: settings.tournamentPlayer1Id
                 },
                 team1Players: t1,
                 team2Players: t2,
                 tournamentId: settings.tournamentId,
-                tournamentMatchId: settings.tournamentMatchId
+                tournamentMatchId: settings.tournamentMatchId,
+                tournamentPlayer1Id: settings.tournamentPlayer1Id
             };
         }
 
@@ -374,19 +376,6 @@ export class GameService {
 
     private notifyState(state: any): void {
         this.gameStateCallbacks.forEach(cb => cb(state));
-    }
-
-    public async recordMatchResult(matchData: any): Promise<any> {
-        try {
-
-            // Fix: Use static Api class, not App instance property
-            const { Api } = await import('../core/Api');
-            const response = await Api.post('/api/game/save', matchData);
-            return response;
-        } catch (e) {
-            console.error("Failed to record match result", e);
-            throw e;
-        }
     }
 
     public disconnect(): void {

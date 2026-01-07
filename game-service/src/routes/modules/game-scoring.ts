@@ -18,6 +18,7 @@ export class GameScoring {
   private player2: GamePlayer;
   private scores: Scores;
   private maxScore: number;
+  private tournamentPlayer1Id?: number;
   // Store team player IDs for correct winner determination
   private team1Players?: TeamPlayer[];
   private team2Players?: TeamPlayer[];
@@ -28,7 +29,8 @@ export class GameScoring {
     player2: GamePlayer,
     maxScore: number,
     team1Players?: TeamPlayer[],
-    team2Players?: TeamPlayer[]
+    team2Players?: TeamPlayer[],
+    tournamentPlayer1Id?: number
   ) {
     this.gameId = gameId;
     this.player1 = player1;
@@ -37,6 +39,7 @@ export class GameScoring {
     this.scores = { player1: 0, player2: 0 };
     this.team1Players = team1Players;
     this.team2Players = team2Players;
+    this.tournamentPlayer1Id = tournamentPlayer1Id;
     logger.info(`[${gameId}] GameScoring initialized with maxScore: ${this.maxScore}`);
   }
 
@@ -166,11 +169,25 @@ export class GameScoring {
             return;
           }
 
+          let submitP1Score = player1Score;
+          let submitP2Score = player2Score;
+
+          // In tournament mode, tournament-service expects scores in ORIGINAL match player1/player2 order.
+          // Our scoring uses player1=left paddle, player2=right paddle.
+          if (
+            typeof this.tournamentPlayer1Id === 'number' &&
+            this.tournamentPlayer1Id > 0 &&
+            this.tournamentPlayer1Id !== this.player1.userId
+          ) {
+            submitP1Score = player2Score;
+            submitP2Score = player1Score;
+          }
+
           await notifyTournamentService(gameId, tournamentId, {
             matchId: tournamentMatchId,
             winnerId: winnerId,
-            player1Score: player1Score,
-            player2Score: player2Score
+            player1Score: submitP1Score,
+            player2Score: submitP2Score
           });
 
           resolve();
