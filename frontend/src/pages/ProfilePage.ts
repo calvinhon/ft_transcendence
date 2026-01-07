@@ -1,7 +1,7 @@
 import { AbstractComponent } from "../components/AbstractComponent";
 import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
-import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, TournamentRanking } from "../services/ProfileService";
+import { ProfileService, UserProfile, GameStats, RecentGame, TournamentRanking } from "../services/ProfileService";
 import { FriendService, Friend } from "../services/FriendService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import Chart from 'chart.js/auto';
@@ -16,7 +16,6 @@ export class ProfilePage extends AbstractComponent {
     private friends: Array<Friend & { profile?: UserProfile }> = [];
     private isFriend: boolean = false;
     private friendStatus?: Friend;
-    private aiStats: AIStats = { aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
 
     private loading: boolean = true;
     private error: string | null = null;
@@ -62,7 +61,7 @@ export class ProfilePage extends AbstractComponent {
         }
 
         const p = this.profile;
-        const s = this.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+        const s = this.stats || { wins: 0, losses: 0, totalGames: 0, winRate: 0, averageGameDuration: 0, aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
         const isBot = p.userId <= 0 || (p as any).isBot === true;
 
 
@@ -196,19 +195,19 @@ export class ProfilePage extends AbstractComponent {
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div class="bg-cyan-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-green-400">${this.aiStats.aiWins}</div>
+                                <div class="text-2xl font-bold text-green-400">${s.aiWins}</div>
                                 <div class="text-[10px] text-gray-400">AI WINS</div>
                             </div>
                             <div class="bg-cyan-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-red-400">${this.aiStats.aiLosses}</div>
+                                <div class="text-2xl font-bold text-red-400">${s.aiLosses}</div>
                                 <div class="text-[10px] text-gray-400">AI LOSSES</div>
                             </div>
                             <div class="bg-purple-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-green-400">${this.aiStats.humanWins}</div>
+                                <div class="text-2xl font-bold text-green-400">${s.humanWins}</div>
                                 <div class="text-[10px] text-gray-400">HUMAN WINS</div>
                             </div>
                             <div class="bg-purple-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-red-400">${this.aiStats.humanLosses}</div>
+                                <div class="text-2xl font-bold text-red-400">${s.humanLosses}</div>
                                 <div class="text-[10px] text-gray-400">HUMAN LOSSES</div>
                             </div>
                         </div>
@@ -347,7 +346,7 @@ export class ProfilePage extends AbstractComponent {
 
     private renderGameRow(g: RecentGame): string {
         const date = new Date(g.date).toLocaleDateString();
-        const colorClass = g.result === 'win' ? 'text-green-400' : (g.result === 'draw' ? 'text-gray-400' : 'text-red-400');
+        const colorClass = g.result === 'win' ? 'text-green-400' : 'text-red-400';
         const bgHover = g.result === 'win' ? 'hover:bg-green-900/10' : 'hover:bg-red-900/10';
 
         return `
@@ -613,19 +612,6 @@ export class ProfilePage extends AbstractComponent {
             this.stats = stats;
             this.history = history;
             this.rankings = rankings;
-
-            // Compute AI stats from history
-            this.aiStats = { aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
-            for (const game of this.history) {
-                const isAIGame = game.opponent === 'AI' || game.opponent.toLowerCase().includes('ai');
-                if (isAIGame) {
-                    if (game.result === 'win') this.aiStats.aiWins++;
-                    else if (game.result === 'loss') this.aiStats.aiLosses++;
-                } else {
-                    if (game.result === 'win') this.aiStats.humanWins++;
-                    else if (game.result === 'loss') this.aiStats.humanLosses++;
-                }
-            }
 
             if (!this.profile) {
                 this.error = "User profile not found";

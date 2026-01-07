@@ -806,14 +806,12 @@ export class MainMenuPage extends AbstractComponent {
                     'ARE YOU SURE YOU WANT TO LOGOUT?',
                     () => {
                         AuthService.getInstance().logout();
-                        // Note: logout() already navigates to /login
                     },
                     () => { },
                     'warning'
                 ).render();
                 return;
             }
-
         };
     }
 

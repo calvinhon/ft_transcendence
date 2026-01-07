@@ -49,7 +49,6 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
     }
   });
 
-
   // Get single game details
   fastify.get<{
     Params: { gameId: string };

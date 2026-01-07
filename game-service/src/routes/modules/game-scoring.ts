@@ -105,18 +105,14 @@ export class GameScoring {
     const winner = this.getWinner();
     let winnerId: number | null = winner ? winner.winnerId : null;
 
-    // Explicitly handle aborted games
+    // Handle aborted games - whoever has more points wins
     if (aborted && !winnerId) {
       const team1Won = this.scores.player1 > this.scores.player2;
-      const team2Won = this.scores.player2 > this.scores.player1;
 
       if (team1Won) {
         winnerId = this.team1Players?.[0]?.userId ?? this.player1.userId;
-      } else if (team2Won) {
-        winnerId = this.team2Players?.[0]?.userId ?? this.player2.userId;
       } else {
-        // Scores are tied (including 0-0). No winner.
-        winnerId = null;
+        winnerId = this.team2Players?.[0]?.userId ?? this.player2.userId;
       }
     }
 

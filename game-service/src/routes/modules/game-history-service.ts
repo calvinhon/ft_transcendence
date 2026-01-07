@@ -68,7 +68,6 @@ export class GameHistoryService {
     });
   }
 
-
   // Save a new game result
   async saveGame(params: {
     player1Id: number;

@@ -131,6 +131,10 @@ export interface GameStats {
   wins: number;
   losses: number;
   winRate: number;
+  aiWins: number;
+  aiLosses: number;
+  humanWins: number;
+  humanLosses: number;
 }
 
 export interface OnlineUser {

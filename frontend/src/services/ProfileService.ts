@@ -17,10 +17,13 @@ export interface UserProfile {
 export interface GameStats {
     wins: number;
     losses: number;
-    draws: number;
     totalGames: number;
     winRate: number;
     averageGameDuration: number;
+    aiWins: number;
+    aiLosses: number;
+    humanWins: number;
+    humanLosses: number;
 }
 
 export interface AIStats {
@@ -33,7 +36,7 @@ export interface AIStats {
 export interface RecentGame {
     id: number;
     opponent: string;
-    result: 'win' | 'loss' | 'draw';
+    result: 'win' | 'loss';
     score: string;
     date: string;
     gameMode: string;
@@ -120,14 +123,17 @@ export class ProfileService {
             return {
                 wins: data.wins || 0,
                 losses: data.losses || 0,
-                draws: data.draws || 0,
                 totalGames: data.totalGames || data.total_games || 0,
                 winRate: data.winRate || 0,
-                averageGameDuration: data.averageGameDuration || 0
+                averageGameDuration: data.averageGameDuration || 0,
+                aiWins: data.aiWins || 0,
+                aiLosses: data.aiLosses || 0,
+                humanWins: data.humanWins || 0,
+                humanLosses: data.humanLosses || 0
             };
         } catch (e) {
             console.warn('Failed to load stats', e);
-            return { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+            return { wins: 0, losses: 0, totalGames: 0, winRate: 0, averageGameDuration: 0, aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
         }
     }
 
@@ -145,7 +151,7 @@ export class ProfileService {
                 const myScore = isPlayer1 ? g.player1_score : g.player2_score;
                 const oppScore = isPlayer1 ? g.player2_score : g.player1_score;
 
-                let result: 'win' | 'loss' | 'draw';
+                let result: 'win' | 'loss';
                 let opponent = 'Unknown';
                 let teammates = '';
 
@@ -156,10 +162,8 @@ export class ProfileService {
                     return `User ${id}`;
                 };
 
-                // Default result logic (overridden below for Arcade)
-                if (winnerId === userId) result = 'win';
-                else if (winnerId === 0 && myScore === oppScore) result = 'draw';
-                else result = 'loss';
+                // Simple: if you're the winner, it's a win; otherwise it's a loss
+                result = (winnerId === userId) ? 'win' : 'loss';
 
                 // For arcade or tournament mode with team data, we need deeper logic
                 if ((g.game_mode === 'arcade' || g.game_mode === 'tournament') && (g.team1_players || g.team2_players)) {

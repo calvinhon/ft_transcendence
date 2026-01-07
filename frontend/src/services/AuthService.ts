@@ -243,7 +243,6 @@ export class AuthService {
         }
     }
 
-
     private waitForOAuthPopup(popup: Window): Promise<any> {
         return new Promise((resolve, reject) => {
             let handled = false;

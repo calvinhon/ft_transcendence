@@ -76,7 +76,6 @@ function handleUserConnect(socket: any, data: any): void {
       tournamentPlayer1Id: data.tournamentPlayer1Id
     };
 
-
     logger.info('Starting game with settings:', gameSettings);
     logger.info('Team 1 players:', data.team1Players);
     logger.info('Team 2 players:', data.team2Players);
