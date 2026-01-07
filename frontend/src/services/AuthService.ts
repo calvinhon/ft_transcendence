@@ -232,7 +232,7 @@ export class AuthService {
         try {
             const authData = await this.waitForOAuthPopup(popup);
             if (authData && authData.success) {
-                this.handleAuthSuccess(authData.token, authData.user, authData.sessionId);
+                await this.handleAuthSuccess(authData.token, authData.user, authData.sessionId);
                 App.getInstance().router.navigateTo('/');
             } else {
                 console.error("OAuth failed:", authData?.error);
@@ -242,6 +242,7 @@ export class AuthService {
             console.error("OAuth error:", error);
         }
     }
+
 
     private waitForOAuthPopup(popup: Window): Promise<any> {
         return new Promise((resolve, reject) => {
