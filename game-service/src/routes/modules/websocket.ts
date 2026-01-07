@@ -69,8 +69,13 @@ function handleUserConnect(socket: any, data: any): void {
       accelerateOnHit: data.accelerateOnHit || false,
       scoreToWin: data.scoreToWin || 5,
       team1PlayerCount: data.team1PlayerCount || 1,
-      team2PlayerCount: data.team2PlayerCount || 1
+      team2PlayerCount: data.team2PlayerCount || 1,
+      // Tournament-specific fields for score swapping
+      tournamentId: data.tournamentId,
+      tournamentMatchId: data.tournamentMatchId,
+      tournamentPlayer1Id: data.tournamentPlayer1Id
     };
+
 
     logger.info('Starting game with settings:', gameSettings);
     logger.info('Team 1 players:', data.team1Players);

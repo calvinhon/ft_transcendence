@@ -19,6 +19,7 @@ export class GameCreator {
       team2Players?: any[];
       tournamentId?: number;
       tournamentMatchId?: number;
+      tournamentPlayer1Id?: number;
     } = {}
   ): Promise<{ gameId: number; game: PongGame }> {
     const gameMode = gameSettings?.gameMode || 'campaign';
@@ -49,7 +50,8 @@ export class GameCreator {
       team2PlayerCount: gameSettings?.team2PlayerCount,
       team1Players: options.team1Players,
       team2Players: options.team2Players,
-
+      // Tournament-specific for score swapping
+      tournamentPlayer1Id: options.tournamentPlayer1Id
     };
 
     return new Promise((resolve, reject) => {

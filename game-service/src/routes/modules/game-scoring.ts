@@ -174,11 +174,12 @@ export class GameScoring {
 
           // In tournament mode, tournament-service expects scores in ORIGINAL match player1/player2 order.
           // Our scoring uses player1=left paddle, player2=right paddle.
-          if (
+          const shouldSwapScores =
             typeof this.tournamentPlayer1Id === 'number' &&
             this.tournamentPlayer1Id > 0 &&
-            this.tournamentPlayer1Id !== this.player1.userId
-          ) {
+            this.tournamentPlayer1Id !== this.player1.userId;
+
+          if (shouldSwapScores) {
             submitP1Score = player2Score;
             submitP2Score = player1Score;
           }
@@ -195,6 +196,7 @@ export class GameScoring {
       );
     });
   }
+
 
   broadcastGameEnd(): void {
     const winner = this.getWinner();

@@ -149,7 +149,8 @@ export class MatchmakingService {
       team1Players: data.team1Players,
       team2Players: data.team2Players,
       tournamentId: data.tournamentId,
-      tournamentMatchId: data.tournamentMatchId
+      tournamentMatchId: data.tournamentMatchId,
+      tournamentPlayer1Id: data.gameSettings?.tournamentPlayer1Id
     });
   }
 
@@ -177,6 +178,7 @@ export class MatchmakingService {
       team2Players?: any[];
       tournamentId?: number;
       tournamentMatchId?: number;
+      tournamentPlayer1Id?: number;
     } = {}
   ): Promise<void> {
     try {
@@ -203,7 +205,8 @@ export class MatchmakingService {
       team1Players: data.team1Players,
       team2Players: data.team2Players,
       tournamentId: data.tournamentId,
-      tournamentMatchId: data.tournamentMatchId
+      tournamentMatchId: data.tournamentMatchId,
+      tournamentPlayer1Id: data.gameSettings?.tournamentPlayer1Id
     });
   }
 }
