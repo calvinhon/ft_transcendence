@@ -103,9 +103,7 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			grant_type: 'authorization_code'
 		});
 
-		//Hoach edited: Fix base64url decoding for JWT payload
-		const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
-		//Hoach edit ended
+		const userInfo = JSON.parse(Buffer.from(response?.data.id_token.split('.')[1], 'base64').toString());
 
 		userData = {
 			email: userInfo.email,
@@ -149,11 +147,12 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 				console.log(store);
 				userData.name += Math.random().toString();
 			}
+			userData.name = userData.name.slice(0, 16);
 			await runQuery('INSERT INTO users (username, email, password_hash, oauth_provider) VALUES (?, ?, NULL, \'Google\')', [userData.name, userData.email]);
 			user = await getQuery('SELECT * FROM users WHERE email = ?', [userData.email]);
-			console.log(user ? 'User was created successfully.' : 'User was not created.');
 			if (!user)
 				throw new Error('User was not created');
+			console.log('User was created successfully.');
 		} catch (err: any) {
 			console.log('User creation failed.', err.message);
 			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });

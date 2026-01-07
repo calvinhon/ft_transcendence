@@ -1,10 +1,13 @@
 // auth-service/src/routes/handlers/logout.ts
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { sendSuccess, createLogger } from '@ft-transcendence/common';
+import { sendError, sendSuccess, createLogger } from '@ft-transcendence/common';
 
 const logger = createLogger('AUTH-SERVICE');
 
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  if (!request.session || !request.session.userId)
+    return console.log('ProfileHandler'),sendError(reply, "Unauthorized", 401);
+
   try {
     // Clear the session cookie
     reply.clearCookie('sessionId', {

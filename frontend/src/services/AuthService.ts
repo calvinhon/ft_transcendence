@@ -134,22 +134,6 @@ export class AuthService {
         }
     }
 
-    // ==========================================
-    // OAuth Methods (Popup Based)
-    // ==========================================
-
-    public async loginWithSchool42(): Promise<void> {
-        await this.initiateOAuthPopup('42');
-    }
-
-    public async loginWithGoogle(): Promise<void> {
-        await this.initiateOAuthPopup('Google');
-    }
-
-    public async loginWithGithub(): Promise<void> {
-        await this.initiateOAuthPopup('GitHub');
-    }
-
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
             const response = await Api.post('/api/auth/login', { username, password });
@@ -225,13 +209,13 @@ export class AuthService {
         }
     }
 
-    private async initiateOAuthPopup(provider: string): Promise<void> {
+    public async loginWithGoogle(): Promise<void> {
         const width = 500;
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
 
-        const url = `/api/auth/oauth/init?provider=${provider}`; // Backend endpoint to start OAuth
+        const url = `/api/auth/oauth/init?provider=Google`; // Backend endpoint to start OAuth
         // Note: Backend works by redirecting this popup to the provider
 
         const popup = window.open(

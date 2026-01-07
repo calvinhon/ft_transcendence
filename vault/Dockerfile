@@ -16,15 +16,11 @@ RUN apk add --update --virtual .deps --no-cache gnupg ca-certificates openssl &&
     pwd && \
     mv /tmp/vault /usr/local/bin/vault && \
     mkdir -p /vault/certs && \
-    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 -subj "/C=AE/ST=Abu Dhabi/L=Abu Dhabi/O=42 Abu Dhabi/OU=Dev/CN=$HOST_NAME" -keyout /vault/certs/vault-key.pem -out /vault/certs/vault-cert.pem && \
+    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 -subj "/C=AE/ST=Abu Dhabi/L=Abu Dhabi/O=42 Abu Dhabi/OU=Dev/CN=vault" -keyout /vault/certs/vault-key.pem -out /vault/certs/vault-cert.pem && \
     rm -f /tmp/vault_${VERSION}_linux_amd64.zip vault_${VERSION}_SHA256SUMS ${VERSION}/vault_${VERSION}_SHA256SUMS.sig && \
     apk del .deps
 
 COPY ./unseal.sh /vault/
-
-COPY data/*.db /vault/data/
-
-COPY data/raft/ /vault/data/raft/
 
 RUN chmod +x /vault/unseal.sh
 

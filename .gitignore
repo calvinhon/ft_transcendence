@@ -23,8 +23,6 @@ pids
 #**/*.db
 #*.db
 
-vault/data/raft/
-
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
