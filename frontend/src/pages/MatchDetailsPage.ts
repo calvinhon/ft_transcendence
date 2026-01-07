@@ -88,7 +88,7 @@ export class MatchDetailsPage extends AbstractComponent {
                     </div>
                      <div class="border border-white/20 p-4">
                          <h3 class="text-gray-400 font-bold mb-2">WINNER</h3>
-                         <div class="text-2xl text-accent">${this.gameData.winner_name || 'Unknown'}</div>
+                         <div class="text-2xl text-accent">${this.gameData.winner_name || 'None'}</div>
                     </div>
                 </div>
 

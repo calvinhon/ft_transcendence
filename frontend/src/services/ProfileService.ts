@@ -151,6 +151,9 @@ export class ProfileService {
                 const myScore = isPlayer1 ? g.player1_score : g.player2_score;
                 const oppScore = isPlayer1 ? g.player2_score : g.player1_score;
 
+                // Check if there is a valid winner (null/undefined means aborted/incomplete)
+                const hasWinner = g.winner_id !== null && g.winner_id !== undefined;
+
                 let result: 'win' | 'loss';
                 let opponent = 'Unknown';
                 let teammates = '';
@@ -173,20 +176,21 @@ export class ProfileService {
 
                         // Find which team the viewing user is on
                         const inTeam1 = team1.some((p: any) => Number(p.userId || p) === userId);
-                        const inTeam2 = team2.some((p: any) => Number(p.userId || p) === userId); // Should be true if !inTeam1, unless generic viewer?
+                        const inTeam2 = team2.some((p: any) => Number(p.userId || p) === userId);
 
-                        // Update Result Logic for Teams
-                        // Team 1 matches Player 1's score/win status
-                        const team1Won = winnerId === player1Id;
+                        // Only apply team outcome logic if game actually finished with a winner
+                        if (hasWinner) {
+                            // Team 1 matches Player 1's score/win status
+                            const team1Won = winnerId === player1Id;
 
-                        // If I am in Team 1 and Team 1 won -> WIN
-                        // If I am in Team 2 and Team 1 won -> LOSS
-                        // If I am in Team 1 and Team 1 lost -> LOSS
-                        // If I am in Team 2 and Team 1 lost -> WIN
-                        if (inTeam1) {
-                            result = team1Won ? 'win' : 'loss';
-                        } else if (inTeam2) {
-                            result = team1Won ? 'loss' : 'win';
+                            if (inTeam1) {
+                                result = team1Won ? 'win' : 'loss';
+                            } else if (inTeam2) {
+                                result = team1Won ? 'loss' : 'win';
+                            }
+                        } else {
+                            // No winner (aborted) -> Loss for everyone
+                            result = 'loss';
                         }
                         // If not in either team (spectator logic?), allow fallback
 

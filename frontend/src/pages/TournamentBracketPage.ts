@@ -234,7 +234,7 @@ export class TournamentBracketPage extends AbstractComponent {
     }
 
     private getWinnerName(): string {
-        if (!this.tournament || !this.tournament.winnerId) return "Unknown";
+        if (!this.tournament || !this.tournament.winnerId) return "None";
         const p = this.tournament.players.find(x => x.id === this.tournament!.winnerId);
         return p ? p.username : `Player ${this.tournament.winnerId}`;
     }

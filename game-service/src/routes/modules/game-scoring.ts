@@ -105,15 +105,10 @@ export class GameScoring {
     const winner = this.getWinner();
     let winnerId: number | null = winner ? winner.winnerId : null;
 
-    // Handle aborted games - whoever has more points wins
+    // Handle aborted games - if aborted and no winner, it remains no winner (Loss for all)
+    // User request: "display a loss for all the parties involved if the match didn't make it to the score"
     if (aborted && !winnerId) {
-      const team1Won = this.scores.player1 > this.scores.player2;
-
-      if (team1Won) {
-        winnerId = this.team1Players?.[0]?.userId ?? this.player1.userId;
-      } else {
-        winnerId = this.team2Players?.[0]?.userId ?? this.player2.userId;
-      }
+      // Do nothing, leave winnerId as null
     }
 
     const finalWinnerId = winnerId;

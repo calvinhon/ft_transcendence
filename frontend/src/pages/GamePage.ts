@@ -310,10 +310,10 @@ export class GamePage extends AbstractComponent {
                 const p1Score = state.scores?.player1 ?? state.player1Score ?? 0;
                 const p2Score = state.scores?.player2 ?? state.player2Score ?? 0;
 
-                // Compute winnerId from scores if not provided
+                // Compute winnerId from scores if not provided (fallback for legacy/undefined)
+                // Note: We check undefined specifically because null is a valid "No Winner" state
                 let winnerId = state.winnerId;
-                if (winnerId === undefined || winnerId === null) {
-                    // Handle draws: if scores are equal, winnerId = 0
+                if (winnerId === undefined) {
                     if (p1Score === p2Score) {
                         winnerId = 0;
                     } else {
@@ -332,11 +332,28 @@ export class GamePage extends AbstractComponent {
                 // Add Auto-Return Timer UI
                 const container = this.$('.game-container');
                 if (container && !this.$('#game-over-overlay')) {
-                    const winnerId = state.winnerId || (state.scores?.player1 > state.scores?.player2 ? this.p1Ids[0] : this.p2Ids[0]);
-                    // Find winner name from setup teams
-                    let winnerName = `PLAYER ${winnerId === this.p1Ids[0] ? '1' : '2'}`;
-                    const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === winnerId);
-                    if (winnerObj) winnerName = winnerObj.username;
+                    // Use resolved winnerId
+                    const finalWinnerId = winnerId;
+
+                    // Find winner name
+                    let winnerName = 'NONE';
+                    if (finalWinnerId !== null && finalWinnerId !== 0) { // 0 could be Al-Ien, need to check if 0 is valid ID or No Winner?
+                        // If Al-Ien (0) is valid winner, we should handle it.
+                        // But finding in team array:
+                        const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === finalWinnerId);
+                        if (winnerObj) {
+                            winnerName = winnerObj.username;
+                        } else {
+                            winnerName = `PLAYER ${finalWinnerId === this.p1Ids[0] ? '1' : '2'}`;
+                        }
+                    } else if (finalWinnerId === 0) {
+                        // Check if Al-Ien logic applies or if it was the old Tie logic
+                        // If Al-Ien is in the game, 0 is a valid ID.
+                        const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === 0);
+                        if (winnerObj) winnerName = winnerObj.username || 'AI';
+                        else if (p1Score === p2Score) winnerName = 'NONE'; // Tie and no AI -> None
+                        else winnerName = 'AI'; // Assumption
+                    }
 
                     const overlay = document.createElement('div');
                     overlay.id = 'game-over-overlay';
