@@ -71,6 +71,7 @@ export interface GameSettings {
   powerupsEnabled: boolean;
   accelerateOnHit: boolean;
   scoreToWin: number;
+  tournamentPlayer1Id?: number;
   team1PlayerCount?: number; // Number of players on team 1
   team2PlayerCount?: number; // Number of players on team 2
   team1Players?: any[]; // Player data for team 1
@@ -88,6 +89,7 @@ export interface JoinGameMessage extends WebSocketMessage {
   player2Name?: string;
   tournamentId?: number;
   tournamentMatchId?: number;
+  tournamentPlayer1Id?: number;
 }
 
 export interface MovePaddleMessage extends WebSocketMessage {

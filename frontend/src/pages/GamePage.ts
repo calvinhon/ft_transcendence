@@ -324,39 +324,8 @@ export class GamePage extends AbstractComponent {
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
 
                 // --- GAME RECORDING ---
-                // Backend handles game data save.
-                // Frontend MUST notify tournament service for bracket updates (via nginx proxy).
-                if (setup.mode === 'tournament' && setup.tournamentId && setup.tournamentMatchId) {
-                    // Scores are in game-engine order: player1 = left paddle, player2 = right paddle
-                    // CHECK FOR SWAP: If current P1 (Left) is NOT the tournament's P1, we must swap scores.
-                    const originalP1Id = Number(setup.tournamentPlayer1Id);
-                    const currentP1Id = Number(this.p1Ids[0]);
-
-                    let finalScore1 = p1Score;
-                    let finalScore2 = p2Score;
-
-                    console.log(`Frontend: Checking for swap. Orig: ${originalP1Id}, Curr: ${currentP1Id}`);
-
-                    if (!isNaN(originalP1Id) && currentP1Id !== originalP1Id) {
-                        console.log("Frontend: Detected Player Swap. Swapping scores for tournament record.", { originalP1Id, currentP1Id });
-                        finalScore1 = p2Score;
-                        finalScore2 = p1Score;
-                    }
-
-                    const { TournamentService } = await import('../services/TournamentService');
-                    try {
-                        await TournamentService.getInstance().recordMatchResult(
-                            setup.tournamentId.toString(),
-                            setup.tournamentMatchId.toString(),
-                            winnerId,
-                            finalScore1, // Score for Original P1
-                            finalScore2  // Score for Original P2
-                        );
-                        console.log('Frontend: Tournament match result recorded:', { winnerId, finalScore1, finalScore2 });
-                    } catch (err) {
-                        console.error("Frontend: Failed to record tournament result:", err);
-                    }
-                } else if (setup.mode === 'arcade' || setup.mode === 'campaign') {
+                // Backend handles game data save and (for tournament mode) posts match results to tournament-service.
+                if (setup.mode === 'arcade' || setup.mode === 'campaign') {
                     console.log('Arcade/Campaign match finished. Backend handles save.');
                 }
 
@@ -429,7 +398,10 @@ export class GamePage extends AbstractComponent {
             accumulateOnHit: setup.settings.accumulateOnHit,
             difficulty: setup.settings.difficulty,
             scoreToWin: setup.settings.scoreToWin,
-            campaignLevel: setup.campaignLevel
+            campaignLevel: setup.campaignLevel,
+            tournamentId: setup.tournamentId,
+            tournamentMatchId: setup.tournamentMatchId,
+            tournamentPlayer1Id: setup.tournamentPlayer1Id
         } as any, sanitizedTeam1, sanitizedTeam2);
     }
 

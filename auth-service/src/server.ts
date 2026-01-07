@@ -4,6 +4,7 @@ import '@fastify/session';
 import cors from '@fastify/cors';
 import authRoutes from './routes/auth';
 import { createServer, createServiceConfig, sessionSecret } from '@ft-transcendence/common';
+import { initializeDatabase } from './utils/database';
 
 const serverConfig = createServiceConfig('AUTH-SERVICE', 3000);
 
@@ -14,6 +15,8 @@ const serverOptions = {
 
 async function start(): Promise<void> {
   try {
+    await initializeDatabase();
+
     const server = await createServer(serverConfig, async (fastify) => {
       // Register additional plugins
       await fastify.register(sessionSecret);

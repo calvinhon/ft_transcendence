@@ -162,9 +162,6 @@ services:
         condition: service_healthy
     working_dir: /app
     volumes: 
-      - ./blockchain/scripts:/app/scripts
-      - ./blockchain/contracts:/app/contracts
-      - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments
     command: "npx hardhat run scripts/deploy.ts --network docker"
     dns:
