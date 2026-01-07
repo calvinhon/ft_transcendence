@@ -15,7 +15,7 @@ const CACHE_TTL = 60000; // 1 minute cache
 
 export class GameHistoryService {
   // Fetch raw game history from database
-  async getGameHistory(userId: string): Promise<GameRecord[]> {
+  async getGameHistory(userId: string, limit: number = 50): Promise<GameRecord[]> {
     return new Promise<GameRecord[]>((resolve, reject) => {
       // Search for userId in player columns OR inside the team JSON arrays
       // We look for "userId":123 or just 123 in the array, but standard is objects with userId
@@ -49,11 +49,12 @@ export class GameHistoryService {
                  g.team2_players LIKE ? 
             ))
          ORDER BY g.started_at DESC
-         LIMIT 50`,
+         LIMIT ?`,
         [
           userId, userId,
           idPattern, idPattern2, idPattern3, idPattern4, idPattern5,
-          idPattern, idPattern2, idPattern3, idPattern4, idPattern5
+          idPattern, idPattern2, idPattern3, idPattern4, idPattern5,
+          limit
         ],
         (err: Error | null, games: GameRecord[]) => {
           if (err) {
@@ -66,6 +67,7 @@ export class GameHistoryService {
       );
     });
   }
+
 
   // Save a new game result
   async saveGame(params: {
