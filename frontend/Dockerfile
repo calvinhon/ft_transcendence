@@ -81,6 +81,12 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 # Remove default nginx config to avoid conflicts
 RUN rm -f /etc/nginx/conf.d/default.conf
 
+# Copy custom ModSecurity config
+COPY nginx/modsecurity.conf /etc/nginx/modsec/main.conf
+
+# Create ModSecurity log directory
+RUN mkdir -p /var/log/modsecurity && chown -R nginx:nginx /var/log/modsecurity
+
 RUN apk update --no-cache && \
 	apk add --no-cache yajl libstdc++ libmaxminddb-libs lmdb libxml2 pcre
 
