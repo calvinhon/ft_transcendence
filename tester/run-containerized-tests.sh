@@ -140,7 +140,6 @@ run_containerized_test "Server-Side Pong" "test-server-side-pong.sh"
 # Advanced Modules
 echo -e "${YELLOW}=== TESTING ADVANCED MODULES ===${NC}"
 run_containerized_test "WAF & Vault" "test-waf-vault.sh"
-run_containerized_test "GDPR Compliance" "test-gdpr-compliance.sh"
 # run_containerized_test "SSR Integration" "test-ssr.sh"  # Removed SSR test
 
 # Print Summary
@@ -157,7 +156,7 @@ echo ""
 echo "=== DETAILED RESULTS ==="
 for module in "Backend Framework (Fastify)" "Database (SQLite)" "Blockchain (Solidity/Hardhat)" \
               "AI Opponent" "Stats Dashboards" "Microservices Architecture" "Server-Side Pong" \
-              "WAF & Vault" "GDPR Compliance"; do
+              "WAF & Vault"; do
     result="${MODULE_RESULTS[$module]}"
     if [ "$result" = "PASS" ]; then
         echo -e "${GREEN}✓${NC} $module"

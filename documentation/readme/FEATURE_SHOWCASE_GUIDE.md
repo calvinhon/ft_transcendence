@@ -425,62 +425,6 @@ curl -s -X POST http://localhost:8545 \
 
 ---
 
-### 8. GDPR Compliance Module
-
-#### Feature: Export Personal Data
-
-**Steps:**
-1. Click **"Profile"** → **"Privacy & Data"**
-2. Click **"Export My Data"**
-3. Download starts (JSON file)
-4. Open JSON file to view contents
-
-**What Should Be Included:**
-```json
-{
-  "user": {
-    "id": "...",
-    "username": "...",
-    "email": "...",
-    "createdAt": "..."
-  },
-  "profile": {
-    "bio": "...",
-    "avatar": "..."
-  },
-  "matches": [...],
-  "friends": [...],
-  "tournaments": [...]
-}
-```
-
-**What to Look For:**
-- ✅ All personal data included
-- ✅ Properly formatted JSON
-- ✅ No truncation of data
-- ✅ Timestamps present
-
-#### Feature: Delete Account
-
-**⚠️ CAUTION: This action cannot be undone!**
-
-**Steps (for testing with test account):**
-1. Login with test account
-2. Go to **Profile** → **Privacy & Data**
-3. Click **"Delete Account"**
-4. Read warning carefully
-5. Type "DELETE" to confirm
-6. Click **"Confirm Deletion"**
-7. **Expected:** Account removed, redirected to login
-
-**What to Look For:**
-- ✅ Requires explicit confirmation
-- ✅ Account immediately inaccessible
-- ✅ Cannot login with deleted account
-- ✅ Data removed from all services
-
----
-
 ## Terminal-Based Module Verification
 
 ### ℹ️ Important Notes for Terminal Testing
@@ -990,8 +934,6 @@ curl -s -X POST http://localhost:8545 \
 | | Leaderboard | ✅ View | ✅ Ranking query | 5 |
 | **BLOCKCHAIN** | Tournament Recording | ✅ View | ✅ eth_blockNumber | 5 |
 | **DATABASE** | Persistence | ✅ After restart | ✅ sqlite3 query | 5 |
-| **GDPR** | Export Data | ✅ Download | ✅ JSON export | 5 |
-| | Delete Account | ✅ Delete | ✅ Account gone | 5 |
 | **MONITORING** | Logging | ✅ Console | ✅ ES search | 3 |
 | | Metrics | ✅ Dashboard | ✅ Prometheus | 2 |
 | **BONUS** | Technical Excellence | - | - | 10 |

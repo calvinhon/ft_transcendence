@@ -115,7 +115,6 @@ main() {
     # Advanced Modules (50 points)
     echo -e "${YELLOW}=== TESTING ADVANCED MODULES (50 Points) ===${NC}"
     run_test_module "WAF & Vault" "test-waf-vault.sh"
-    run_test_module "GDPR Compliance" "test-gdpr-compliance.sh"
     run_test_module "SSR Integration" "test-ssr.sh"
     
     # Print summary

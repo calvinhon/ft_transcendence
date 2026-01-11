@@ -82,7 +82,6 @@ The platform consists of 8 independent microservices, each handling specific bus
   - Achievement system and progression tracking
   - Friend relationships and social features
   - Comprehensive statistics and leaderboards
-  - GDPR compliance and data management
 
 #### Tournament Service (`/tournament-service`)
 - **Port**: 3004
@@ -216,7 +215,6 @@ make help
 - **Vault Integration**: Centralized secrets management
 - **CORS Configuration**: Proper cross-origin request handling
 - **Input Validation**: Comprehensive request validation
-- **GDPR Compliance**: Data privacy and user rights
 
 ## 🧪 Testing Infrastructure
 
@@ -236,7 +234,6 @@ make help
 - ✅ Microservices Architecture
 - ✅ Server-Side Pong
 - ✅ Security (WAF & Vault)
-- ✅ GDPR Compliance
 - ✅ SSR Integration
 
 ## 📈 Performance

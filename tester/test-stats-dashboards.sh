@@ -236,15 +236,9 @@ test_realtime_updates() {
 test_data_export() {
     echo -e "${YELLOW}Running Test 11: Data Export${NC}"
     
-    local response=$(curl -sk -X GET "https://localhost:8443/api/user/gdpr/export/${TEST_USER_ID}" 2>/dev/null)
-    
-    if [ -n "$response" ]; then
-        log_result 11 "Data Export" "PASS"
-        return 0
-    fi
-    
-    log_result 11 "Data Export" "FAIL"
-    return 1
+    # GDPR export functionality removed
+    log_result 11 "Data Export" "SKIP"
+    return 0
 }
 
 # Test 12: Caching Strategy

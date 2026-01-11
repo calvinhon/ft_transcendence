@@ -1128,7 +1128,7 @@ docker exec ft_transcendence-auth-service-1 sqlite3 /app/database/auth.db \
   "SELECT COUNT(*) FROM users;"
 
 # Update: (via API) Update profile
-# Delete: (via API) GDPR delete account
+# Delete: (via API) Delete account
 ```
 
 **Points:** 5/5 ✅
@@ -1973,132 +1973,6 @@ docker exec ft_transcendence-auth-service-1 env | grep -i "password\|secret" | w
 
 ---
 
-### 11. GDPR Compliance (5 Points) ✅
-
-**Verification:**
-
-#### 11.1 Data Export
-
-```bash
-# Export user data
-curl http://localhost:3004/api/user/gdpr/export \
-  -H "Authorization: Bearer $TOKEN" \
-  > user_data_export.json
-
-# Check exported data
-cat user_data_export.json | jq
-
-# Expected: Complete JSON with:
-# - Personal data (username, email)
-# - Profile info
-# - Match history
-# - Statistics
-# - Friends list
-# - Consents
-# - Technical data
-
-# File size check
-ls -lh user_data_export.json
-# Expected: 50KB - 500KB depending on activity
-```
-
-#### 11.2 Account Deletion
-
-```bash
-# Request account deletion
-curl -X DELETE http://localhost:3004/api/user/gdpr/delete \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "password": "Test123456",
-    "confirmation": "DELETE",
-    "reason": "Testing GDPR compliance"
-  }'
-
-# Expected:
-# {
-#   "success": true,
-#   "deletedAt": "2025-12-06T10:35:00Z",
-#   "dataRemoved": {
-#     "auth": ["user", "sessions", "2fa_secrets"],
-#     "user": ["profile", "friendships"],
-#     "game": ["active_matches"]
-#   },
-#   "dataAnonymized": {
-#     "game": ["match_history"],
-#     "tournament": ["tournament_results"]
-#   }
-# }
-
-# Verify user deleted
-docker exec ft_transcendence-auth-service-1 sqlite3 /app/database/auth.db \
-  "SELECT id, email FROM users WHERE id='user_123';"
-
-# Expected: User marked as deleted or not found
-
-# Check match history anonymized
-docker exec ft_transcendence-game-service-1 sqlite3 /app/database/games.db \
-  "SELECT player1_id, player1_name FROM matches WHERE player1_id='user_123' LIMIT 5;"
-
-# Expected: player1_name = "DELETED_USER_123"
-```
-
-#### 11.3 Data Anonymization
-
-```bash
-# Anonymize account (keeps stats)
-curl -X POST http://localhost:3004/api/user/gdpr/anonymize \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "password": "Test123456",
-    "keepStatistics": true
-  }'
-
-# Expected:
-# {
-#   "success": true,
-#   "anonymizedAt": "2025-12-06T10:40:00Z",
-#   "changes": {
-#     "email": "anonymized_123@deleted.local",
-#     "username": "Anonymous_User_123"
-#   },
-#   "preserved": {
-#     "statistics": {
-#       "wins": 95,
-#       "losses": 55
-#     }
-#   }
-# }
-```
-
-#### 11.4 Consent Management
-
-```bash
-# Get consents
-curl http://localhost:3004/api/user/gdpr/consents \
-  -H "Authorization: Bearer $TOKEN"
-
-# Expected:
-# {
-#   "consents": [
-#     {
-#       "type": "terms_of_service",
-#       "accepted": true,
-#       "acceptedAt": "2025-11-01T14:20:00Z"
-#     },
-#     {
-#       "type": "privacy_policy",
-#       "accepted": true
-#     }
-#   ]
-# }
-```
-
-**Points:** 5/5 ✅
-
----
-
 ### 12. ELK Stack Logging (10 Points) ❌ REMOVED
 
 **Status:** ELK Stack was implemented but subsequently removed for architectural simplification.
@@ -2417,7 +2291,6 @@ Frontend (Nginx) :80
 - [ ] 2FA setup and login
 - [ ] WAF blocks attacks
 - [ ] Vault stores secrets
-- [ ] GDPR data export
 - [ ] Account deletion works
 - [ ] Elasticsearch logs stored
 - [ ] Kibana visualization works
@@ -2592,7 +2465,6 @@ Each Minor Module = **5 points**
 | Stats Dashboard | 5 | Dashboard displays, data correct, leaderboard shows |
 | 2FA + JWT | 5 | 2FA setup works, JWT valid, login with 2FA succeeds |
 | WAF + Vault | 5 | WAF blocks attacks, Vault stores/provides secrets |
-| GDPR Compliance | 5 | Export works, deletion anonymizes, consents tracked |
 | ELK Logging | 5 | Logs collected, stored, searchable in Kibana |
 | Monitoring (Prometheus/Grafana) | 5 | Metrics collected, targets up, dashboards display |
 | Microservices Architecture | 5 | Services independent, own databases, scalable |
