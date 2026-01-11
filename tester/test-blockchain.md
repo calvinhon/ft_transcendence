@@ -69,7 +69,7 @@ HARDHAT_PID=$!
 sleep 5
 
 # Check if listening on port 8545
-curl -X POST http://localhost:8545 \
+curl -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
   | jq .
@@ -78,7 +78,7 @@ curl -X POST http://localhost:8545 \
 # {"jsonrpc":"2.0","result":"0x7a69","id":1}
 
 # Get block number
-curl -X POST http://localhost:8545 \
+curl -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
   | jq .

@@ -1,3 +1,4 @@
+import fs from 'fs';
 import fp from 'fastify-plugin';
 import fastifyCookie from '@fastify/cookie';
 import fastifySession from '@fastify/session';
@@ -13,7 +14,16 @@ declare module 'fastify' {
 }
 
 export const sessionSecret = fp(async (fastify) => {
-	const redisClient = new Redis({ host: 'redis', port: 6379 });
+	const redisClient = new Redis({
+		host: 'redis',
+		port: 6379,
+		tls: {
+			ca: fs.readFileSync(process.env.HTTPS_CA_PATH!),
+			key: fs.readFileSync(process.env.HTTPS_KEY_PATH!),
+			cert: fs.readFileSync(process.env.HTTPS_CERT_PATH!),
+			rejectUnauthorized: true
+		}
+	});
 	redisClient.on('error', (err) => { console.log('Redis Client Error: ', err); })
 
 	const vaultAddr = process.env.VAULT_ADDR;
@@ -72,7 +82,7 @@ export const sessionSecret = fp(async (fastify) => {
 		cookie: {
 			path: '/',
 			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production', // Only secure in production
+			secure: true,
 			maxAge: 3600000,
 			sameSite: 'lax'
 		},

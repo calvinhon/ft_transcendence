@@ -46,7 +46,7 @@ export function notifyTournamentService(
         logger.info(`[${gameId}] Notifying tournament service: tournamentId=${tournamentId}, matchId=${result.matchId}`);
         try {
             const secret = await getServerSecret();
-            const res = await fetch('http://tournament-service:3000/matches/result', {
+            const res = await fetch('https://tournament-service:3000/matches/result', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

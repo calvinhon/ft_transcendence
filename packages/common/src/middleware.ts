@@ -162,11 +162,7 @@ export function createErrorHandler(serviceName: string) {
     });
 
     // Don't leak internal errors
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const errorResponse = {
-      error: isDevelopment ? error.message : 'Internal server error',
-      ...(isDevelopment && { stack: error.stack })
-    };
+    const errorResponse = { error: 'Internal server error' };
 
     reply.code(error.statusCode || 500).send(errorResponse);
   };

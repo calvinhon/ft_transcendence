@@ -38,13 +38,13 @@ docker compose ps
 ### Quick Manual Tests (5 minutes)
 ```bash
 # 1. Frontend works
-curl http://localhost -L | head -20
+curl https://localhost -L | head -20
 
 # 2. All services healthy
-curl http://localhost:3001/health  # auth
-curl http://localhost:3002/health  # game  
-curl http://localhost:3004/health  # user
-curl http://localhost:3003/health  # tournament
+curl https://localhost:3001/health  # auth
+curl https://localhost:3002/health  # game  
+curl https://localhost:3004/health  # user
+curl https://localhost:3003/health  # tournament
 ```
 
 ---
@@ -172,7 +172,7 @@ docker logs SERVICE_NAME | head -20
 #### Step 3: API Endpoint Verification
 ```bash
 # Test the relevant API endpoint
-curl -X GET/POST http://localhost:PORT/api/endpoint \
+curl -X GET/POST https://localhost:PORT/api/endpoint \
   -H "Content-Type: application/json" \
   -d '{"test": "data"}'
 
@@ -210,7 +210,7 @@ docker exec SERVICE_NAME sqlite3 /app/database/db.db \
 
 #### Step 6: Browser/Visual Verification (if applicable)
 ```
-1. Open http://localhost in Firefox
+1. Open https://localhost in Firefox
 2. F12 to open Developer Tools
 3. Check Console tab for JavaScript errors
 4. Test feature in UI
@@ -298,8 +298,8 @@ docker compose ps
 
 ```bash
 # Open browser
-open http://localhost
-# Or manually navigate to: http://localhost
+open https://localhost
+# Or manually navigate to: https://localhost
 
 # Expected: Landing page with login/register buttons
 ```
@@ -325,14 +325,14 @@ docker exec ft_transcendence-auth-service-1 ls -lah dist/
 # Expected: Compiled JavaScript files (.js)
 
 # Verify service is running
-curl http://localhost:3001/health
+curl https://localhost:3001/health
 # Expected: {"status":"healthy","timestamp":"2025-12-06T..."}
 
 # Check all 4 microservices
-curl http://localhost:3001/health  # auth-service
-curl http://localhost:3002/health  # game-service  
-curl http://localhost:3004/health  # user-service
-curl http://localhost:3003/health  # tournament-service
+curl https://localhost:3001/health  # auth-service
+curl https://localhost:3002/health  # game-service  
+curl https://localhost:3004/health  # user-service
+curl https://localhost:3003/health  # tournament-service
 
 # All should return: {"status":"healthy",...}
 ```
@@ -405,9 +405,9 @@ docker exec ft_transcendence-nginx-1 grep -o "router\|pushState" /usr/share/ngin
 **Interactive Test:**
 
 1. **Navigate to different pages:**
-   - Click "Login" → URL changes to `http://localhost/login`
-   - Click "Register" → URL changes to `http://localhost/register`
-   - Click "Game" → URL changes to `http://localhost/game`
+   - Click "Login" → URL changes to `https://localhost/login`
+   - Click "Register" → URL changes to `https://localhost/register`
+   - Click "Game" → URL changes to `https://localhost/game`
 
 2. **Test browser buttons:**
    - Click browser BACK button → Returns to previous page
@@ -418,7 +418,7 @@ docker exec ft_transcendence-nginx-1 grep -o "router\|pushState" /usr/share/ngin
 3. **Direct URL access:**
    ```bash
    # Open in browser
-   http://localhost/profile
+   https://localhost/profile
    # Should load profile page directly (no 404)
    ```
 
@@ -441,7 +441,7 @@ docker exec ft_transcendence-nginx-1 grep -o "router\|pushState" /usr/share/ngin
 
 1. **Open Firefox:**
    ```bash
-   firefox http://localhost
+   firefox https://localhost
    ```
 
 2. **Check console (F12):**
@@ -518,7 +518,7 @@ docker compose up -d
 
 1. **Access game:**
    ```bash
-   open http://localhost
+   open https://localhost
    # Click "Play" → "Quick Match"
    ```
 
@@ -548,7 +548,7 @@ docker compose up -d
 
 ```bash
 # Create tournament via API
-curl -X POST http://localhost:3003/api/tournament/create \
+curl -X POST https://localhost:3003/api/tournament/create \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Evaluation Tournament",
@@ -569,7 +569,7 @@ docker exec ft_transcendence-tournament-service-1 sqlite3 /app/database/tourname
   "SELECT id, name, status, max_players FROM tournaments LIMIT 5;"
 
 # View bracket
-open http://localhost/tournament
+open https://localhost/tournament
 ```
 
 **Visual Verification:**
@@ -639,7 +639,7 @@ docker exec ft_transcendence-game-service-1 cat src/routes/modules/aiPlayer.ts |
 
 **Verification (Play a game):**
 
-1. Start game: http://localhost/game
+1. Start game: https://localhost/game
 2. Observe:
    - ✅ Two paddles (left and right)
    - ✅ Ball bounces off paddles
@@ -673,7 +673,7 @@ curl -kv https://localhost 2>&1 | grep -E "subject|issuer|TLS|SSL"
 # Expected: TLSv1.3 (or TLSv1.2) and certificate details
 
 # 3. Verify HTTP redirects to HTTPS
-curl -I http://localhost 2>&1 | head -5
+curl -I https://localhost 2>&1 | head -5
 # Expected: HTTP/1.1 301 Moved Permanently with Location: https://localhost/
 
 # 4. Check Nginx has SSL configured
@@ -693,7 +693,7 @@ curl -I https://localhost/api/game/ws 2>&1 | grep -E "HTTP|Upgrade"
 
 ```bash
 # Register a user via API
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -722,7 +722,7 @@ docker exec ft_transcendence-auth-service-1 sqlite3 /app/database/auth.db \
 
 ```bash
 # Attempt SQL injection on login
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST https://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@example.com'\'' OR '\''1'\''='\''1",
@@ -733,7 +733,7 @@ curl -X POST http://localhost:3001/auth/login \
 # Response: {"error":"Invalid credentials"}
 
 # Try injection on user endpoint
-curl "http://localhost:3004/api/user/profile?id=1' OR '1'='1"
+curl "https://localhost:3004/api/user/profile?id=1' OR '1'='1"
 
 # Expected: 403 Forbidden (blocked by WAF) or 400 Bad Request
 
@@ -761,7 +761,7 @@ docker exec ft_transcendence-auth-service-1 cat src/services/authService.ts | gr
 
 ```bash
 # Attempt XSS in profile bio
-curl -X PATCH http://localhost:3004/api/user/profile \
+curl -X PATCH https://localhost:3004/api/user/profile \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{
@@ -854,7 +854,7 @@ curl -kv https://localhost 2>&1 | grep -E "SSL|TLS|certificate|subject|issuer"
 ##### 4. HTTP to HTTPS Redirect Verification
 ```bash
 # Test HTTP request automatically redirects to HTTPS
-curl -i http://localhost 2>&1 | head -10
+curl -i https://localhost 2>&1 | head -10
 # Expected: 301 Moved Permanently with Location: https://localhost/
 
 # Verify both ports are listening
@@ -948,7 +948,7 @@ docker inspect nginx | jq '.[0].Mounts[] | select(.Source | contains("nginx"))'
 
 ```bash
 # Test email validation
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "test",
@@ -959,7 +959,7 @@ curl -X POST http://localhost:3001/auth/register \
 # Expected: {"error":"Invalid email format"}
 
 # Test password requirements
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "test",
@@ -970,7 +970,7 @@ curl -X POST http://localhost:3001/auth/register \
 # Expected: {"error":"Password must be at least 8 characters"}
 
 # Test username length
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "ab",
@@ -1043,10 +1043,10 @@ docker exec ft_transcendence-auth-service-1 cat package.json | grep -i fastify
 
 # Check server startup
 docker logs ft_transcendence-auth-service-1 | head -20
-# Expected: "Server listening at http://0.0.0.0:3000"
+# Expected: "Server listening at https://0.0.0.0:3000"
 
 # Performance test (optional)
-ab -n 1000 -c 10 http://localhost:3001/health
+ab -n 1000 -c 10 https://localhost:3001/health
 # Expected: 1000+ requests/second
 
 # Check TypeScript compilation
@@ -1058,20 +1058,20 @@ docker exec ft_transcendence-auth-service-1 ls dist/
 
 ```bash
 # Auth Service
-curl http://localhost:3001/health
-curl http://localhost:3001/auth/status
+curl https://localhost:3001/health
+curl https://localhost:3001/auth/status
 
 # Game Service
-curl http://localhost:3002/health
+curl https://localhost:3002/health
 
 # User Service
-curl http://localhost:3004/health
+curl https://localhost:3004/health
 
 # Tournament Service
-curl http://localhost:3003/health
+curl https://localhost:3003/health
 
 # SSR Service
-curl http://localhost:3005/health
+curl https://localhost:3005/health
 ```
 
 **Points:** 10/10 ✅
@@ -1119,7 +1119,7 @@ docker exec ft_transcendence-user-service-1 sqlite3 /app/database/users.db \
 
 ```bash
 # Create: Register new user (creates DB record)
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"dbtest","email":"dbtest@example.com","password":"Test123456"}'
 
@@ -1142,7 +1142,7 @@ docker exec ft_transcendence-auth-service-1 sqlite3 /app/database/auth.db \
 ```bash
 # Check Hardhat node is running
 docker logs hardhat-node | head -20
-# Expected: "Started HTTP and WebSocket JSON-RPC server at http://0.0.0.0:8545/"
+# Expected: "Started HTTP and WebSocket JSON-RPC server at https://0.0.0.0:8545/"
 
 # Check contract deployment
 docker exec hardhat-node ls -lah /app/deployed-address.txt
@@ -1165,7 +1165,7 @@ docker exec hardhat-node npx hardhat test
 
 ```bash
 # Record tournament result (via tournament service)
-curl -X POST http://localhost:3003/api/tournament/123/complete \
+curl -X POST https://localhost:3003/api/tournament/123/complete \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{
@@ -1211,7 +1211,7 @@ cat blockchain/contracts/TournamentRankings.sol | head -30
 
 ```bash
 # Register new user
-curl -X POST http://localhost:3001/auth/register \
+curl -X POST https://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "evaluser",
@@ -1231,7 +1231,7 @@ curl -X POST http://localhost:3001/auth/register \
 
 ```bash
 # Login
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST https://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "eval@example.com",
@@ -1246,7 +1246,7 @@ curl -X POST http://localhost:3001/auth/login \
 
 ```bash
 # Get profile
-curl http://localhost:3004/api/user/profile/user_123 \
+curl https://localhost:3004/api/user/profile/user_123 \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1259,7 +1259,7 @@ curl http://localhost:3004/api/user/profile/user_123 \
 # }
 
 # Update profile
-curl -X PATCH http://localhost:3004/api/user/profile \
+curl -X PATCH https://localhost:3004/api/user/profile \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1274,7 +1274,7 @@ curl -X PATCH http://localhost:3004/api/user/profile \
 
 ```bash
 # Add friend
-curl -X POST http://localhost:3004/api/user/friends/add \
+curl -X POST https://localhost:3004/api/user/friends/add \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"targetUserId": "user_456"}'
@@ -1282,7 +1282,7 @@ curl -X POST http://localhost:3004/api/user/friends/add \
 # Expected: {"success": true, "status": "pending"}
 
 # Get friends list
-curl http://localhost:3004/api/user/friends \
+curl https://localhost:3004/api/user/friends \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1297,7 +1297,7 @@ curl http://localhost:3004/api/user/friends \
 
 ```bash
 # Get user statistics
-curl http://localhost:3004/api/user/stats/user_123 \
+curl https://localhost:3004/api/user/stats/user_123 \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1318,7 +1318,7 @@ curl http://localhost:3004/api/user/stats/user_123 \
 
 ```bash
 # Get match history
-curl http://localhost:3004/api/user/matches?userId=user_123&limit=10 \
+curl https://localhost:3004/api/user/matches?userId=user_123&limit=10 \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1364,7 +1364,7 @@ docker exec ft_transcendence-auth-service-1 env | grep GOOGLE_CLIENT_ID
 **Test Flow:**
 
 1. **Browser Test:**
-   - Open http://localhost
+   - Open https://localhost
    - Click "Sign in with Google"
    - Redirects to Google login page
    - Login with Google account
@@ -1373,7 +1373,7 @@ docker exec ft_transcendence-auth-service-1 env | grep GOOGLE_CLIENT_ID
 2. **Check OAuth endpoint:**
 ```bash
 # Initiate OAuth
-curl http://localhost:3001/auth/oauth/init?provider=google
+curl https://localhost:3001/auth/oauth/init?provider=google
 
 # Expected: Redirect to Google
 # Location: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
@@ -1449,7 +1449,7 @@ docker exec ft_transcendence-game-service-1 cat src/routes/modules/aiPlayer.ts |
 
 **Browser Test:**
 
-1. Open http://localhost/game
+1. Open https://localhost/game
 2. Select "Play vs Bot"
 3. Choose difficulty: Easy / Medium / Hard
 4. Play game:
@@ -1462,7 +1462,7 @@ docker exec ft_transcendence-game-service-1 cat src/routes/modules/aiPlayer.ts |
 
 ```bash
 # Create AI match
-curl -X POST http://localhost:3002/api/game/match/ai \
+curl -X POST https://localhost:3002/api/game/match/ai \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1577,7 +1577,7 @@ wscat -c ws://localhost/api/game/ws
 
 ```bash
 # Create match
-curl -X POST http://localhost:3002/api/game/match \
+curl -X POST https://localhost:3002/api/game/match \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1586,7 +1586,7 @@ curl -X POST http://localhost:3002/api/game/match \
   }'
 
 # Get match state
-curl http://localhost:3002/api/game/match/match_789 \
+curl https://localhost:3002/api/game/match/match_789 \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1601,7 +1601,7 @@ curl http://localhost:3002/api/game/match/match_789 \
 # }
 
 # End match
-curl -X DELETE http://localhost:3002/api/game/match/match_789 \
+curl -X DELETE https://localhost:3002/api/game/match/match_789 \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -1619,7 +1619,7 @@ curl -X DELETE http://localhost:3002/api/game/match/match_789 \
 
 **Browser Test:**
 
-1. Open http://localhost/profile
+1. Open https://localhost/profile
 2. See statistics:
    - Total matches
    - Wins / Losses
@@ -1633,7 +1633,7 @@ curl -X DELETE http://localhost:3002/api/game/match/match_789 \
 
 ```bash
 # Get dashboard data
-curl http://localhost:3004/api/user/dashboard/user_123 \
+curl https://localhost:3004/api/user/dashboard/user_123 \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1663,7 +1663,7 @@ curl http://localhost:3004/api/user/dashboard/user_123 \
 
 ```bash
 # Get global leaderboard
-curl http://localhost:3003/api/leaderboard?type=global&limit=10
+curl https://localhost:3003/api/leaderboard?type=global&limit=10
 
 # Expected:
 # {
@@ -1688,7 +1688,7 @@ curl http://localhost:3003/api/leaderboard?type=global&limit=10
 
 ```bash
 # Get match history with filters
-curl "http://localhost:3004/api/user/matches?userId=user_123&mode=ranked&result=win&limit=20" \
+curl "https://localhost:3004/api/user/matches?userId=user_123&mode=ranked&result=win&limit=20" \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1719,7 +1719,7 @@ curl "http://localhost:3004/api/user/matches?userId=user_123&mode=ranked&result=
 
 ```bash
 # Get chart data
-curl "http://localhost:3004/api/user/stats/charts?userId=user_123&period=30days" \
+curl "https://localhost:3004/api/user/stats/charts?userId=user_123&period=30days" \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1747,7 +1747,7 @@ curl "http://localhost:3004/api/user/stats/charts?userId=user_123&period=30days"
 
 ```bash
 # Login to get JWT
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST https://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -1769,7 +1769,7 @@ echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | cut -d. -f2 | base64 -d
 # }
 
 # Use token for authenticated request
-curl http://localhost:3004/api/user/profile/user_123 \
+curl https://localhost:3004/api/user/profile/user_123 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 
 # Expected: Profile data returned
@@ -1781,7 +1781,7 @@ curl http://localhost:3004/api/user/profile/user_123 \
 
 ```bash
 # Step 1: Generate 2FA secret
-curl -X POST http://localhost:3001/auth/2fa/setup \
+curl -X POST https://localhost:3001/auth/2fa/setup \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1796,7 +1796,7 @@ curl -X POST http://localhost:3001/auth/2fa/setup \
 # Step 2: Scan QR code with Google Authenticator app
 
 # Step 3: Verify and enable 2FA
-curl -X POST http://localhost:3001/auth/2fa/verify \
+curl -X POST https://localhost:3001/auth/2fa/verify \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1825,7 +1825,7 @@ curl -X POST http://localhost:3001/auth/2fa/verify \
 
 ```bash
 # Step 1: Regular login
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST https://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -1840,7 +1840,7 @@ curl -X POST http://localhost:3001/auth/login \
 # }
 
 # Step 2: Submit 2FA code
-curl -X POST http://localhost:3001/auth/2fa/validate \
+curl -X POST https://localhost:3001/auth/2fa/validate \
   -H "Content-Type: application/json" \
   -d '{
     "tempToken": "temp_jwt_token_abc123",
@@ -1859,7 +1859,7 @@ curl -X POST http://localhost:3001/auth/2fa/validate \
 
 ```bash
 # Get 2FA status
-curl http://localhost:3001/auth/2fa/status \
+curl https://localhost:3001/auth/2fa/status \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -1902,14 +1902,14 @@ curl "https://localhost/api/user/profile?id=1' OR '1'='1" --insecure
 # {"error":"Request blocked by security policy"}
 
 # Test XSS detection
-curl -X POST http://localhost:3004/api/user/profile \
+curl -X POST https://localhost:3004/api/user/profile \
   -H "Content-Type: application/json" \
   -d '{"bio":"<script>alert(1)</script>"}'
 
 # Expected: 403 Forbidden
 
 # Test rate limiting
-for i in {1..20}; do curl http://localhost:3001/health; done
+for i in {1..20}; do curl https://localhost:3001/health; done
 
 # Expected: After 10 requests, get 429 Too Many Requests
 
@@ -1981,7 +1981,7 @@ docker exec ft_transcendence-auth-service-1 env | grep -i "password\|secret" | w
 
 ```bash
 # Export user data
-curl http://localhost:3004/api/user/gdpr/export \
+curl https://localhost:3004/api/user/gdpr/export \
   -H "Authorization: Bearer $TOKEN" \
   > user_data_export.json
 
@@ -2006,7 +2006,7 @@ ls -lh user_data_export.json
 
 ```bash
 # Request account deletion
-curl -X DELETE http://localhost:3004/api/user/gdpr/delete \
+curl -X DELETE https://localhost:3004/api/user/gdpr/delete \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -2047,7 +2047,7 @@ docker exec ft_transcendence-game-service-1 sqlite3 /app/database/games.db \
 
 ```bash
 # Anonymize account (keeps stats)
-curl -X POST http://localhost:3004/api/user/gdpr/anonymize \
+curl -X POST https://localhost:3004/api/user/gdpr/anonymize \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -2076,7 +2076,7 @@ curl -X POST http://localhost:3004/api/user/gdpr/anonymize \
 
 ```bash
 # Get consents
-curl http://localhost:3004/api/user/gdpr/consents \
+curl https://localhost:3004/api/user/gdpr/consents \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected:
@@ -2119,7 +2119,7 @@ curl http://localhost:3004/api/user/gdpr/consents \
   }'
 
 # Count logs by service
-curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
+curl -X GET "https://localhost:9200/filebeat-*/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "size": 0,
@@ -2145,7 +2145,7 @@ curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
 
 **Browser Test:**
 
-1. Open http://localhost:9090
+1. Open https://localhost:9090
 2. Go to: Status → Targets
 3. See all services:
    - ✅ auth-service (UP)
@@ -2167,12 +2167,12 @@ curl -X GET "http://localhost:9200/filebeat-*/_search?pretty" \
 
 ```bash
 # Check Prometheus health
-curl http://localhost:9090/-/healthy
+curl https://localhost:9090/-/healthy
 
 # Expected: Prometheus is Healthy.
 
 # Query metrics via API
-curl 'http://localhost:9090/api/v1/query?query=up'
+curl 'https://localhost:9090/api/v1/query?query=up'
 
 # Expected:
 # {
@@ -2189,7 +2189,7 @@ curl 'http://localhost:9090/api/v1/query?query=up'
 # }
 
 # Get all targets
-curl http://localhost:9090/api/v1/targets
+curl https://localhost:9090/api/v1/targets
 
 # Expected: List of monitored services
 ```
@@ -2198,7 +2198,7 @@ curl http://localhost:9090/api/v1/targets
 
 **Browser Test:**
 
-1. Open http://localhost:3000
+1. Open https://localhost:3000
 2. Login:
    - Username: `admin`
    - Password: `admin`
@@ -2219,7 +2219,7 @@ curl http://localhost:9090/api/v1/targets
 
 ```bash
 # Check Grafana health
-curl http://localhost:3000/api/health
+curl https://localhost:3000/api/health
 
 # Expected:
 # {
@@ -2228,7 +2228,7 @@ curl http://localhost:3000/api/health
 # }
 
 # List dashboards
-curl http://admin:admin@localhost:3000/api/search?query=
+curl https://admin:admin@localhost:3000/api/search?query=
 
 # Expected: List of dashboards
 ```
@@ -2266,9 +2266,9 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 docker stop user-service
 
 # Test other services still work
-curl http://localhost:3001/health  # ✅ Still works
-curl http://localhost:3002/health  # ✅ Still works
-curl http://localhost:3003/health  # ❌ Fails (expected)
+curl https://localhost:3001/health  # ✅ Still works
+curl https://localhost:3002/health  # ✅ Still works
+curl https://localhost:3003/health  # ❌ Fails (expected)
 
 # Restart service
 docker start user-service
@@ -2301,10 +2301,10 @@ docker exec ft_transcendence-nginx-1 cat /etc/nginx/nginx.conf | grep -A 5 "loca
 
 # Expected: Routing to different services
 # location /api/auth/ {
-#     proxy_pass http://auth-service:3000/;
+#     proxy_pass https://auth-service:3000/;
 # }
 # location /api/game/ {
-#     proxy_pass http://game-service:3000/;
+#     proxy_pass https://game-service:3000/;
 # }
 
 # Test routing
@@ -2351,7 +2351,7 @@ docker ps | grep game-service
 # Each service has health endpoint
 for service in auth-service game-service user-service tournament-service; do
     echo "$service:"
-    curl http://localhost:3001/health 2>/dev/null | jq -r .status
+    curl https://localhost:3001/health 2>/dev/null | jq -r .status
 done
 
 # Expected: All return "ok"
@@ -2382,8 +2382,8 @@ Frontend (Nginx) :80
 ### Pre-Evaluation (5 minutes)
 
 - [ ] Services running: `docker compose ps`
-- [ ] Application loads: http://localhost
-- [ ] Health checks pass: `curl http://localhost:3001/health`
+- [ ] Application loads: https://localhost
+- [ ] Health checks pass: `curl https://localhost:3001/health`
 - [ ] No critical errors in logs
 
 ### Mandatory Part (15 minutes)
@@ -2728,7 +2728,7 @@ docker start ft_transcendence-SERVICE-1
 ### Issue: Login Returns 500 Error - "no such column: two_factor_enabled"
 **Symptom:** 
 ```
-POST http://localhost/api/auth/login
+POST https://localhost/api/auth/login
 [HTTP/1.1 500 Internal Server Error]
 Error: SQLITE_ERROR: no such column: two_factor_enabled
 ```

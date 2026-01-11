@@ -24,7 +24,7 @@ Verify Vault service starts and is accessible.
 docker-compose ps | grep vault
 
 # Health check
-curl -s http://vault-server:8200/v1/sys/health | jq .
+curl -s https://vault-server:8200/v1/sys/health | jq .
 
 # Expected response:
 # {
@@ -39,7 +39,7 @@ curl -s http://vault-server:8200/v1/sys/health | jq .
 # }
 
 # Check UI accessibility
-curl -s http://vault-server:8200/ui/ | head -50
+curl -s https://vault-server:8200/ui/ | head -50
 ```
 
 ### Pass Criteria
@@ -80,13 +80,13 @@ cat vault/config.hcl
 # ui = true
 
 # Check listener is working
-curl -I http://vault-server:8200/v1/sys/health
+curl -I https://vault-server:8200/v1/sys/health
 
 # Expected: HTTP/1.1 200 OK
 
 # Check auth methods
 curl -s -H "X-Vault-Token: dev-token" \
-  http://vault-server:8200/v1/sys/auth | jq '.data.data'
+  https://vault-server:8200/v1/sys/auth | jq '.data.data'
 ```
 
 ### Pass Criteria
@@ -113,7 +113,7 @@ Verify secrets can be stored and retrieved from Vault.
 ### Test Commands
 ```bash
 # Set JWT secret
-curl -X POST http://vault-server:8200/v1/secret/data/jwt \
+curl -X POST https://vault-server:8200/v1/secret/data/jwt \
   -H "X-Vault-Token: dev-token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -123,13 +123,13 @@ curl -X POST http://vault-server:8200/v1/secret/data/jwt \
   }'
 
 # Retrieve JWT secret
-curl -s -X GET http://vault-server:8200/v1/secret/data/jwt \
+curl -s -X GET https://vault-server:8200/v1/secret/data/jwt \
   -H "X-Vault-Token: dev-token" | jq '.data.data.secret'
 
 # Expected: "super-secret-jwt-key-12345"
 
 # Set OAuth credentials
-curl -X POST http://vault-server:8200/v1/secret/data/oauth \
+curl -X POST https://vault-server:8200/v1/secret/data/oauth \
   -H "X-Vault-Token: dev-token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -142,7 +142,7 @@ curl -X POST http://vault-server:8200/v1/secret/data/oauth \
   }'
 
 # Try accessing without token (should fail)
-curl -s -X GET http://vault-server:8200/v1/secret/data/jwt | jq '.errors' | grep -i "permission\|forbidden"
+curl -s -X GET https://vault-server:8200/v1/secret/data/jwt | jq '.errors' | grep -i "permission\|forbidden"
 ```
 
 ### Pass Criteria
@@ -206,19 +206,19 @@ Verify WAF blocks SQL injection attempts.
 ### Test Commands
 ```bash
 # Normal request (should pass)
-curl -X GET "http://localhost/api/users/1" \
+curl -X GET "https://localhost/api/users/1" \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected: 200 OK or 404 if not found
 
 # SQL Injection attempt (should be blocked)
-curl -X GET "http://localhost/api/users/1 OR 1=1" \
+curl -X GET "https://localhost/api/users/1 OR 1=1" \
   -H "Authorization: Bearer $TOKEN" -v
 
 # Expected: 403 Forbidden
 
 # Another injection attempt
-curl -X GET "http://localhost/api/users?username=admin' OR '1'='1" -v
+curl -X GET "https://localhost/api/users?username=admin' OR '1'='1" -v
 
 # Expected: 403 Forbidden
 
@@ -249,7 +249,7 @@ Verify WAF blocks XSS attempts.
 ### Test Commands
 ```bash
 # Normal POST (should pass)
-curl -X POST "http://localhost/api/comments" \
+curl -X POST "https://localhost/api/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"text":"This is a normal comment"}'
@@ -257,7 +257,7 @@ curl -X POST "http://localhost/api/comments" \
 # Expected: 201 Created
 
 # XSS attempt 1: Script tag
-curl -X POST "http://localhost/api/comments" \
+curl -X POST "https://localhost/api/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"text":"<script>alert(1)</script>"}' -v
@@ -265,7 +265,7 @@ curl -X POST "http://localhost/api/comments" \
 # Expected: 403 Forbidden
 
 # XSS attempt 2: Event handler
-curl -X POST "http://localhost/api/comments" \
+curl -X POST "https://localhost/api/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"text":"<img onerror=alert(1)>"}' -v
@@ -273,7 +273,7 @@ curl -X POST "http://localhost/api/comments" \
 # Expected: 403 Forbidden
 
 # XSS attempt 3: JavaScript protocol
-curl -X POST "http://localhost/api/comments" \
+curl -X POST "https://localhost/api/comments" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"text":"<a href=\"javascript:alert(1)\">Click</a>"}' -v
@@ -305,20 +305,20 @@ Verify rate limiting prevents abuse.
 ```bash
 # Normal requests (should pass)
 for i in {1..5}; do
-  curl -s http://auth:3000/health | jq '.status'
+  curl -s https://auth:3000/health | jq '.status'
 done
 
 # Expected: 5 successful responses
 
 # Rapid requests (may trigger rate limit)
 for i in {1..100}; do
-  curl -s http://auth:3000/health &
+  curl -s https://auth:3000/health &
 done
 
 sleep 5
 
 # Check if rate limited
-curl -I http://auth:3000/health | grep -i "rate\|429\|x-ratelimit"
+curl -I https://auth:3000/health | grep -i "rate\|429\|x-ratelimit"
 
 # If implemented, expect:
 # X-RateLimit-Limit: 1000
@@ -349,7 +349,7 @@ Verify large requests are rejected.
 ### Test Commands
 ```bash
 # Normal sized request (should pass)
-curl -X POST "http://localhost/api/games" \
+curl -X POST "https://localhost/api/games" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"moves":[1,2,3,4,5]}'
@@ -359,7 +359,7 @@ curl -X POST "http://localhost/api/games" \
 # Very large request (should fail)
 LARGE_DATA=$(printf 'a%.0s' {1..10000000})
 
-curl -X POST "http://localhost/api/games" \
+curl -X POST "https://localhost/api/games" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d "{\"data\":\"$LARGE_DATA\"}" -v
@@ -430,24 +430,24 @@ Verify Vault enforces access control.
 ### Test Commands
 ```bash
 # Store secret with dev-token
-curl -X POST http://vault-server:8200/v1/secret/data/test \
+curl -X POST https://vault-server:8200/v1/secret/data/test \
   -H "X-Vault-Token: dev-token" \
   -H "Content-Type: application/json" \
   -d '{"data": {"secret": "confidential"}}'
 
 # Try accessing with wrong token
-curl -s http://vault-server:8200/v1/secret/data/test \
+curl -s https://vault-server:8200/v1/secret/data/test \
   -H "X-Vault-Token: wrong-token" | jq '.errors'
 
 # Expected: Permission denied
 
 # Try accessing with no token
-curl -s http://vault-server:8200/v1/secret/data/test | jq '.errors'
+curl -s https://vault-server:8200/v1/secret/data/test | jq '.errors'
 
 # Expected: missing token
 
 # Try deleting secret with wrong token
-curl -s -X DELETE http://vault-server:8200/v1/secret/data/test \
+curl -s -X DELETE https://vault-server:8200/v1/secret/data/test \
   -H "X-Vault-Token: wrong-token" | jq '.errors'
 
 # Expected: Permission denied
@@ -476,7 +476,7 @@ Verify security headers are present in responses.
 ### Test Commands
 ```bash
 # Check response headers
-curl -I http://localhost/api/health | head -20
+curl -I https://localhost/api/health | head -20
 
 # Expected headers:
 # X-Content-Type-Options: nosniff
@@ -486,10 +486,10 @@ curl -I http://localhost/api/health | head -20
 # Content-Security-Policy: ...
 
 # Full header check
-curl -I http://localhost/api/auth/login | grep -i "x-\|strict\|content-security"
+curl -I https://localhost/api/auth/login | grep -i "x-\|strict\|content-security"
 
 # Verify no Server header (don't expose software)
-curl -I http://localhost/api/health | grep -i "^Server:" || echo "No Server header exposed (good)"
+curl -I https://localhost/api/health | grep -i "^Server:" || echo "No Server header exposed (good)"
 ```
 
 ### Pass Criteria
@@ -515,20 +515,20 @@ Verify security events are logged for audit.
 ### Test Commands
 ```bash
 # Normal request
-curl -s http://localhost/api/health | jq .
+curl -s https://localhost/api/health | jq .
 
 # Check logs for this request
 docker logs nginx 2>&1 | grep "health" | tail -3
 
 # SQL injection attempt
-curl -s "http://localhost/api/search?q=1' OR '1'='1" || true
+curl -s "https://localhost/api/search?q=1' OR '1'='1" || true
 
 # Check logs for blocked request
 docker logs nginx 2>&1 | grep -i "SQL\|injection\|ModSecurity" | tail -5
 
 # Check Vault audit logs
 curl -s -H "X-Vault-Token: dev-token" \
-  http://vault-server:8200/v1/sys/audit | jq '.data'
+  https://vault-server:8200/v1/sys/audit | jq '.data'
 
 # Expected logs to include:
 # - Timestamp
@@ -557,17 +557,17 @@ curl -s -H "X-Vault-Token: dev-token" \
 ### Quick Test Commands
 ```bash
 # Check Vault health
-curl http://vault-server:8200/v1/sys/health | jq .status
+curl https://vault-server:8200/v1/sys/health | jq .status
 
 # Test WAF - SQL injection blocked
-curl "http://localhost/api/users?id=1' OR '1'='1" -v
+curl "https://localhost/api/users?id=1' OR '1'='1" -v
 
 # Test WAF - XSS blocked
-curl -X POST http://localhost/api/test \
+curl -X POST https://localhost/api/test \
   -d '{"data":"<script>alert(1)</script>"}'
 
 # Check security headers
-curl -I http://localhost/api/health | grep -i "x-\|strict"
+curl -I https://localhost/api/health | grep -i "x-\|strict"
 ```
 
 ---

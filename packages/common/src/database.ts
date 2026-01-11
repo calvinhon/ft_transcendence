@@ -60,7 +60,7 @@ export function createDatabaseConnection(config: DatabaseConfig): DatabaseConnec
   const logger = createLogger(config.serviceName);
 
   // Determine if we're in test mode
-  const isTest = config.enableTestMode && (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined);
+  const isTest = config.enableTestMode && process.env.JEST_WORKER_ID !== undefined;
   const actualDbPath = isTest ? ':memory:' : config.dbPath;
 
   if (config.lazyLoad) {

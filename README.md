@@ -160,14 +160,14 @@ make start
 
 # Wait 2-3 minutes for services to initialize
 # Then verify with:
-curl http://localhost  # Should show web interface
+curl https://localhost  # Should show web interface
 docker compose ps     # All containers should show "Up (healthy)"
 ```
 
 ### Verify Services Are Running
 ```bash
 # Quick health check
-curl http://localhost/api/auth/health
+curl https://localhost/api/auth/health
 
 # Expected: {"status":"ok"}
 ```
