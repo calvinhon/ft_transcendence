@@ -57,6 +57,7 @@ RUN echo "Setting up ModSecurity" && \
 	cp /opt/ModSecurity/unicode.mapping modsec && \
 	cp /opt/ModSecurity/modsecurity.conf-recommended modsec/modsecurity.conf && \
 	sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' modsec/modsecurity.conf && \
+	sed -i 's/SecAuditLogParts ABIJDEFHZ/SecAuditLogParts ABCEFHJKZ/' modsec/modsecurity.conf && \
 	echo -e "Include /etc/nginx/modsec/modsecurity.conf\nInclude /usr/local/modsecurity-crs/crs-setup.conf\nInclude /usr/local/modsecurity-crs/rules/*.conf" > modsec/main.conf
 
 
@@ -81,12 +82,6 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
 # Remove default nginx config to avoid conflicts
 RUN rm -f /etc/nginx/conf.d/default.conf
-
-# Copy custom ModSecurity config
-COPY nginx/modsecurity.conf /etc/nginx/modsec/main.conf
-
-# Create ModSecurity log directory
-RUN mkdir -p /var/log/modsecurity && chown -R nginx:nginx /var/log/modsecurity
 
 COPY ./entrypoint.sh .
 

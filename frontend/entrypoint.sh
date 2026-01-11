@@ -1,6 +1,22 @@
 #!/bin/sh
 set -e  # 1. Fail fast
 
+echo "SecAction \
+ \"id:900200,\
+  phase:1,\
+  nolog,\
+  pass,\
+  t:none,\
+  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT'\"
+
+SecAction \
+ \"id:900220,\
+  phase:1,\
+  nolog,\
+  pass,\
+  t:none,\
+  setvar:'tx.allowed_request_content_type=|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/json|'\"" >> /usr/local/modsecurity-crs/crs-setup.conf
+
 if [ -z "$VAULT_TOKEN" ]; then
   exit 2
 fi
