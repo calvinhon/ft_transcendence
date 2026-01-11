@@ -65,16 +65,16 @@ Verify health check endpoints respond correctly from all services.
 ### Test Commands
 ```bash
 # Auth Service
-curl -X GET http://auth:3000/health -H "Content-Type: application/json"
+curl -X GET https://auth:3000/health -H "Content-Type: application/json"
 
 # Game Service
-curl -X GET http://game:3000/health -H "Content-Type: application/json"
+curl -X GET https://game:3000/health -H "Content-Type: application/json"
 
 # Tournament Service
-curl -X GET http://tournament:3000/health -H "Content-Type: application/json"
+curl -X GET https://tournament:3000/health -H "Content-Type: application/json"
 
 # User Service
-curl -X GET http://user:3000/health -H "Content-Type: application/json"
+curl -X GET https://user:3000/health -H "Content-Type: application/json"
 ```
 
 ### Expected Response
@@ -109,20 +109,20 @@ Verify CORS headers are set correctly for cross-origin requests.
 ### Test Commands
 ```bash
 # Test CORS headers
-curl -X OPTIONS http://auth:3000/health \
-  -H "Origin: http://localhost:5173" \
+curl -X OPTIONS https://auth:3000/health \
+  -H "Origin: https://localhost:5173" \
   -H "Access-Control-Request-Method: GET" \
   -v
 
 # Check response headers
-curl -X GET http://auth:3000/health \
-  -H "Origin: http://localhost:5173" \
+curl -X GET https://auth:3000/health \
+  -H "Origin: https://localhost:5173" \
   -v 2>&1 | grep "Access-Control"
 ```
 
 ### Expected Response Headers
 ```
-Access-Control-Allow-Origin: http://localhost:5173
+Access-Control-Allow-Origin: https://localhost:5173
 Access-Control-Allow-Credentials: true
 Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
@@ -150,13 +150,13 @@ Verify HTTP-only cookies are set correctly.
 ### Test Commands
 ```bash
 # Register user and get cookie
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","email":"test@test.com","password":"TestPass123!"}' \
   -v 2>&1 | grep -i "set-cookie"
 
 # Verify cookie is HTTP-only
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser2","email":"test2@test.com","password":"TestPass123!"}' \
   -v 2>&1 | grep -i "httponly"
@@ -189,12 +189,12 @@ Verify JWT token generation and validation.
 ### Test Commands
 ```bash
 # Register user
-REGISTER=$(curl -s -X POST http://auth:3000/auth/register \
+REGISTER=$(curl -s -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"jwttest","email":"jwttest@test.com","password":"TestPass123!"}')
 
 # Login to get JWT
-LOGIN=$(curl -s -X POST http://auth:3000/auth/login \
+LOGIN=$(curl -s -X POST https://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"jwttest","password":"TestPass123!"}')
 
@@ -205,7 +205,7 @@ TOKEN=$(echo $LOGIN | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 echo "Token: $TOKEN"
 
 # Use token in request
-curl -X GET http://user:3000/profile \
+curl -X GET https://user:3000/profile \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -237,17 +237,17 @@ Verify request validation and error handling.
 ### Test Commands
 ```bash
 # Missing required field
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"test"}'
 
 # Invalid email format
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"test","email":"invalid","password":"pass"}'
 
 # Password too weak
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"test","email":"test@test.com","password":"123"}'
 ```
@@ -283,14 +283,14 @@ Verify error handling and exception management.
 ### Test Commands
 ```bash
 # Non-existent endpoint
-curl -X GET http://auth:3000/api/nonexistent
+curl -X GET https://auth:3000/api/nonexistent
 
 # Duplicate user registration
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"duplicate","email":"dup@test.com","password":"TestPass123!"}'
 
-curl -X POST http://auth:3000/auth/register \
+curl -X POST https://auth:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"username":"duplicate","email":"dup@test.com","password":"TestPass123!"}'
 ```
@@ -329,7 +329,7 @@ Verify middleware execution order and functionality.
 docker logs auth | grep -i "middleware\|cors\|jwt" | head -20
 
 # Make request and check logs
-curl -X GET http://auth:3000/health
+curl -X GET https://auth:3000/health
 docker logs auth | tail -5
 ```
 
@@ -361,7 +361,7 @@ Verify services shut down gracefully.
 ### Test Commands
 ```bash
 # Start a long operation (adjust endpoint as needed)
-curl -X GET http://auth:3000/health &
+curl -X GET https://auth:3000/health &
 
 # Gracefully stop the service
 docker-compose stop auth
@@ -398,14 +398,14 @@ Verify services can communicate with each other.
 ### Test Commands
 ```bash
 # Make request that might trigger inter-service communication
-curl -X GET http://user:3000/stats \
+curl -X GET https://user:3000/stats \
   -H "Authorization: Bearer $TOKEN"
 
 # Check game received request
 docker logs game | grep -i "request\|stats"
 
 # Check for service-to-service calls
-docker exec auth curl -s http://game:3000/health
+docker exec auth curl -s https://game:3000/health
 ```
 
 ### Expected Results
@@ -436,7 +436,7 @@ Verify request/response logging functionality.
 ### Test Commands
 ```bash
 # Make request
-curl -X POST http://auth:3000/auth/login \
+curl -X POST https://auth:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser","password":"password"}'
 
@@ -510,7 +510,7 @@ ls -la dist/*.js.map
 # Run all health checks
 for port in 3001 3002 3003 3004; do
   echo "Testing port $port..."
-  curl -s http://localhost:$port/health | jq .
+  curl -s https://localhost:$port/health | jq .
 done
 ```
 

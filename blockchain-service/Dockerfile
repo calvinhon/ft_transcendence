@@ -13,6 +13,12 @@ COPY ./blockchain-service/src/ ./src/
 
 RUN npm run build
 
-USER node
+COPY ./blockchain-service/entrypoint.sh ./entryway/
+
+COPY ./blockchain-service/ca.crt /usr/local/share/ca.crt
+
+RUN chmod +x ./entryway/entrypoint.sh  && apk add curl jq
+
+ENTRYPOINT [ "./entryway/entrypoint.sh" ]
 
 CMD ["node", "dist/server.js"]

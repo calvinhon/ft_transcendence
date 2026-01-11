@@ -282,13 +282,13 @@ class Router {
 
 **A:** CORS stands for **Cross-Origin Resource Sharing**.
 
-In the ft_transcendence project, CORS is configured for all API endpoints to allow the frontend (running on `http://localhost`) to make requests to the backend services.
+In the ft_transcendence project, CORS is configured for all API endpoints to allow the frontend (running on `https://localhost`) to make requests to the backend services.
 
 #### Purpose of CORS Configuration
 
-**Without CORS**: Browsers block requests from `http://localhost` (frontend) to `http://localhost/api/*` (backend) because they're considered different "origins" due to security policies.
+**Without CORS**: Browsers block requests from `https://localhost` (frontend) to `https://localhost/api/*` (backend) because they're considered different "origins" due to security policies.
 
-**With CORS**: The backend explicitly tells the browser "it's okay to accept requests from http://localhost"
+**With CORS**: The backend explicitly tells the browser "it's okay to accept requests from https://localhost"
 
 #### CORS Configuration in nginx
 
@@ -298,7 +298,7 @@ In the nginx configuration (`frontend/nginx/nginx.conf`):
 # For auth service (with credentials for cookies)
 location /api/auth/ {
     # CORS headers
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+    add_header 'Access-Control-Allow-Origin' 'https://localhost' always;
     add_header 'Access-Control-Allow-Credentials' 'true' always;
     add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
     add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
@@ -307,9 +307,9 @@ location /api/auth/ {
 
 #### Key CORS Headers Explained
 
-1. **`Access-Control-Allow-Origin: http://localhost`**
+1. **`Access-Control-Allow-Origin: https://localhost`**
    - Specifies which origin (domain) can access the API
-   - Allows requests from `http://localhost`
+   - Allows requests from `https://localhost`
 
 2. **`Access-Control-Allow-Credentials: true`**
    - **Critical for HTTP-only cookies!**
@@ -328,7 +328,7 @@ location /api/auth/ {
 
 The authentication system uses **HTTP-only cookies**, which require:
 - `Access-Control-Allow-Credentials: true`
-- Specific origin (not `*`) - we use `http://localhost`
+- Specific origin (not `*`) - we use `https://localhost`
 - Cookie proxy headers in nginx
 
 Without proper CORS + credentials configuration, the authentication would fail because browsers wouldn't send the JWT cookie with API requests.
@@ -509,22 +509,22 @@ user-service:
 1. **Simplicity**: Each service uses the same internal port (3000) - simpler configuration
 2. **Isolation**: Containers are isolated - they can all use port 3000 without conflicts
 3. **External Access**: Different external ports let you access each service directly:
-   - `http://localhost:3001` → auth-service
-   - `http://localhost:3002` → game-service
-   - `http://localhost:3003` → tournament-service
-   - `http://localhost:3004` → user-service
+   - `https://localhost:3001` → auth-service
+   - `https://localhost:3002` → game-service
+   - `https://localhost:3003` → tournament-service
+   - `https://localhost:3004` → user-service
 
 #### Service-to-Service Communication
 
 **Inside Docker network**, services talk to each other using **service names** and **internal port**:
 ```typescript
 // From tournament-service talking to auth-service
-fetch('http://auth-service:3000/verify')  // NOT localhost:3001!
+fetch('https://auth-service:3000/verify')  // NOT localhost:3001!
 ```
 
 **From your browser/host machine**, you use **localhost** and **external ports**:
 ```bash
-curl http://localhost:3001/verify  # Access auth-service from host
+curl https://localhost:3001/verify  # Access auth-service from host
 ```
 
 #### nginx Routing
@@ -540,7 +540,7 @@ upstream game_backend {
 }
 ```
 
-So when you visit `http://localhost/api/auth/login`:
+So when you visit `https://localhost/api/auth/login`:
 1. Request goes to nginx (port 80)
 2. nginx forwards to `auth-service:3000` (internal)
 3. auth-service processes request
@@ -550,14 +550,14 @@ So when you visit `http://localhost/api/auth/login`:
 
 | Service | Internal Port | External Port | Access From Host | Internal Access |
 |---------|--------------|---------------|------------------|-----------------|
-| nginx | 80 | 80 | `http://localhost` | `nginx:80` |
-| auth-service | 3000 | 3001 | `http://localhost:3001` | `auth-service:3000` |
-| game-service | 3000 | 3002 | `http://localhost:3002` | `game-service:3000` |
-| tournament-service | 3000 | 3003 | `http://localhost:3003` | `tournament-service:3000` |
-| user-service | 3000 | 3004 | `http://localhost:3004` | `user-service:3000` |
-| hardhat-node | 8545 | 8545 | `http://localhost:8545` | `hardhat-node:8545` |
+| nginx | 80 | 80 | `https://localhost` | `nginx:80` |
+| auth-service | 3000 | 3001 | `https://localhost:3001` | `auth-service:3000` |
+| game-service | 3000 | 3002 | `https://localhost:3002` | `game-service:3000` |
+| tournament-service | 3000 | 3003 | `https://localhost:3003` | `tournament-service:3000` |
+| user-service | 3000 | 3004 | `https://localhost:3004` | `user-service:3000` |
+| hardhat-node | 8545 | 8545 | `https://localhost:8545` | `hardhat-node:8545` |
 
-**In practice**: You only access through `http://localhost` (port 80) via nginx, which handles all routing internally.
+**In practice**: You only access through `https://localhost` (port 80) via nginx, which handles all routing internally.
 
 ---
 
@@ -589,12 +589,12 @@ Unlike other services, hardhat-node uses the **same port internally and external
 
 **From tournament-service (inside Docker network)**:
 ```typescript
-const provider = new ethers.JsonRpcProvider('http://hardhat-node:8545');
+const provider = new ethers.JsonRpcProvider('https://hardhat-node:8545');
 ```
 
 **From your computer (testing)**:
 ```bash
-curl -X POST http://localhost:8545 \
+curl -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 ```
@@ -741,7 +741,7 @@ Response: [{ id, name, description, unlocked: true }, ...]
 ```
 User clicks "Create Tournament" button
     ↓
-Frontend: fetch('http://localhost/api/tournament/create', {
+Frontend: fetch('https://localhost/api/tournament/create', {
     method: 'POST',
     credentials: 'include',  // Send cookies
     body: JSON.stringify({ name, description, maxParticipants })
@@ -969,7 +969,7 @@ Connection closes
 ### REST API Proxy (HTTP)
 ```nginx
 location /api/auth/ {
-    proxy_pass http://auth-service:3000/;
+    proxy_pass https://auth-service:3000/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     # ... standard HTTP proxy
@@ -979,7 +979,7 @@ location /api/auth/ {
 ### WebSocket Proxy (Upgrade)
 ```nginx
 location /api/game/ws {
-    proxy_pass http://game-service:3000/ws;
+    proxy_pass https://game-service:3000/ws;
     proxy_http_version 1.1;
     
     # WebSocket-specific headers
@@ -1037,7 +1037,7 @@ make rebuild
 make clean
 ```
 
-The system will be accessible at `http://localhost`
+The system will be accessible at `https://localhost`
 
 **Services Started**:
 - nginx (port 80) - Frontend and API gateway
@@ -1111,7 +1111,7 @@ paddle = paddles[team][0];
 
 3. **Docker Simplicity**:
    - Port 8080 is used for HTTP (standard non-privileged port)
-   - Access via `http://localhost:8080` instead of `http://localhost:80`
+   - Access via `https://localhost:8080` instead of `https://localhost:80`
 
 4. **Security Already Implemented**:
    - **HTTP-only cookies** (prevents XSS attacks)
@@ -1527,7 +1527,7 @@ const fastify: FastifyInstance = Fastify({
 
 // TypeScript knows fastify's methods and types
 await fastify.register(cors, {
-  origin: 'http://localhost',
+  origin: 'https://localhost',
   credentials: true
 });
 
@@ -1918,7 +1918,7 @@ tournament-service/database/tourn.db   - Tournaments, registrations
 import { ethers } from 'ethers';
 
 // Connect to Hardhat local network
-const provider = new ethers.JsonRpcProvider('http://hardhat-node:8545');
+const provider = new ethers.JsonRpcProvider('https://hardhat-node:8545');
 const contract = new ethers.Contract(contractAddress, abi, signer);
 
 // Record tournament winner on blockchain
@@ -2067,7 +2067,7 @@ cd tester && ./run-all-tests.sh
    User enters username/password in browser
    ↓
 2. Nginx (Reverse Proxy)
-   http://localhost/api/auth/login
+   https://localhost/api/auth/login
    ↓
 3. ModSecurity (WAF)
    Check for SQL injection attempts → Pass ✅
@@ -2326,7 +2326,7 @@ cd calvin_ft_transcendence
 docker compose down -v          # Remove all containers and volumes
 docker compose up -d            # Rebuild everything fresh
 sleep 180                       # Wait 3 minutes for initialization
-curl http://localhost/          # Test frontend
+curl https://localhost/          # Test frontend
 ```
 
 **What This Does:**

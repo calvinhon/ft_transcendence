@@ -254,7 +254,7 @@ export class GameHistoryService {
     if (userId >= 100000) return 'BOT';
     try {
       // Try User Service for Display Name
-      const userResponse = await fetch(`http://user-service:3000/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
+      const userResponse = await fetch(`https://user-service:3000/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
       if (userResponse.ok) {
         const userData = await userResponse.json() as any;
         if (userData.display_name && userData.display_name !== 'undefined') {
@@ -266,7 +266,7 @@ export class GameHistoryService {
       }
 
       // Fallback to Auth Service for Username
-      const authResponse = await fetch(`http://auth-service:3000/auth/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
+      const authResponse = await fetch(`https://auth-service:3000/auth/profile/${userId}`, { headers: { 'X-Microservice-Secret': sessionSecret } });
       if (authResponse.ok) {
         const authData = await authResponse.json() as any;
         if (authData.data && authData.data.username) return authData.data.username;

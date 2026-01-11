@@ -63,9 +63,6 @@ RUN echo "Setting up ModSecurity" && \
 # Production stage
 FROM nginx:1.29.4-alpine
 
-# Create the www-data user and group for nginx to use
-RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true
-
 # Copy all built files to nginx
 COPY --from=builder /app/dist /usr/share/nginx/html/
 COPY --from=builder /app/css /usr/share/nginx/html/css
@@ -74,8 +71,12 @@ COPY --from=waf /usr/local/modsecurity /usr/local/modsecurity
 COPY --from=waf /usr/local/owasp-modsecurity-crs /usr/local/modsecurity-crs
 COPY --from=waf /opt/modsec /etc/nginx/modsec
 
-# Copy SSL certificates and nginx configuration
-COPY nginx/certs /etc/nginx/certs
+RUN apk update --no-cache && apk add --no-cache yajl libstdc++ libmaxminddb-libs lmdb libxml2 pcre curl jq
+
+# Create the www-data user and group for nginx to use
+RUN addgroup -g 101 -S nginx && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx || true
+
+# Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
 # Remove default nginx config to avoid conflicts
@@ -87,9 +88,12 @@ COPY nginx/modsecurity.conf /etc/nginx/modsec/main.conf
 # Create ModSecurity log directory
 RUN mkdir -p /var/log/modsecurity && chown -R nginx:nginx /var/log/modsecurity
 
-RUN apk update --no-cache && \
-	apk add --no-cache yajl libstdc++ libmaxminddb-libs lmdb libxml2 pcre
+COPY ./entrypoint.sh .
 
-EXPOSE 80 443
+COPY ./ca.crt /usr/local/share/ca.crt
+
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT [ "./entrypoint.sh" ]
 
 CMD ["nginx", "-g", "daemon off;"]

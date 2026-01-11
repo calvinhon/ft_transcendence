@@ -1,6 +1,7 @@
 // packages/common/src/server.ts
 // Shared server bootstrap utilities for all services
 
+import fs from 'fs';
 import Fastify, { FastifyInstance } from 'fastify';
 import { Logger, createLogger } from './logger';
 
@@ -36,7 +37,7 @@ export class ServerBootstrap {
       ...options
     };
     this.logger = createLogger(config.serviceName);
-    this.fastify = Fastify({ logger: true, trustProxy: true });
+    this.fastify = Fastify({ logger: true, trustProxy: true, https: { cert: fs.readFileSync(process.env.HTTPS_CERT_PATH!), key: fs.readFileSync(process.env.HTTPS_KEY_PATH!) } });
   }
 
   async initialize(): Promise<void> {

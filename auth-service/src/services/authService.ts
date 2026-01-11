@@ -31,12 +31,12 @@ export class AuthService {
     try {
       // Add a profile for the user in the user database.
       console.log('Attempting to create a user profile for the new user');
-      let profile = await axios.get(`http://user-service:3000/profile/${result.lastID}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+      let profile = await axios.get(`https://user-service:3000/profile/${result.lastID}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
       if (profile.status === 200)
         console.log('User profile ready for update');
 
       console.log('Attempting to update the user profile for the new user');
-      profile = await axios.put(`http://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+      profile = await axios.put(`https://user-service:3000/profile/${result.lastID}`, { displayName: username }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
       if (profile.status === 200)
         console.log('User profile ready');
     } catch (err: any) {

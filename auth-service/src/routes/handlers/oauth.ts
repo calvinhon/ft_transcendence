@@ -122,9 +122,9 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		if (!user.oauth_provider)
 			return generateOAuthPopupResponse(reply, 409, { success: false, error: 'Email is already in use' });
 		try {
-			const response = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+			const response = await axios.get(`https://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 			if (!response.data.is_custom_avatar && userData.picture) {
-				const profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture, is_custom_avatar: 0 }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+				const profile = await axios.put(`https://user-service:3000/profile/${user.id}`, { avatarUrl: userData.picture, is_custom_avatar: 0 }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 				if (profile.status === 200)
 					console.log('Updated the image of the user');
 			}
@@ -160,13 +160,13 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		try {
 			// Add a profile for the user in the user database.
 			console.log('Attempting to create a user profile for the new user');
-			let profile = await axios.get(`http://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+			let profile = await axios.get(`https://user-service:3000/profile/${user.id}`, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 
 			if (profile.status === 200)
 				console.log('User profile ready for update');
 
 			console.log('Attempting to update the user profile for the new user');
-			profile = await axios.put(`http://user-service:3000/profile/${user.id}`, { displayName: userData.name, bio: 'External user connected through Google', avatarUrl: userData.picture || null }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
+			profile = await axios.put(`https://user-service:3000/profile/${user.id}`, { displayName: userData.name, bio: 'External user connected through Google', avatarUrl: userData.picture || null }, { timeout: 5000, headers: { 'X-Microservice-Secret': sessionSecret } });
 			if (profile.status === 200)
 				console.log('User profile ready');
 		} catch (err: any) {

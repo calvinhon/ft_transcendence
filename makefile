@@ -43,7 +43,7 @@ dev: check-docker check-compose
 	@echo "🚀 Starting all services for development (uses build cache)..."
 	docker compose up -d --build
 	@$(MAKE) open
-	@echo "✅ All services started! Visit http://localhost:8443"
+	@echo "✅ All services started! Visit https://localhost:8443"
 
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
 clean-start: check-docker check-compose clean-dev clean
@@ -51,7 +51,7 @@ clean-start: check-docker check-compose clean-dev clean
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
 	@$(MAKE) open
-	@echo "✅ Services started! Visit http://localhost"
+	@echo "✅ Services started! Visit https://localhost:8443"
 
 # Restart - quick restart of existing containers without rebuilding
 restart: check-docker check-compose

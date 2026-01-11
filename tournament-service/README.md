@@ -304,7 +304,7 @@ function owner() returns (address)
 DATABASE_PATH=./database/tournaments.db
 
 # Blockchain
-ETHEREUM_RPC_URL=http://hardhat-node:8545
+ETHEREUM_RPC_URL=https://hardhat-node:8545
 PRIVATE_KEY=your_private_key
 CONTRACT_ADDRESS=deployed_contract_address
 

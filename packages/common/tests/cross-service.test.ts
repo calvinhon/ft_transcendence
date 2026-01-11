@@ -19,7 +19,7 @@ describe('Cross-Service Compatibility Tests', () => {
 
       for (const service of services) {
         try {
-          const response = await axios.get(`http://localhost:${service.port}/health`, {
+          const response = await axios.get(`https://localhost:${service.port}/health`, {
             timeout: 5000
           });
 
@@ -48,7 +48,7 @@ describe('Cross-Service Compatibility Tests', () => {
 
       for (const service of services) {
         try {
-          const response = await axios.get(`http://localhost:${service.port}/health`, {
+          const response = await axios.get(`https://localhost:${service.port}/health`, {
             timeout: 5000
           });
           responses.push(response.data);
