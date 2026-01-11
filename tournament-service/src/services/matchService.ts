@@ -5,6 +5,7 @@ import { dbRun, dbGet, dbAll } from '../database';
 import { TournamentMatch, MatchResultBody } from '../types';
 import { createLogger } from '@ft-transcendence/common';
 import { ParticipantService } from './participantService';
+import { notifyBlockchainRecordRanks } from './blockchain-notifier';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 
@@ -62,7 +63,7 @@ export class MatchService {
    */
   static async checkRoundCompletion(tournamentId: number, round: number): Promise<void> {
     const roundMatches = await dbAll<TournamentMatch>(
-      'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ?',
+      'SELECT * FROM tournament_matches WHERE tournament_id = ? AND round = ? ORDER BY match_number',
       [tournamentId, round]
     );
 
@@ -139,11 +140,26 @@ export class MatchService {
         continue;
       }
 
-	  let rank = 1;
+      let rank = 1;
       const eliminationRound = lastMatch.round;
       if (participant.user_id !== winnerId)
-      	rank = totalRounds - eliminationRound + 2;
+        rank = totalRounds - eliminationRound + 2;
       await dbRun('UPDATE tournament_participants SET final_rank = ? WHERE id = ?', [rank, participant.id]);
+    }
+
+    // Record final ranks on blockchain-service (service-to-service). Best-effort.
+    try {
+      const finalRanks = await dbAll<{ user_id: number; final_rank: number | null }>(
+        'SELECT user_id, final_rank FROM tournament_participants WHERE tournament_id = ? ORDER BY final_rank ASC',
+        [tournamentId]
+      );
+
+      const players = finalRanks.map((r) => Number(r.user_id));
+      const ranks = finalRanks.map((r) => Number(r.final_rank ?? 999));
+
+      await notifyBlockchainRecordRanks(tournamentId, players, ranks);
+    } catch (e: any) {
+      logger.warn('Failed to dispatch blockchain rank recording', { tournamentId, error: e?.message });
     }
 
     logger.info('Tournament completed successfully', { tournamentId, winnerId });

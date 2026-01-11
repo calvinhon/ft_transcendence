@@ -43,7 +43,7 @@ test_game_initialization() {
     echo -e "${YELLOW}Running Test 1: Game Initialization${NC}"
     
     # Hoach edited - Updated to use HTTPS endpoint through nginx proxy
-    local response=$(curl -sk -X POST https://localhost/api/game/games \
+    local response=$(curl -sk -X POST https://localhost:8443/api/game/games \
         -H "Content-Type: application/json" \
         -d '{"mode": "local"}' 2>/dev/null)
     # Hoach edit ended
@@ -202,7 +202,7 @@ test_performance_optimization() {
     echo -e "${YELLOW}Running Test 11: Performance Optimization${NC}"
     
     local start=$(date +%s%N)
-    curl -sk https://localhost/api/game/health > /dev/null
+    curl -sk https://localhost:8443/api/game/health > /dev/null
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

@@ -4,6 +4,8 @@ import { AuthService } from "../services/AuthService";
 import { UserProfile } from "../services/ProfileService";
 import { Api } from "../core/Api";
 import { WebGLService } from "../services/WebGLService";
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 export class SettingsPage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -88,7 +90,7 @@ export class SettingsPage extends AbstractComponent {
                     <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">DISPLAY NAME</label>
-                            <input type="text" id="input-displayname" value="${p.username}" 
+                            <input type="text" id="input-displayname" value="${p.username}" maxlength="16"
                                 class="w-full bg-black border border-white/30 p-2 text-white focus:border-accent outline-none font-mono text-sm">
                         </div>
 
@@ -159,7 +161,24 @@ export class SettingsPage extends AbstractComponent {
                     <i class="fas ${is3DEnabled ? 'fa-cube' : 'fa-square'}"></i>
                     ${is3DEnabled ? 'ENABLED' : 'DISABLED'}
                 </button>
+                </button>
             </div>
+            
+            <!-- Post Processing Toggle -->
+             <div class="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                <div>
+                     <div class="text-sm">POST PROCESSING</div>
+                     <div class="text-xs text-gray-500">Enable advanced visual effects (Glow)</div>
+                 </div>
+                 <button id="toggle-pp-mode" 
+                     class="px-4 py-2 border ${webglService.isPostProcessingEnabled()
+                ? 'border-green-500 text-green-500 hover:bg-green-900/20'
+                : 'border-gray-600 text-gray-500 hover:bg-gray-900/20'} 
+                     transition-all font-mono text-sm flex items-center gap-2">
+                     <i class="fas ${webglService.isPostProcessingEnabled() ? 'fa-magic' : 'fa-square'}"></i>
+                     ${webglService.isPostProcessingEnabled() ? 'ENABLED' : 'DISABLED'}
+                 </button>
+             </div>
             <div class="mt-3 text-xs text-gray-600">
                 <i class="fas fa-info-circle mr-1"></i>
                 Changes require page reload to take effect
@@ -194,14 +213,26 @@ export class SettingsPage extends AbstractComponent {
         this.$('#toggle-3d-mode')?.addEventListener('click', () => {
             const webglService = WebGLService.getInstance();
             const newValue = !webglService.is3DModeEnabled();
-            webglService.set3DModeEnabled(newValue);
 
-            // Show reload prompt
-            if (confirm('3D Mode changed. Reload page to apply changes?')) {
-                window.location.reload();
-            } else {
-                this.refresh();
-            }
+            new ConfirmationModal(
+                newValue ? 'ENABLE 3D MODE? PAGE WILL RELOAD.' : 'DISABLE 3D MODE? PAGE WILL RELOAD.',
+                () => {
+                    webglService.set3DModeEnabled(newValue);
+                    window.location.reload();
+                },
+                () => { },
+                'neutral'
+            ).render();
+        });
+
+        // Post Processing toggle
+        this.$('#toggle-pp-mode')?.addEventListener('click', () => {
+            const webglService = WebGLService.getInstance();
+            const newValue = !webglService.isPostProcessingEnabled();
+
+            // Direct update then reload
+            webglService.setPostProcessingEnabled(newValue);
+            window.location.reload();
         });
     }
 
@@ -286,9 +317,7 @@ export class SettingsPage extends AbstractComponent {
 
     private showError(msg: string) {
         this.error = msg;
-        // Try to insert error banner at top of form without re-rendering
-        // Or just alert
-        alert(msg); // Fallback for MVP simplicity to avoid wiping form
+        new ErrorModal(msg.toUpperCase()).render();
     }
 
     private refresh(): void {

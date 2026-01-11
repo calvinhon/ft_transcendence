@@ -24,7 +24,7 @@ app.start()
             console.log("[MAIN] 3D Mode enabled - Initializing BabylonJS");
             document.body.classList.add('babylon-3d-mode');
             // Increase font size for better readability on 3D monitor
-            document.documentElement.style.fontSize = '24px';
+            document.documentElement.style.fontSize = "18px";
             BabylonWrapper.getInstanceIfEnabled();
         } else {
             console.log("[MAIN] 3D Mode disabled - Running in 2D mode");

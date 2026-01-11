@@ -132,26 +132,6 @@ export class TournamentService {
         return tournament;
     }
 
-    public async recordMatchResult(
-        tournamentId: string,
-        matchId: string,
-        winnerId: number,
-        score1: number,
-        score2: number
-    ): Promise<void> {
-        await Api.post(`/api/tournament/tournaments/${tournamentId}/matches/${matchId}/result`, {
-            winnerId,
-            player1Score: score1,
-            player2Score: score2
-        });
-
-        // Wait for backend to process next round creation
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Refresh local state
-        await this.get(tournamentId);
-    }
-
     public async list(): Promise<Tournament[]> {
         return Api.get('/api/tournament/tournaments/list');
     }

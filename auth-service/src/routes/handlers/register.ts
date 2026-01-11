@@ -12,10 +12,22 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
     const { username, email, password } = request.body as RegisterRequestBody;
     const validationError = validateRequiredFields(request.body, ['username', 'email', 'password']);
     if (validationError) return sendError(reply, validationError, 400);
+
+    // Enforce 16 char limit
+    if (username.length > 16) {
+      return sendError(reply, 'Username must be 16 characters or less', 400);
+    }
+
     if (!validateEmail(email)) return sendError(reply, ERROR_MESSAGES.INVALID_EMAIL_FORMAT, 400);
     const passwordError = validatePassword(password);
     if (passwordError) return sendError(reply, passwordError, 400);
     const result = await authService.register(username, email, password);
+
+    if (!request.session.authenticated) {
+      request.session.userId = Number(result.userId);
+      request.session.authenticated = true;
+      await request.session.save();
+    }
 
     sendSuccess(reply, { user: { userId: result.userId, username } }, 'User registered successfully', 201);
   } catch (error: any) {

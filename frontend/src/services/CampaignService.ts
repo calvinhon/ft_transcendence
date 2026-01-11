@@ -6,10 +6,7 @@ export class CampaignService {
     private currentLevel: number = 1;
     private readonly MAX_LEVEL = 3;
 
-    private constructor() {
-        this.loadLocalLevel();
-        this.syncWithBackend();
-    }
+    private constructor() {}
 
     public static getInstance(): CampaignService {
         if (!CampaignService.instance) {
@@ -80,36 +77,6 @@ export class CampaignService {
             }
         } catch (e) {
             console.warn("Failed to sync campaign level to backend", e);
-        }
-    }
-
-    private loadLocalLevel(): void {
-        const user = AuthService.getInstance().getCurrentUser();
-        if (user) {
-            const saved = localStorage.getItem(`campaign_level_${user.userId}`);
-            if (saved) {
-                this.currentLevel = parseInt(saved, 10);
-            }
-        }
-    }
-
-    public async syncWithBackend(): Promise<void> {
-        try {
-            const user = AuthService.getInstance().getCurrentUser();
-            if (!user) return;
-
-            const data = await Api.get(`/api/user/profile/${user.userId}`);
-            if (data && data.campaign_level) {
-                const remoteLevel = parseInt(data.campaign_level, 10);
-                if (!isNaN(remoteLevel) && remoteLevel !== this.currentLevel) {
-                    console.log(`Syncing campaign level from ${this.currentLevel} to ${remoteLevel}`);
-                    this.currentLevel = remoteLevel;
-                    // Update local storage to match
-                    localStorage.setItem(`campaign_level_${user.userId}`, remoteLevel.toString());
-                }
-            }
-        } catch (e) {
-            console.warn("Failed to sync campaign level from backend", e);
         }
     }
 }

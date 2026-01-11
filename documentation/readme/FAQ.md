@@ -172,7 +172,7 @@ The `/api/` prefix in the nginx configuration routes requests to the appropriate
 
 #### How SPAs Work:
 ```
-1. User visits https://localhost
+1. User visits https://localhost:8443
 2. Server sends single HTML page + JavaScript bundle
 3. JavaScript handles all subsequent navigation
 4. API calls fetch data dynamically
@@ -217,7 +217,7 @@ class Router {
 
 **1. Navigation Without Reloads:**
 ```
-1. Open https://localhost in Firefox
+1. Open https://localhost:8443 in Firefox
 2. Click navigation links: Home → Game → Tournament → Profile
 3. Notice: No page refresh, instant transitions
 4. Check Network tab: No new HTML requests
@@ -234,7 +234,7 @@ class Router {
 
 **3. Direct URL Access:**
 ```
-1. Type https://localhost/game directly in address bar
+1. Type https://localhost:8443/game directly in address bar
 2. Press Enter
 3. Game page loads directly (no redirect to home)
 4. Browser back button works correctly
@@ -282,13 +282,13 @@ class Router {
 
 **A:** CORS stands for **Cross-Origin Resource Sharing**.
 
-In the ft_transcendence project, CORS is configured for all API endpoints to allow the frontend (running on `http://localhost`) to make requests to the backend services.
+In the ft_transcendence project, CORS is configured for all API endpoints to allow the frontend (running on `https://localhost`) to make requests to the backend services.
 
 #### Purpose of CORS Configuration
 
-**Without CORS**: Browsers block requests from `http://localhost` (frontend) to `http://localhost/api/*` (backend) because they're considered different "origins" due to security policies.
+**Without CORS**: Browsers block requests from `https://localhost` (frontend) to `https://localhost/api/*` (backend) because they're considered different "origins" due to security policies.
 
-**With CORS**: The backend explicitly tells the browser "it's okay to accept requests from http://localhost"
+**With CORS**: The backend explicitly tells the browser "it's okay to accept requests from https://localhost"
 
 #### CORS Configuration in nginx
 
@@ -298,7 +298,7 @@ In the nginx configuration (`frontend/nginx/nginx.conf`):
 # For auth service (with credentials for cookies)
 location /api/auth/ {
     # CORS headers
-    add_header 'Access-Control-Allow-Origin' 'http://localhost' always;
+    add_header 'Access-Control-Allow-Origin' 'https://localhost' always;
     add_header 'Access-Control-Allow-Credentials' 'true' always;
     add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
     add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
@@ -307,9 +307,9 @@ location /api/auth/ {
 
 #### Key CORS Headers Explained
 
-1. **`Access-Control-Allow-Origin: http://localhost`**
+1. **`Access-Control-Allow-Origin: https://localhost`**
    - Specifies which origin (domain) can access the API
-   - Allows requests from `http://localhost`
+   - Allows requests from `https://localhost`
 
 2. **`Access-Control-Allow-Credentials: true`**
    - **Critical for HTTP-only cookies!**
@@ -328,7 +328,7 @@ location /api/auth/ {
 
 The authentication system uses **HTTP-only cookies**, which require:
 - `Access-Control-Allow-Credentials: true`
-- Specific origin (not `*`) - we use `http://localhost`
+- Specific origin (not `*`) - we use `https://localhost`
 - Cookie proxy headers in nginx
 
 Without proper CORS + credentials configuration, the authentication would fail because browsers wouldn't send the JWT cookie with API requests.
@@ -509,22 +509,22 @@ user-service:
 1. **Simplicity**: Each service uses the same internal port (3000) - simpler configuration
 2. **Isolation**: Containers are isolated - they can all use port 3000 without conflicts
 3. **External Access**: Different external ports let you access each service directly:
-   - `http://localhost:3001` → auth-service
-   - `http://localhost:3002` → game-service
-   - `http://localhost:3003` → tournament-service
-   - `http://localhost:3004` → user-service
+   - `https://localhost:3001` → auth-service
+   - `https://localhost:3002` → game-service
+   - `https://localhost:3003` → tournament-service
+   - `https://localhost:3004` → user-service
 
 #### Service-to-Service Communication
 
 **Inside Docker network**, services talk to each other using **service names** and **internal port**:
 ```typescript
 // From tournament-service talking to auth-service
-fetch('http://auth-service:3000/verify')  // NOT localhost:3001!
+fetch('https://auth-service:3000/verify')  // NOT localhost:3001!
 ```
 
 **From your browser/host machine**, you use **localhost** and **external ports**:
 ```bash
-curl http://localhost:3001/verify  # Access auth-service from host
+curl https://localhost:3001/verify  # Access auth-service from host
 ```
 
 #### nginx Routing
@@ -540,7 +540,7 @@ upstream game_backend {
 }
 ```
 
-So when you visit `http://localhost/api/auth/login`:
+So when you visit `https://localhost/api/auth/login`:
 1. Request goes to nginx (port 80)
 2. nginx forwards to `auth-service:3000` (internal)
 3. auth-service processes request
@@ -550,14 +550,14 @@ So when you visit `http://localhost/api/auth/login`:
 
 | Service | Internal Port | External Port | Access From Host | Internal Access |
 |---------|--------------|---------------|------------------|-----------------|
-| nginx | 80 | 80 | `http://localhost` | `nginx:80` |
-| auth-service | 3000 | 3001 | `http://localhost:3001` | `auth-service:3000` |
-| game-service | 3000 | 3002 | `http://localhost:3002` | `game-service:3000` |
-| tournament-service | 3000 | 3003 | `http://localhost:3003` | `tournament-service:3000` |
-| user-service | 3000 | 3004 | `http://localhost:3004` | `user-service:3000` |
-| hardhat-node | 8545 | 8545 | `http://localhost:8545` | `hardhat-node:8545` |
+| nginx | 80 | 80 | `https://localhost` | `nginx:80` |
+| auth-service | 3000 | 3001 | `https://localhost:3001` | `auth-service:3000` |
+| game-service | 3000 | 3002 | `https://localhost:3002` | `game-service:3000` |
+| tournament-service | 3000 | 3003 | `https://localhost:3003` | `tournament-service:3000` |
+| user-service | 3000 | 3004 | `https://localhost:3004` | `user-service:3000` |
+| hardhat-node | 8545 | 8545 | `https://localhost:8545` | `hardhat-node:8545` |
 
-**In practice**: You only access through `http://localhost` (port 80) via nginx, which handles all routing internally.
+**In practice**: You only access through `https://localhost` (port 80) via nginx, which handles all routing internally.
 
 ---
 
@@ -589,12 +589,12 @@ Unlike other services, hardhat-node uses the **same port internally and external
 
 **From tournament-service (inside Docker network)**:
 ```typescript
-const provider = new ethers.JsonRpcProvider('http://hardhat-node:8545');
+const provider = new ethers.JsonRpcProvider('https://hardhat-node:8545');
 ```
 
 **From your computer (testing)**:
 ```bash
-curl -X POST http://localhost:8545 \
+curl -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 ```
@@ -741,7 +741,7 @@ Response: [{ id, name, description, unlocked: true }, ...]
 ```
 User clicks "Create Tournament" button
     ↓
-Frontend: fetch('http://localhost/api/tournament/create', {
+Frontend: fetch('https://localhost/api/tournament/create', {
     method: 'POST',
     credentials: 'include',  // Send cookies
     body: JSON.stringify({ name, description, maxParticipants })
@@ -969,7 +969,7 @@ Connection closes
 ### REST API Proxy (HTTP)
 ```nginx
 location /api/auth/ {
-    proxy_pass http://auth-service:3000/;
+    proxy_pass https://auth-service:3000/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     # ... standard HTTP proxy
@@ -979,7 +979,7 @@ location /api/auth/ {
 ### WebSocket Proxy (Upgrade)
 ```nginx
 location /api/game/ws {
-    proxy_pass http://game-service:3000/ws;
+    proxy_pass https://game-service:3000/ws;
     proxy_http_version 1.1;
     
     # WebSocket-specific headers
@@ -1037,7 +1037,7 @@ make rebuild
 make clean
 ```
 
-The system will be accessible at `http://localhost`
+The system will be accessible at `https://localhost`
 
 **Services Started**:
 - nginx (port 80) - Frontend and API gateway
@@ -1110,8 +1110,8 @@ paddle = paddles[team][0];
    - Easier debugging (can inspect traffic easily)
 
 3. **Docker Simplicity**:
-   - Port 80 is the standard HTTP port (no need to specify `:8080`)
-   - Access via `http://localhost` instead of `http://localhost:8080`
+   - Port 8080 is used for HTTP (standard non-privileged port)
+   - Access via `https://localhost:8080` instead of `https://localhost:80`
 
 4. **Security Already Implemented**:
    - **HTTP-only cookies** (prevents XSS attacks)
@@ -1527,7 +1527,7 @@ const fastify: FastifyInstance = Fastify({
 
 // TypeScript knows fastify's methods and types
 await fastify.register(cors, {
-  origin: 'http://localhost',
+  origin: 'https://localhost',
   credentials: true
 });
 
@@ -1872,7 +1872,7 @@ socket.addEventListener('message', (event) => {
 **4 Microservices**:
 1. **auth-service** (Port 3001) - Authentication, OAuth, 2FA, JWT
 2. **game-service** (Port 3002) - Real-time Pong, WebSocket, AI opponent
-3. **user-service** (Port 3003) - Profiles, friends, statistics, GDPR
+3. **user-service** (Port 3003) - Profiles, friends, statistics
 4. **tournament-service** (Port 3004) - Tournaments, blockchain integration
 
 ---
@@ -1918,7 +1918,7 @@ tournament-service/database/tourn.db   - Tournaments, registrations
 import { ethers } from 'ethers';
 
 // Connect to Hardhat local network
-const provider = new ethers.JsonRpcProvider('http://hardhat-node:8545');
+const provider = new ethers.JsonRpcProvider('https://hardhat-node:8545');
 const contract = new ethers.Contract(contractAddress, abi, signer);
 
 // Record tournament winner on blockchain
@@ -2027,9 +2027,8 @@ Microservices Architecture      - 12 tests ✅
 Stats Dashboards                - 12 tests ✅
 2FA + JWT                       - 12 tests ✅
 WAF + Vault                     - 12 tests ✅
-GDPR Compliance                 - 12 tests ✅
 
-Total: 144/144 tests passing (100% success rate)
+Total: 132/132 tests passing (100% success rate)
 ```
 
 **Test Execution**:
@@ -2052,7 +2051,6 @@ cd tester && ./run-all-tests.sh
 - ✅ AI opponent behavior
 - ✅ OAuth login flows
 - ✅ Security (SQL injection, XSS, CSRF)
-- ✅ GDPR data export and deletion
 - ✅ Log ingestion and search
 - ✅ Metrics collection
 
@@ -2069,7 +2067,7 @@ cd tester && ./run-all-tests.sh
    User enters username/password in browser
    ↓
 2. Nginx (Reverse Proxy)
-   http://localhost/api/auth/login
+   https://localhost/api/auth/login
    ↓
 3. ModSecurity (WAF)
    Check for SQL injection attempts → Pass ✅
@@ -2328,7 +2326,7 @@ cd calvin_ft_transcendence
 docker compose down -v          # Remove all containers and volumes
 docker compose up -d            # Rebuild everything fresh
 sleep 180                       # Wait 3 minutes for initialization
-curl http://localhost/          # Test frontend
+curl https://localhost/          # Test frontend
 ```
 
 **What This Does:**
@@ -2462,7 +2460,7 @@ No manual intervention needed on clean clones anymore!
 ```
 
 #### **Stricter Settings in User Service:**
-User-service has **GDPR compliance** and complex data models:
+User-service has complex data models:
 ```json
 "strictNullChecks": true,     // Prevent null/undefined errors
 "noImplicitAny": true,        // No implicit 'any' types
@@ -2559,63 +2557,3 @@ logger.info('AppGameManager', '🎮 Starting game...');
 ```
 
 **The logger's console calls are essential infrastructure, not "extra" overhead!** 🏗️📊
-
----
-
-## GDPR Compliance
-
-### Q: What is GDPR?
-
-**A:** **GDPR = General Data Protection Regulation**
-
-GDPR is a comprehensive EU law that protects **personal data privacy** and gives individuals control over their data.
-
-#### **Key Principles:**
-1. **📊 Lawful Processing** - Data must be collected and processed legally
-2. **🎯 Purpose Limitation** - Data collected for specific, legitimate purposes only
-3. **📏 Data Minimization** - Only collect what's necessary
-4. **⏰ Storage Limitation** - Don't keep data longer than needed
-5. **🔒 Security** - Protect data from breaches
-6. **👤 Rights** - Individuals have rights over their data
-
-#### **Individual Rights Under GDPR:**
-- **📖 Right to Access** - Know what data is held about you
-- **✏️ Right to Rectification** - Correct inaccurate data
-- **🗑️ Right to Erasure** ("Right to be Forgotten")** - Delete your data
-- **🚫 Right to Restrict Processing** - Limit how data is used
-- **📤 Right to Data Portability** - Get your data in portable format
-- **🚫 Right to Object** - Object to processing in certain cases
-
-#### **GDPR in Your User Service:**
-Your **user-service** implements GDPR compliance because it handles:
-- **👤 User profiles** (personal information)
-- **🏆 Achievements** (user behavior data)
-- **📊 Statistics** (usage patterns)
-- **🔒 Privacy settings** (user preferences)
-
-#### **GDPR-Compliant Code:**
-```typescript
-// GDPR-compliant data handling
-interface UserProfile {
-  // Nullable fields for data minimization
-  display_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  country: string | null;
-  
-  // Privacy controls
-  privacy_settings: string;
-  notification_settings: string;
-}
-
-// GDPR routes
-app.delete('/gdpr/delete-account/:userId');  // Right to erasure
-app.get('/gdpr/data-export/:userId');        // Data portability
-```
-
-#### **Penalties for Non-Compliance:**
-- **💰 Fines up to €20 million** or **4% of global revenue**
-- **🚫 Legal action** from individuals and regulators
-- **📢 Reputational damage**
-
-**GDPR ensures users own their data and you handle it responsibly!** 🛡️👤

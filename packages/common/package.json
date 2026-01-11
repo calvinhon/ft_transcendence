@@ -31,9 +31,12 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "fastify": "^4.0.0",
+    "@fastify/cookie": "^9.3.1",
+    "@fastify/session": "^10.9.0",
+    "connect-redis": "^7.1.1",
+    "fastify": "^4.29.1",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.4.1",
     "sqlite3": "^5.1.6"
-  },
-  "peerDependencies": {
   }
 }

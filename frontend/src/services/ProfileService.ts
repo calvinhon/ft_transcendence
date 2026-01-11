@@ -17,10 +17,13 @@ export interface UserProfile {
 export interface GameStats {
     wins: number;
     losses: number;
-    draws: number;
     totalGames: number;
     winRate: number;
     averageGameDuration: number;
+    aiWins: number;
+    aiLosses: number;
+    humanWins: number;
+    humanLosses: number;
 }
 
 export interface AIStats {
@@ -33,7 +36,7 @@ export interface AIStats {
 export interface RecentGame {
     id: number;
     opponent: string;
-    result: 'win' | 'loss' | 'draw';
+    result: 'win' | 'loss';
     score: string;
     date: string;
     gameMode: string;
@@ -120,14 +123,17 @@ export class ProfileService {
             return {
                 wins: data.wins || 0,
                 losses: data.losses || 0,
-                draws: data.draws || 0,
                 totalGames: data.totalGames || data.total_games || 0,
                 winRate: data.winRate || 0,
-                averageGameDuration: data.averageGameDuration || 0
+                averageGameDuration: data.averageGameDuration || 0,
+                aiWins: data.aiWins || 0,
+                aiLosses: data.aiLosses || 0,
+                humanWins: data.humanWins || 0,
+                humanLosses: data.humanLosses || 0
             };
         } catch (e) {
             console.warn('Failed to load stats', e);
-            return { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+            return { wins: 0, losses: 0, totalGames: 0, winRate: 0, averageGameDuration: 0, aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
         }
     }
 
@@ -137,14 +143,20 @@ export class ProfileService {
             const games: any[] = res.data || [];
 
             return games.map((g: any) => {
-                const isPlayer1 = g.player1_id === userId;
+                // Ensure IDs are numbers for correct comparison (SQLite may return strings)
+                const player1Id = Number(g.player1_id);
+                const winnerId = Number(g.winner_id);
+
+                const isPlayer1 = player1Id === userId;
                 const myScore = isPlayer1 ? g.player1_score : g.player2_score;
                 const oppScore = isPlayer1 ? g.player2_score : g.player1_score;
 
-                let result: 'win' | 'loss' | 'draw';
-                if (g.winner_id === userId) result = 'win';
-                else if (g.winner_id === 0 && myScore === oppScore) result = 'draw';
-                else result = 'loss';
+                // Check if there is a valid winner (null/undefined means aborted/incomplete)
+                const hasWinner = g.winner_id !== null && g.winner_id !== undefined;
+
+                let result: 'win' | 'loss';
+                let opponent = 'Unknown';
+                let teammates = '';
 
                 // Opponent Name Logic (simplified port)
                 const getBotName = (id: number) => {
@@ -153,27 +165,73 @@ export class ProfileService {
                     return `User ${id}`;
                 };
 
-                let opponent = 'Unknown';
-                if (g.game_mode === 'tournament' && g.tournament_match_id) {
+                // Simple: if you're the winner, it's a win; otherwise it's a loss
+                result = (winnerId === userId) ? 'win' : 'loss';
+
+                // For arcade or tournament mode with team data, we need deeper logic
+                if ((g.game_mode === 'arcade' || g.game_mode === 'tournament') && (g.team1_players || g.team2_players)) {
+                    try {
+                        const team1: any[] = g.team1_players ? JSON.parse(g.team1_players) : [];
+                        const team2: any[] = g.team2_players ? JSON.parse(g.team2_players) : [];
+
+                        // Find which team the viewing user is on
+                        const inTeam1 = team1.some((p: any) => Number(p.userId || p) === userId);
+                        const inTeam2 = team2.some((p: any) => Number(p.userId || p) === userId);
+
+                        // Only apply team outcome logic if game actually finished with a winner
+                        if (hasWinner) {
+                            // Team 1 matches Player 1's score/win status
+                            const team1Won = winnerId === player1Id;
+
+                            if (inTeam1) {
+                                result = team1Won ? 'win' : 'loss';
+                            } else if (inTeam2) {
+                                result = team1Won ? 'loss' : 'win';
+                            }
+                        } else {
+                            // No winner (aborted) -> Loss for everyone
+                            result = 'loss';
+                        }
+                        // If not in either team (spectator logic?), allow fallback
+
+                        const myTeam = inTeam1 ? team1 : team2;
+                        const oppTeam = inTeam1 ? team2 : team1;
+
+                        // Get opponent names: all players on opposing team
+                        const oppNames = oppTeam.map((p: any) => {
+                            if (p.username) return p.username;
+                            const id = p.userId || p;
+                            if (id === 0) return 'Al-Ien';
+                            if (id < 0) return `BOT ${Math.abs(id)}`;
+                            return `User ${id}`;
+                        });
+                        opponent = oppNames.length > 0 ? oppNames.join(' & ') : 'Unknown';
+
+                        // Get teammate names: other players on same team (excluding viewing user)
+                        const currentUser = AuthService.getInstance().getCurrentUser();
+                        const myName = currentUser?.username;
+                        const teammateNames = myTeam
+                            .filter((p: any) => Number(p.userId || p) !== userId)
+                            .map((p: any) => {
+                                if (p.username && p.username !== myName) return p.username;
+                                const id = p.userId || p;
+                                if (id === 0) return 'Al-Ien';
+                                if (id < 0) return `BOT ${Math.abs(id)}`;
+                                return `User ${id}`;
+                            })
+                            .filter((name: string) => name !== myName);
+                        teammates = teammateNames.join(' & ');
+                    } catch (e) {
+                        // Fall back to simple name logic on parse error
+                        opponent = isPlayer1 ? (g.player2_name || getBotName(g.player2_id))
+                            : (g.player1_name || getBotName(g.player1_id));
+                    }
+                } else if (g.game_mode === 'tournament' && g.tournament_match_id) {
                     opponent = isPlayer1 ? g.player2_name : g.player1_name;
                     if (!opponent) opponent = (g.player2_id <= 0 || g.player1_id <= 0) ? 'AI' : 'Opponent';
                 } else {
                     opponent = isPlayer1 ? (g.player2_name || getBotName(g.player2_id))
                         : (g.player1_name || getBotName(g.player1_id));
-                }
-
-                let teammates = '';
-                if (g.game_mode === 'arcade') {
-                    const myTeam = isPlayer1 ? g.player1_name : g.player2_name;
-                    if (myTeam && myTeam.includes('&')) {
-                        // Current user is one of them, we want the OTHER(s)
-                        const parts = myTeam.split('&').map((s: string) => s.trim());
-                        // Try to find current user's profile to get their name
-                        const currentUser = AuthService.getInstance().getCurrentUser();
-                        const myName = currentUser?.username;
-
-                        teammates = parts.filter((p: string) => p !== myName).join(' & ');
-                    }
                 }
 
                 return {

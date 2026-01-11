@@ -23,11 +23,16 @@ export class TournamentAliasModal extends AbstractComponent {
                 <div class="w-[600px] border-2 border-accent bg-black p-0 relative shadow-[0_0_30px_rgba(41,182,246,0.2)]">
                     
                     <!-- Header -->
-                    <div class="p-8 border-b border-white/20">
-                        <h2 class="font-vcr text-3xl text-white mb-4 tracking-[0.1em] uppercase">TOURNAMENT REGISTRATION</h2>
-                        <p class="font-vcr text-sm text-white max-w-md leading-relaxed">
-                            Please enter an alias for each member taking part in the tournament.
-                        </p>
+                    <div class="p-8 border-b border-white/20 flex justify-between items-start">
+                        <div>
+                            <h2 class="font-vcr text-3xl text-white mb-4 tracking-[0.1em] uppercase">TOURNAMENT REGISTRATION</h2>
+                            <p class="font-vcr text-sm text-white max-w-md leading-relaxed">
+                                Please enter an alias for each member taking part in the tournament.
+                            </p>
+                        </div>
+                        <button id="modal-close-btn" class="text-white/50 hover:text-red-500 transition-colors">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
                     </div>
 
                     <!-- Player List -->
@@ -66,7 +71,7 @@ export class TournamentAliasModal extends AbstractComponent {
                     id="alias-input-${i}" 
                     value="${p.alias || ''}"
                     placeholder="Alias"
-                    maxlength="10"
+                    maxlength="16"
                     class="flex-1 bg-black border border-white/50 p-3 text-white font-vcr text-sm focus:border-accent focus:shadow-[0_0_10px_rgba(41,182,246,0.3)] outline-none transition-all placeholder:text-gray-700"
                 >
             </div>
@@ -87,8 +92,8 @@ export class TournamentAliasModal extends AbstractComponent {
                 const input = this.$(`#alias-input-${i}`) as HTMLInputElement;
                 let alias = input?.value.trim() || newPlayers[i].username;
 
-                if (alias.length > 10) {
-                    this.showError(`Alias for ${newPlayers[i].username} is too long (max 10 chars)`);
+                if (alias.length > 16) {
+                    this.showError(`Alias for ${newPlayers[i].username} is too long (max 16 chars)`);
                     hasError = true;
                     break;
                 }
@@ -107,6 +112,10 @@ export class TournamentAliasModal extends AbstractComponent {
                 this.onConfirm(newPlayers);
                 this.destroy();
             }
+        });
+
+        this.$('#modal-close-btn')?.addEventListener('click', () => {
+            this.destroy();
         });
     }
 

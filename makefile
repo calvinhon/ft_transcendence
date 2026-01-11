@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild ensure-database-folders help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild fix-ownership help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -26,30 +26,32 @@ help:
 	@echo "  make purge              - 🔥 PURGE: Stop/remove ALL project containers + images"
 	@echo "  make nuke               - 🔥 NUKE: Stop all containers + prune + delete ALL images"
 	@echo "  make ps                 - Show container status"
+	@echo "  make fix-ownership      - 🔧 OWNERSHIP: Fix database file permissions when switching hosts"
 	@echo "  make test               - Show test documentation"
 	@echo ""
 	@echo "💡 Quick dev cycle: 'make dev' → code → 'make restart'"
 	@echo "💡 Fresh start: 'make clean-start' (removes everything)"
 	@echo "💡 Architecture: Microservices with SQLite (no external DB needed)"
+	@echo "💡 Database issues? Run 'make fix-ownership' when switching hosts"
 	@echo ""
 
 # Dev mode - quick development start with cached builds
-dev: check-docker check-compose ensure-database-folders
+dev: check-docker check-compose
 	@echo "🛑 Stopping any running containers first..."
 	@docker compose down --remove-orphans 2>/dev/null || true
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Starting all services for development (uses build cache)..."
-	docker compose up -d --build --force-recreate
+	docker compose up -d --build
 	@$(MAKE) open
-	@echo "✅ All services started! Visit http://localhost"
+	@echo "✅ All services started! Visit https://localhost:8443"
 
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
-clean-start: check-docker check-compose clean-dev clean ensure-database-folders
+clean-start: check-docker check-compose clean-dev clean
 	@echo "� Clean start with fresh build (after removing images & volumes)..."
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
 	@$(MAKE) open
-	@echo "✅ Services started! Visit http://localhost"
+	@echo "✅ Services started! Visit https://localhost:8443"
 
 # Restart - quick restart of existing containers without rebuilding
 restart: check-docker check-compose
@@ -58,7 +60,7 @@ restart: check-docker check-compose
 	@echo "✅ Services restarted!"
 
 # Rebuild - rebuild images from scratch (no cache) but keep data volumes
-rebuild: check-docker check-compose clean-dev ensure-database-folders
+rebuild: check-docker check-compose clean-dev
 	@echo "🔨 Rebuilding and restarting services from scratch..."
 	docker compose down
 	docker compose build --no-cache
@@ -169,99 +171,34 @@ nuke: check-docker
 	@docker rmi $$(docker images -q) 2>/dev/null || true
 	@echo "💥 Docker environment completely nuked!"
 	@echo "💡 To rebuild: make clean-start"
-	@$(MAKE) ensure-database-folders
-
-# Ensure database folders and required files exist
-ensure-database-folders:
-	@echo "📁 Ensuring database folders exist for all services..."
-	@mkdir -p auth-service/database
-	@mkdir -p game-service/database
-	@mkdir -p tournament-service/database
-	@mkdir -p user-service/database
-	@mkdir -p vault/data
-	@touch auth-service/database/.gitkeep
-	@touch game-service/database/.gitkeep
-	@touch tournament-service/database/.gitkeep
-	@touch user-service/database/.gitkeep
-	@if [ ! -f .env ]; then \
-		echo "📝 Creating empty .env file..."; \
-		touch .env; \
-		echo "✅ .env file created"; \
-	fi
-	@echo "🔐 Setting vault permissions..."
-	@if [ -d vault/data ]; then \
-		if [ -f vault/data/vault.db ] || [ -d vault/data/raft ]; then \
-			if ! find vault/data -type f -o -type d >/dev/null 2>&1; then \
-				echo "🔑 Vault data exists but has wrong permissions (cannot access files)"; \
-				echo "🔑 Need sudo access to fix vault permissions..."; \
-				if sudo -n true 2>/dev/null; then \
-					echo "✅ Sudo access available, fixing permissions..."; \
-					sudo chown -R $$(whoami):$$(whoami) vault/data; \
-					echo "✅ Vault permissions fixed"; \
-				else \
-					echo "🔑 Please enter your sudo password to fix vault permissions:"; \
-					sudo chown -R $$(whoami):$$(whoami) vault/data && \
-					echo "✅ Vault permissions fixed" || \
-					(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
-				fi; \
-			else \
-				CURRENT_OWNER=$$(find vault/data -type f -o -type d | head -1 | xargs stat -c '%U' 2>/dev/null || find vault/data -type f -o -type d | head -1 | xargs stat -f '%Su' 2>/dev/null || echo "unknown"); \
-				if [ "$$CURRENT_OWNER" != "$$(whoami)" ] && [ "$$CURRENT_OWNER" != "unknown" ]; then \
-					echo "🔑 Vault data exists but has wrong permissions (owned by $$CURRENT_OWNER)"; \
-					echo "🔑 Need sudo access to fix vault permissions..."; \
-					if sudo -n true 2>/dev/null; then \
-						echo "✅ Sudo access available, fixing permissions..."; \
-						sudo chown -R $$(whoami):$$(whoami) vault/data; \
-						echo "✅ Vault permissions fixed"; \
-					else \
-						echo "🔑 Please enter your sudo password to fix vault permissions:"; \
-						sudo chown -R $$(whoami):$$(whoami) vault/data && \
-						echo "✅ Vault permissions fixed" || \
-						(echo "❌ Failed to fix vault permissions. Please run: sudo chown -R $$(whoami):$$(whoami) vault/data" && exit 1); \
-					fi; \
-				else \
-					echo "✅ Vault permissions are correct"; \
-				fi; \
-			fi; \
-		else \
-			if command -v chown >/dev/null 2>&1; then \
-				sudo chown -R 100:1000 vault/data 2>/dev/null || \
-				chown -R 100:1000 vault/data 2>/dev/null || \
-				echo "⚠️  Could not change vault permissions (may need sudo)"; \
-			else \
-				echo "⚠️  chown command not available"; \
-			fi; \
-		fi; \
-	fi
-	@echo "✅ Database folders, .env file, and vault permissions ensured"
 
 open:
-	@echo "🌐 Opening browser at http://localhost:80 ..."
+	@echo "🌐 Opening browser at https://localhost:8443 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
-		open http://localhost:80; \
+		open https://localhost:8443; \
 	elif echo "$(OS)" | grep -q "MINGW\|MSYS"; then \
 		if command -v firefox >/dev/null 2>&1; then \
-			start firefox http://localhost:80; \
+			start firefox https://localhost:8443; \
 		else \
-			start http://localhost:80; \
+			start https://localhost:8443; \
 		fi \
 	elif grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then \
 		echo "🪟 Detected WSL environment, using Windows browser..."; \
 		if command -v wslview >/dev/null 2>&1; then \
-			wslview http://localhost:80 2>/dev/null || \
+			wslview https://localhost:8443 2>/dev/null || \
 			(echo "⚠️  wslview failed, trying cmd.exe fallback..." && \
-			cmd.exe /c start http://localhost:80 2>/dev/null || \
-			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
-			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."); \
+			cmd.exe /c start https://localhost:8443 2>/dev/null || \
+			powershell.exe -c "Start-Process 'https://localhost:8443'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."); \
 		else \
-			cmd.exe /c start http://localhost:80 2>/dev/null || \
-			powershell.exe -c "Start-Process 'http://localhost:80'" 2>/dev/null || \
-			echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+			cmd.exe /c start https://localhost:8443 2>/dev/null || \
+			powershell.exe -c "Start-Process 'https://localhost:8443'" 2>/dev/null || \
+			echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
 		fi \
 	elif command -v xdg-open >/dev/null 2>&1; then \
-		xdg-open http://localhost:80; \
+		xdg-open https://localhost:8443; \
 	else \
-		echo "❌ Could not auto-open browser. Please visit http://localhost:80 manually."; \
+		echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
 	fi
 
 stop:
@@ -285,17 +222,17 @@ health:
 	@echo "🏥 Checking service health..."
 	@echo ""
 	@echo "🔍 Frontend (HTTPS):"
-	@curl -sk https://localhost 2>&1 | grep -q "DOCTYPE" && echo "  ✅ Frontend responding" || echo "  ❌ Frontend not responding"
+	@curl -sk https://localhost:8443 2>&1 | grep -q "DOCTYPE" && echo "  ✅ Frontend responding" || echo "  ❌ Frontend not responding"
 	@echo ""
 	@echo "🔍 Microservices (HTTPS via Nginx):"
 	@echo "  Auth Service:"
-	@curl -sk https://localhost/api/auth/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/auth/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Game Service:"
-	@curl -sk https://localhost/api/game/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/game/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  User Service:"
-	@curl -sk https://localhost/api/user/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/user/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo "  Tournament Service:"
-	@curl -sk https://localhost/api/tournament/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
+	@curl -sk https://localhost:8443/api/tournament/health 2>/dev/null | grep -q '"status":"ok"' && echo "    ✅ Healthy" || echo "    ⚠️  Not responding"
 	@echo ""
 	@echo "📦 Database Check:"
 	@echo "  Auth DB: $(shell [ -f auth-service/database/auth.db ] && echo '✅ Exists' || echo '❌ Missing')"

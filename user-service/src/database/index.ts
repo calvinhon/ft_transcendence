@@ -40,10 +40,6 @@ export async function initializeDatabase(): Promise<void> {
         is_custom_avatar INTEGER DEFAULT 0,
         bio TEXT,
         country TEXT,
-        preferred_language TEXT DEFAULT 'en',
-        theme_preference TEXT DEFAULT 'dark',
-        notification_settings TEXT DEFAULT '{}',
-        privacy_settings TEXT DEFAULT '{}',
         campaign_level INTEGER DEFAULT 1,
         games_played INTEGER DEFAULT 0,
         games_won INTEGER DEFAULT 0,
@@ -59,9 +55,9 @@ export async function initializeDatabase(): Promise<void> {
 
     // Ensure all columns exist (migration logic from Develop)
     await ensureColumnExists(db, 'user_profiles', 'campaign_level', 'INTEGER DEFAULT 1');
-    //Hoach edited
     await ensureColumnExists(db, 'user_profiles', 'is_custom_avatar', 'INTEGER DEFAULT 0');
-    //Hoach edit ended
+    await ensureColumnExists(db, 'user_profiles', 'bio', 'TEXT');
+    await ensureColumnExists(db, 'user_profiles', 'country', 'TEXT');
 
     const gameStatsColumns = [
       'games_played INTEGER DEFAULT 0',
@@ -81,45 +77,15 @@ export async function initializeDatabase(): Promise<void> {
     // Update existing rows that might have NULL campaign_level
     await promisifyDbRun(db, `UPDATE user_profiles SET campaign_level = 1 WHERE campaign_level IS NULL`);
 
-    // 3. Create achievements table (Develop Schema)
+    // 3. Create Friends Table
     await promisifyDbRun(db, `
-      CREATE TABLE IF NOT EXISTS achievements (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT NOT NULL,
-        icon_url TEXT,
-        reward_points INTEGER DEFAULT 0
-      )
-    `);
-
-    // Insert default achievements if table is empty
-    const result = await promisifyDbGet<{ count: number }>(db, 'SELECT COUNT(*) as count FROM achievements');
-    if (result && result.count === 0) {
-      const defaultAchievements = [
-        { name: 'First Win', description: 'Win your first game', icon_url: '🏆', reward_points: 10 },
-        { name: 'Winning Streak', description: 'Win 5 games in a row', icon_url: '🔥', reward_points: 25 },
-        { name: 'Tournament Champion', description: 'Win a tournament', icon_url: '👑', reward_points: 50 },
-        { name: 'Social Butterfly', description: 'Make 10 friends', icon_url: '🦋', reward_points: 15 },
-        { name: 'Veteran Player', description: 'Play 100 games', icon_url: '🎖️', reward_points: 30 }
-      ];
-
-      for (const achievement of defaultAchievements) {
-        await promisifyDbRun(db,
-          'INSERT INTO achievements (name, description, icon_url, reward_points) VALUES (?, ?, ?, ?)',
-          [achievement.name, achievement.description, achievement.icon_url, achievement.reward_points]
-        );
-      }
-    }
-
-    // Create user achievements table
-    await promisifyDbRun(db, `
-      CREATE TABLE IF NOT EXISTS user_achievements (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+      CREATE TABLE IF NOT EXISTS friends (
         user_id INTEGER NOT NULL,
-        achievement_id INTEGER NOT NULL,
-        unlocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (achievement_id) REFERENCES achievements (id),
-        UNIQUE(user_id, achievement_id)
+        friend_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, friend_id),
+        FOREIGN KEY (user_id) REFERENCES user_profiles(user_id),
+        FOREIGN KEY (friend_id) REFERENCES user_profiles(user_id)
       )
     `);
 

@@ -95,20 +95,7 @@ async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Friends Table
-    db.run(`
-      CREATE TABLE IF NOT EXISTS friends (
-        user_id INTEGER NOT NULL,
-        friend_id INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (user_id, friend_id),
-        FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (friend_id) REFERENCES users (id)
-      )
-    `, (err: any) => {
-      if (err) logger.error('Error creating friends table:', err);
-      else logger.info('Friends table ready');
-    });
+
 
   } catch (error) {
     logger.error('Error initializing game-service database:', error);

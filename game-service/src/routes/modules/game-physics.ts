@@ -124,7 +124,8 @@ export class GamePhysics {
       p.powerupExpires = Date.now() + 10000; // 10 seconds
 
       // Clamp position to prevent clipping out of bounds
-      const maxY = 600 - p.height;
+      // Add small buffer (2px) to prevent visual clipping through bottom border
+      const maxY = 600 - p.height - 2;
       if (p.y > maxY) {
         p.y = maxY;
       }
@@ -201,7 +202,8 @@ export class GamePhysics {
 
       // Check if the crossing point is within the paddle's y-range
       // Add a buffer (ball radius approx 5-10px) to prevent vertical tunneling at edges
-      const tolerance = 2;
+      // Increased tolerance to 8px to catch edge cases better
+      const tolerance = 8;
       if (crossY >= paddle.y - tolerance && crossY <= paddle.y + paddleHeight + tolerance) {
         // Adjust ball position
         const offset = side === 'left' ? 1 : -1;
@@ -230,7 +232,7 @@ export class GamePhysics {
     const hitPos = (ball.y - paddle.y) / (paddle.height || 110);
     const angle = side === 'left'
       ? (hitPos - 0.5) * Math.PI / 2
-      : Math.PI + (hitPos - 0.5) * Math.PI / 2;
+      : Math.PI - (hitPos - 0.5) * Math.PI / 2;
 
     const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
     let newSpeed = currentSpeed;
@@ -344,7 +346,8 @@ export class GamePhysics {
       return true;
     } else if (direction === 'down') {
       const paddleHeight = paddle.height || 100;
-      const maxY = 600 - paddleHeight;
+      // Subtract 2px buffer to prevent clipping
+      const maxY = 600 - paddleHeight - 2;
       if (paddle.y < maxY) {
         paddle.y = Math.min(maxY, paddle.y + moveSpeed);
         paddle.vy = moveSpeed; // Track velocity

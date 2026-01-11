@@ -1,6 +1,8 @@
+import '@fastify/cookie';
+import '@fastify/session';
 import cors from '@fastify/cors';
 import userRoutes from './routes/index';
-import { createServer, createServiceConfig } from '@ft-transcendence/common';
+import { createServer, createServiceConfig, sessionSecret } from '@ft-transcendence/common';
 
 const serverConfig = createServiceConfig('USER-SERVICE', 3000);
 
@@ -19,7 +21,11 @@ async function start(): Promise<void> {
     process.exit(1);
   }
 
-  const server = await createServer(serverConfig, userRoutes, serverOptions);
+  const server = await createServer(serverConfig, async (fastify) => {
+    await fastify.register(sessionSecret);
+    await userRoutes(fastify);
+  }, serverOptions);
+
   await server.start();
 }
 

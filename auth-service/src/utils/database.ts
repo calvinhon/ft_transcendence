@@ -14,7 +14,7 @@ function getDatabase(): any {
   return db;
 }
 
-async function initializeDatabase(): Promise<void> {
+export async function initializeDatabase(): Promise<void> {
   try {
     // Initialize database connection
     db = connection.getDb();
@@ -31,17 +31,17 @@ async function initializeDatabase(): Promise<void> {
         last_login DATETIME
       )
     `);
-  } catch (error) {
-    logger.error('Error initializing auth-service database:', error);
+
+    logger.info('Connected to AUTH_SERVICE SQLite database');
+  } catch (error: any) {
+    if (error.code === 'SQLITE_READONLY') {
+      logger.error('🚨 CRITICAL ERROR: Database is READ-ONLY. Please check filesystem permissions for the database file and directory.');
+    } else {
+      logger.error('Error initializing auth-service database:', error);
+    }
     throw error;
   }
 }
-
-// Initialize the database
-initializeDatabase().catch((error) => {
-  logger.error('Failed to initialize database:', error);
-  process.exit(1);
-});
 
 export function runQuery<T = any>(query: string, params: any[] = []): Promise<T> {
   return promisifyDbRun(getDatabase(), query, params) as Promise<T>;

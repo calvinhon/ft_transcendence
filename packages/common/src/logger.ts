@@ -18,12 +18,10 @@ export class Logger {
   }
 
   private setLevelFromEnv(): void {
-    if (process.env.NODE_ENV === 'production') {
-      this.level = LogLevel.WARN;
-    } else if (process.env.LOG_LEVEL === 'debug') {
+    if (process.env.LOG_LEVEL === 'debug') {
       this.level = LogLevel.DEBUG;
     } else {
-      this.level = LogLevel.INFO;
+      this.level = LogLevel.WARN;
     }
   }
 

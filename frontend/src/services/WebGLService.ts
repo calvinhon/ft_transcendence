@@ -9,9 +9,11 @@
 export class WebGLService {
     private static instance: WebGLService;
     private static readonly STORAGE_KEY = 'ft_3d_mode_enabled';
+    private static readonly POST_PROCESSING_KEY = 'ft_post_processing_enabled';
 
     private webglSupported: boolean;
     private userPreference: boolean | null = null; // null = not set yet
+    private postProcessingEnabled: boolean = false; // Default disabled as requested
 
     private constructor() {
         this.webglSupported = this.detectWebGL();
@@ -20,6 +22,14 @@ export class WebGLService {
         // Auto-enable 3D mode on first visit if WebGL is supported
         if (this.userPreference === null && this.webglSupported) {
             this.set3DModeEnabled(true);
+        }
+
+        // Load post-processing preference
+        const storedPP = localStorage.getItem(WebGLService.POST_PROCESSING_KEY);
+        if (storedPP !== null) {
+            this.postProcessingEnabled = storedPP === 'true';
+        } else {
+            this.postProcessingEnabled = false; // Explicit default
         }
     }
 
@@ -93,5 +103,20 @@ export class WebGLService {
      */
     public getUserPreference(): boolean | null {
         return this.userPreference;
+    }
+
+    /**
+     * Returns true if post-processing (glow) should be enabled
+     */
+    public isPostProcessingEnabled(): boolean {
+        return this.postProcessingEnabled;
+    }
+
+    /**
+     * Sets post-processing preference
+     */
+    public setPostProcessingEnabled(enabled: boolean): void {
+        this.postProcessingEnabled = enabled;
+        localStorage.setItem(WebGLService.POST_PROCESSING_KEY, enabled.toString());
     }
 }

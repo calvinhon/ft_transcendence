@@ -2,6 +2,7 @@ import { Api } from '../core/Api';
 import { App } from '../core/App';
 import { User } from '../types';
 import { LocalPlayerService } from './LocalPlayerService';
+import { ErrorModal } from "../components/ErrorModal";
 
 export class AuthService {
     private static instance: AuthService;
@@ -62,21 +63,6 @@ export class AuthService {
             throw e;
         }
     }
-
-    public async forgotPassword(email: string): Promise<{ success: boolean, error?: string }> {
-        try {
-            const response = await Api.post('/api/auth/forgot-password', { email });
-            if (response.success) {
-                return { success: true };
-            }
-            return { success: false, error: response.error || 'Failed to send reset email' };
-        } catch (e: any) {
-            console.error("Forgot password failed", e);
-            return { success: false, error: e.message || 'Network error' };
-        }
-    }
-
-
 
     public logout(): void {
         localStorage.removeItem('token');
@@ -140,29 +126,12 @@ export class AuthService {
             //Hoach edit ended
 
             // Backend didn't return user and no stored user data available
-            console.warn("AuthService: Backend says valid but no user data available");
             return false;
         } catch (e: any) {
             console.error("AuthService: Verify failed or timed out:", e.message || e);
             // No localStorage user and backend failed - need to login
             return false;
         }
-    }
-
-    // ==========================================
-    // OAuth Methods (Popup Based)
-    // ==========================================
-
-    public async loginWithSchool42(): Promise<void> {
-        await this.initiateOAuthPopup('42');
-    }
-
-    public async loginWithGoogle(): Promise<void> {
-        await this.initiateOAuthPopup('Google');
-    }
-
-    public async loginWithGithub(): Promise<void> {
-        await this.initiateOAuthPopup('GitHub');
     }
 
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
@@ -240,13 +209,13 @@ export class AuthService {
         }
     }
 
-    private async initiateOAuthPopup(provider: string): Promise<void> {
+    public async loginWithGoogle(): Promise<void> {
         const width = 500;
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
 
-        const url = `/api/auth/oauth/init?provider=${provider}`; // Backend endpoint to start OAuth
+        const url = `/api/auth/oauth/init?provider=Google`; // Backend endpoint to start OAuth
         // Note: Backend works by redirecting this popup to the provider
 
         const popup = window.open(
@@ -256,18 +225,18 @@ export class AuthService {
         );
 
         if (!popup) {
-            alert("Popup blocked! Please allow popups for this site.");
+            new ErrorModal("POPUP BLOCKED! PLEASE ALLOW POPUPS FOR THIS SITE.").render();
             return;
         }
 
         try {
             const authData = await this.waitForOAuthPopup(popup);
             if (authData && authData.success) {
-                this.handleAuthSuccess(authData.token, authData.user);
+                await this.handleAuthSuccess(authData.token, authData.user, authData.sessionId);
                 App.getInstance().router.navigateTo('/');
             } else {
                 console.error("OAuth failed:", authData?.error);
-                alert("Authentication failed: " + (authData?.error || "Unknown error"));
+                new ErrorModal("AUTHENTICATION FAILED: " + (authData?.error || "UNKNOWN ERROR")).render();
             }
         } catch (error) {
             console.error("OAuth error:", error);
@@ -283,10 +252,12 @@ export class AuthService {
                 // Security check: ensure origin matches (if needed, currently relative)
                 // if (event.origin !== window.location.origin) return;
 
+                console.log('AuthService: Received message from popup:', event.data);
                 if (event.data && event.data.type === 'OAUTH_SUCCESS') {
                     handled = true;
                     window.removeEventListener('message', messageHandler);
                     popup.close();
+                    console.log('AuthService: OAuth success payload:', event.data.payload);
                     resolve(event.data.payload);
                 } else if (event.data && event.data.type === 'OAUTH_ERROR') {
                     handled = true;
@@ -340,14 +311,29 @@ export class AuthService {
             }, window.location.origin);
             window.close();
         } else {
-            alert("Authentication failed: " + error);
-            window.location.href = '/login';
+            const modal = new ErrorModal("AUTHENTICATION FAILED: " + error.toUpperCase(), () => {
+                window.location.href = '/login';
+            });
+            modal.render();
         }
     }
 
-    private handleAuthSuccess(token: string, user: User): void {
+    private async handleAuthSuccess(token: string, user: User, sessionId?: string): Promise<void> {
+        console.log('AuthService: handleAuthSuccess called with', { token: !!token, user: user?.username, sessionId: !!sessionId });
         if (token) localStorage.setItem('token', token);
         if (user) localStorage.setItem('user', JSON.stringify(user));
+        if (sessionId) {
+            console.log('AuthService: Establishing session for userId:', user.userId);
+            // Establish session in main window
+            try {
+                const response = await Api.post('/api/auth/establish-session', { userId: user.userId });
+                console.log('AuthService: Session established successfully:', response);
+            } catch (error) {
+                console.error('AuthService: Failed to establish session:', error);
+            }
+        } else {
+            console.log('AuthService: No sessionId provided, skipping session establishment');
+        }
         App.getInstance().currentUser = user;
     }
 }

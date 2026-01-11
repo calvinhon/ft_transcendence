@@ -72,10 +72,8 @@ class Logger {
 export const logger = new Logger();
 
 // Set log level based on environment
-if (process.env.NODE_ENV === 'production') {
-  logger.setLevel(LogLevel.WARN);
-} else if (process.env.LOG_LEVEL === 'debug') {
+if (process.env.LOG_LEVEL === 'debug') {
   logger.setLevel(LogLevel.DEBUG);
 } else {
-  logger.setLevel(LogLevel.INFO);
+  logger.setLevel(LogLevel.WARN);
 }

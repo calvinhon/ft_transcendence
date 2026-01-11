@@ -11,6 +11,8 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   fastify.get<{
     Params: { id: string };
   }>('/tournaments/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Tournaments'),sendError(reply, "Unauthorized", 401);
     try {
       const id = parseInt(request.params.id);
       if (isNaN(id)) {
@@ -36,6 +38,8 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
   }>('/tournaments/:tournamentId/start', async (request: FastifyRequest<{
     Params: { tournamentId: string };
   }>, reply: FastifyReply) => {
+    if (!request.session || !request.session.userId)
+        return console.log('Tournament Start'),sendError(reply, "Unauthorized", 401);
     try {
       const tournamentId = parseInt(request.params.tournamentId);
 

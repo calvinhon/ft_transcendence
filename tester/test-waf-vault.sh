@@ -151,7 +151,7 @@ test_certificate_management() {
     echo -e "${YELLOW}Running Test 8: Certificate Management${NC}"
     
     # Check for SSL/TLS configuration
-    local response=$(curl -s https://localhost 2>/dev/null)
+    local response=$(curl -s https://localhost:8443 2>/dev/null)
     
     if [ $? -eq 0 ] || [ -n "$response" ]; then
         log_result 8 "Certificate Management" "PASS"

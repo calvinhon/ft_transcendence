@@ -1,10 +1,12 @@
 import { AbstractComponent } from "../components/AbstractComponent";
 import { App } from "../core/App";
 import { AuthService } from "../services/AuthService";
-import { ProfileService, UserProfile, GameStats, AIStats, RecentGame, TournamentRanking } from "../services/ProfileService";
+import { ProfileService, UserProfile, GameStats, RecentGame, TournamentRanking } from "../services/ProfileService";
 import { FriendService, Friend } from "../services/FriendService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import Chart from 'chart.js/auto';
+import { ErrorModal } from "../components/ErrorModal";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 export class ProfilePage extends AbstractComponent {
     private profile: UserProfile | null = null;
@@ -14,7 +16,6 @@ export class ProfilePage extends AbstractComponent {
     private friends: Array<Friend & { profile?: UserProfile }> = [];
     private isFriend: boolean = false;
     private friendStatus?: Friend;
-    private aiStats: AIStats = { aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
 
     private loading: boolean = true;
     private error: string | null = null;
@@ -60,7 +61,7 @@ export class ProfilePage extends AbstractComponent {
         }
 
         const p = this.profile;
-        const s = this.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0, winRate: 0, averageGameDuration: 0 };
+        const s = this.stats || { wins: 0, losses: 0, totalGames: 0, winRate: 0, averageGameDuration: 0, aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
         const isBot = p.userId <= 0 || (p as any).isBot === true;
 
 
@@ -194,19 +195,19 @@ export class ProfilePage extends AbstractComponent {
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div class="bg-cyan-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-green-400">${this.aiStats.aiWins}</div>
+                                <div class="text-2xl font-bold text-green-400">${s.aiWins}</div>
                                 <div class="text-[10px] text-gray-400">AI WINS</div>
                             </div>
                             <div class="bg-cyan-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-red-400">${this.aiStats.aiLosses}</div>
+                                <div class="text-2xl font-bold text-red-400">${s.aiLosses}</div>
                                 <div class="text-[10px] text-gray-400">AI LOSSES</div>
                             </div>
                             <div class="bg-purple-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-green-400">${this.aiStats.humanWins}</div>
+                                <div class="text-2xl font-bold text-green-400">${s.humanWins}</div>
                                 <div class="text-[10px] text-gray-400">HUMAN WINS</div>
                             </div>
                             <div class="bg-purple-900/20 p-3 rounded">
-                                <div class="text-2xl font-bold text-red-400">${this.aiStats.humanLosses}</div>
+                                <div class="text-2xl font-bold text-red-400">${s.humanLosses}</div>
                                 <div class="text-[10px] text-gray-400">HUMAN LOSSES</div>
                             </div>
                         </div>
@@ -345,7 +346,7 @@ export class ProfilePage extends AbstractComponent {
 
     private renderGameRow(g: RecentGame): string {
         const date = new Date(g.date).toLocaleDateString();
-        const colorClass = g.result === 'win' ? 'text-green-400' : (g.result === 'draw' ? 'text-gray-400' : 'text-red-400');
+        const colorClass = g.result === 'win' ? 'text-green-400' : 'text-red-400';
         const bgHover = g.result === 'win' ? 'hover:bg-green-900/10' : 'hover:bg-red-900/10';
 
         return `
@@ -573,10 +574,28 @@ export class ProfilePage extends AbstractComponent {
                 this.isFriend = false;
             }
 
-            // 3. Check Online Status for the Profile being viewed
-            // We fetch all online users and check if this user is in the list
-            const onlineUsers = await friendService.getOnlineUsers();
-            const isProfileOnline = onlineUsers.includes(userId);
+            // 3. Check Online Status (LOCAL ONLY REFACTOR)
+            // User requested that "Online" means "Logged in LOCALLY on this device/window"
+            // So we ignore the backend "onlineUsers" list (which includes remote connections)
+            // and only check LocalPlayerService.
+
+            const localPlayerService = LocalPlayerService.getInstance();
+            const localPlayers = localPlayerService.getLocalPlayers();
+
+
+            // Helper to check if a ID is "locally online"
+            const isLocallyOnline = (targetId: number) => {
+                if (currentUser && currentUser.userId === targetId) return true;
+                return localPlayers.some(lp => lp.userId === targetId);
+            };
+
+            const isProfileOnline = isLocallyOnline(userId);
+
+            // Update friends list status based on LOCAL players only
+            this.friends = this.friends.map(f => ({
+                ...f,
+                isOnline: isLocallyOnline(f.userId)
+            }));
 
             // Start constructing the 'status' object even if not a friend, so renderOnlineStatus works
             if (!this.friendStatus) {
@@ -593,19 +612,6 @@ export class ProfilePage extends AbstractComponent {
             this.stats = stats;
             this.history = history;
             this.rankings = rankings;
-
-            // Compute AI stats from history
-            this.aiStats = { aiWins: 0, aiLosses: 0, humanWins: 0, humanLosses: 0 };
-            for (const game of this.history) {
-                const isAIGame = game.opponent === 'AI' || game.opponent.toLowerCase().includes('ai');
-                if (isAIGame) {
-                    if (game.result === 'win') this.aiStats.aiWins++;
-                    else if (game.result === 'loss') this.aiStats.aiLosses++;
-                } else {
-                    if (game.result === 'win') this.aiStats.humanWins++;
-                    else if (game.result === 'loss') this.aiStats.humanLosses++;
-                }
-            }
 
             if (!this.profile) {
                 this.error = "User profile not found";
@@ -638,7 +644,7 @@ export class ProfilePage extends AbstractComponent {
                 // Reload profile/friends list to get updated status/online state
                 await this.loadProfile(this.profile.userId);
             } else {
-                alert('Failed to add friend');
+                new ErrorModal('FAILED TO ADD FRIEND').render();
             }
         });
 
@@ -647,15 +653,23 @@ export class ProfilePage extends AbstractComponent {
             const currentUser = AuthService.getInstance().getCurrentUser();
             if (!currentUser) return;
 
-            if (confirm(`Remove ${this.profile.username} from friends?`)) {
-                const success = await FriendService.getInstance().removeFriend(currentUser.userId, this.profile.userId);
-                if (success) {
-                    // Reload profile to update status
-                    await this.loadProfile(this.profile.userId);
-                } else {
-                    alert('Failed to remove friend');
-                }
-            }
+            const profileId = this.profile.userId;
+            const profileName = this.profile.username;
+
+            new ConfirmationModal(
+                `REMOVE ${profileName.toUpperCase()} FROM FRIENDS?`,
+                async () => {
+                    const success = await FriendService.getInstance().removeFriend(currentUser.userId, profileId);
+                    if (success) {
+                        // Reload profile to update status
+                        await this.loadProfile(profileId);
+                    } else {
+                        new ErrorModal('FAILED TO REMOVE FRIEND').render();
+                    }
+                },
+                () => { },
+                'destructive'
+            ).render();
         });
     }
 

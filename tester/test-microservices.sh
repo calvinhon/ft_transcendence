@@ -48,7 +48,7 @@ test_service_discovery() {
     local all_running=true
     
     for service in "${services[@]}"; do
-        if ! curl -sk --max-time 2 https://localhost/api/$service/health > /dev/null 2>&1; then
+        if ! curl -sk --max-time 2 https://localhost:8443/api/$service/health > /dev/null 2>&1; then
             all_running=false
             break
         fi
@@ -70,7 +70,7 @@ test_inter_service_communication() {
     
     # Hoach edited - Updated to use HTTPS endpoint
     # Check if services can communicate with each other
-    local response=$(curl -sk https://localhost/api/game/health 2>/dev/null)
+    local response=$(curl -sk https://localhost:8443/api/game/health 2>/dev/null)
     # Hoach edit ended
     
     if echo "$response" | python3 -m json.tool > /dev/null 2>&1; then

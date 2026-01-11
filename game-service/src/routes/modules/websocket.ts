@@ -4,7 +4,7 @@ import { addOnlineUser } from './online-users';
 import { matchmakingService } from './matchmaking-service';
 import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
-import { activeConnections } from './friend-service';
+// cleaned up
 
 export function handleWebSocketMessage(socket: any, message: Buffer | string): void {
   try {
@@ -52,8 +52,6 @@ function handleUserConnect(socket: any, data: any): void {
   // Track user as online when they connect with authentication
   addOnlineUser(data.userId, data.username, socket);
 
-  // Track in FriendService for online status checks
-  activeConnections.add(data.userId);
   // Store userId on socket object for cleanup on close
   (socket as any).userId = data.userId;
 
@@ -71,7 +69,11 @@ function handleUserConnect(socket: any, data: any): void {
       accelerateOnHit: data.accelerateOnHit || false,
       scoreToWin: data.scoreToWin || 5,
       team1PlayerCount: data.team1PlayerCount || 1,
-      team2PlayerCount: data.team2PlayerCount || 1
+      team2PlayerCount: data.team2PlayerCount || 1,
+      // Tournament-specific fields for score swapping
+      tournamentId: data.tournamentId,
+      tournamentMatchId: data.tournamentMatchId,
+      tournamentPlayer1Id: data.tournamentPlayer1Id
     };
 
     logger.info('Starting game with settings:', gameSettings);
@@ -101,7 +103,8 @@ export function handleWebSocketClose(socket: any): void {
 
   // Remove from FriendService online tracking
   if ((socket as any).userId) {
-    activeConnections.delete((socket as any).userId);
+    // activeConnections usage removed
+    logger.ws(`User ${(socket as any).userId} disconnected (cleaned up)`);
     logger.ws(`User ${(socket as any).userId} disconnected (cleaned up)`);
   }
 }

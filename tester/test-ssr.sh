@@ -11,7 +11,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-BASE_URL="http://localhost:3005"
+BASE_URL="https://localhost:3005"
 PASSED=0
 FAILED=0
 TOTAL=12

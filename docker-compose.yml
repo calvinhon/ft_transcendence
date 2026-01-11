@@ -1,30 +1,45 @@
 # Docker Compose - Combined Configuration
 # Use profiles to control which services start:
 # - Default: Core services only (fast development)
-# - Full profile: All services including SSR (--profile full)
 # UPDATED: Added health checks for improved container orchestration reliability
 
 services:
   vault:
     build: ./vault
     container_name: vault
-    ports:
-      - "8200:8200"
+    expose:
+      - "8200"
     volumes:
-      - ./vault/config:/vault/config
-      - ./vault/data:/vault/data
+      - vault-db:/vault/data
     cap_add:
       - IPC_LOCK
-    environment:
-      - VAULT_ADDR=https://127.0.0.1:8200
     env_file:
-      - .env
+      - .env.vault
     mem_limit: 256m
     dns:
       - 8.8.8.8
       - 8.8.4.4
     networks:
       - transcendence-network
+
+  redis:
+    build: ./redis
+    container_name: redis
+    expose:
+      - '6379'
+    environment:
+      - HOST=redis
+    env_file:
+      - .env
+    networks:
+      - transcendence-network
+    depends_on:
+      - vault
+    healthcheck:
+        test: ["CMD", "redis-cli", "--tls", "--cert", "/redis/certs/redis-cert.pem", "--key", "/redis/certs/redis-key.pem", "--cacert", "/redis/certs/redis-ca.pem", "ping"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
 
   auth-service:
     build:
@@ -34,13 +49,13 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./auth-service/database:/app/database
+      - auth-db:/app/database
     environment:
-      - NODE_ENV=development
-      - VAULT_ADDR=https://vault:8200
-      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - HOST=auth
     env_file:
       - .env
+    depends_on:
+      - redis
     mem_limit: 256m
     networks:
       - transcendence-network
@@ -53,12 +68,16 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./game-service/database:/app/database
+      - game-db:/app/database
+    environment:
+      - HOST=game
+    env_file:
+      - .env
     mem_limit: 256m
     healthcheck:
       test:
         - CMD-SHELL
-        - curl -fsS http://127.0.0.1:3000/health || exit 1
+        - curl -fsS https://127.0.0.1:3000/health || exit 1
       interval: 5s
       timeout: 3s
       retries: 10
@@ -74,12 +93,16 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./tournament-service/database:/app/database
+      - tournament-db:/app/database
+    environment:
+      - HOST=tournament
+    env_file:
+      - .env
     mem_limit: 256m
     healthcheck:
       test:
         - CMD-SHELL
-        - curl -fsS http://127.0.0.1:3000/health || exit 1
+        - curl -fsS https://127.0.0.1:3000/health || exit 1
       interval: 5s
       timeout: 3s
       retries: 10
@@ -95,13 +118,17 @@ services:
     expose:
       - "3000"
     volumes:
-      - ./user-service/database:/app/database
-      - ./auth-service/database:/app/auth-database # Shared for cross-DB JOIN
+      - user-db:/app/database
+      - auth-db:/app/auth-database # Shared for cross-DB JOIN
+    environment:
+      - HOST=user
+    env_file:
+      - .env
     mem_limit: 256m
     healthcheck:
       test:
         - CMD-SHELL
-        - curl -fsS http://127.0.0.1:3000/health || exit 1
+        - curl -fsS https://127.0.0.1:3000/health || exit 1
       interval: 5s
       timeout: 3s
       retries: 10
@@ -119,6 +146,7 @@ services:
       - hardhat-data:/app/data
       - ./blockchain/contracts:/app/contracts
       - ./blockchain/scripts:/app/scripts
+      - ./blockchain/artifacts:/app/artifacts
     networks:
       - transcendence-network
     healthcheck:
@@ -136,22 +164,26 @@ services:
         condition: service_healthy
     working_dir: /app
     volumes: 
-      - ./blockchain/scripts:/app/scripts
-      - ./blockchain/contracts:/app/contracts
-      - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments
     command: "npx hardhat run scripts/deploy.ts --network docker"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     networks:
       - transcendence-network
 
   blockchain-service:
-    build: ./blockchain-service
+    build:
+      context: .
+      dockerfile: ./blockchain-service/Dockerfile
     container_name: blockchain-service
     expose:
       - "3000"
     volumes:
       - ./blockchain/artifacts:/app/artifacts
       - ./blockchain/deployments:/app/deployments
+    environment:
+      - HOST=blockchain
     env_file:
       - .env
     depends_on:
@@ -162,7 +194,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - curl -fsS http://127.0.0.1:3000/ || exit 1
+        - curl -fsS https://127.0.0.1:3000/ || exit 1
       interval: 5s
       timeout: 3s
       retries: 10
@@ -174,11 +206,14 @@ services:
     build: ./frontend
     container_name: frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "8200:8200"
+      - "8443:443"
     volumes:
       - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./frontend/nginx/certs:/etc/nginx/certs:ro
+    environment:
+      - HOST=frontend
+    env_file:
+      - .env
     depends_on:
       - auth-service
       - user-service
@@ -189,20 +224,19 @@ services:
     networks:
       - transcendence-network
 
-  ssr-service:
-    build:
-      context: .
-      dockerfile: ./ssr-service/Dockerfile
-    container_name: ssr
-    expose:
-      - "3000"
-    mem_limit: 256m
-    networks:
-      - transcendence-network
-
 networks:
   transcendence-network:
     driver: bridge
 
 volumes:
   hardhat-data:
+  auth-db:
+  game-db:
+  tournament-db:
+  user-db:
+  vault-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${PWD}/vault/data'

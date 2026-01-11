@@ -9,56 +9,55 @@ export class LoginPage extends AbstractComponent {
 
     getHtml(): string {
         return `
-            <div class="flex bg-black items-center justify-center relative">
-                <div class="w-full max-w-[600px] p-8 border-2 border-accent rounded-xl shadow-glow bg-black relative pointer-events-auto">
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr">
+            <div class="flex bg-black items-center justify-center relative w-full h-full">
+                <div class="w-full max-w-[600px] border-2 border-accent shadow-[0_0_20px_rgba(0,255,255,0.2)] bg-black relative pointer-events-auto">
+                    <!-- Tabs -->
+                    <div class="flex w-full border-b-2 border-accent">
+                        <div class="w-1/2 justify-center items-center flex py-4 bg-accent text-black font-vcr font-bold text-xl cursor-default">
                             LOGIN
-                        </h1>
+                        </div>
+                        <button id="tab-register" class="w-1/2 justify-center items-center flex py-4 bg-transparent hover:bg-white/5 text-text-muted hover:text-white font-vcr font-bold text-xl transition-colors cursor-pointer">
+                            REGISTER
+                        </button>
                     </div>
 
-                    <form id="login-form" class="flex flex-col gap-4">
-                        <input
-                            type="text"
-                            id="username"
-                            placeholder="Username"
-                            required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
-                        />
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="Password"
-                            required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted"
-                        />
-
-                         <div id="error-msg" class="text-primary text-xs text-center hidden font-vcr uppercase"></div>
-
-                        <button
-                            type="submit"
-                            class="mt-4 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong"
-                        >
-                            LOGIN
-                        </button>
-                    </form>
-
-                    <div class="flex flex-col items-center gap-3 mt-8 pt-4 border-t border-panel-border">
-                        <div class="flex gap-4 mb-2 w-full justify-center">
-                            <button id="login-42" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with 42">
-                                <span class="font-vcr font-bold text-white group-hover:text-accent">42</span>
+                    <div class="p-12 flex flex-col gap-8">
+                        <form id="login-form" class="flex flex-col gap-6">
+                            <input
+                                type="text"
+                                id="username"
+                                placeholder="Username"
+                                required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
+                            />
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="Password"
+                                required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
+                            />
+    
+                            <div id="error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+    
+                            <button
+                                type="submit"
+                                class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]"
+                            >
+                                LOGIN
                             </button>
-                            <button id="login-google" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with Google">
-                                <i class="fab fa-google text-white group-hover:text-accent text-lg"></i>
-                            </button>
-                            <button id="login-github" class="w-12 h-12 flex items-center justify-center rounded-full border border-panel-border hover:border-accent hover:shadow-glow hover:bg-accent/10 transition-all group" title="Login with GitHub">
-                                <i class="fab fa-github text-white group-hover:text-accent text-lg"></i>
+                        </form>
+    
+                        <div class="flex flex-col gap-6 items-center w-full">
+                             <div class="relative flex items-center w-full">
+                                <span class="mx-auto text-white font-vcr uppercase">OR</span>
+                            </div>
+                            
+                            <button id="login-google" class="w-full py-4 flex items-center justify-center gap-3 bg-transparent border border-accent hover:bg-accent/10 text-accent font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] group">
+                                <i class="fab fa-google text-lg"></i>
+                                <span>Login with Google</span>
                             </button>
                         </div>
-                        <span class="text-text-muted text-[10px] uppercase">NEW USER?</span>
-                        <a href="#" id="go-to-register" class="text-accent text-xs font-vcr uppercase tracking-widest hover:text-white transition-colors">
-                            Create an Account
-                        </a>
                     </div>
                 </div>
             </div>
@@ -74,6 +73,16 @@ export class LoginPage extends AbstractComponent {
             const errorDiv = this.$('#error-msg')!;
 
             try {
+                if (
+                    username.toLowerCase() == "snyysbevg" &&
+                    password.toLowerCase() == "tbgpuln!"
+                )
+                    throw new Error("Try again with ROT13");
+                else if (
+                    username.toLowerCase() == "fallforit" &&
+                    password.toLowerCase() == "gotchya!"
+                )
+                    throw new Error("Literally just read those values again.");
                 const result = await AuthService.getInstance().login(username, password);
                 if (!result.success) {
                     throw new Error(result.error || "Authentication Failed");
@@ -85,21 +94,12 @@ export class LoginPage extends AbstractComponent {
             }
         });
 
-        this.$('#login-42')?.addEventListener('click', async () => {
-            await AuthService.getInstance().loginWithSchool42();
-        });
-
         this.$('#login-google')?.addEventListener('click', async () => {
             await AuthService.getInstance().loginWithGoogle();
         });
 
-        this.$('#login-github')?.addEventListener('click', async () => {
-            await AuthService.getInstance().loginWithGithub();
-        });
-
-        this.$('#go-to-register')?.addEventListener('click', (e) => {
+        this.$('#tab-register')?.addEventListener('click', (e) => {
             e.preventDefault();
-            // We need to access App to navigate
             const app = (window as any).app;
             if (app) app.router.navigateTo('/register');
         });

@@ -166,7 +166,7 @@ test_ai_vs_player() {
     
     # Hoach edited - Updated to use HTTPS endpoint through nginx proxy
     # Start a game with AI opponent via API
-    local response=$(curl -sk -X POST https://localhost/api/game/games \
+    local response=$(curl -sk -X POST https://localhost:8443/api/game/games \
         -H "Content-Type: application/json" \
         -d '{"mode": "ai", "difficulty": "medium"}' 2>/dev/null)
     # Hoach edit ended
@@ -204,7 +204,7 @@ test_performance_testing() {
     
     # Check AI response time
     local start=$(date +%s%N)
-    curl -sk -X GET https://localhost/api/game/health > /dev/null
+    curl -sk -X GET https://localhost:8443/api/game/health > /dev/null
     local end=$(date +%s%N)
     local elapsed=$(( ($end - $start) / 1000000 ))
     

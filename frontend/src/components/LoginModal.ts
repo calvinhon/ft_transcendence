@@ -15,69 +15,63 @@ export class LoginModal extends AbstractComponent {
     getHtml(): string {
         return `
             <div class="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-                <div class="w-full max-w-[600px] p-8 border-2 border-accent rounded-xl shadow-[0_0_30px_rgba(41,182,246,0.2)] bg-black relative">
-                    <button id="modal-close-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white">
-                        <i class="fas fa-times"></i>
+                <div class="w-full max-w-[500px] border-2 border-accent shadow-[0_0_20px_rgba(0,255,255,0.2)] bg-black relative pointer-events-auto">
+                    <button id="modal-close-btn" class="absolute -top-10 right-0 text-white hover:text-accent transition-colors">
+                        <i class="fas fa-times text-2xl"></i>
                     </button>
-                    
-                    <div class="text-center mb-6">
-                        <h1 class="text-3xl text-white tracking-[4px] uppercase font-vcr" id="modal-title">
-                            ADD PLAYER
-                        </h1>
-                        <p class="text-xs text-gray-400 mt-2 font-vcr" id="modal-subtitle">Login to join the session</p>
-                    </div>
 
-                    <!-- LOGIN FORM -->
-                    <form id="modal-login-form" class="flex flex-col gap-4 ${this.isRegisterMode ? 'hidden' : ''}">
-                        <input type="text" id="login-username" placeholder="Username" required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted outline-none" />
-                        <input type="password" id="login-password" placeholder="Password" required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted outline-none" />
-                        
-                        <button type="submit" class="mt-2 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong">
+                    <!-- Tabs -->
+                    <div class="flex w-full border-b-2 border-accent">
+                        <button id="tab-login" class="w-1/2 justify-center items-center flex py-4 ${!this.isRegisterMode ? 'bg-accent text-black font-bold cursor-default' : 'bg-transparent text-text-muted hover:text-white cursor-pointer'} font-vcr text-xl transition-colors">
                             LOGIN
                         </button>
-                    </form>
+                        <button id="tab-register" class="w-1/2 justify-center items-center flex py-4 ${this.isRegisterMode ? 'bg-accent text-black font-bold cursor-default' : 'bg-transparent text-text-muted hover:text-white cursor-pointer'} font-vcr text-xl transition-colors">
+                            REGISTER
+                        </button>
+                    </div>
 
-                    <!-- REGISTER FORM -->
-                    <form id="modal-register-form" class="flex flex-col gap-4 ${this.isRegisterMode ? '' : 'hidden'}">
-                        <input type="text" id="reg-username" placeholder="Username" required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted outline-none" />
-                        <input type="email" id="reg-email" placeholder="Email" required
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted outline-none" />
-                        <input type="password" id="reg-password" placeholder="Password (min 6 chars)" required minlength="6"
-                            class="w-full p-4 bg-transparent border border-panel-border rounded text-white font-vcr focus:border-accent focus:shadow-glow transition-all placeholder:text-text-muted outline-none" />
+                    <div class="p-12 flex flex-col gap-8">
+                        <!-- LOGIN FORM -->
+                        <form id="modal-login-form" class="flex flex-col gap-6 ${this.isRegisterMode ? 'hidden' : ''}">
+                            <input type="text" id="login-username" placeholder="Username" required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
+                            <input type="password" id="login-password" placeholder="Password" required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
+                            
+                            <div id="login-error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+
+                            <button type="submit" class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]">
+                                LOGIN
+                            </button>
+                        </form>
+
+                        <!-- REGISTER FORM -->
+                        <form id="modal-register-form" class="flex flex-col gap-6 ${this.isRegisterMode ? '' : 'hidden'}">
+                            <input type="text" id="reg-username" placeholder="Username" required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
+                            <input type="email" id="reg-email" placeholder="Email" required
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
+                            <input type="password" id="reg-password" placeholder="Password" required minlength="6"
+                                class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
+                            
+                            <div id="reg-error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+
+                            <button type="submit" class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]">
+                                CREATE ACCOUNT
+                            </button>
+                        </form>
                         
-                        <button type="submit" class="mt-2 w-full py-4 bg-accent-dim hover:bg-accent border border-accent rounded text-white hover:text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-glow hover:shadow-glow-strong">
-                            CREATE ACCOUNT
-                        </button>
-                    </form>
-                    
-                    <!-- OAUTH SECTION -->
-                    <div class="my-6 flex items-center gap-4">
-                        <div class="h-[1px] bg-gray-800 flex-1"></div>
-                        <span class="text-[10px] text-gray-500 font-vcr">OR CONNECT WITH</span>
-                        <div class="h-[1px] bg-gray-800 flex-1"></div>
-                    </div>
-
-                    <div class="flex justify-center gap-4">
-                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="42">
-                            <img src="/assets/42_logo.svg" alt="42" class="w-6 h-6 invert" onerror="this.style.display='none';this.parentElement.innerHTML='42'">
-                        </button>
-                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="Google">
-                            <i class="fab fa-google text-white text-xl"></i>
-                        </button>
-                        <button class="oauth-btn w-12 h-12 rounded border border-gray-700 hover:border-white hover:bg-gray-800 transition-all flex items-center justify-center" data-provider="GitHub">
-                            <i class="fab fa-github text-white text-xl"></i>
-                        </button>
-                    </div>
-
-                    <div id="modal-error-msg" class="mt-4 text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
-                    
-                    <div class="mt-6 text-center pt-4 border-t border-gray-800">
-                        <p class="text-[10px] text-gray-500 font-vcr uppercase cursor-pointer hover:text-white transition-colors" id="toggle-mode-btn">
-                            ${this.isRegisterMode ? 'Already have an account? Login' : 'New Player? Create Account'}
-                        </p>
+                        <!-- GOOGLE LOGIN (Shared) -->
+                        <div class="flex flex-col gap-6 items-center w-full ${this.isRegisterMode ? 'hidden' : ''}">
+                             <div class="relative flex items-center w-full">
+                                <span class="mx-auto text-white font-vcr uppercase">OR</span>
+                            </div>
+                            
+                            <button class="oauth-btn w-full py-4 flex items-center justify-center gap-3 bg-transparent border border-accent hover:bg-accent/10 text-accent font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] group" data-provider="Google">
+                                <i class="fab fa-google text-lg"></i>
+                                <span>Login with Google</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -85,10 +79,19 @@ export class LoginModal extends AbstractComponent {
     }
 
     onMounted(): void {
-        // Toggle Logic
-        this.$('#toggle-mode-btn')?.addEventListener('click', () => {
-            this.isRegisterMode = !this.isRegisterMode;
-            this.render(); // Re-render to swap forms
+        // Tab Switching
+        this.$('#tab-login')?.addEventListener('click', () => {
+            if (this.isRegisterMode) {
+                this.isRegisterMode = false;
+                this.render();
+            }
+        });
+
+        this.$('#tab-register')?.addEventListener('click', () => {
+            if (!this.isRegisterMode) {
+                this.isRegisterMode = true;
+                this.render();
+            }
         });
 
         // Close
@@ -102,7 +105,7 @@ export class LoginModal extends AbstractComponent {
             e.preventDefault();
             const username = (this.$('#login-username') as HTMLInputElement).value;
             const password = (this.$('#login-password') as HTMLInputElement).value;
-            await this.handleAuthAction(() => AuthService.getInstance().verifyCredentials(username, password));
+            await this.handleAuthAction(() => AuthService.getInstance().verifyCredentials(username, password), 'login-error-msg');
         });
 
         // REGISTER SUBMIT
@@ -111,7 +114,7 @@ export class LoginModal extends AbstractComponent {
             const username = (this.$('#reg-username') as HTMLInputElement).value;
             const email = (this.$('#reg-email') as HTMLInputElement).value;
             const password = (this.$('#reg-password') as HTMLInputElement).value;
-            await this.handleAuthAction(() => AuthService.getInstance().registerUserOnly(username, email, password));
+            await this.handleAuthAction(() => AuthService.getInstance().registerUserOnly(username, email, password), 'reg-error-msg');
         });
 
         // OAUTH BUTTONS
@@ -119,24 +122,23 @@ export class LoginModal extends AbstractComponent {
             btn.addEventListener('click', async (e) => {
                 const provider = (e.currentTarget as HTMLElement).dataset.provider;
                 if (provider) {
-                    await this.handleAuthAction(() => AuthService.getInstance().authenticateViaOAuth(provider));
+                    await this.handleAuthAction(() => AuthService.getInstance().authenticateViaOAuth(provider), 'login-error-msg');
                 }
             });
         });
     }
 
-    private async handleAuthAction(action: () => Promise<{ success: boolean, user?: any, error?: string }>) {
-        const errorDiv = this.$('#modal-error-msg')!;
+    private async handleAuthAction(action: () => Promise<{ success: boolean, user?: any, error?: string }>, errorElementId: string) {
+        const errorDiv = this.$(`#${errorElementId}`)!;
         errorDiv.classList.add('hidden');
         errorDiv.innerText = '';
 
-        // Show loading state if desired (e.g. disable buttons)
-
         try {
             const result = await action();
+            // Wait for 100ms to allow popup to close if it was oauth
             if (result.success && result.user) {
                 this.onLoginSuccess(result.user);
-                this.destroy(); // Success!
+                this.destroy();
             } else {
                 throw new Error(result.error || "Authentication failed");
             }
@@ -160,16 +162,12 @@ export class LoginModal extends AbstractComponent {
     }
 
     public render(_containerId: string = ''): void {
-        // If already mounted, just update innerHTML to preserve container
-        // But re-binding events is easier with full replace or careful DOM updates.
-        // Simple approach: remove old, create new.
         if (this.container) {
-            this.container.innerHTML = this.getHtml(); // Update content (replaces children)
-            this.onMounted(); // Re-bind events
+            this.container.innerHTML = this.getHtml();
+            this.onMounted();
         } else {
-            // First mount
             const container = document.createElement('div');
-            container.className = 'pointer-events-auto'; // Ensure children are interactive
+            container.className = 'pointer-events-auto';
             this.container = container;
             container.innerHTML = this.getHtml();
 

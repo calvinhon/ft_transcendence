@@ -1,9 +1,13 @@
 import { AbstractComponent } from "../components/AbstractComponent";
+import { ThreeDGameRenderer } from "../components/ThreeDGameRenderer";
 import { GameRenderer } from "../components/GameRenderer";
+import { BabylonWrapper } from "../core/BabylonWrapper";
 import { GameService } from "../services/GameService";
 import { App } from "../core/App";
 import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
+import { WebGLService } from "../services/WebGLService";
+import { ConfirmationModal } from "../components/ConfirmationModal";
 
 const SNAP_THRESHOLD = 200; // Distance to snap rather than lerp. Higher = smoother for fast objects.
 
@@ -16,16 +20,19 @@ export class GamePage extends AbstractComponent {
     private isPaused: boolean = false;
     private animationFrameId: number | null = null;
     private startTime: Date | null = null;
+    private floatingHud: HTMLElement | null = null; // Floating HUD for 3D mode
+    private is3DMode: boolean = false;
 
     getHtml(): string {
         return `
-            <div id="game-screen" class="screen active w-full h-full bg-black p-2 border-[4px] border-accent box-border flex flex-col">
+            <div id="game-screen" class="screen active relative w-full h-full bg-black p-2 border-[4px] border-accent box-border flex flex-col">
                 <!-- Top Bar (HUD) -->
-                <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative">
+                <div class="w-full mx-auto mb-2 border border-white flex justify-between h-14 bg-black text-white relative z-20">
                     <!-- Left Player -->
                     <div class="flex items-center w-1/3 border-r border-white">
                         <div id="p1-avatar" class="w-14 h-full border-r border-white bg-cover bg-center" style="background-color: #333;"></div>
                         <span id="p1-name" class="pl-4 font-vcr uppercase truncate">Player 1</span>
+                        <span id="p1-score" class="ml-auto pr-4 font-vcr text-2xl text-accent">0</span>
                     </div>
 
                     <!-- Center Status -->
@@ -35,6 +42,7 @@ export class GamePage extends AbstractComponent {
 
                     <!-- Right Player -->
                     <div class="flex items-center justify-end w-1/3 border-l border-white">
+                        <span id="p2-score" class="mr-auto pl-4 font-vcr text-2xl text-accent">0</span>
                         <span id="p2-name" class="pr-4 font-vcr uppercase truncate">Player 2</span>
                         <div id="p2-avatar" class="w-14 h-full border-l border-white bg-cover bg-center" style="background-color: #333;"></div>
                     </div>
@@ -66,10 +74,38 @@ export class GamePage extends AbstractComponent {
             }
         }
 
-        this.renderer = new GameRenderer(canvas);
+        // Toggle Renderer
+        const canUse3D = WebGLService.getInstance().is3DModeEnabled();
+        if (setup.settings.use3D && canUse3D) {
+            console.log("3D Mode Enabled: Switching to Babylon Renderer");
+            this.is3DMode = true;
+            document.body.setAttribute('data-3d-game', 'true'); // Signal for modals
+            if (canvas) canvas.style.display = 'none'; // Hide 2D Canvas
+            const screen = this.$('#game-screen');
+            if (screen) {
+                screen.classList.remove('bg-black');
+                screen.classList.add('bg-transparent');
+                screen.style.display = 'none';
+            }
+            this.renderer = new ThreeDGameRenderer() as any;
 
-        window.addEventListener('keydown', this.handleKeyDown);
-        window.addEventListener('keyup', this.handleKeyUp);
+            // Create floating HUD for 3D mode (outside of HtmlMesh)
+            this.createFloatingHUD(setup);
+        } else {
+            // 2D Mode
+            if (canvas) canvas.style.display = 'block';
+            this.renderer = new GameRenderer(canvas);
+
+            // Safety: Tell Babylon to relax (disable tilt/camera updates) to prevent recursion crashes
+            // while HtmlMesh is displaying this 2D game.
+            if (canUse3D) {
+                BabylonWrapper.getInstanceIfEnabled()?.set2DGameActive(true);
+            }
+        }
+
+        // Use capture to ensure we get events before other elements swallow them
+        window.addEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.addEventListener('keyup', this.handleKeyUp, { capture: true });
 
         // Sanitize teams to ensure usernames are present
         const getName = (p: any) => {
@@ -86,18 +122,6 @@ export class GamePage extends AbstractComponent {
         this.p2Ids = sanitizedTeam2.map((p: any) => p.userId);
 
         console.log("Game IDs:", this.p1Ids, this.p2Ids);
-
-        const service = GameService.getInstance();
-        service.connect({
-            mode: setup.mode,
-            ballSpeed: setup.settings.ballSpeed,
-            paddleSpeed: setup.settings.paddleSpeed,
-            powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
-            accumulateOnHit: setup.settings.accumulateOnHit,
-            difficulty: setup.settings.difficulty,
-            scoreToWin: setup.settings.scoreToWin,
-            campaignLevel: setup.campaignLevel
-        } as any, sanitizedTeam1, sanitizedTeam2);
 
         // HUD Names and Avatars
         const p1Name = sanitizedTeam1.map((p: any) => p.username).join(', ') || 'PLAYER 1';
@@ -212,7 +236,7 @@ export class GamePage extends AbstractComponent {
                 this.animationFrameId = requestAnimationFrame(updateLoop);
             }
         };
-
+        const service = GameService.getInstance();
         service.onGameState(async (state) => {
             // Handle Non-GameState Events strictly
             if (state.type === 'gamePaused') {
@@ -240,9 +264,27 @@ export class GamePage extends AbstractComponent {
                 // --- Tracking Start Time ---
                 if (state && (state.gameState === 'playing' || state.type === 'gameStart') && !this.startTime) {
                     this.startTime = new Date();
+                }
+
+                targetState = state;
+
+                // Update Score DOM 
+                const lScore = state.leftScore !== undefined ? state.leftScore : (state.scores?.player1 ?? 0);
+                const rScore = state.rightScore !== undefined ? state.rightScore : (state.scores?.player2 ?? 0);
+
+                if (this.is3DMode) {
+                    // Update floating HUD for 3D mode
+                    this.updateFloatingHUD(lScore, rScore);
                 } else {
-                    targetState = state;
-                    // If loop stopped (e.g. resumed from pause), restart it
+                    // Update regular HUD for 2D mode
+                    const p1ScoreEl = this.$('#p1-score');
+                    const p2ScoreEl = this.$('#p2-score');
+                    if (p1ScoreEl) p1ScoreEl.innerText = lScore.toString();
+                    if (p2ScoreEl) p2ScoreEl.innerText = rScore.toString();
+                }
+
+                // Render frame
+                if (this.renderer) {
                     if (!this.animationFrameId) updateLoop();
                 }
             }
@@ -264,16 +306,14 @@ export class GamePage extends AbstractComponent {
                 if (this.isRecording) return;
                 this.isRecording = true;
 
-                // Save Game Result (ALL modes now)
-
                 // Scores are in state.scores.player1 and state.scores.player2
                 const p1Score = state.scores?.player1 ?? state.player1Score ?? 0;
                 const p2Score = state.scores?.player2 ?? state.player2Score ?? 0;
 
-                // Compute winnerId from scores if not provided
+                // Compute winnerId from scores if not provided (fallback for legacy/undefined)
+                // Note: We check undefined specifically because null is a valid "No Winner" state
                 let winnerId = state.winnerId;
-                if (winnerId === undefined || winnerId === null) {
-                    // Handle draws: if scores are equal, winnerId = 0
+                if (winnerId === undefined) {
                     if (p1Score === p2Score) {
                         winnerId = 0;
                     } else {
@@ -283,61 +323,56 @@ export class GamePage extends AbstractComponent {
 
                 console.log('Recording match with scores:', { p1Score, p2Score, winnerId, team1: setup.team1, team2: setup.team2, mode: setup.mode });
 
-                // --- TOURNAMENT LOGIC ---
-                if (setup.mode === 'tournament' && setup.tournamentId && setup.tournamentMatchId) {
-                    let finalScore1 = p1Score;
-                    let finalScore2 = p2Score;
-                    let recordWinner = winnerId;
-
-                    // If Team 1 user isn't the original Player 1, they swapped sides!
-                    if (setup.tournamentPlayer1Id && setup.team1[0].userId !== setup.tournamentPlayer1Id) {
-                        console.log("Detecting players swapped, swapping scores for tournament record");
-                        finalScore1 = p2Score;
-                        finalScore2 = p1Score;
-                        // Winner ID is likely correct from backend, but if it was based on P1/P2 slot...
-                        // Backend winnerId corresponds to User ID, so it should be correct regardless of slot.
-                    }
-
-                    // Manually record to tournament service with CORRECT scores
-                    // Note: This relies on TournamentService being imported
-                    const { TournamentService } = await import('../services/TournamentService');
-                    try {
-                        await TournamentService.getInstance().recordMatchResult(
-                            setup.tournamentId.toString(),
-                            setup.tournamentMatchId.toString(),
-                            recordWinner,
-                            finalScore1,
-                            finalScore2
-                        );
-                    } catch (err) {
-                        console.error("Frontend tournament record failed:", err);
-                    }
-                } else if (setup.mode === 'arcade' || setup.mode === 'campaign') {
-                    // ARCADE & CAMPAIGN Match History Recording
-                    // Handled by Backend GameScoring service automatically.
-                    // Frontend manual save caused duplicate entries (and incorrect "Bot 1" naming).
-                    console.log('Arcade/Campaign match finished. Saving handled by backend.');
+                // --- GAME RECORDING ---
+                // Backend handles game data save and (for tournament mode) posts match results to tournament-service.
+                if (setup.mode === 'arcade' || setup.mode === 'campaign') {
+                    console.log('Arcade/Campaign match finished. Backend handles save.');
                 }
 
                 // Add Auto-Return Timer UI
                 const container = this.$('.game-container');
                 if (container && !this.$('#game-over-overlay')) {
-                    const winnerId = state.winnerId || (state.scores?.player1 > state.scores?.player2 ? this.p1Ids[0] : this.p2Ids[0]);
-                    // Find winner name from setup teams
-                    let winnerName = `PLAYER ${winnerId === this.p1Ids[0] ? '1' : '2'}`;
-                    const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === winnerId);
-                    if (winnerObj) winnerName = winnerObj.username;
+                    // Use resolved winnerId
+                    const finalWinnerId = winnerId;
+
+                    // Find winner name
+                    let winnerName = 'NONE';
+                    if (finalWinnerId !== null && finalWinnerId !== 0) { // 0 could be Al-Ien, need to check if 0 is valid ID or No Winner?
+                        // If Al-Ien (0) is valid winner, we should handle it.
+                        // But finding in team array:
+                        const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === finalWinnerId);
+                        if (winnerObj) {
+                            winnerName = winnerObj.username;
+                        } else {
+                            winnerName = `PLAYER ${finalWinnerId === this.p1Ids[0] ? '1' : '2'}`;
+                        }
+                    } else if (finalWinnerId === 0) {
+                        // Check if Al-Ien logic applies or if it was the old Tie logic
+                        // If Al-Ien is in the game, 0 is a valid ID.
+                        const winnerObj = [...setup.team1, ...setup.team2].find((p: any) => p.userId === 0);
+                        if (winnerObj) winnerName = winnerObj.username || 'AI';
+                        else if (p1Score === p2Score) winnerName = 'NONE'; // Tie and no AI -> None
+                        else winnerName = 'AI'; // Assumption
+                    }
 
                     const overlay = document.createElement('div');
                     overlay.id = 'game-over-overlay';
-                    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 text-white font-pixel';
+                    if (this.is3DMode) {
+                        // In 3D mode, append to body and use fixed positioning
+                        overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[9999] text-white font-pixel';
+                        document.body.appendChild(overlay);
+                    } else {
+                        // In 2D mode, append to game container
+                        overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 text-white font-pixel';
+                        container.appendChild(overlay);
+                    }
+
                     overlay.innerHTML = `
                         <h1 class="text-4xl mb-4 text-neon-blue">GAME OVER</h1>
                         <p class="text-xl mb-8">WINNER: ${winnerName.toUpperCase()}</p>
                         <p class="text-sm text-gray-400">Returning to menu in <span id="return-countdown">5</span>...</p>
                         <button id="return-now-btn" class="mt-4 px-6 py-2 border border-accent hover:bg-accent/20">RETURN NOW</button>
                     `;
-                    container.appendChild(overlay);
 
                     let seconds = 5;
                     const countEl = overlay.querySelector('#return-countdown');
@@ -371,6 +406,20 @@ export class GamePage extends AbstractComponent {
                 }
             }
         });
+
+        service.connect({
+            mode: setup.mode,
+            ballSpeed: setup.settings.ballSpeed,
+            paddleSpeed: setup.settings.paddleSpeed,
+            powerups: (setup.settings as any).powerupsEnabled ?? setup.settings.powerups,
+            accumulateOnHit: setup.settings.accumulateOnHit,
+            difficulty: setup.settings.difficulty,
+            scoreToWin: setup.settings.scoreToWin,
+            campaignLevel: setup.campaignLevel,
+            tournamentId: setup.tournamentId,
+            tournamentMatchId: setup.tournamentMatchId,
+            tournamentPlayer1Id: setup.tournamentPlayer1Id
+        } as any, sanitizedTeam1, sanitizedTeam2);
     }
 
     private handleKeyDown = (e: KeyboardEvent) => {
@@ -400,15 +449,14 @@ export class GamePage extends AbstractComponent {
     }
 
     private updatePauseUI(): void {
-        const container = this.$('.game-container');
         const overlayId = 'pause-overlay';
-        const existingOverlay = this.$(`#${overlayId}`);
+        let existingOverlay = document.getElementById(overlayId);
 
         if (this.isPaused) {
-            if (container && !existingOverlay) {
+            if (!existingOverlay) {
                 const overlay = document.createElement('div');
                 overlay.id = overlayId;
-                overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40 text-white font-pixel';
+
                 overlay.innerHTML = `
                     <h1 class="text-4xl mb-4 text-neon-blue tracking-widest">PAUSED</h1>
                     <div class="flex flex-col gap-4 items-center">
@@ -417,11 +465,37 @@ export class GamePage extends AbstractComponent {
                     </div>
                     <p class="mt-6 text-[8px] text-gray-500 font-pixel tracking-widest uppercase">Press 'P' to Resume</p>
                 `;
-                container.appendChild(overlay);
+
+                if (this.is3DMode) {
+                    // In 3D Mode, the game is full-screen 3D. Pause menu should be a HUD on the screen glass.
+                    overlay.className = 'fixed inset-0 flex flex-col items-center justify-center bg-black/80 z-[9999] text-white font-pixel';
+                    document.body.appendChild(overlay);
+                } else {
+                    // In 2D Mode (Classic), the game might be projected onto a 3D monitor (HtmlMesh).
+                    // We must append to #game-screen so it lives INSIDE the HtmlMesh and appears on the monitor.
+                    overlay.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-[50] text-white font-pixel';
+
+                    const gameScreen = this.$('#game-screen');
+                    if (gameScreen) {
+                        gameScreen.appendChild(overlay);
+                    } else {
+                        // Fallback if screen not found (unlikely)
+                        document.body.appendChild(overlay);
+                    }
+                }
 
                 overlay.querySelector('#pause-resume-btn')?.addEventListener('click', () => this.togglePause());
                 overlay.querySelector('#pause-quit-btn')?.addEventListener('click', () => {
-                    if (confirm("Quit game?")) this.exitGame();
+                    const modalTarget = this.is3DMode
+                        ? document.body
+                        : document.getElementById('modal-container');
+
+                    new ConfirmationModal(
+                        "QUIT GAME? CURRENT PROGRESS WILL BE RECORDED.",
+                        () => this.exitGame(),
+                        () => { },
+                        'destructive'
+                    ).render(modalTarget as HTMLElement);
                 });
             }
         } else {
@@ -439,16 +513,41 @@ export class GamePage extends AbstractComponent {
         const setup = GameStateService.getInstance().getSetup();
         GameService.getInstance().disconnect();
 
+        // Remove Pause Overlay
+        const overlay = document.getElementById('pause-overlay');
+        if (overlay) overlay.remove();
+
+        // Remove Game Over Overlay
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        if (gameOverOverlay) gameOverOverlay.remove();
+
         let nextRoute = '/';
         if (setup && (setup.mode === 'tournament' || setup.tournamentId)) {
             nextRoute = '/tournament';
+        }
+
+        if (this.renderer && typeof (this.renderer as any).dispose === 'function') {
+            (this.renderer as any).dispose();
+            this.renderer = null;
         }
 
         GameStateService.getInstance().clearSetup();
         App.getInstance().router.navigateTo(nextRoute);
     }
 
+
     onDestroy(): void {
+        // Clean up 3D game mode signal
+        document.body.removeAttribute('data-3d-game');
+
+        window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
+
+        // Restore Babylon camera state if we were in 2D mode (re-enable tilt)
+        if (!this.is3DMode && WebGLService.getInstance().is3DModeEnabled()) {
+            BabylonWrapper.getInstanceIfEnabled()?.set2DGameActive(false);
+        }
+
         if (this.returnTimer) {
             clearInterval(this.returnTimer);
             this.returnTimer = null;
@@ -458,8 +557,113 @@ export class GamePage extends AbstractComponent {
             this.animationFrameId = null;
         }
 
-        window.removeEventListener('keydown', this.handleKeyDown);
-        window.removeEventListener('keyup', this.handleKeyUp);
+        // Remove Pause Overlay
+        const overlay = document.getElementById('pause-overlay');
+        if (overlay) overlay.remove();
+
+        // Clean up floating HUD
+        if (this.floatingHud) {
+            this.floatingHud.remove();
+            this.floatingHud = null;
+        }
+
+        // Remove Game Over Overlay
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        if (gameOverOverlay) gameOverOverlay.remove();
+
+        // Ensure renderer cleanup if not already done via exitGame
+        if (this.renderer && typeof (this.renderer as any).dispose === 'function') {
+            (this.renderer as any).dispose();
+            this.renderer = null;
+        }
+
+        window.removeEventListener('keydown', this.handleKeyDown, { capture: true });
+        window.removeEventListener('keyup', this.handleKeyUp, { capture: true });
         GameService.getInstance().disconnect();
+    }
+
+    private createFloatingHUD(setup: any): void {
+        // Create a floating HUD that sits on top of the Babylon canvas
+        // This is necessary because in 3D mode, the HtmlMesh (which contains #app) is disabled
+        const sanitizedTeam1 = setup.team1 || [];
+        const sanitizedTeam2 = setup.team2 || [];
+
+        const p1Name = sanitizedTeam1.map((p: any) => p.username || `User ${p.userId}`).join(', ') || 'PLAYER 1';
+        const p2Name = sanitizedTeam2.map((p: any) => p.username || `User ${p.userId}`).join(', ') || 'PLAYER 2';
+
+        const p1Avatar = sanitizedTeam1[0]?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(p1Name)}&background=0A0A0A&color=29B6F6`;
+        const p2Avatar = sanitizedTeam2[0]?.avatarUrl || (sanitizedTeam2[0]?.isBot ? 'https://ui-avatars.com/api/?name=AI&background=FF0000&color=FFF' : `https://ui-avatars.com/api/?name=${encodeURIComponent(p2Name)}&background=0A0A0A&color=29B6F6`);
+
+        this.floatingHud = document.createElement('div');
+        this.floatingHud.id = 'floating-game-hud';
+        this.floatingHud.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            pointer-events: none;
+            padding: 12px;
+        `;
+
+        this.floatingHud.innerHTML = `
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid #29b6f6;
+                padding: 8px 16px;
+                font-family: 'VCR OSD Mono', monospace;
+                color: white;
+            ">
+                <!-- Left Player -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background-image: url('${p1Avatar}');
+                        background-size: cover;
+                        background-position: center;
+                        border: 2px solid #29b6f6;
+                    "></div>
+                    <span style="text-transform: uppercase; font-size: 14px;">${p1Name}</span>
+                    <span id="floating-p1-score" style="font-size: 28px; color: #29b6f6; font-weight: bold;">0</span>
+                </div>
+                
+                <!-- Center -->
+                <div style="text-align: center;">
+                    <span id="floating-game-status" style="font-size: 12px; color: #888;">PLAYING</span>
+                </div>
+                
+                <!-- Right Player -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span id="floating-p2-score" style="font-size: 28px; color: #29b6f6; font-weight: bold;">0</span>
+                    <span style="text-transform: uppercase; font-size: 14px;">${p2Name}</span>
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        background-image: url('${p2Avatar}');
+                        background-size: cover;
+                        background-position: center;
+                        border: 2px solid #29b6f6;
+                    "></div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(this.floatingHud);
+    }
+
+    private updateFloatingHUD(leftScore: number, rightScore: number): void {
+        if (!this.floatingHud) return;
+
+        const p1ScoreEl = this.floatingHud.querySelector('#floating-p1-score');
+        const p2ScoreEl = this.floatingHud.querySelector('#floating-p2-score');
+
+        if (p1ScoreEl) p1ScoreEl.textContent = leftScore.toString();
+        if (p2ScoreEl) p2ScoreEl.textContent = rightScore.toString();
     }
 }
