@@ -26,7 +26,11 @@ RUN mkdir -p /app/database /app/auth-database && chown -R node:node /app/databas
 
 # Copy entrypoint to perform runtime initialization on mounts
 COPY ./auth-service/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+
+COPY ./auth-service/ca.crt /usr/local/share/ca.crt
+
+RUN chmod +x /app/entrypoint.sh && apk add curl jq
 
 ENTRYPOINT ["/app/entrypoint.sh"]
+
 CMD ["node", "dist/server.js"]

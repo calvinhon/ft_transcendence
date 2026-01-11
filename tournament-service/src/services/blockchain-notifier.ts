@@ -40,7 +40,7 @@ export async function notifyBlockchainRecordRanks(
 
   try {
     const secret = await getServerSecret();
-    const res = await fetch('http://blockchain-service:3000/record', {
+    const res = await fetch('https://blockchain-service:3000/record', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

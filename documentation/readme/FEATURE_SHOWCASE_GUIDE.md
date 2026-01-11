@@ -49,15 +49,15 @@ curl -k https://localhost:8443 2>&1 | grep -q "DOCTYPE" && echo "✅ Frontend Re
 make health
 
 # Or manually check each service (curl without jq)
-curl -s http://localhost:3001/health  # Auth Service
-curl -s http://localhost:3002/health  # Game Service
-curl -s http://localhost:3004/health  # User Service
-curl -s http://localhost:3003/health  # Tournament Service
+curl -s https://localhost:3001/health  # Auth Service
+curl -s https://localhost:3002/health  # Game Service
+curl -s https://localhost:3004/health  # User Service
+curl -s https://localhost:3003/health  # Tournament Service
 
 # Expected: {"status":"healthy"} or similar for each
 
 # With jq for pretty output (if installed):
-# curl -s http://localhost:3001/health | jq .
+# curl -s https://localhost:3001/health | jq .
 ```
 
 ---
@@ -67,7 +67,7 @@ curl -s http://localhost:3003/health  # Tournament Service
 ### Access the Application
 
 ```
-URL: http://localhost
+URL: https://localhost
 Browser: Chrome, Firefox, Safari (recommend Firefox)
 Resolution: 1920x1080 (for best display)
 Network: Local or via HTTPS at https://localhost:8443 (if HTTPS configured)
@@ -78,7 +78,7 @@ Network: Local or via HTTPS at https://localhost:8443 (if HTTPS configured)
 #### Feature: User Registration
 
 **Steps:**
-1. Open http://localhost in browser
+1. Open https://localhost in browser
 2. Click **"Register"** button
 3. Fill registration form:
    - Username: `testuser_demo`
@@ -393,7 +393,7 @@ cat /tmp/cookies.txt | grep -i "httponly"
 
 ```bash
 # Check blockchain transactions
-curl -s -X POST http://localhost:8545 \
+curl -s -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
@@ -436,7 +436,7 @@ curl -s -X POST http://localhost:8545 \
   
 - Internal Services (port 3001-3004): Use HTTP internally
   - No -k flag needed for internal API calls
-  - Example: `curl http://localhost:3001/health`
+  - Example: `curl https://localhost:3001/health`
 
 **Common curl flags you'll need:**
 ```bash
@@ -486,26 +486,26 @@ docker compose ps
 ```bash
 # Auth Service Health
 echo "=== Auth Service ==="
-curl -s http://localhost:3001/health
+curl -s https://localhost:3001/health
 
 # Game Service Health
 echo "=== Game Service ==="
-curl -s http://localhost:3002/health
+curl -s https://localhost:3002/health
 
 # User Service Health
 echo "=== User Service ==="
-curl -s http://localhost:3004/health
+curl -s https://localhost:3004/health
 
 # Tournament Service Health
 echo "=== Tournament Service ==="
-curl -s http://localhost:3003/health
+curl -s https://localhost:3003/health
 
 # Frontend Health
 echo "=== Frontend ==="
-curl -s http://localhost:8080 | head -1
+curl -s https://localhost:8080 | head -1
 
 # With jq for pretty printing (if installed):
-# curl -s http://localhost:3001/health | jq .
+# curl -s https://localhost:3001/health | jq .
 ```
 
 ### Authentication Testing
@@ -523,7 +523,7 @@ curl -k -s -X POST https://localhost:8443/register \
   }'
 
 # Method 2: Direct HTTP to auth service (for testing)
-curl -s -X POST http://localhost:3001/register \
+curl -s -X POST https://localhost:3001/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
@@ -556,7 +556,7 @@ curl -k -s -c /tmp/cookies.txt -X POST https://localhost:8443/login \
   }'
 
 # Method 2: Direct HTTP to auth service (for testing without HTTPS)
-curl -s -c /tmp/cookies.txt -X POST http://localhost:3001/login \
+curl -s -c /tmp/cookies.txt -X POST https://localhost:3001/login \
   -H "Content-Type: application/json" \
   -d '{
     "username": "terminaluser",
@@ -595,7 +595,7 @@ echo "User info from login: $TOKEN"
 TOKEN="your_token_here"
 USER_ID="1"  # Use the userId from login response
 
-curl -s -X GET http://localhost:3004/profile/$USER_ID \
+curl -s -X GET https://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected: User profile data with user info, stats, and settings
@@ -610,7 +610,7 @@ TOKEN="your_token_here"
 USER_ID="1"  # Use the userId from login response
 
 # Update user profile
-curl -s -X PUT http://localhost:3004/profile/$USER_ID \
+curl -s -X PUT https://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -631,7 +631,7 @@ TOKEN="your_token_here"
 USER_ID="1"  # Use the userId from login response
 
 # Fetch user stats (included in profile, or update stats endpoint if available)
-curl -s http://localhost:3004/profile/$USER_ID \
+curl -s https://localhost:3004/profile/$USER_ID \
   -H "Authorization: Bearer $TOKEN"
 
 # Expected response includes:
@@ -646,7 +646,7 @@ curl -s http://localhost:3004/profile/$USER_ID \
 TOKEN="your_token_here"
 
 # Create game
-curl -s -X POST http://localhost:3002/api/games/create \
+curl -s -X POST https://localhost:3002/api/games/create \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -665,12 +665,12 @@ curl -s -X POST http://localhost:3002/api/games/create \
 TOKEN="your_token_here"
 
 # List available games
-curl -s http://localhost:3002/api/games/available \
+curl -s https://localhost:3002/api/games/available \
   -H "Authorization: Bearer $TOKEN"
 
 # Join a game (extract gameId from previous response)
 GAME_ID="game_id_from_list"
-curl -s -X POST http://localhost:3002/api/games/$GAME_ID/join \
+curl -s -X POST https://localhost:3002/api/games/$GAME_ID/join \
   -H "Authorization: Bearer $TOKEN"
 
 # With jq for parsing: ... | jq '.data.gameId'
@@ -683,7 +683,7 @@ TOKEN="your_token_here"
 GAME_ID="game_id"
 
 # Record match end with score
-curl -s -X POST http://localhost:3002/api/games/$GAME_ID/finish \
+curl -s -X POST https://localhost:3002/api/games/$GAME_ID/finish \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -703,7 +703,7 @@ curl -s -X POST http://localhost:3002/api/games/$GAME_ID/finish \
 TOKEN="your_token_here"
 
 # Create new tournament
-curl -X POST http://localhost:3003/api/tournaments/create \
+curl -X POST https://localhost:3003/api/tournaments/create \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -717,7 +717,7 @@ curl -X POST http://localhost:3003/api/tournaments/create \
 
 ```bash
 # Get all tournaments
-curl -s http://localhost:3003/api/tournaments/list | jq '.[] | {id, name, status, participants}'
+curl -s https://localhost:3003/api/tournaments/list | jq '.[] | {id, name, status, participants}'
 ```
 
 #### View Tournament Details
@@ -727,7 +727,7 @@ TOKEN="your_token_here"
 TOURNAMENT_ID="tournament_id"
 
 # Get tournament with bracket
-curl -s http://localhost:3003/api/tournaments/$TOURNAMENT_ID \
+curl -s https://localhost:3003/api/tournaments/$TOURNAMENT_ID \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
@@ -771,7 +771,7 @@ sqlite3 game-service/database/games.db "SELECT id, player1_id, player2_id, winne
 
 ```bash
 # Get cluster health
-curl -s http://localhost:9200/_cluster/health | jq .
+curl -s https://localhost:9200/_cluster/health | jq .
 
 # Expected:
 # {
@@ -785,23 +785,23 @@ curl -s http://localhost:9200/_cluster/health | jq .
 
 ```bash
 # List all indices
-curl -s http://localhost:9200/_cat/indices?v
+curl -s https://localhost:9200/_cat/indices?v
 
 # Get index mapping
-curl -s http://localhost:9200/logs-*/_mapping | jq '.[] | .mappings.properties' | head -20
+curl -s https://localhost:9200/logs-*/_mapping | jq '.[] | .mappings.properties' | head -20
 ```
 
 #### Search Logs
 
 ```bash
 # Search game logs
-curl -s "http://localhost:9200/logs-game-*/_search?q=*" | jq '.hits.hits[] | {_id, _source}' | head -50
+curl -s "https://localhost:9200/logs-game-*/_search?q=*" | jq '.hits.hits[] | {_id, _source}' | head -50
 
 # Search authentication logs
-curl -s "http://localhost:9200/logs-auth-*/_search?q=login" | jq '.hits.hits[0:5]'
+curl -s "https://localhost:9200/logs-auth-*/_search?q=login" | jq '.hits.hits[0:5]'
 
 # Count logs by type
-curl -s "http://localhost:9200/_cat/indices" | awk '{print $3}' | sort | uniq -c
+curl -s "https://localhost:9200/_cat/indices" | awk '{print $3}' | sort | uniq -c
 ```
 
 ### Prometheus & Monitoring ❌ REMOVED
@@ -819,10 +819,10 @@ curl -s "http://localhost:9200/_cat/indices" | awk '{print $3}' | sort | uniq -c
 
 ```bash
 # Check each service's health directly
-curl http://localhost:3001/health  # Auth Service
-curl http://localhost:3002/health  # Game Service
-curl http://localhost:3003/health  # Tournament Service
-curl http://localhost:3004/health  # User Service
+curl https://localhost:3001/health  # Auth Service
+curl https://localhost:3002/health  # Game Service
+curl https://localhost:3003/health  # Tournament Service
+curl https://localhost:3004/health  # User Service
 ```
 
 All services should return:
@@ -839,20 +839,20 @@ All services should return:
 
 ```bash
 # List all scrape targets and their health
-curl -s http://localhost:9090/api/v1/targets
+curl -s https://localhost:9090/api/v1/targets
 
 # Query for services that are UP (only Prometheus and Vault)
-curl -s 'http://localhost:9090/api/v1/query?query=up'
+curl -s 'https://localhost:9090/api/v1/query?query=up'
 ```
 
 #### View Available Metrics
 
 ```bash
 # See all metric names Prometheus has collected
-curl -s http://localhost:9090/api/v1/label/__name__/values
+curl -s https://localhost:9090/api/v1/label/__name__/values
 
 # Query specific metrics (Go runtime, memory, etc.)
-curl -s 'http://localhost:9090/api/v1/query?query=go_runtime_go_goroutines'
+curl -s 'https://localhost:9090/api/v1/query?query=go_runtime_go_goroutines'
 ```
 
 #### Future: Add Metrics to Microservices
@@ -883,18 +883,18 @@ Once implemented, the dashboard will automatically display:
 
 ```bash
 # Get current block number
-curl -s -X POST http://localhost:8545 \
+curl -s -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' | jq '.result'
 
 # Get accounts
-curl -s -X POST http://localhost:8545 \
+curl -s -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' | jq '.result'
 
 # Get balance
 ACCOUNT="0x..."  # Use account from above
-curl -s -X POST http://localhost:8545 \
+curl -s -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getBalance\",\"params\":[\"$ACCOUNT\",\"latest\"],\"id\":1}" | jq '.result'
 ```
@@ -903,11 +903,11 @@ curl -s -X POST http://localhost:8545 \
 
 ```bash
 # Get contract address
-curl -s http://localhost:3003/api/blockchain/contract-address | jq .
+curl -s https://localhost:3003/api/blockchain/contract-address | jq .
 
 # Check contract state
 CONTRACT_ADDR="0x..."
-curl -s -X POST http://localhost:8545 \
+curl -s -X POST https://localhost:8545 \
   -H "Content-Type: application/json" \
   -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"$CONTRACT_ADDR\",\"latest\"],\"id\":1}" | jq '.result'
 ```
@@ -949,10 +949,10 @@ curl -s -X POST http://localhost:8545 \
 sudo apt install apache2-utils
 
 # Load test the frontend
-ab -n 100 -c 10 http://localhost/
+ab -n 100 -c 10 https://localhost/
 
 # Load test API
-ab -n 100 -c 10 http://localhost:3001/health
+ab -n 100 -c 10 https://localhost:3001/health
 
 # Results should show < 100ms avg response time
 ```
@@ -973,7 +973,7 @@ wscat -c ws://localhost:3002/ws/game/live
 sudo tc qdisc add dev lo root netem delay 100ms
 
 # Run tests
-curl http://localhost
+curl https://localhost
 
 # Remove latency
 sudo tc qdisc del dev lo root
@@ -984,7 +984,7 @@ sudo tc qdisc del dev lo root
 ```bash
 # Create 1000 test users
 for i in {1..100}; do
-  curl -X POST http://localhost:3001/api/auth/register \
+  curl -X POST https://localhost:3001/api/auth/register \
     -H "Content-Type: application/json" \
     -d "{
       \"username\": \"stresstest_$i\",
@@ -1022,7 +1022,7 @@ make start
 docker compose logs auth-service | tail -50
 
 # Verify token endpoint
-curl -X POST http://localhost:3001/api/auth/login \
+curl -X POST https://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"testuser_demo","password":"SecurePass123!"}' -v
 
@@ -1033,7 +1033,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 
 ```bash
 # Verify game service
-curl http://localhost:3002/health
+curl https://localhost:3002/health
 
 # Check browser console for errors
 # F12 → Console tab
@@ -1042,7 +1042,7 @@ curl http://localhost:3002/health
 curl -i -N \
   -H "Connection: Upgrade" \
   -H "Upgrade: websocket" \
-  http://localhost:3002/ws/game/live
+  https://localhost:3002/ws/game/live
 ```
 
 ### Database Issues
@@ -1063,13 +1063,13 @@ docker compose logs -f auth-service | grep -i "connected"
 
 ```bash
 # Check cluster health
-curl http://localhost:9200/_cluster/health
+curl https://localhost:9200/_cluster/health
 
 # Restart Elasticsearch
 docker compose restart elasticsearch
 
 # Wait for green status
-while [ "$(curl -s http://localhost:9200/_cluster/health | jq -r .status)" != "green" ]; do
+while [ "$(curl -s https://localhost:9200/_cluster/health | jq -r .status)" != "green" ]; do
   echo "Waiting for ES..."
   sleep 2
 done
@@ -1120,12 +1120,12 @@ make clean
 sqlite3 auth-service/database/auth.db
 
 # Check Elasticsearch
-curl http://localhost:9200
+curl https://localhost:9200
 
 # Access Grafana
-open http://localhost:3000
+open https://localhost:3000
 # Or via command line:
-# curl http://localhost:3000
+# curl https://localhost:3000
 ```
 
 ---
@@ -1134,7 +1134,7 @@ open http://localhost:3000
 
 ### Access Grafana
 
-**URL:** `http://localhost:3000`
+**URL:** `https://localhost:3000`
 
 **Default Credentials:**
 - **Username:** `admin`
@@ -1142,7 +1142,7 @@ open http://localhost:3000
 
 ### First Time Login
 
-1. Open browser and navigate to `http://localhost:3000`
+1. Open browser and navigate to `https://localhost:3000`
 2. You'll see the Grafana login page
 3. Enter credentials:
    - Username: `admin`
@@ -1196,10 +1196,10 @@ docker compose up prometheus -d
 sleep 180
 
 # Check if Prometheus is collecting data and scraping targets
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
+curl -s https://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health}'
 
 # Verify Prometheus is responding
-curl -s http://localhost:9090/-/healthy
+curl -s https://localhost:9090/-/healthy
 
 # Refresh Grafana dashboard (F5 in browser) - data will populate as Prometheus collects metrics
 # Note: First data collection may take 1-5 minutes for services to report metrics
@@ -1214,10 +1214,10 @@ curl -s http://localhost:9090/-/healthy
 **Option 2: View Service Health Without Prometheus**
 ```bash
 # Check individual service health via API
-curl http://localhost:3001/health  # Auth Service
-curl http://localhost:3002/health  # Game Service
-curl http://localhost:3003/health  # Tournament Service
-curl http://localhost:3004/health  # User Service
+curl https://localhost:3001/health  # Auth Service
+curl https://localhost:3002/health  # Game Service
+curl https://localhost:3003/health  # Tournament Service
+curl https://localhost:3004/health  # User Service
 ```
 
 #### Viewing Metrics for Each Service (When Prometheus is Running)
@@ -1241,23 +1241,23 @@ Once Prometheus is running and the dashboard refreshes, you can:
 
 ```bash
 # Check Grafana health
-curl -s http://localhost:3000/api/health
+curl -s https://localhost:3000/api/health
 
 # List configured data sources
-curl -s -u admin:admin http://localhost:3000/api/datasources
+curl -s -u admin:admin https://localhost:3000/api/datasources
 
 # List available dashboards
-curl -s -u admin:admin http://localhost:3000/api/search
+curl -s -u admin:admin https://localhost:3000/api/search
 
 # Get specific dashboard
-curl -s -u admin:admin http://localhost:3000/api/dashboards/db/dashboard-name
+curl -s -u admin:admin https://localhost:3000/api/dashboards/db/dashboard-name
 ```
 
 ### Troubleshooting Grafana
 
 ```bash
 # Check if Grafana is running
-curl http://localhost:3000
+curl https://localhost:3000
 
 # View Grafana logs
 docker compose logs -f grafana
@@ -1276,7 +1276,7 @@ docker compose exec grafana grafana-cli
 1. **Open Grafana**
    ```bash
    # Open in browser
-   http://localhost:3000
+   https://localhost:3000
    ```
 
 2. **Login** (if not already logged in)
