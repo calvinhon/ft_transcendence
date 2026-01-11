@@ -166,10 +166,6 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       sendError(reply, 'Error fetching online users', 500);
     }
   });
-
-
-
-
 }
 
 export default gameRoutes;

@@ -806,6 +806,8 @@ export class MainMenuPage extends AbstractComponent {
                     'ARE YOU SURE YOU WANT TO LOGOUT?',
                     () => {
                         AuthService.getInstance().logout();
+                        // Force full page reload to properly show login page
+                        window.location.href = '/login';
                     },
                     () => { },
                     'warning'
