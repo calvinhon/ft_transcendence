@@ -1,8 +1,3 @@
-# Docker Compose - Combined Configuration
-# Use profiles to control which services start:
-# - Default: Core services only (fast development)
-# UPDATED: Added health checks for improved container orchestration reliability
-
 services:
   vault:
     build: ./vault
@@ -231,12 +226,32 @@ networks:
 volumes:
   hardhat-data:
   auth-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./auth-service/database/"
   game-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./game-service/database/"
   tournament-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./tournament-service/database/"
   user-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./user-service/database/"
   vault-db:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: '${PWD}/vault/data'
+      device: './vault/data'

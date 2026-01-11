@@ -22,9 +22,6 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# Ensure database directories exist in image layer
-RUN mkdir -p /app/database /app/game-database && chown -R node:node /app/database /app/game-database || true
-
 # Copy entrypoint to perform runtime initialization on mounts
 COPY ./game-service/entrypoint.sh /app/entrypoint.sh
 

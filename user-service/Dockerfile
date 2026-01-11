@@ -25,9 +25,6 @@ RUN npm prune --production
 # Install su-exec so we can drop privileges at runtime
 RUN apk add --no-cache su-exec
 
-# Ensure database directories exist in image layer
-RUN mkdir -p /app/database /app/user-database && chown -R node:node /app/database /app/user-database || true
-
 # Copy entrypoint to perform runtime initialization on mounts
 COPY ./user-service/entrypoint.sh /app/entrypoint.sh
 

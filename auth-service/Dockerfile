@@ -21,9 +21,6 @@ RUN npm run build
 # Remove devDependencies after build
 RUN npm prune --production
 
-# Ensure database directories exist in image layer
-RUN mkdir -p /app/database /app/auth-database && chown -R node:node /app/database /app/auth-database || true
-
 # Copy entrypoint to perform runtime initialization on mounts
 COPY ./auth-service/entrypoint.sh /app/entrypoint.sh
 
