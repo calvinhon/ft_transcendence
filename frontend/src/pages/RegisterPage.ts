@@ -47,7 +47,7 @@ export class RegisterPage extends AbstractComponent {
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
                             />
     
-                            <div id="error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+                            <div id="error-msg" class="text-red-500 text-xs text-center min-h-[18px] opacity-0 transition-opacity duration-200 font-vcr uppercase"></div>
     
                             <button
                                 type="submit"
@@ -64,20 +64,36 @@ export class RegisterPage extends AbstractComponent {
 
     onMounted(): void {
         const form = this.$('#register-form');
+        const errorDiv = this.$('#error-msg')!;
+
+        const hideError = () => {
+            errorDiv.textContent = '';
+            errorDiv.classList.add('opacity-0');
+            errorDiv.classList.remove('opacity-100');
+        };
+
+        const showError = (message: string) => {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('opacity-0');
+            errorDiv.classList.add('opacity-100');
+        };
+
+        hideError();
+
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = (this.$('#register-username') as HTMLInputElement).value;
             const email = (this.$('#register-email') as HTMLInputElement).value;
             const password = (this.$('#register-password') as HTMLInputElement).value;
-            const errorDiv = this.$('#error-msg')!;
+
+            hideError();
 
             try {
                 await AuthService.getInstance().register(username, email, password);
                 // On success, maybe auto-login or redirect to login? 
                 // Let's rely on AuthService to handle or just redirect to login manually for now if it doesn't auto-login.
             } catch (err: any) {
-                errorDiv.textContent = err.message || "Registration Failed";
-                errorDiv.classList.remove('hidden');
+                showError(err.message || "Registration Failed");
             }
         });
 

@@ -38,7 +38,7 @@ export class LoginPage extends AbstractComponent {
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted"
                             />
     
-                            <div id="error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+                            <div id="error-msg" class="text-red-500 text-xs text-center min-h-[18px] opacity-0 transition-opacity duration-200 font-vcr uppercase"></div>
     
                             <button
                                 type="submit"
@@ -66,11 +66,28 @@ export class LoginPage extends AbstractComponent {
 
     onMounted(): void {
         const form = this.$('#login-form');
+        const errorDiv = this.$('#error-msg')!;
+
+        const hideError = () => {
+            errorDiv.textContent = '';
+            errorDiv.classList.add('opacity-0');
+            errorDiv.classList.remove('opacity-100');
+        };
+
+        const showError = (message: string) => {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('opacity-0');
+            errorDiv.classList.add('opacity-100');
+        };
+
+        hideError();
+
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = (this.$('#username') as HTMLInputElement).value;
             const password = (this.$('#password') as HTMLInputElement).value;
-            const errorDiv = this.$('#error-msg')!;
+
+            hideError();
 
             try {
                 if (
@@ -89,8 +106,7 @@ export class LoginPage extends AbstractComponent {
                 }
                 // Router navigation happens in AuthService on success
             } catch (err: any) {
-                errorDiv.textContent = err.message || "Authentication Failed";
-                errorDiv.classList.remove('hidden');
+                showError(err.message || "Authentication Failed");
             }
         });
 

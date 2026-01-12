@@ -38,7 +38,7 @@ export class LoginModal extends AbstractComponent {
                             <input type="password" id="login-password" placeholder="Password" required
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
                             
-                            <div id="login-error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+                            <div id="login-error-msg" class="text-red-500 text-xs text-center min-h-[18px] opacity-0 transition-opacity duration-200 font-vcr uppercase"></div>
 
                             <button type="submit" class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]">
                                 LOGIN
@@ -54,7 +54,7 @@ export class LoginModal extends AbstractComponent {
                             <input type="password" id="reg-password" placeholder="Password" required minlength="6"
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
                             
-                            <div id="reg-error-msg" class="text-red-500 text-xs text-center hidden font-vcr uppercase"></div>
+                            <div id="reg-error-msg" class="text-red-500 text-xs text-center min-h-[18px] opacity-0 transition-opacity duration-200 font-vcr uppercase"></div>
 
                             <button type="submit" class="w-full py-4 bg-accent hover:bg-accent-hover text-black font-bold font-vcr uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,255,255,0.4)] hover:shadow-[0_0_25px_rgba(0,255,255,0.6)]">
                                 CREATE ACCOUNT
@@ -130,8 +130,19 @@ export class LoginModal extends AbstractComponent {
 
     private async handleAuthAction(action: () => Promise<{ success: boolean, user?: any, error?: string }>, errorElementId: string) {
         const errorDiv = this.$(`#${errorElementId}`)!;
-        errorDiv.classList.add('hidden');
-        errorDiv.innerText = '';
+        const hideError = () => {
+            errorDiv.textContent = '';
+            errorDiv.classList.add('opacity-0');
+            errorDiv.classList.remove('opacity-100');
+        };
+
+        const showError = (message: string) => {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('opacity-0');
+            errorDiv.classList.add('opacity-100');
+        };
+
+        hideError();
 
         try {
             const result = await action();
@@ -143,8 +154,7 @@ export class LoginModal extends AbstractComponent {
                 throw new Error(result.error || "Authentication failed");
             }
         } catch (err: any) {
-            errorDiv.textContent = err.message || "Error occurred";
-            errorDiv.classList.remove('hidden');
+            showError(err.message || "Error occurred");
         }
     }
 
