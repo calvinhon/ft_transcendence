@@ -1,8 +1,7 @@
 // tournament-service/src/routes/tournament/crud.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { TournamentService } from '../../services/tournamentService';
-import { CreateTournamentBody, TournamentQuery } from '../../types';
-import { sendSuccess, sendError, sendHealthCheck, createLogger } from '@ft-transcendence/common';
+import { sendSuccess, sendError, createLogger } from '@ft-transcendence/common';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 

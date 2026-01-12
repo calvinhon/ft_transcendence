@@ -53,12 +53,6 @@ export interface MatchResultBody {
   player2Score: number;
 }
 
-export interface TournamentQuery {
-  status?: string;
-  limit?: string;
-  page?: string;
-}
-
 export interface TournamentDetails {
   tournament: Tournament;
   participants: TournamentParticipant[];
@@ -97,40 +91,9 @@ export interface MatchToCreate {
   matchNumber: number;
 }
 
-export interface BlockchainRanking {
-  userId: number;
-  rank: number;
-  address?: string;
-}
-
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
-}
-
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface TournamentStats {
-  totalTournaments: number;
-  activeTournaments: number;
-  completedTournaments: number;
-  totalParticipants: number;
-}
-
-export interface LeaderboardEntry {
-  userId: number;
-  username?: string;
-  tournamentsWon: number;
-  totalMatches: number;
-  winRate: number;
-  currentRank: number;
 }

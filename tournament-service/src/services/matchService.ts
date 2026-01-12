@@ -5,7 +5,7 @@ import { dbRun, dbGet, dbAll } from '../database';
 import { TournamentMatch, MatchResultBody } from '../types';
 import { createLogger } from '@ft-transcendence/common';
 import { ParticipantService } from './participantService';
-import { notifyBlockchainRecordRanks } from './blockchain-notifier';
+import { notifyBlockchainRecordRanks } from './blockchainNotifier';
 
 const logger = createLogger('TOURNAMENT-SERVICE');
 

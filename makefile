@@ -42,6 +42,7 @@ dev: check-docker check-compose
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
 	@echo "🚀 Starting all services for development (uses build cache)..."
 	docker compose up -d --build
+	@sleep 5
 	@$(MAKE) open
 	@echo "✅ All services started! Visit https://localhost:8443"
 
@@ -195,6 +196,8 @@ open:
 			powershell.exe -c "Start-Process 'https://localhost:8443'" 2>/dev/null || \
 			echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
 		fi \
+	elif command -v firefox >/dev/null 2>&1; then \
+		firefox https://localhost:8443 >/dev/null 2>&1 & \
 	elif command -v xdg-open >/dev/null 2>&1; then \
 		xdg-open https://localhost:8443; \
 	else \
