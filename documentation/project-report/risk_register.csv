@@ -1,6 +1,0 @@
-id,description,likelihood,impact,owner,mitigation
-1,Server downtime during peak testing,2,4,DevOps,Set up monitoring + alerting + restart scripts
-2,SQL injection attempt in legacy code,1,5,Backend,Parameterize queries + WAF rules
-3,Data leak via misconfigured logs,2,4,Security,Redact PII in logs + restrict access
-4,OAuth provider downtime,3,3,Auth Team,Provide alternative login methods
-5,Blockchain hardhat node failure,1,4,Blockchain Team,Automated backup and local fallback
