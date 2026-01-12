@@ -105,6 +105,13 @@ export class AuthService {
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                 }
+                
+                // Hoach added Load campaign progress for the authenticated user
+                const { CampaignService } = await import('./CampaignService');
+                CampaignService.getInstance().loadLevel().catch(err => {
+                    console.warn('Failed to load campaign level after session check:', err);
+                });
+                // Hoach add ended
                 return true;
             }
 
@@ -117,6 +124,13 @@ export class AuthService {
                         const user = JSON.parse(storedUser);
                         console.log("AuthService: Using stored user data for", user.username);
                         App.getInstance().currentUser = user;
+                        //
+                        // Load campaign progress for the authenticated user
+                        const { CampaignService } = await import('./CampaignService');
+                        CampaignService.getInstance().loadLevel().catch(err => {
+                            console.warn('Failed to load campaign level after session check:', err);
+                        });
+                        
                         return true;
                     } catch (e) {
                         console.warn("AuthService: Failed to parse stored user data", e);
@@ -335,5 +349,11 @@ export class AuthService {
             console.log('AuthService: No sessionId provided, skipping session establishment');
         }
         App.getInstance().currentUser = user;
+        
+        // Load campaign progress for the authenticated user
+        const { CampaignService } = await import('./CampaignService');
+        CampaignService.getInstance().loadLevel().catch(err => {
+            console.warn('Failed to load campaign level after auth:', err);
+        });
     }
 }

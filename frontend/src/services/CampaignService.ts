@@ -5,6 +5,7 @@ export class CampaignService {
     private static instance: CampaignService;
     private currentLevel: number = 1;
     private readonly MAX_LEVEL = 3;
+    private levelLoaded: boolean = false;
 
     private constructor() {}
 
@@ -18,7 +19,46 @@ export class CampaignService {
     public getCurrentLevel(): number {
         return this.currentLevel;
     }
+// Hoach Added
+    public async loadLevel(): Promise<void> {
+        const user = AuthService.getInstance().getCurrentUser();
+        if (!user) {
+            this.currentLevel = 1;
+            this.levelLoaded = true;
+            return;
+        }
 
+        try {
+            // Try to load from backend first
+            const response = await Api.get(`/api/user/profile/${user.userId}`);
+            if (response && typeof response.campaign_level === 'number') {
+                this.currentLevel = Math.max(1, Math.min(response.campaign_level, this.MAX_LEVEL));
+                // Sync to localStorage
+                localStorage.setItem(`campaign_level_${user.userId}`, this.currentLevel.toString());
+                this.levelLoaded = true;
+                console.log(`Campaign level loaded from database: ${this.currentLevel}`);
+                return;
+            }
+        } catch (e) {
+            console.warn('Failed to load campaign level from backend, trying localStorage', e);
+        }
+
+        // Fallback to localStorage
+        const stored = localStorage.getItem(`campaign_level_${user.userId}`);
+        if (stored) {
+            const level = parseInt(stored, 10);
+            if (!isNaN(level)) {
+                this.currentLevel = Math.max(1, Math.min(level, this.MAX_LEVEL));
+                this.levelLoaded = true;
+                return;
+            }
+        }
+
+        // Default to level 1
+        this.currentLevel = 1;
+        this.levelLoaded = true;
+    }
+// Hoach add ended
     public getMaxLevel(): number {
         return this.MAX_LEVEL;
     }

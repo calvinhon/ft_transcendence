@@ -58,6 +58,11 @@ export class MainMenuPage extends AbstractComponent {
         super();
         this.setTitle('Main Menu');
 
+        // Load campaign level from database
+        CampaignService.getInstance().loadLevel().catch(err => {
+            console.warn('Failed to load campaign level:', err);
+        });
+
         // Initialize Host in LocalPlayerService with full profile (including avatar)
         const currentUser = AuthService.getInstance().getCurrentUser();
         if (currentUser) {
