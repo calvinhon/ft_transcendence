@@ -9,11 +9,11 @@ export async function logoutHandler(request: FastifyRequest, reply: FastifyReply
     return console.log('ProfileHandler'),sendError(reply, "Unauthorized", 401);
 
   try {
-    // Clear the session cookie
+    // Keep cookie options in sync with what fastify-session registered
     reply.clearCookie('sessionId', {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/'
     });
     await request.session.destroy();

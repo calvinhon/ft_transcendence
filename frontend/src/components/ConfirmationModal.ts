@@ -4,11 +4,11 @@ export type ConfirmVariant = 'destructive' | 'warning' | 'neutral';
 
 export class ConfirmationModal extends AbstractComponent {
     private message: string;
-    private onConfirm: () => void;
+    private onConfirm: () => void | Promise<void>;
     private onCancel: () => void;
     private variant: ConfirmVariant;
 
-    constructor(message: string, onConfirm: () => void, onCancel: () => void = () => { }, variant: ConfirmVariant = 'warning') {
+    constructor(message: string, onConfirm: () => void | Promise<void>, onCancel: () => void = () => { }, variant: ConfirmVariant = 'warning') {
         super();
         this.message = message;
         this.onConfirm = onConfirm;
@@ -106,9 +106,9 @@ export class ConfirmationModal extends AbstractComponent {
     }
 
     onMounted(): void {
-        this.$('#confirm-yes-btn')?.addEventListener('click', () => {
+        this.$('#confirm-yes-btn')?.addEventListener('click', async () => {
             this.destroy();
-            this.onConfirm();
+            await this.onConfirm();
         });
 
         this.$('#confirm-no-btn')?.addEventListener('click', () => {

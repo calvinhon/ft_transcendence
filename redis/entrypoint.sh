@@ -23,4 +23,4 @@ echo "$RESPONSE" | jq -r '.data.issuing_ca' > $HTTPS_CA_PATH
 exec redis-server --tls-port 6379 --port 0 --tls-cert-file $HTTPS_CERT_PATH --tls-key-file $HTTPS_KEY_PATH --tls-ca-cert-file $HTTPS_CA_PATH --tls-auth-clients yes
 
 
-docker exec redis redis-cli --tls --cert /redis/certs/redis-cert.pem --key /redis/certs/redis-key.pem --cacert /redis/certs/redis-ca.pem KEYS "*"
+# docker exec redis redis-cli --tls --cert /redis/certs/redis-cert.pem --key /redis/certs/redis-key.pem --cacert /redis/certs/redis-ca.pem KEYS "*"

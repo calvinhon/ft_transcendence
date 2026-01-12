@@ -64,7 +64,7 @@ export class AuthService {
         }
     }
 
-    public logout(): void {
+    public async logout(): Promise<void> {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
 
@@ -72,7 +72,11 @@ export class AuthService {
         LocalPlayerService.getInstance().clearAllPlayers();
 
         App.getInstance().currentUser = null;
-        Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
+        try {
+            await Api.post('/api/auth/logout', {});
+        } catch (e) {
+            console.warn('Logout API call failed', e)
+        }
         App.getInstance().router.navigateTo('/login');
     }
 

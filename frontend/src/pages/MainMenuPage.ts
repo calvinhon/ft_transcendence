@@ -809,10 +809,9 @@ export class MainMenuPage extends AbstractComponent {
             if (logoutBtn) {
                 new ConfirmationModal(
                     'ARE YOU SURE YOU WANT TO LOGOUT?',
-                    () => {
-                        AuthService.getInstance().logout();
-                        // Force full page reload to properly show login page
-                        window.location.href = '/login';
+                    async () => {
+                        await AuthService.getInstance().logout();
+                        // logout() already navigates to /login, no need for window.location.href
                     },
                     () => { },
                     'warning'
