@@ -32,7 +32,7 @@ function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: {
 }
 
 // Hoach edited
-export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { provider: string; prompt?: string } }>, reply: FastifyReply): Promise<void> {
+export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { provider: string; prompt?: string; mode?: string } }>, reply: FastifyReply): Promise<void> {
 	// Check for invalid provider
 	if (request.query.provider !== 'Google')
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
@@ -49,7 +49,7 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 			return generateOAuthPopupResponse(reply, 500, { success: false, error: err.message });
 		}
 	}
-
+	
 	// Create state token to prevent CSRF attacks
 	const state = randomBytes(16).toString('hex');
 
@@ -143,11 +143,11 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			console.log('Image update for existing user failed');
 		}
 
-		if (!request.session.authenticated) {
-			request.session.userId = Number(user.userId);
-			request.session.authenticated = true;
-			await request.session.save();
-		}
+		// Always update session for OAuth login
+		request.session.userId = Number(user.userId);
+		request.session.authenticated = true;
+		await request.session.save();
+		console.log('Session updated for main Google login');
 
 		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email }, sessionId: request.session.sessionId });
 	} else { // register the new user
@@ -184,11 +184,11 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			console.log('Something went wrong');
 		}
 
-		if (!request.session.authenticated) {
-			request.session.userId = Number(user.userId);
-			request.session.authenticated = true;
-			await request.session.save();
-		}
+		// Always update session for OAuth login
+		request.session.userId = Number(user.userId);
+		request.session.authenticated = true;
+		await request.session.save();
+		console.log('Session updated for new Google user (main login)');
 
 		return generateOAuthPopupResponse(reply, 200, { success: true, user: { userId: user.id, username: user.username, email: user.email }, sessionId: request.session.sessionId });
 	}

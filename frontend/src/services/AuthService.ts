@@ -32,9 +32,6 @@ export class AuthService {
 
             if (response.success) {
                 this.handleAuthSuccess(token, user);
-                // Hoach edited - Clear OAuth state to prevent conflicts on refresh
-                sessionStorage.removeItem('oauth_pending');
-                // Hoach edit ended
                 if (navigateToHome) {
                     App.getInstance().router.navigateTo('/');
                 }
@@ -156,10 +153,36 @@ export class AuthService {
                 return true;
             }
 
-            //Hoach edited - REMOVED localStorage fallback to prevent session override
-            // If backend says valid but no user data, that's an error - don't use stale localStorage
+            //Hoach edited
+            // Backend says valid but no user data - check localStorage for stored user
             if (data.valid) {
-                console.warn("AuthService: Backend says valid but returned no user data - this shouldn't happen");
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    try {
+                        const user = JSON.parse(storedUser);
+                        console.log("AuthService: Using stored user data for", user.username);
+                        App.getInstance().currentUser = user;
+                        //
+                        // Load campaign progress from backend response if available
+                        //Hoach added
+                        if (data.user && data.user.campaign_level !== undefined) {
+                            const { CampaignService } = await import('./CampaignService');
+                            CampaignService.getInstance().setCurrentLevel(data.user.campaign_level);
+                            console.log('Campaign level loaded from verify response:', data.user.campaign_level);
+                        } else {
+                            // Fallback to loading from backend
+                            const { CampaignService } = await import('./CampaignService');
+                            CampaignService.getInstance().loadLevel().catch(err => {
+                                console.warn('Failed to load campaign level after session check:', err);
+                            });
+                        }
+                        // Hoach add ended
+                        
+                        return true;
+                    } catch (e) {
+                        console.warn("AuthService: Failed to parse stored user data", e);
+                    }
+                }
             }
             //Hoach edit ended
 
@@ -227,9 +250,7 @@ export class AuthService {
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
         // Force account selection to allow choosing different Google accounts
-        // Hoach edited - Add mode parameter to prevent session override
-        const url = `/api/auth/oauth/init?provider=${provider}&prompt=select_account&mode=local_player`;
-        // Hoach edit ended
+        const url = `/api/auth/oauth/init?provider=${provider}&prompt=select_account`;
         
         // Hoach removed - sessionStorage not needed with mode parameter
         // sessionStorage.setItem('oauth_mode', 'local_player');
@@ -268,10 +289,7 @@ export class AuthService {
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
 
-        // Check if user is already logged in - if so, treat as account linking
-        const currentUser = this.getCurrentUser();
-        const mode = currentUser ? 'local_player' : '';
-        const url = `/api/auth/oauth/init?provider=Google${mode ? `&mode=${mode}` : ''}`; // Backend endpoint to start OAuth
+        const url = `/api/auth/oauth/init?provider=Google`; // Backend endpoint to start OAuth
         // Note: Backend works by redirecting this popup to the provider
 
         const popup = window.open(
