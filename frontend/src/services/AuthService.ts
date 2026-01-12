@@ -268,7 +268,10 @@ export class AuthService {
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
 
-        const url = `/api/auth/oauth/init?provider=Google`; // Backend endpoint to start OAuth
+        // Check if user is already logged in - if so, treat as account linking
+        const currentUser = this.getCurrentUser();
+        const mode = currentUser ? 'local_player' : '';
+        const url = `/api/auth/oauth/init?provider=Google${mode ? `&mode=${mode}` : ''}`; // Backend endpoint to start OAuth
         // Note: Backend works by redirecting this popup to the provider
 
         const popup = window.open(

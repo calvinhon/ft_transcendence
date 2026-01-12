@@ -65,6 +65,12 @@ export class LoginPage extends AbstractComponent {
     }
 
     onMounted(): void {
+        // Redirect if already logged in
+        if (AuthService.getInstance().getCurrentUser()) {
+            App.getInstance().router.navigateTo('/main-menu');
+            return;
+        }
+
         const form = this.$('#login-form');
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
