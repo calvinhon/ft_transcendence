@@ -96,6 +96,10 @@ export class AuthService {
 
     public async checkSession(): Promise<boolean> {
         console.log("AuthService: Checking Session...");
+        // Hoach added - Debug localStorage state
+        const storedUser = localStorage.getItem('user');
+        console.log("AuthService: localStorage user before verify:", storedUser ? JSON.parse(storedUser).username : 'none');
+        // Hoach add ended
 
         try {
             const verifyPromise = Api.post('/api/auth/verify', {});
@@ -108,6 +112,9 @@ export class AuthService {
             console.log("AuthService: Verify response received:", response);
 
             const data = response.data || response;
+            // Hoach added - Debug what backend returned
+            console.log("AuthService: Backend returned user:", data.user ? data.user.username : 'none');
+            // Hoach add ended
 
             // If backend returns a user, use it
             if (data.user) {
@@ -149,36 +156,10 @@ export class AuthService {
                 return true;
             }
 
-            //Hoach edited
-            // Backend says valid but no user data - check localStorage for stored user
+            //Hoach edited - REMOVED localStorage fallback to prevent session override
+            // If backend says valid but no user data, that's an error - don't use stale localStorage
             if (data.valid) {
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    try {
-                        const user = JSON.parse(storedUser);
-                        console.log("AuthService: Using stored user data for", user.username);
-                        App.getInstance().currentUser = user;
-                        //
-                        // Load campaign progress from backend response if available
-                        //Hoach added
-                        if (data.user && data.user.campaign_level !== undefined) {
-                            const { CampaignService } = await import('./CampaignService');
-                            CampaignService.getInstance().setCurrentLevel(data.user.campaign_level);
-                            console.log('Campaign level loaded from verify response:', data.user.campaign_level);
-                        } else {
-                            // Fallback to loading from backend
-                            const { CampaignService } = await import('./CampaignService');
-                            CampaignService.getInstance().loadLevel().catch(err => {
-                                console.warn('Failed to load campaign level after session check:', err);
-                            });
-                        }
-                        // Hoach add ended
-                        
-                        return true;
-                    } catch (e) {
-                        console.warn("AuthService: Failed to parse stored user data", e);
-                    }
-                }
+                console.warn("AuthService: Backend says valid but returned no user data - this shouldn't happen");
             }
             //Hoach edit ended
 
@@ -246,7 +227,13 @@ export class AuthService {
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
         // Force account selection to allow choosing different Google accounts
-        const url = `/api/auth/oauth/init?provider=${provider}&prompt=select_account`;
+        // Hoach edited - Add mode parameter to prevent session override
+        const url = `/api/auth/oauth/init?provider=${provider}&prompt=select_account&mode=local_player`;
+        // Hoach edit ended
+        
+        // Hoach removed - sessionStorage not needed with mode parameter
+        // sessionStorage.setItem('oauth_mode', 'local_player');
+        // Hoach remove ended
 
         const popup = window.open(
             url,
@@ -258,12 +245,18 @@ export class AuthService {
 
         try {
             const authData = await this.waitForOAuthPopup(popup);
+            // Hoach removed - sessionStorage cleanup not needed
+            // sessionStorage.removeItem('oauth_mode');
+            // Hoach remove ended
             if (authData && authData.success) {
                 return { success: true, user: authData.user, token: authData.token }; // Pure data return
             } else {
                 return { success: false, error: authData?.error || "OAuth failed" };
             }
         } catch (error: any) {
+            // Hoach removed - sessionStorage cleanup not needed
+            // sessionStorage.removeItem('oauth_mode');
+            // Hoach remove ended
             return { success: false, error: error.message };
         }
     }

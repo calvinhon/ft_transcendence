@@ -408,6 +408,7 @@ export class ProfilePage extends AbstractComponent {
             }
         }
 
+        // Always refresh profile data when mounting (campaign levels can change)
         await this.loadProfile(userId);
         this.initCharts();
     }

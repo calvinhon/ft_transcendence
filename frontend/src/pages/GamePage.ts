@@ -399,7 +399,10 @@ export class GamePage extends AbstractComponent {
                     // If winnerId matches the player 1 ID, advance the campaign.
                     if (winnerId === this.p1Ids[0]) {
                         console.log("Campaign Victory! Advancing Level...");
-                        CampaignService.getInstance().advanceLevel();
+                        // Hoach edited - Await to ensure campaign update completes
+                        await CampaignService.getInstance().advanceLevel();
+                        console.log("Campaign level updated successfully");
+                        // Hoach edit ended
                     } else {
                         console.log("Campaign Defeat. winnerId:", winnerId, "p1Id:", this.p1Ids[0]);
                     }

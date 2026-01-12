@@ -61,12 +61,30 @@ export class CampaignService {
     }
 
     public async advanceLevel(): Promise<void> {
-        if (this.currentLevel < this.MAX_LEVEL) {
-            await this.saveLevel(this.currentLevel + 1);
-        } else {
-            // Already maxed out
-            console.log("Campaign completed!");
+        // Hoach edited - Send current mission completion to backend, let it calculate advancement
+        const user = AuthService.getInstance().getCurrentUser();
+        if (!user) {
+            console.warn('No user logged in, cannot advance campaign');
+            return;
         }
+
+        try {
+            // Tell backend we completed the current level
+            const response = await Api.post(`/api/user/game/update-campaign/${user.userId}`, {
+                missionId: this.currentLevel,
+                completed: true
+            });
+            
+            // Backend returns the new campaign level
+            if (response && typeof response.campaign_level === 'number') {
+                this.currentLevel = response.campaign_level;
+                console.log(`Campaign advanced to level ${this.currentLevel}`);
+            }
+        } catch (e) {
+            console.error('Failed to advance campaign level:', e);
+            throw e;
+        }
+        // Hoach edit ended
     }
 
     public isCompleted(): boolean {
@@ -90,25 +108,7 @@ export class CampaignService {
     }
     // Hoach edit ended
 
-    // Hoach edited
-    public async saveLevel(level: number): Promise<void> {
-        if (level < 1 || level > this.MAX_LEVEL) return;
-
-        this.currentLevel = level;
-
-        // Sync to backend only - no localStorage for security
-        try {
-            const user = AuthService.getInstance().getCurrentUser();
-            if (user) {
-                // Use the new campaign update endpoint for security
-                await Api.post(`/api/user/game/update-campaign/${user.userId}`, {
-                    missionId: level,
-                    completed: true
-                });
-            }
-        } catch (e) {
-            console.warn("Failed to sync campaign level to backend", e);
-        }
-    }
-    // Hoach edit ended
+    // Hoach removed - saveLevel no longer needed, advanceLevel handles API call directly
+    // Campaign level advancement is now fully server-side
+    // Hoach remove ended
 }

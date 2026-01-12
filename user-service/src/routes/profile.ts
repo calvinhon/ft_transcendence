@@ -141,19 +141,26 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
       // Fetch current profile
       const profile = await UserService.getOrCreateProfile(parseInt(userId));
 
-      // Validate and update campaign level (e.g., increment if mission unlocks next level)
-      // Hoach added
+      // Validate and update campaign level
+      // Hoach edited - Check if missionId is the current level being completed
       let newCampaignLevel = profile.campaign_level || 1;
-      if (missionId === newCampaignLevel && completed) {  // Example: missionId matches current level
-        newCampaignLevel = Math.min(newCampaignLevel + 1, 3);  // Max 3 levels
+      // Advance to next level when completing the current level
+      if (missionId === newCampaignLevel && completed) {
+        newCampaignLevel = newCampaignLevel + 1;
       }
       
       // Calculate campaign_mastered server-side (user masters campaign when reaching max level)
       const campaignMastered = newCampaignLevel >= 3 ? 1 : 0;
-      // Hoach add ended
+      // Hoach edit ended
 
       await promisifyDbRun(db, 'UPDATE user_profiles SET campaign_level = ?, campaign_mastered = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', [newCampaignLevel, campaignMastered, userId]);
-      reply.send({ message: 'Campaign updated successfully' });
+      // Hoach edited - Return new campaign level so frontend can update
+      reply.send({ 
+        message: 'Campaign updated successfully', 
+        campaign_level: newCampaignLevel,
+        campaign_mastered: campaignMastered 
+      });
+      // Hoach edit ended
     } catch (err) {
       reply.status(500).send({ error: 'Database error', details: err });
     }
