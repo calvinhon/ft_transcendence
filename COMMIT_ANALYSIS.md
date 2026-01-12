@@ -5,6 +5,12 @@ The requested commit hash `de712a7` was not found on the current branch (`copilo
 
 ## Latest Commits on Branch
 
+### Commit: c405ddf - "Initial plan"
+**Author:** copilot-swe-agent[bot]  
+**Date:** Mon Jan 12 16:30:07 2026 +0000
+
+This is an empty commit created by the Copilot agent to start the analysis task. No code changes.
+
 ### Commit: 0d88728 (grafted) - "a"
 **Author:** Hoach Nguyen  
 **Date:** Mon Jan 12 16:31:28 2026 +0400
@@ -281,12 +287,20 @@ The codebase implements a complete microservices-based application with 9 distin
 ## File Statistics
 
 Total files added in commit 0d88728:
-- **~100+ files** across all services
-- **TypeScript files**: ~50+ (auth, game, tournament, user, frontend, blockchain services)
+- **100+ files** across all services
+- **TypeScript files**: 115 files (auth, game, tournament, user, frontend, blockchain services)
+- **Services**: 9 containerized microservices
+- **Frontend Pages**: 11 pages (GamePage, MainMenu, Profile, Tournament, Settings, etc.)
 - **Configuration files**: Docker, TypeScript, package.json for each service
 - **Smart Contracts**: 1 Solidity contract with deployment scripts
-- **Frontend Components**: ~15 TypeScript components and pages
+- **Frontend Components**: 15+ TypeScript components (modals, renderers, abstractions)
 - **Infrastructure**: docker-compose.yml, Dockerfiles, entrypoint scripts, CA certificates
+
+**Lines of Code (Key Files):**
+- BabylonWrapper.ts: 554 lines (3D scene management)
+- GamePage.ts: 672 lines (game orchestration)
+- GameRenderer.ts: 401 lines (2D canvas renderer)
+- ThreeDGameRenderer.ts: 339 lines (3D Babylon renderer)
 
 ---
 
