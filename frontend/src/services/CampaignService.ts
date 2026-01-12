@@ -5,7 +5,6 @@ export class CampaignService {
     private static instance: CampaignService;
     private currentLevel: number = 1;
     private readonly MAX_LEVEL = 3;
-    private levelLoaded: boolean = false;
 
     private constructor() {}
 
@@ -24,7 +23,6 @@ export class CampaignService {
         const user = AuthService.getInstance().getCurrentUser();
         if (!user) {
             this.currentLevel = 1;
-            this.levelLoaded = true;
             return;
         }
 
@@ -35,7 +33,6 @@ export class CampaignService {
                 this.currentLevel = Math.max(1, Math.min(response.campaign_level, this.MAX_LEVEL));
                 // Sync to localStorage
                 localStorage.setItem(`campaign_level_${user.userId}`, this.currentLevel.toString());
-                this.levelLoaded = true;
                 console.log(`Campaign level loaded from database: ${this.currentLevel}`);
                 return;
             }
@@ -49,14 +46,12 @@ export class CampaignService {
             const level = parseInt(stored, 10);
             if (!isNaN(level)) {
                 this.currentLevel = Math.max(1, Math.min(level, this.MAX_LEVEL));
-                this.levelLoaded = true;
                 return;
             }
         }
 
         // Default to level 1
         this.currentLevel = 1;
-        this.levelLoaded = true;
     }
 // Hoach add ended
     public getMaxLevel(): number {
