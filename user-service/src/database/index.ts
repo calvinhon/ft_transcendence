@@ -48,6 +48,7 @@ export async function initializeDatabase(): Promise<void> {
         friends_count INTEGER DEFAULT 0,
         xp INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
+        campaign_mastered INTEGER DEFAULT 0, -- Hoach edited
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -66,7 +67,8 @@ export async function initializeDatabase(): Promise<void> {
       'tournaments_won INTEGER DEFAULT 0',
       'friends_count INTEGER DEFAULT 0',
       'xp INTEGER DEFAULT 0',
-      'level INTEGER DEFAULT 1'
+      'level INTEGER DEFAULT 1',
+      'campaign_mastered INTEGER DEFAULT 0' // Hoach edited
     ];
 
     for (const columnDef of gameStatsColumns) {

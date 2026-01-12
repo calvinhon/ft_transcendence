@@ -65,47 +65,99 @@ export async function setupProfileRoutes(fastify: FastifyInstance): Promise<void
     }
   });
 
-  // Update game stats (wins, total_games, xp, level, campaign_level, etc)
+  // Update game stats (only verifiable data; levels calculated server-side)
+  // Hoach edited
   fastify.post<{
     Params: { userId: string };
     Body: {
-      wins?: number;
-      total_games?: number;
-      xp?: number;
-      level?: number;
-      campaign_level?: number;
-      winRate?: number;
-      lost?: number;
+      gameResult?: 'win' | 'loss';  // Verifiable outcome
+      xpGained?: number;  // XP from game
       [key: string]: any;
     };
-  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { wins?: number; total_games?: number; xp?: number; level?: number; campaign_level?: number; winRate?: number; lost?: number;[key: string]: any; } }>, reply: FastifyReply) => {
+  }>('/game/update-stats/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { gameResult?: 'win' | 'loss'; xpGained?: number; [key: string]: any; } }>, reply: FastifyReply) => {
     const { userId } = request.params;
-    const { wins, total_games, xp, level, campaign_level, winRate, lost } = request.body;
+    const { gameResult, xpGained } = request.body;
 
-    // Build dynamic SQL for only provided fields
-    const fields: string[] = [];
-    const values: any[] = [];
-    if (typeof wins === 'number') { fields.push('wins = ?'); values.push(wins); }
-    if (typeof total_games === 'number') { fields.push('total_games = ?'); values.push(total_games); }
-    if (typeof xp === 'number') { fields.push('xp = ?'); values.push(xp); }
-    if (typeof level === 'number') { fields.push('level = ?'); values.push(level); }
-    if (typeof campaign_level === 'number') { fields.push('campaign_level = ?'); values.push(campaign_level); }
-    if (typeof winRate === 'number') { fields.push('winRate = ?'); values.push(winRate); }
-    if (typeof lost === 'number') { fields.push('lost = ?'); values.push(lost); }
-    fields.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(userId);
-
-    if (fields.length === 1) {
-      // Only updated_at, nothing to update
-      return reply.status(400).send({ error: 'No stats provided' });
+    const serverCheck = request.headers['x-microservice-secret'];
+    if (serverCheck !== serverSecret && (!request.session || request.session.userId !== parseInt(userId))) {
+      return sendError(reply, "Unauthorized", 401);
     }
 
     try {
-      const sql = 'UPDATE user_profiles SET ' + fields.join(', ') + ' WHERE user_id = ?';
+      // Fetch current profile
+      const profile = await UserService.getOrCreateProfile(parseInt(userId));
+
+      // Update verifiable stats
+      const updates: any = { updated_at: 'CURRENT_TIMESTAMP' };
+      if (gameResult === 'win') {
+        updates.wins = (profile.wins || 0) + 1;
+        updates.total_games = (profile.total_games || 0) + 1;
+      } else if (gameResult === 'loss') {
+        updates.lost = (profile.lost || 0) + 1;
+        updates.total_games = (profile.total_games || 0) + 1;
+      }
+      if (typeof xpGained === 'number' && xpGained > 0) {
+        updates.xp = (profile.xp || 0) + xpGained;
+      }
+
+      // Calculate level server-side (e.g., based on XP)
+      // Hoach added
+      const newXp = updates.xp || profile.xp || 0;
+      updates.level = Math.floor(newXp / 100) + 1;  // Example: level = floor(xp/100) + 1
+      // Hoach add ended
+
+      // Update database
+      const fields = Object.keys(updates).map(key => `${key} = ?`);
+      const values = Object.values(updates);
+      values.push(userId);
+      const sql = `UPDATE user_profiles SET ${fields.join(', ')} WHERE user_id = ?`;
       await promisifyDbRun(db, sql, values);
       reply.send({ message: 'Game stats updated successfully' });
     } catch (err) {
       reply.status(500).send({ error: 'Database error', details: err });
     }
   });
+  // Hoach edit ended
+
+  // Update campaign level (server-side validation only)
+  // Hoach added
+  fastify.post<{
+    Params: { userId: string };
+    Body: { missionId?: number; completed?: boolean };
+  }>('/game/update-campaign/:userId', async (request: FastifyRequest<{ Params: { userId: string }; Body: { missionId?: number; completed?: boolean } }>, reply: FastifyReply) => {
+    const { userId } = request.params;
+    const { missionId, completed } = request.body;
+
+    const serverCheck = request.headers['x-microservice-secret'];
+    if (serverCheck !== serverSecret && (!request.session || request.session.userId !== parseInt(userId))) {
+      return sendError(reply, "Unauthorized", 401);
+    }
+
+    if (!missionId || completed !== true) {
+      return reply.status(400).send({ error: 'Invalid mission completion data' });
+    }
+
+    try {
+      // Fetch current profile
+      const profile = await UserService.getOrCreateProfile(parseInt(userId));
+
+      // Validate and update campaign level (e.g., increment if mission unlocks next level)
+      // Hoach added
+      let newCampaignLevel = profile.campaign_level || 1;
+      if (missionId === newCampaignLevel && completed) {  // Example: missionId matches current level
+        newCampaignLevel = Math.min(newCampaignLevel + 1, 3);  // Max 3 levels
+      }
+      
+      // Calculate campaign_mastered server-side (user masters campaign when reaching max level)
+      const campaignMastered = newCampaignLevel >= 3 ? 1 : 0;
+      // Hoach add ended
+
+      await promisifyDbRun(db, 'UPDATE user_profiles SET campaign_level = ?, campaign_mastered = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', [newCampaignLevel, campaignMastered, userId]);
+      reply.send({ message: 'Campaign updated successfully' });
+    } catch (err) {
+      reply.status(500).send({ error: 'Database error', details: err });
+    }
+  });
+  // Hoach add ended
+
 }

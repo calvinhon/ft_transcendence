@@ -32,6 +32,9 @@ export class AuthService {
 
             if (response.success) {
                 this.handleAuthSuccess(token, user);
+                // Hoach edited - Clear OAuth state to prevent conflicts on refresh
+                sessionStorage.removeItem('oauth_pending');
+                // Hoach edit ended
                 if (navigateToHome) {
                     App.getInstance().router.navigateTo('/');
                 }
@@ -64,7 +67,8 @@ export class AuthService {
         }
     }
 
-    public logout(): void {
+    // Hoach edited
+    public async logout(): Promise<void> {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
 
@@ -72,9 +76,17 @@ export class AuthService {
         LocalPlayerService.getInstance().clearAllPlayers();
 
         App.getInstance().currentUser = null;
-        Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
+        
+        // Wait for logout API call to complete before navigating
+        try {
+            await Api.post('/api/auth/logout', {});
+        } catch (e) {
+            console.warn('Logout API call failed', e);
+        }
+        
         App.getInstance().router.navigateTo('/login');
     }
+    // Hoach edit ended
 
     public getCurrentUser(): User | null {
         // Access App instance via global or direct App import if circular dependency is managed
@@ -100,17 +112,39 @@ export class AuthService {
             // If backend returns a user, use it
             if (data.user) {
                 console.log("AuthService: Session valid for user", data.user.username);
+                
+                // Fetch fresh profile data including campaign_mastered from server
+                // Hoach added
+                try {
+                    const profileResponse = await Api.get(`/api/user/profile/${data.user.userId}`);
+                    const profile = profileResponse.data || profileResponse;
+                    if (profile.campaign_mastered !== undefined) {
+                        data.user.campaign_mastered = profile.campaign_mastered;
+                    }
+                } catch (err) {
+                    console.warn('Failed to fetch profile for campaign_mastered:', err);
+                }
+                // Hoach add ended
+                
                 App.getInstance().currentUser = data.user;
                 localStorage.setItem('user', JSON.stringify(data.user));
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                 }
                 
-                // Hoach added Load campaign progress for the authenticated user
-                const { CampaignService } = await import('./CampaignService');
-                CampaignService.getInstance().loadLevel().catch(err => {
-                    console.warn('Failed to load campaign level after session check:', err);
-                });
+                // Load campaign progress from backend response
+                //Hoach added
+                if (data.user.campaign_level !== undefined) {
+                    const { CampaignService } = await import('./CampaignService');
+                    CampaignService.getInstance().setCurrentLevel(data.user.campaign_level);
+                    console.log('Campaign level loaded from verify response:', data.user.campaign_level);
+                } else {
+                    // Fallback to loading from backend if not included
+                    const { CampaignService } = await import('./CampaignService');
+                    CampaignService.getInstance().loadLevel().catch(err => {
+                        console.warn('Failed to load campaign level after session check:', err);
+                    });
+                }
                 // Hoach add ended
                 return true;
             }
@@ -125,11 +159,20 @@ export class AuthService {
                         console.log("AuthService: Using stored user data for", user.username);
                         App.getInstance().currentUser = user;
                         //
-                        // Load campaign progress for the authenticated user
-                        const { CampaignService } = await import('./CampaignService');
-                        CampaignService.getInstance().loadLevel().catch(err => {
-                            console.warn('Failed to load campaign level after session check:', err);
-                        });
+                        // Load campaign progress from backend response if available
+                        //Hoach added
+                        if (data.user && data.user.campaign_level !== undefined) {
+                            const { CampaignService } = await import('./CampaignService');
+                            CampaignService.getInstance().setCurrentLevel(data.user.campaign_level);
+                            console.log('Campaign level loaded from verify response:', data.user.campaign_level);
+                        } else {
+                            // Fallback to loading from backend
+                            const { CampaignService } = await import('./CampaignService');
+                            CampaignService.getInstance().loadLevel().catch(err => {
+                                console.warn('Failed to load campaign level after session check:', err);
+                            });
+                        }
+                        // Hoach add ended
                         
                         return true;
                     } catch (e) {
@@ -196,12 +239,14 @@ export class AuthService {
      * Authenticates via OAuth popup but returns the data instead of logging in globally.
      * Used for adding local players.
      */
+    // Hoach edited
     public async authenticateViaOAuth(provider: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         const width = 500;
         const height = 600;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        const url = `/api/auth/oauth/init?provider=${provider}`;
+        // Force account selection to allow choosing different Google accounts
+        const url = `/api/auth/oauth/init?provider=${provider}&prompt=select_account`;
 
         const popup = window.open(
             url,
@@ -222,6 +267,7 @@ export class AuthService {
             return { success: false, error: error.message };
         }
     }
+    // Hoach edit ended
 
     public async loginWithGoogle(): Promise<void> {
         const width = 500;
@@ -352,8 +398,28 @@ export class AuthService {
         
         // Load campaign progress for the authenticated user
         const { CampaignService } = await import('./CampaignService');
-        CampaignService.getInstance().loadLevel().catch(err => {
-            console.warn('Failed to load campaign level after auth:', err);
-        });
+        const campaignService = CampaignService.getInstance();
+        
+        // Fetch campaign_mastered from server
+        // Hoach added
+        try {
+            const profileResponse = await Api.get(`/api/user/profile/${user.userId}`);
+            const profile = profileResponse.data || profileResponse;
+            user.campaign_mastered = profile.campaign_mastered;
+        } catch (err) {
+            console.warn('Failed to fetch campaign_mastered on auth:', err);
+        }
+        // Hoach add ended
+        
+        //Hoach added
+        if (user.campaign_level !== undefined) {
+            campaignService.setCurrentLevel(user.campaign_level);
+            console.log('Campaign level set from user data:', user.campaign_level);
+        } else {
+            campaignService.loadLevel().catch(err => {
+                console.warn('Failed to load campaign level after auth:', err);
+            });
+        }
+        // Hoach add ended
     }
 }

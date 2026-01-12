@@ -7,7 +7,15 @@ export interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   country: string | null;
-
+  // Hoach edited
+  campaign_level?: number;
+  campaign_mastered?: number;
+  wins?: number;
+  total_games?: number;
+  lost?: number;
+  xp?: number;
+  level?: number;
+  // Hoach edit ended
   created_at: string;
   updated_at: string;
 }

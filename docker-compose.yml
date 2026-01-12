@@ -214,6 +214,14 @@ services:
       - tournament-service
       - blockchain-service
     mem_limit: 128m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS --insecure https://127.0.0.1:443/ || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - transcendence-network
 

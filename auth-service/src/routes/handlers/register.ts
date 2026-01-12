@@ -3,8 +3,11 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../../services/authService';
 import { RegisterRequestBody } from '../../types';
 import { validateRequiredFields, validateEmail, sendError, sendSuccess, createLogger, validatePassword, ERROR_MESSAGES } from '@ft-transcendence/common';
+import axios from 'axios';
 
 const logger = createLogger('AUTH-SERVICE');
+
+let sessionSecret: any = null;
 
 export async function registerHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authService = new AuthService();
@@ -29,7 +32,15 @@ export async function registerHandler(request: FastifyRequest, reply: FastifyRep
       await request.session.save();
     }
 
-    sendSuccess(reply, { user: { userId: result.userId, username } }, 'User registered successfully', 201);
+    sendSuccess(reply, { 
+      user: { 
+        userId: result.userId, 
+        username, 
+        //Hoach added
+        campaign_level: 1 
+        // Hoach add ended
+      } 
+    }, 'User registered successfully', 201);
   } catch (error: any) {
     if (error.message?.includes('UNIQUE constraint failed')) {
       sendError(reply, 'Username or email already exists', 409);

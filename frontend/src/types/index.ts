@@ -3,6 +3,10 @@ export interface User {
     username: string;
     email?: string;
     avatarUrl?: string;
+    //Hoach added
+    campaign_level?: number;
+    campaign_mastered?: boolean; // Hoach edited
+    // Hoach add ended
 }
 
 export interface GameSettings {

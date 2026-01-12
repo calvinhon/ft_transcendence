@@ -31,7 +31,8 @@ function generateOAuthPopupResponse(reply: FastifyReply, status: number, data: {
 	</html>`);
 }
 
-export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { provider: string } }>, reply: FastifyReply): Promise<void> {
+// Hoach edited
+export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { provider: string; prompt?: string } }>, reply: FastifyReply): Promise<void> {
 	// Check for invalid provider
 	if (request.query.provider !== 'Google')
 		return generateOAuthPopupResponse(reply, 503, { success: false, error: 'Unsupported provider' });
@@ -61,15 +62,25 @@ export async function oauthInitHandler(request: FastifyRequest<{ Querystring: { 
 	});
 
 	// Create API Sign In redirect
-	return reply.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+	// Hoach edited - Support prompt parameter for account selection
+	const authParams: any = {
 		client_id: googleSecrets.clientID,
 		redirect_uri: googleSecrets.clientCallbackURL,
 		scope: 'openid profile email',
 		response_type: 'code',
 		state: state
-	}).toString()}`);
+	};
+	
+	// Add prompt parameter if provided (select_account forces account chooser)
+	if (request.query.prompt) {
+		authParams.prompt = request.query.prompt;
+	}
+	
+	return reply.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams(authParams).toString()}`);
 }
+// Hoach edit ended
 
+// Hoach edited
 export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring: { code: string, state: string, provider: string } }>, reply: FastifyReply): Promise<void> {
 	const { code, state, provider } = request.query;
 

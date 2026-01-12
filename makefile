@@ -4,7 +4,7 @@
 
 OS := $(shell uname)
 
-.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke open stop restart rebuild fix-ownership help health test logs ps
+.PHONY: dev clean-start check-docker check-compose clean clean-dev purge nuke clean-volumes open wait-for-healthy stop restart rebuild fix-ownership help health test logs ps
 
 .DEFAULT_GOAL := help
 
@@ -12,8 +12,8 @@ help:
 	@echo "📚 FT_TRANSCENDENCE - Available Commands:"
 	@echo ""
 	@echo "🚀 Main Commands:"
-	@echo "  make dev                - 🚀 DEV: Quick start with cached builds (~30s)"
-	@echo "  make clean-start        - 🧹 CLEAN: Remove images/volumes + fresh build (~2-3min)"
+	@echo "  make dev                - 🚀 DEV: Quick start with cached builds (~30s) + auto-open browser when ready"
+	@echo "  make clean-start        - 🧹 CLEAN: Remove images/volumes + fresh build (~2-3min) + auto-open browser when ready"
 	@echo "  make restart            - 🔄 RESTART: Restart containers without rebuild (~5s)"
 	@echo "  make rebuild            - 🔨 REBUILD: Rebuild from scratch, keep volumes (~2min)"
 	@echo "  make stop               - 🛑 STOP: Stop all services"
@@ -25,6 +25,7 @@ help:
 	@echo "  make clean-dev          - Clean node_modules and build artifacts"
 	@echo "  make purge              - 🔥 PURGE: Stop/remove ALL project containers + images"
 	@echo "  make nuke               - 🔥 NUKE: Stop all containers + prune + delete ALL images"
+	@echo "  make clean-volumes      - 🗑️  VOLUMES: Delete all Docker volumes for this project"
 	@echo "  make ps                 - Show container status"
 	@echo "  make fix-ownership      - 🔧 OWNERSHIP: Fix database file permissions when switching hosts"
 	@echo "  make test               - Show test documentation"
@@ -40,16 +41,19 @@ dev: check-docker check-compose
 	@echo "🛑 Stopping any running containers first..."
 	@docker compose down --remove-orphans 2>/dev/null || true
 	@docker ps -q | xargs -r docker stop 2>/dev/null || true
+
 	@echo "🚀 Starting all services for development (uses build cache)..."
 	docker compose up -d --build
-	@$(MAKE) open
+	$(MAKE) wait-for-healthy
+	$(MAKE) open
 	@echo "✅ All services started! Visit https://localhost:8443"
 
 # Clean start - complete reset: removes images, volumes, host artifacts + fresh build
 clean-start: check-docker check-compose clean-dev clean
-	@echo "� Clean start with fresh build (after removing images & volumes)..."
+	@echo "🧹 Clean start with fresh build (after removing images & volumes)..."
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
+	@$(MAKE) wait-for-healthy
 	@$(MAKE) open
 	@echo "✅ Services started! Visit https://localhost:8443"
 
@@ -65,6 +69,7 @@ rebuild: check-docker check-compose clean-dev
 	docker compose down
 	docker compose build --no-cache
 	docker compose up -d --force-recreate
+	@$(MAKE) wait-for-healthy
 	@echo "✅ Services rebuilt and started!"
 
 check-docker:
@@ -172,6 +177,27 @@ nuke: check-docker
 	@echo "💥 Docker environment completely nuked!"
 	@echo "💡 To rebuild: make clean-start"
 
+# Clean Volumes - delete all Docker volumes for this project
+clean-volumes: check-docker
+	@echo "🗑️  Removing all Docker volumes for this project..."
+	@if [ -f docker-compose.yml ]; then \
+		PROJECT=$$(basename "$$(pwd)"); \
+		echo "🔍 Finding volumes for project: $$PROJECT"; \
+		VOLUMES=$$(docker volume ls --filter "name=$$PROJECT" -q 2>/dev/null || true); \
+		if [ -n "$$VOLUMES" ]; then \
+			echo "🗑️  Found volumes: $$VOLUMES"; \
+			echo "⚠️  This will delete all persistent data (databases, etc.)!"; \
+			read -p "Are you sure? Type 'yes' to continue: " confirm && [ "$$confirm" = "yes" ] || (echo "❌ Operation cancelled." && exit 1); \
+			echo "🛑 Stopping containers first..."; \
+			docker compose down --remove-orphans 2>/dev/null || true; \
+			docker volume rm $$VOLUMES 2>/dev/null && echo "✅ Volumes deleted successfully!" || echo "⚠️  Some volumes may still be in use"; \
+		else \
+			echo "ℹ️  No volumes found for project: $$PROJECT"; \
+		fi; \
+	else \
+		echo "⚠️  No docker-compose.yml found in this directory."; \
+	fi
+
 open:
 	@echo "🌐 Opening browser at https://localhost:8443 ..."
 	@if [ "$(OS)" = "Darwin" ]; then \
@@ -199,6 +225,27 @@ open:
 		xdg-open https://localhost:8443; \
 	else \
 		echo "❌ Could not auto-open browser. Please visit https://localhost:8443 manually."; \
+	fi
+
+wait-for-healthy:
+	@echo "⏳ Waiting for all services to be healthy..."
+	@timeout=120; \
+	counter=0; \
+	while [ $$counter -lt $$timeout ]; do \
+		if curl -sk https://localhost:8443 2>/dev/null | grep -q "DOCTYPE" && \
+		   curl -sk https://localhost:8443/api/auth/health 2>/dev/null | grep -q '"status":"ok"' && \
+		   curl -sk https://localhost:8443/api/game/health 2>/dev/null | grep -q '"status":"ok"' && \
+		   curl -sk https://localhost:8443/api/user/health 2>/dev/null | grep -q '"status":"ok"' && \
+		   curl -sk https://localhost:8443/api/tournament/health 2>/dev/null | grep -q '"status":"ok"'; then \
+			echo "✅ All services are healthy!"; \
+			break; \
+		fi; \
+		echo "⏳ Waiting... ($$counter/$$timeout seconds)"; \
+		sleep 5; \
+		counter=$$((counter + 5)); \
+	done; \
+	if [ $$counter -ge $$timeout ]; then \
+		echo "⚠️  Timeout waiting for services to be healthy. Opening browser anyway..."; \
 	fi
 
 stop:
