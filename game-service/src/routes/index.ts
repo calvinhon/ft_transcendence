@@ -18,6 +18,11 @@ async function gameRoutes(fastify: FastifyInstance): Promise<void> {
       handleWebSocketMessage(connection.socket, 'Unauthorized');
       return handleWebSocketClose(connection.socket);
     }
+
+    // Bind the authenticated session to the socket for downstream authorization.
+    (connection.socket as any).session = req.session;
+    (connection.socket as any).sessionUserId = req.session.userId;
+
     logger.info('=== NEW WEBSOCKET CONNECTION ESTABLISHED ===');
     logger.info('Connection from:', req.socket.remoteAddress);
 

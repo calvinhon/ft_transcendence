@@ -46,7 +46,7 @@ export default async function tournamentCrudRoutes(fastify: FastifyInstance): Pr
         return sendError(reply, 'Invalid tournament ID', 400);
       }
 
-      const tournament = await TournamentService.startTournament(tournamentId);
+      const tournament = await TournamentService.startTournament(tournamentId, request.session.userId);
       logger.info('Tournament started via specific route', { tournamentId });
       return sendSuccess(reply, tournament, 'Tournament started successfully');
     } catch (error) {

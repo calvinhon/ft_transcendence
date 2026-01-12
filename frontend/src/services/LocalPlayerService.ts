@@ -1,13 +1,11 @@
 import { User } from '../types';
+import { Api } from '../core/Api';
 
 export interface LocalPlayer {
     id: string;
     username: string;
-    isCurrentUser: boolean;
     userId: number;
-    token: string;
     team?: number; // 1 or 2 (for Arcade)
-    email?: string;
     avatarUrl?: string;
     isBot?: boolean;
 }
@@ -19,7 +17,55 @@ export class LocalPlayerService {
     private listeners: ((players: LocalPlayer[]) => void)[] = [];
 
     private constructor() {
-        this.loadFromLocalStorage();
+        // Local players are stored server-side (in the auth-service session).
+        // Keep a client cache for rendering only.
+        void this.refreshFromServer();
+    }
+
+    public async refreshFromServer(): Promise<void> {
+        try {
+            const res = await Api.get('/api/auth/local-players');
+            const data = res?.data ?? res;
+            const players = (data?.players ?? data?.data?.players ?? []) as LocalPlayer[];
+            if (Array.isArray(players)) {
+                this.localPlayers = players;
+                this.notifyListeners();
+            }
+        } catch (e) {
+            // If not logged in yet, this may 401; keep cache empty.
+        }
+    }
+
+    public async addLocalPlayerWithPassword(username: string, password: string): Promise<LocalPlayer | null> {
+        const res = await Api.post('/api/auth/local-players/add', { username, password });
+        const data = res?.data ?? res;
+        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
+        await this.refreshFromServer();
+        return player ?? null;
+    }
+
+    public async registerLocalPlayer(username: string, email: string, password: string): Promise<LocalPlayer | null> {
+        const res = await Api.post('/api/auth/local-players/register', { username, email, password });
+        const data = res?.data ?? res;
+        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
+        await this.refreshFromServer();
+        return player ?? null;
+    }
+
+    public async addLocalPlayerFromOAuth(userId: number): Promise<LocalPlayer | null> {
+        const res = await Api.post('/api/auth/local-players/add-oauth', { userId });
+        const data = res?.data ?? res;
+        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
+        await this.refreshFromServer();
+        return player ?? null;
+    }
+
+    public async addBot(userId: number, username: string, avatarUrl?: string): Promise<LocalPlayer | null> {
+        const res = await Api.post('/api/auth/local-players/add-bot', { userId, username, avatarUrl });
+        const data = res?.data ?? res;
+        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
+        await this.refreshFromServer();
+        return player ?? null;
     }
 
     public static getInstance(): LocalPlayerService {
@@ -52,40 +98,18 @@ export class LocalPlayerService {
         return { duplicate: false };
     }
 
-    public addLocalPlayer(player: LocalPlayer): void {
-        // Set default avatar if missing
-        if (!player.avatarUrl) {
-            player.avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.username)}&background=0A0A0A&color=29B6F6`;
-        }
-
-        const check = this.isDuplicateLocalPlayer({
-            ...player,
-            userId: player.userId,
-            avatarUrl: player.avatarUrl || undefined
-        });
-
-        // Note: isDuplicateLocalPlayer checks IDs. If we just created a stub player, it might pass.
-        // But usually we pass a real User object.
-        // We re-check username specifically for good measure
-        const existing = this.localPlayers.find(p => p.username === player.username);
-
-        if (check.duplicate || existing) {
-            console.warn(`Player "${player.username}" already exists/duplicate:`, check.reason);
-            return;
-        }
-
-        this.localPlayers.push(player);
-        this.saveToLocalStorage();
-        this.notifyListeners();
-        console.log('Local player added:', player);
-    }
+    // NOTE: local players should be added via the server-backed methods above.
 
     public updateLocalPlayer(userId: number, updates: Partial<LocalPlayer>): void {
         const player = this.localPlayers.find(p => p.userId === userId);
         if (player) {
             Object.assign(player, updates);
-            this.saveToLocalStorage();
             this.notifyListeners();
+            void Api.post('/api/auth/local-players/update', {
+                userId,
+                team: updates.team,
+                avatarUrl: updates.avatarUrl
+            }).catch(() => {});
         }
     }
 
@@ -93,8 +117,8 @@ export class LocalPlayerService {
         const player = this.localPlayers.find(p => p.id === playerId);
         if (player) {
             player.team = team;
-            this.saveToLocalStorage();
             this.notifyListeners();
+            void Api.post('/api/auth/local-players/update', { userId: player.userId, team }).catch(() => {});
         }
     }
 
@@ -102,9 +126,12 @@ export class LocalPlayerService {
         const index = this.localPlayers.findIndex(p => p.id === playerId);
         if (index >= 0) {
             const removed = this.localPlayers.splice(index, 1)[0];
-            this.saveToLocalStorage();
             this.notifyListeners();
             console.log('Local player removed:', removed);
+            void fetch(`/api/auth/local-players/${encodeURIComponent(String(removed.userId))}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            }).catch(() => {});
         }
     }
 
@@ -140,34 +167,14 @@ export class LocalPlayerService {
 
     public clearAllPlayers(): void {
         this.localPlayers = [];
-        this.saveToLocalStorage();
         this.notifyListeners();
+        void Api.post('/api/auth/local-players/clear', {}).catch(() => {});
     }
 
     public subscribe(callback: (players: LocalPlayer[]) => void): void {
         this.listeners.push(callback);
         // Initial call
         callback(this.localPlayers);
-    }
-
-    private loadFromLocalStorage(): void {
-        try {
-            const saved = localStorage.getItem('localPlayers');
-            if (saved) {
-                this.localPlayers = JSON.parse(saved);
-            }
-        } catch (error) {
-            console.warn('Failed to load local players:', error);
-            this.localPlayers = [];
-        }
-    }
-
-    private saveToLocalStorage(): void {
-        try {
-            localStorage.setItem('localPlayers', JSON.stringify(this.localPlayers));
-        } catch (error) {
-            console.warn('Failed to save local players:', error);
-        }
     }
 
     private notifyListeners(): void {

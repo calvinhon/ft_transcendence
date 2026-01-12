@@ -6,10 +6,55 @@ import { GameHandlers } from './game-handlers';
 import { logger } from './logger';
 // cleaned up
 
+function getSessionUserId(socket: any): number | null {
+  const sessionUserId = (socket as any)?.sessionUserId;
+  return typeof sessionUserId === 'number' && !Number.isNaN(sessionUserId) ? sessionUserId : null;
+}
+
+function getAllowedParticipantIdsFromSocket(socket: any): Set<number> {
+  const allowed = new Set<number>();
+  const session = (socket as any)?.session;
+
+  if (session && typeof session.userId === 'number') {
+    allowed.add(session.userId);
+  }
+
+  const localPlayers = session?.localPlayers;
+  if (Array.isArray(localPlayers)) {
+    for (const p of localPlayers) {
+      const userId = (p && typeof p.userId === 'number') ? p.userId : undefined;
+      if (typeof userId === 'number') allowed.add(userId);
+    }
+  }
+
+  return allowed;
+}
+
+function extractPlayerId(p: any): number | null {
+  if (typeof p === 'number') return Number.isFinite(p) ? p : null;
+  if (p && typeof p.userId === 'number' && Number.isFinite(p.userId)) return p.userId;
+  return null;
+}
+
+function validateTeamPlayers(team: any[] | undefined, allowed: Set<number>): boolean {
+  if (!team) return true;
+  if (!Array.isArray(team)) return false;
+
+  for (const p of team) {
+    const id = extractPlayerId(p);
+    if (id === null) return false;
+    // Allow bots/AI by convention (0 or negative IDs)
+    if (id > 0 && !allowed.has(id)) return false;
+  }
+  return true;
+}
+
 export function handleWebSocketMessage(socket: any, message: Buffer | string): void {
   try {
     const data = JSON.parse(message.toString()) as WebSocketMessage;
     // logger.ws('Received WebSocket message:', data.type); // Reduce noise
+
+    const sessionUserId = getSessionUserId(socket);
 
     switch (data.type) {
       case 'userConnect':
@@ -17,11 +62,25 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
         break;
       case 'joinGame':
         logger.ws('Processing joinGame');
+        if (sessionUserId === null) return;
+        (data as any).userId = sessionUserId;
         matchmakingService.handleJoinGame(socket, data as JoinGameMessage);
         break;
       case 'joinBotGame':
         logger.ws('Processing joinBotGame');
-        matchmakingService.handleJoinBotGame(socket, data as JoinGameMessage);
+        if (sessionUserId === null) return;
+        {
+          const allowed = getAllowedParticipantIdsFromSocket(socket);
+          if (!validateTeamPlayers((data as any).team1Players, allowed) || !validateTeamPlayers((data as any).team2Players, allowed)) {
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Unauthorized players in team selection'
+            }));
+            return;
+          }
+          (data as any).userId = sessionUserId;
+          matchmakingService.handleJoinBotGame(socket, data as JoinGameMessage);
+        }
         break;
       case 'movePaddle':
         // logger.ws('Processing movePaddle'); // Very noisy
@@ -48,12 +107,18 @@ export function handleWebSocketMessage(socket: any, message: Buffer | string): v
 }
 
 function handleUserConnect(socket: any, data: any): void {
-  logger.ws(`Processing userConnect for ${data.username} (${data.userId})`);
+  const sessionUserId = getSessionUserId(socket);
+  if (sessionUserId === null) {
+    socket.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
+    return;
+  }
+
+  logger.ws(`Processing userConnect for ${data.username} (${sessionUserId})`);
   // Track user as online when they connect with authentication
-  addOnlineUser(data.userId, data.username, socket);
+  addOnlineUser(sessionUserId, data.username, socket);
 
   // Store userId on socket object for cleanup on close
-  (socket as any).userId = data.userId;
+  (socket as any).userId = sessionUserId;
 
   // Check if this is a game mode request (arcade or campaign)
   if (data.gameMode) {
@@ -80,10 +145,19 @@ function handleUserConnect(socket: any, data: any): void {
     logger.info('Team 1 players:', data.team1Players);
     logger.info('Team 2 players:', data.team2Players);
 
+    const allowed = getAllowedParticipantIdsFromSocket(socket);
+    if (!validateTeamPlayers(data.team1Players, allowed) || !validateTeamPlayers(data.team2Players, allowed)) {
+      socket.send(JSON.stringify({
+        type: 'error',
+        message: 'Unauthorized players in team selection'
+      }));
+      return;
+    }
+
     // Start the bot game directly with team player data
     matchmakingService.handleJoinBotGame(socket, {
       type: 'joinBotGame',
-      userId: data.userId,
+      userId: sessionUserId,
       username: data.username,
       gameSettings: gameSettings,
       team1Players: data.team1Players,

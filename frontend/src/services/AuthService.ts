@@ -154,20 +154,20 @@ export class AuthService {
 
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
-            const response = await Api.post('/api/auth/login', { username, password });
-            if (response.success) {
-                const user = response.data?.user || response.user;
-                if (user) {
-                    return {
-                        success: true,
-                        user: {
-                            userId: user.userId || user.id,
-                            username: user.username,
-                            email: user.email
-                        },
-                        token: response.data?.token // Return token if present
-                    };
-                }
+            // Used by LoginModal ("Add Player") — verifies credentials server-side and stores the
+            // added local player in the host's session.
+            const response = await Api.post('/api/auth/local-players/add', { username, password });
+            const data = response.data || response;
+            const player = data.player || data.data?.player;
+            if (response.success && player) {
+                return {
+                    success: true,
+                    user: {
+                        userId: player.userId,
+                        username: player.username,
+                        // email intentionally omitted for local players
+                    } as any
+                };
             }
             return { success: false, error: response.error || response.message || 'Verification failed' };
         } catch (e: any) {
@@ -177,17 +177,18 @@ export class AuthService {
 
     public async registerUserOnly(username: string, email: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
-            const response = await Api.post('/api/auth/register', { username, email, password });
-
+            // Used by LoginModal ("Add Player" -> Register) — register user without switching
+            // the host session, and store it as a local player server-side.
+            const response = await Api.post('/api/auth/local-players/register', { username, email, password });
             const data = response.data || response;
-            const user = data.user || response.user;
-            const token = data.token;
-
-            if (response.success) {
+            const player = data.player || data.data?.player;
+            if (response.success && player) {
                 return {
                     success: true,
-                    user: user,
-                    token: token
+                    user: {
+                        userId: player.userId,
+                        username: player.username,
+                    } as any
                 };
             }
             return { success: false, error: response.error || 'Registration failed' };
@@ -218,7 +219,14 @@ export class AuthService {
         try {
             const authData = await this.waitForOAuthPopup(popup);
             if (authData && authData.success) {
-                return { success: true, user: authData.user, token: authData.token }; // Pure data return
+                // Add the OAuth user as a local player in the host session.
+                try {
+                    await Api.post('/api/auth/local-players/add-oauth', { userId: authData.user.userId });
+                } catch {
+                    // If this fails, keep UX simple: surface it as a generic OAuth failure.
+                    return { success: false, error: 'Failed to add OAuth local player' };
+                }
+                return { success: true, user: authData.user, token: authData.token }; // token ignored by local-player flow
             } else {
                 return { success: false, error: authData?.error || "OAuth failed" };
             }

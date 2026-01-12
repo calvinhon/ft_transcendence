@@ -750,15 +750,9 @@ export class MainMenuPage extends AbstractComponent {
                             console.warn('Failed to fetch profile for avatar', err);
                         }
 
-                        LocalPlayerService.getInstance().addLocalPlayer({
-                            id: user.userId.toString(),
-                            userId: user.userId,
-                            username: user.username,
-                            email: user.email,
-                            isCurrentUser: false,
-                            token: user.token || '',
-                            avatarUrl: avatarUrl
-                        });
+                        // Local players are stored server-side (added during auth in the modal).
+                        // Refresh client cache and optionally store avatarUrl.
+                        await LocalPlayerService.getInstance().refreshFromServer();
 
                         // Force update in case they already existed (to refresh avatar)
                         if (avatarUrl) {
@@ -828,7 +822,7 @@ export class MainMenuPage extends AbstractComponent {
             return;
         }
 
-        import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+        import('../services/LocalPlayerService').then(async ({ LocalPlayerService }) => {
             const existing = LocalPlayerService.getInstance().getLocalPlayers();
             const bot1 = existing.find(p => p.userId === -1);
             const bot2 = existing.find(p => p.userId === -2);
@@ -841,15 +835,8 @@ export class MainMenuPage extends AbstractComponent {
             const botId = !bot1 ? -1 : -2;
             const botName = !bot1 ? "BOT 1" : "BOT 2";
 
-            LocalPlayerService.getInstance().addLocalPlayer({
-                id: botId.toString(),
-                userId: botId,
-                username: botName,
-                isCurrentUser: false,
-                token: 'bot-token',
-                isBot: true,
-                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(botName)}&background=333333&color=ffffff`
-            });
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(botName)}&background=333333&color=ffffff`;
+            await LocalPlayerService.getInstance().addBot(botId, botName, avatarUrl);
         });
     }
 
