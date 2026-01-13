@@ -7,7 +7,7 @@ echo "SecAction \
   nolog,\
   pass,\
   t:none,\
-  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT'\"
+  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS PUT DELETE'\"
 
 SecAction \
  \"id:900220,\

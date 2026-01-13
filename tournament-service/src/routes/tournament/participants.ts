@@ -35,7 +35,7 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         return console.log('Tournaments Join'),sendError(reply, "Unauthorized", 401);
     try {
       const tournamentId = parseInt(request.params.tournamentId);
-      const { userId } = request.body;
+      const { userId, alias, avatarUrl } = request.body;
 
       if (isNaN(tournamentId)) {
         return sendError(reply, 'Invalid tournament ID', 400);
@@ -58,8 +58,8 @@ export default async function tournamentParticipantRoutes(fastify: FastifyInstan
         return sendError(reply, 'Participant is not authorized for this session', 403);
       }
 
-      const participant = await ParticipantService.joinTournament(tournamentId, userId);
-      logger.info('User joined tournament', { tournamentId, userId });
+      const participant = await ParticipantService.joinTournament(tournamentId, userId, alias, avatarUrl);
+      logger.info('User joined tournament', { tournamentId, userId, alias });
       return sendSuccess(reply, participant, 'Successfully joined tournament');
     } catch (error) {
       const err = error as Error;

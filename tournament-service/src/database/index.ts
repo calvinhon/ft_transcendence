@@ -33,6 +33,8 @@ export async function initializeTables(): Promise<void> {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tournament_id INTEGER NOT NULL,
       user_id INTEGER NOT NULL,
+      alias TEXT,
+      avatar_url TEXT,
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       eliminated_at DATETIME,
       final_rank INTEGER,

@@ -17,6 +17,8 @@ export interface TournamentParticipant {
   id: number;
   tournament_id: number;
   user_id: number;
+  alias?: string | null;
+  avatar_url?: string | null;
   joined_at: string;
   eliminated_at: string | null;
   final_rank?: number;
@@ -44,6 +46,8 @@ export interface CreateTournamentBody {
 export interface JoinTournamentBody {
   tournamentId: number;
   userId: number;
+  alias?: string;
+  avatarUrl?: string;
 }
 
 export interface MatchResultBody {
