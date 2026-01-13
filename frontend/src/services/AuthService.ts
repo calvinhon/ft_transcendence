@@ -65,18 +65,25 @@ export class AuthService {
     }
 
     public async logout(): Promise<void> {
+        // Clear current user
+        App.getInstance().currentUser = null;
+        
+        // Clear all auth-related data from localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
 
-        // Clear local players state
-        LocalPlayerService.getInstance().clearAllPlayers();
-
-        App.getInstance().currentUser = null;
         try {
+            // Call backend logout to destroy session and clear cookie
             await Api.post('/api/auth/logout', {});
         } catch (e) {
-            console.warn('Logout API call failed', e)
+            console.warn('Logout API call failed', e);
         }
+
+        // Clear local players state - must be AFTER logout call to avoid 
+        // /local-players/clear call potentially re-creating a session
+        LocalPlayerService.getInstance().clearAllPlayers();
+        
+        // Navigate to login page
         App.getInstance().router.navigateTo('/login');
     }
 

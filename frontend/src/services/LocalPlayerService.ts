@@ -165,10 +165,10 @@ export class LocalPlayerService {
         return participants;
     }
 
-    public clearAllPlayers(): void {
+    public clearAllPlayers(notify: boolean = true): void {
         this.localPlayers = [];
-        this.notifyListeners();
-        void Api.post('/api/auth/local-players/clear', {}).catch(() => {});
+        if (notify) this.notifyListeners();
+        // Don't call the API clear if we're logging out, as the session is being destroyed anyway
     }
 
     public subscribe(callback: (players: LocalPlayer[]) => void): void {
