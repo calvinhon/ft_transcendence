@@ -47,7 +47,7 @@ export class LoginModal extends AbstractComponent {
 
                         <!-- REGISTER FORM -->
                         <form id="modal-register-form" class="flex flex-col gap-6 ${this.isRegisterMode ? '' : 'hidden'}">
-                            <input type="text" id="reg-username" placeholder="Username" required
+                            <input type="text" id="reg-username" placeholder="Username" required maxlength="16"
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />
                             <input type="email" id="reg-email" placeholder="Email" required
                                 class="w-full p-4 bg-transparent border border-white/20 text-white font-vcr focus:border-accent focus:shadow-[0_0_10px_rgba(0,255,255,0.5)] outline-none transition-all placeholder:text-text-muted" />

@@ -135,6 +135,11 @@ export async function registerLocalPlayerHandler(
   const { username, email, password } = request.body || ({} as any);
   if (!username || !email || !password) return sendError(reply, 'Username, email and password required', 400);
 
+  // Enforce 16 char limit
+  if (username.length > 16) {
+    return sendError(reply, 'Username must be 16 characters or less', 400);
+  }
+
   try {
     const authService = new AuthService();
     const result = await authService.register(username, email, password);
