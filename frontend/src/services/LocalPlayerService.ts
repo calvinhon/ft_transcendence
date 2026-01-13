@@ -36,30 +36,6 @@ export class LocalPlayerService {
         }
     }
 
-    public async addLocalPlayerWithPassword(username: string, password: string): Promise<LocalPlayer | null> {
-        const res = await Api.post('/api/auth/local-players/add', { username, password });
-        const data = res?.data ?? res;
-        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
-        await this.refreshFromServer();
-        return player ?? null;
-    }
-
-    public async registerLocalPlayer(username: string, email: string, password: string): Promise<LocalPlayer | null> {
-        const res = await Api.post('/api/auth/local-players/register', { username, email, password });
-        const data = res?.data ?? res;
-        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
-        await this.refreshFromServer();
-        return player ?? null;
-    }
-
-    public async addLocalPlayerFromOAuth(userId: number): Promise<LocalPlayer | null> {
-        const res = await Api.post('/api/auth/local-players/add-oauth', { userId });
-        const data = res?.data ?? res;
-        const player = (data?.player ?? data?.data?.player) as LocalPlayer | undefined;
-        await this.refreshFromServer();
-        return player ?? null;
-    }
-
     public async addBot(userId: number, username: string, avatarUrl?: string): Promise<LocalPlayer | null> {
         const res = await Api.post('/api/auth/local-players/add-bot', { userId, username, avatarUrl });
         const data = res?.data ?? res;
@@ -83,23 +59,6 @@ export class LocalPlayerService {
         return this.hostUser;
     }
 
-    public isDuplicateLocalPlayer(user: User): { duplicate: boolean; reason?: string } {
-        // Check against Host
-        if (this.hostUser && (this.hostUser.userId === user.userId || this.hostUser.username === user.username)) {
-            return { duplicate: true, reason: 'User is already the Host' };
-        }
-
-        // Check against existing local players
-        const existing = this.localPlayers.find(p => p.userId === user.userId || p.username === user.username);
-        if (existing) {
-            return { duplicate: true, reason: `User ${user.username} is already added` };
-        }
-
-        return { duplicate: false };
-    }
-
-    // NOTE: local players should be added via the server-backed methods above.
-
     public updateLocalPlayer(userId: number, updates: Partial<LocalPlayer>): void {
         const player = this.localPlayers.find(p => p.userId === userId);
         if (player) {
@@ -110,15 +69,6 @@ export class LocalPlayerService {
                 team: updates.team,
                 avatarUrl: updates.avatarUrl
             }).catch(() => {});
-        }
-    }
-
-    public assignPlayerToTeam(playerId: string, team: number): void {
-        const player = this.localPlayers.find(p => p.id === playerId);
-        if (player) {
-            player.team = team;
-            this.notifyListeners();
-            void Api.post('/api/auth/local-players/update', { userId: player.userId, team }).catch(() => {});
         }
     }
 
