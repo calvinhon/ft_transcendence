@@ -58,7 +58,10 @@ export class PongGame {
       this.gameSettings.scoreToWin,
       this.gameSettings.team1Players,
       this.gameSettings.team2Players,
-      this.gameSettings.tournamentPlayer1Id
+      this.gameSettings.tournamentPlayer1Id,
+      // Hoach - campaign progression- backend
+      this.gameSettings.gameMode,
+      this.gameSettings.campaignLevel
     );
     this.broadcaster = new GameBroadcaster(gameId, player1, player2);
 

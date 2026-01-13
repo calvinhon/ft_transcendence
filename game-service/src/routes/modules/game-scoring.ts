@@ -3,6 +3,8 @@ import { GamePlayer, Scores } from './types';
 import { db } from './database';
 import { createLogger } from '@ft-transcendence/common';
 import { notifyTournamentService } from './tournament-notifier';
+// Hoach - campaign progression- backend
+import { campaignProgressionService } from './campaign-service';
 
 const logger = createLogger('GAME-SERVICE');
 
@@ -22,6 +24,9 @@ export class GameScoring {
   // Store team player IDs for correct winner determination
   private team1Players?: TeamPlayer[];
   private team2Players?: TeamPlayer[];
+  // Hoach - campaign progression- backend
+  private gameMode: string;
+  private campaignLevel?: number;
 
   constructor(
     gameId: number,
@@ -30,7 +35,10 @@ export class GameScoring {
     maxScore: number,
     team1Players?: TeamPlayer[],
     team2Players?: TeamPlayer[],
-    tournamentPlayer1Id?: number
+    tournamentPlayer1Id?: number,
+    // Hoach - campaign progression- backend
+    gameMode?: string,
+    campaignLevel?: number
   ) {
     this.gameId = gameId;
     this.player1 = player1;
@@ -40,7 +48,10 @@ export class GameScoring {
     this.team1Players = team1Players;
     this.team2Players = team2Players;
     this.tournamentPlayer1Id = tournamentPlayer1Id;
-    logger.info(`[${gameId}] GameScoring initialized with maxScore: ${this.maxScore}`);
+    // Hoach - campaign progression- backend
+    this.gameMode = gameMode || 'arcade';
+    this.campaignLevel = campaignLevel;
+    logger.info(`[${gameId}] GameScoring initialized with maxScore: ${this.maxScore}, gameMode: ${this.gameMode}`);
   }
 
   scorePoint(scorer: 'player1' | 'player2'): boolean {
@@ -127,6 +138,18 @@ export class GameScoring {
           }
 
           logger.info(`[${gameId}] Game recorded in database (Aborted: ${aborted}, WinnerID: ${finalWinnerId}, Scores: ${finalScores.player1}-${finalScores.player2})`);
+
+          // Hoach - campaign progression- backend: Handle campaign level advancement server-side
+          if (this.gameMode === 'campaign' && this.campaignLevel && finalWinnerId !== null) {
+            // In campaign mode, team1 (player1/left paddle) is always the human
+            const humanPlayerId = this.team1Players?.[0]?.userId ?? this.player1.userId;
+            await campaignProgressionService.handleCampaignGameEnd({
+              gameId: gameId,
+              humanPlayerId: humanPlayerId,
+              winnerId: finalWinnerId,
+              campaignLevel: this.campaignLevel
+            });
+          }
 
           // Notify tournament service if this was a tournament game
           await this.checkAndNotifyTournament(gameId, finalWinnerId, finalScores.player1, finalScores.player2);

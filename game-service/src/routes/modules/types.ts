@@ -76,6 +76,8 @@ export interface GameSettings {
   team2PlayerCount?: number; // Number of players on team 2
   team1Players?: any[]; // Player data for team 1
   team2Players?: any[]; // Player data for team 2
+  // Hoach - campaign progression- backend
+  campaignLevel?: number; // Current campaign level being played
 }
 
 export interface JoinGameMessage extends WebSocketMessage {

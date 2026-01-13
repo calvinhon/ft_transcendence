@@ -393,15 +393,17 @@ export class GamePage extends AbstractComponent {
                     });
                 }
 
-                // Campaign Logic
+                // Hoach - campaign progression- backend
+                // Campaign Logic - Server handles level advancement, we just refresh state
                 if (setup.mode === 'campaign') {
-                    // Player 1 is always the human in campaign mode.
-                    // If winnerId matches the player 1 ID, advance the campaign.
+                    // Server has already advanced the level if player won
+                    // We just refresh our local state from the server
+                    await CampaignService.getInstance().refreshAfterGame();
+                    
                     if (winnerId === this.p1Ids[0]) {
-                        console.log("Campaign Victory! Advancing Level...");
-                        CampaignService.getInstance().advanceLevel();
+                        console.log("[GamePage] Campaign Victory! Server has advanced level.");
                     } else {
-                        console.log("Campaign Defeat. winnerId:", winnerId, "p1Id:", this.p1Ids[0]);
+                        console.log("[GamePage] Campaign Defeat. winnerId:", winnerId, "p1Id:", this.p1Ids[0]);
                     }
                 }
             }

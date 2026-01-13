@@ -2,6 +2,8 @@ import '@fastify/cookie';
 import '@fastify/session';
 import cors from '@fastify/cors';
 import userRoutes from './routes/index';
+// Hoach - campaign progression- backend
+import { campaignRoutes } from './routes/campaign';
 import { createServer, createServiceConfig, sessionSecret } from '@ft-transcendence/common';
 
 const serverConfig = createServiceConfig('USER-SERVICE', 3000);
@@ -24,6 +26,8 @@ async function start(): Promise<void> {
   const server = await createServer(serverConfig, async (fastify) => {
     await fastify.register(sessionSecret);
     await userRoutes(fastify);
+    // Hoach - campaign progression- backend
+    await fastify.register(campaignRoutes, { prefix: '/api/user' });
   }, serverOptions);
 
   await server.start();

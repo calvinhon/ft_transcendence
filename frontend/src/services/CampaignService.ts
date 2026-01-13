@@ -1,9 +1,12 @@
 import { Api } from '../core/Api';
 import { AuthService } from './AuthService';
 
+// Hoach - campaign progression- backend
+// Refactored to be read-only from server. Server handles all level advancement.
 export class CampaignService {
     private static instance: CampaignService;
     private currentLevel: number = 1;
+    private mastered: boolean = false;
     private readonly MAX_LEVEL = 3;
 
     private constructor() {}
@@ -18,44 +21,47 @@ export class CampaignService {
     public getCurrentLevel(): number {
         return this.currentLevel;
     }
-// Hoach Added
+
+    public getMaxLevel(): number {
+        return this.MAX_LEVEL;
+    }
+
+    /**
+     * Load campaign progress from server (source of truth)
+     * Hoach - campaign progression- backend
+     */
     public async loadLevel(): Promise<void> {
         const user = AuthService.getInstance().getCurrentUser();
         if (!user) {
             this.currentLevel = 1;
+            this.mastered = false;
             return;
         }
 
         try {
-            // Try to load from backend first
-            const response = await Api.get(`/api/user/profile/${user.userId}`);
-            if (response && typeof response.campaign_level === 'number') {
-                this.currentLevel = Math.max(1, Math.min(response.campaign_level, this.MAX_LEVEL));
-                // Sync to localStorage
-                localStorage.setItem(`campaign_level_${user.userId}`, this.currentLevel.toString());
-                console.log(`Campaign level loaded from database: ${this.currentLevel}`);
-                return;
+            // Hoach - campaign progression- backend: Use dedicated campaign endpoint
+            const response = await Api.get(`/api/user/campaign/${user.userId}`);
+            if (response) {
+                this.currentLevel = Math.max(1, Math.min(response.level || 1, this.MAX_LEVEL));
+                this.mastered = response.mastered === true;
+                console.log(`[CampaignService] Loaded from server: Level ${this.currentLevel}, Mastered: ${this.mastered}`);
             }
         } catch (e) {
-            console.warn('Failed to load campaign level from backend, trying localStorage', e);
-        }
-
-        // Fallback to localStorage
-        const stored = localStorage.getItem(`campaign_level_${user.userId}`);
-        if (stored) {
-            const level = parseInt(stored, 10);
-            if (!isNaN(level)) {
-                this.currentLevel = Math.max(1, Math.min(level, this.MAX_LEVEL));
-                return;
+            console.warn('[CampaignService] Failed to load from server, trying legacy endpoint:', e);
+            // Fallback to profile endpoint for backwards compatibility
+            try {
+                const response = await Api.get(`/api/user/profile/${user.userId}`);
+                if (response && typeof response.campaign_level === 'number') {
+                    this.currentLevel = Math.max(1, Math.min(response.campaign_level, this.MAX_LEVEL));
+                    this.mastered = response.campaign_mastered === 1 || response.campaign_mastered === true;
+                    console.log(`[CampaignService] Loaded from profile: Level ${this.currentLevel}, Mastered: ${this.mastered}`);
+                }
+            } catch (e2) {
+                console.warn('[CampaignService] Failed to load from profile:', e2);
+                this.currentLevel = 1;
+                this.mastered = false;
             }
         }
-
-        // Default to level 1
-        this.currentLevel = 1;
-    }
-// Hoach add ended
-    public getMaxLevel(): number {
-        return this.MAX_LEVEL;
     }
 
     public getDifficultyForLevel(level: number): 'easy' | 'medium' | 'hard' {
@@ -64,54 +70,33 @@ export class CampaignService {
         return 'hard';
     }
 
+    /**
+     * Hoach - campaign progression- backend
+     * Called after a game ends to refresh state from server.
+     * The actual advancement is done server-side by game-service.
+     * This replaces the old advanceLevel() method.
+     */
+    public async refreshAfterGame(): Promise<void> {
+        console.log('[CampaignService] Refreshing campaign state from server after game...');
+        await this.loadLevel();
+    }
+
+    /**
+     * @deprecated Use refreshAfterGame() instead. Server handles advancement.
+     * Hoach - campaign progression- backend
+     */
     public async advanceLevel(): Promise<void> {
-        if (this.currentLevel < this.MAX_LEVEL) {
-            await this.saveLevel(this.currentLevel + 1);
-        } else {
-            // Already maxed out
-            console.log("Campaign completed!");
-            this.setCompleted();
-        }
+        // Server handles level advancement now
+        // This just refreshes state from server for backwards compatibility
+        console.log('[CampaignService] advanceLevel() called - refreshing from server (server handles actual advancement)');
+        await this.refreshAfterGame();
     }
 
     public isCompleted(): boolean {
-        // If current level is max AND we have flagged it as done (OR imply it if we want strict level > max)
-        // For simplicity, let's say if level == MAX_LEVEL and we've beaten it? 
-        // Actually, user asked for "Campaign Mastered".
-        // Let's add a persisted flag or just check if level > MAX_LEVEL? 
-        // But logic caps at MAX_LEVEL. 
-        // Let's add a separate flag in localStorage.
-        return localStorage.getItem('campaign_mastered') === 'true';
+        return this.mastered;
     }
 
-    private setCompleted(): void {
-        localStorage.setItem('campaign_mastered', 'true');
-    }
-
-    public async saveLevel(level: number): Promise<void> {
-        if (level < 1 || level > this.MAX_LEVEL) return;
-
-        this.currentLevel = level;
-
-        // Save locally
-        const user = AuthService.getInstance().getCurrentUser();
-        if (user) {
-            localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
-        }
-
-        // Sync to backend
-        try {
-            // We use the profile update endpoint or a specific campaign endpoint if it existed.
-            // Legacy used 'updateProfiler' which likely hit /api/user/profile/:id (PATCH).
-            // Let's assume there's an endpoint or we can update profile.
-            // Adjust this path if legacy used a different specific route.
-            if (user) {
-                await Api.post(`/api/user/game/update-stats/${user.userId}`, {
-                    campaign_level: level
-                });
-            }
-        } catch (e) {
-            console.warn("Failed to sync campaign level to backend", e);
-        }
-    }
+    // Hoach - campaign progression- backend
+    // REMOVED: saveLevel() - Server handles this now
+    // REMOVED: setCompleted() - Server handles this now
 }

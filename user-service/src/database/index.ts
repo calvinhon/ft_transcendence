@@ -41,6 +41,7 @@ export async function initializeDatabase(): Promise<void> {
         bio TEXT,
         country TEXT,
         campaign_level INTEGER DEFAULT 1,
+        campaign_mastered INTEGER DEFAULT 0,
         games_played INTEGER DEFAULT 0,
         games_won INTEGER DEFAULT 0,
         win_streak INTEGER DEFAULT 0,
@@ -55,6 +56,8 @@ export async function initializeDatabase(): Promise<void> {
 
     // Ensure all columns exist (migration logic from Develop)
     await ensureColumnExists(db, 'user_profiles', 'campaign_level', 'INTEGER DEFAULT 1');
+    // Hoach - campaign progression- backend: Add campaign_mastered column
+    await ensureColumnExists(db, 'user_profiles', 'campaign_mastered', 'INTEGER DEFAULT 0');
     await ensureColumnExists(db, 'user_profiles', 'is_custom_avatar', 'INTEGER DEFAULT 0');
     await ensureColumnExists(db, 'user_profiles', 'bio', 'TEXT');
     await ensureColumnExists(db, 'user_profiles', 'country', 'TEXT');
