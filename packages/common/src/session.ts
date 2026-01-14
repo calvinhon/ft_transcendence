@@ -37,7 +37,7 @@ export const sessionSecret = fp(async (fastify) => {
 	const fetchSecretWithRetry = async (): Promise<string> => {
 		const url = `${vaultAddr}/v1/kv/data/Client_Session`;
 		const start = Date.now();
-		const timeoutMs = Number(process.env.VAULT_STARTUP_TIMEOUT_MS ?? 60_000);
+		const timeoutMs = 60000;
 		let attempt = 0;
 		let delayMs = 500;
 

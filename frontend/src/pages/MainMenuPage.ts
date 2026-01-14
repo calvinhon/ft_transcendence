@@ -7,6 +7,7 @@ import { GameStateService } from "../services/GameStateService";
 import { CampaignService } from "../services/CampaignService";
 import { LocalPlayerService } from "../services/LocalPlayerService";
 import { WebGLService } from "../services/WebGLService";
+import { ProfileService } from "../services/ProfileService";
 import { ErrorModal } from "../components/ErrorModal";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 
@@ -58,62 +59,59 @@ export class MainMenuPage extends AbstractComponent {
         super();
         this.setTitle('Main Menu');
 
+        // Load campaign level from database
+        CampaignService.getInstance().loadLevel().catch(err => {
+            console.warn('Failed to load campaign level:', err);
+        });
+
         // Initialize Host in LocalPlayerService with full profile (including avatar)
         const currentUser = AuthService.getInstance().getCurrentUser();
         if (currentUser) {
-            import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
-                // Set host immediately with what we have
-                LocalPlayerService.getInstance().setHostUser(currentUser);
+            // Set host immediately with what we have
+            LocalPlayerService.getInstance().setHostUser(currentUser);
 
-                // Then fetch full profile to get avatar
-                import('../services/ProfileService').then(({ ProfileService }) => {
-                    ProfileService.getInstance().getUserProfile(currentUser.userId).then(profile => {
-                        if (profile) {
-                            // Update hostUser with avatar
-                            const updatedHost = {
-                                ...currentUser,
-                                avatarUrl: (profile as any).avatar_url || profile.avatarUrl
-                            };
-                            LocalPlayerService.getInstance().setHostUser(updatedHost as any);
-                            this.updateAvailablePlayersList();
-                        }
-                    }).catch(err => console.warn('Failed to fetch host profile:', err));
-                });
-            });
+            // Then fetch full profile to get avatar
+            ProfileService.getInstance().getUserProfile(currentUser.userId).then(profile => {
+                if (profile) {
+                    // Update hostUser with avatar
+                    const updatedHost = {
+                        ...currentUser,
+                        avatarUrl: (profile as any).avatar_url || profile.avatarUrl
+                    };
+                    LocalPlayerService.getInstance().setHostUser(updatedHost as any);
+                    this.updateAvailablePlayersList();
+                }
+            }).catch(err => console.warn('Failed to fetch host profile:', err));
         }
 
         this.loadState();
 
         // Subscribe to LocalPlayer changes
-        import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
-            LocalPlayerService.getInstance().subscribe(() => {
-                this.updateAvailablePlayersList();
-            });
-            // Initial sync
+        LocalPlayerService.getInstance().subscribe(() => {
             this.updateAvailablePlayersList();
         });
+        // Initial sync
+        this.updateAvailablePlayersList();
     }
 
     private updateAvailablePlayersList() {
-        // Dynamic import to avoid issues, or use top level if safe.
-        import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
-            const all = LocalPlayerService.getInstance().getAllParticipants();
-            this.availablePlayers = all.map(p => ({
-                id: p.id,
-                userId: p.id, // Fixed: Use p.id (which is numeric)
-                username: p.username,
-                isBot: p.isBot,
-                avatarUrl: p.avatarUrl // CRITICAL: Preserve avatarUrl
-            }));
+        const all = LocalPlayerService.getInstance().getAllParticipants();
+        this.availablePlayers = all.map(p => ({
+            id: p.id,
+            userId: p.id, // Fixed: Use p.id (which is numeric)
+            username: p.username,
+            isBot: p.isBot,
+            avatarUrl: p.avatarUrl // CRITICAL: Preserve avatarUrl
+        }));
 
-            // Reconcile teams (remove players who logged out)
-            const availableIds = new Set(this.availablePlayers.map(p => p.id));
-            if (this.campaignPlayer && !availableIds.has(this.campaignPlayer.id)) {
-                this.campaignPlayer = null;
-            }
-            this.arcadeTeam1 = this.arcadeTeam1.filter(p => availableIds.has(p.id));
-            this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
-            this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
+        // Reconcile teams (remove players who logged out)
+        const availableIds = new Set(this.availablePlayers.map(p => p.id));
+        if (this.campaignPlayer && !availableIds.has(this.campaignPlayer.id)) {
+            this.campaignPlayer = null;
+        }
+        this.arcadeTeam1 = this.arcadeTeam1.filter(p => availableIds.has(p.id));
+        this.arcadeTeam2 = this.arcadeTeam2.filter(p => availableIds.has(p.id));
+        this.tournamentPlayers = this.tournamentPlayers.filter(p => availableIds.has(p.id));
 
             // Update active players from availablePlayers to catch changes (like avatars)
             const syncPlayer = (p: Player) => this.availablePlayers.find(ap => ap.id === p.id) || p;
@@ -135,8 +133,7 @@ export class MainMenuPage extends AbstractComponent {
                 }
             }
 
-            this.renderContent();
-        });
+        this.renderContent();
     }
 
     private loadState(): void {
@@ -554,7 +551,7 @@ export class MainMenuPage extends AbstractComponent {
         // Sync Host Avatar from Backend
         const currentUser = AuthService.getInstance().getCurrentUser();
         if (currentUser) {
-            import('../services/ProfileService').then(async ({ ProfileService }) => {
+            void (async () => {
                 try {
                     const profile = await ProfileService.getInstance().getUserProfile(currentUser.userId);
                     if (profile && profile.avatarUrl) {
@@ -566,7 +563,7 @@ export class MainMenuPage extends AbstractComponent {
                 } catch (e) {
                     console.warn('Failed to sync host avatar', e);
                 }
-            });
+            })();
         }
 
         // Force refresh UI to ensure latest campaign level is shown
@@ -731,9 +728,6 @@ export class MainMenuPage extends AbstractComponent {
             if (addPlayerBtn) {
                 const modal = new LoginModal(
                     async (user) => {
-                        const { LocalPlayerService } = await import('../services/LocalPlayerService');
-                        const { ProfileService } = await import('../services/ProfileService');
-
                         // Fetch full profile to ensure we have the avatar
                         let avatarUrl: string | undefined = undefined;
                         try {
@@ -745,15 +739,9 @@ export class MainMenuPage extends AbstractComponent {
                             console.warn('Failed to fetch profile for avatar', err);
                         }
 
-                        LocalPlayerService.getInstance().addLocalPlayer({
-                            id: user.userId.toString(),
-                            userId: user.userId,
-                            username: user.username,
-                            email: user.email,
-                            isCurrentUser: false,
-                            token: user.token || '',
-                            avatarUrl: avatarUrl
-                        });
+                        // Local players are stored server-side (added during auth in the modal).
+                        // Refresh client cache and optionally store avatarUrl.
+                        await LocalPlayerService.getInstance().refreshFromServer();
 
                         // Force update in case they already existed (to refresh avatar)
                         if (avatarUrl) {
@@ -804,8 +792,9 @@ export class MainMenuPage extends AbstractComponent {
             if (logoutBtn) {
                 new ConfirmationModal(
                     'ARE YOU SURE YOU WANT TO LOGOUT?',
-                    () => {
-                        AuthService.getInstance().logout();
+                    async () => {
+                        await AuthService.getInstance().logout();
+                        // logout() already navigates to /login, no need for window.location.href
                     },
                     () => { },
                     'warning'
@@ -822,7 +811,7 @@ export class MainMenuPage extends AbstractComponent {
             return;
         }
 
-        import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
+        void (async () => {
             const existing = LocalPlayerService.getInstance().getLocalPlayers();
             const bot1 = existing.find(p => p.userId === -1);
             const bot2 = existing.find(p => p.userId === -2);
@@ -835,16 +824,9 @@ export class MainMenuPage extends AbstractComponent {
             const botId = !bot1 ? -1 : -2;
             const botName = !bot1 ? "BOT 1" : "BOT 2";
 
-            LocalPlayerService.getInstance().addLocalPlayer({
-                id: botId.toString(),
-                userId: botId,
-                username: botName,
-                isCurrentUser: false,
-                token: 'bot-token',
-                isBot: true,
-                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(botName)}&background=333333&color=ffffff`
-            });
-        });
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(botName)}&background=333333&color=ffffff`;
+            await LocalPlayerService.getInstance().addBot(botId, botName, avatarUrl);
+        })();
     }
 
     private assignPlayer(id: number, target: string): void {
@@ -858,15 +840,13 @@ export class MainMenuPage extends AbstractComponent {
 
         if (target === 'campaign') {
             // Restrict Campaign to Host Only
-            import('../services/LocalPlayerService').then(({ LocalPlayerService }) => {
-                const host = LocalPlayerService.getInstance().getHostUser();
-                if (host && host.userId === player.id) {
-                    this.campaignPlayer = player;
-                    this.renderContent();
-                } else {
-                    new ErrorModal("ONLY THE HOST CAN PLAY CAMPAIGN MODE.").render();
-                }
-            });
+            const host = LocalPlayerService.getInstance().getHostUser();
+            if (host && host.userId === player.id) {
+                this.campaignPlayer = player;
+                this.renderContent();
+            } else {
+                new ErrorModal("ONLY THE HOST CAN PLAY CAMPAIGN MODE.").render();
+            }
             // Early return to wait for promise/prevent render before check
             return;
         } else if (target === 'tournament') {

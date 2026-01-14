@@ -58,19 +58,13 @@ export class TournamentService {
 
         const tournamentId = createRes.data.id;
 
-        // Save aliases locally since backend might not support them yet
-        const aliasMap: Record<number, string> = {};
-        const avatarMap: Record<number, string> = {};
-        players.forEach(p => {
-            if (p.alias) aliasMap[p.id] = p.alias;
-            if (p.avatarUrl) avatarMap[p.id] = p.avatarUrl;
-        });
-        sessionStorage.setItem(`tournament_aliases_${tournamentId}`, JSON.stringify(aliasMap));
-        sessionStorage.setItem(`tournament_avatars_${tournamentId}`, JSON.stringify(avatarMap));
-
-        // 2. Add Participants
+        // 2. Add Participants (with alias and avatarUrl stored in backend)
         for (const p of players) {
-            await Api.post(`/api/tournament/tournaments/${tournamentId}/join`, { userId: p.id });
+            await Api.post(`/api/tournament/tournaments/${tournamentId}/join`, {
+                userId: p.id,
+                alias: p.alias,
+                avatarUrl: p.avatarUrl
+            });
         }
 
         // 3. Start
@@ -84,16 +78,15 @@ export class TournamentService {
         const response = await Api.get(`/api/tournament/tournaments/${id}?t=${Date.now()}`);
         const t = response.tournament || response;
 
-        // Load aliases
-        let aliasMap: Record<number, string> = {};
-        let avatarMap: Record<number, string> = {};
-        try {
-            const storedAliases = sessionStorage.getItem(`tournament_aliases_${t.id}`);
-            if (storedAliases) aliasMap = JSON.parse(storedAliases);
-
-            const storedAvatars = sessionStorage.getItem(`tournament_avatars_${t.id}`);
-            if (storedAvatars) avatarMap = JSON.parse(storedAvatars);
-        } catch (e) { }
+        // Build alias/avatar maps from backend participant data
+        const aliasMap: Record<number, string> = {};
+        const avatarMap: Record<number, string> = {};
+        if (response.participants) {
+            for (const p of response.participants) {
+                if (p.alias) aliasMap[p.user_id] = p.alias;
+                if (p.avatar_url) avatarMap[p.user_id] = p.avatar_url;
+            }
+        }
 
         // Map backend response to local interface if needed
         const tournament: Tournament = {
@@ -104,9 +97,9 @@ export class TournamentService {
             winnerId: t.winner_id,
             players: response.participants ? response.participants.map((p: any) => ({
                 id: p.user_id,
-                username: aliasMap[p.user_id] || p.username || `Player ${p.user_id}`,
+                username: p.alias || p.username || `Player ${p.user_id}`,
                 isBot: p.user_id === 0 || p.is_bot === true,
-                avatarUrl: avatarMap[p.user_id] || p.avatar_url || null
+                avatarUrl: p.avatar_url || null
             })) : [],
             matches: response.matches ? response.matches.map((m: any) => ({
                 matchId: m.id,

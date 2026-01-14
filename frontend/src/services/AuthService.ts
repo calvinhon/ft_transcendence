@@ -64,15 +64,26 @@ export class AuthService {
         }
     }
 
-    public logout(): void {
+    public async logout(): Promise<void> {
+        // Clear current user
+        App.getInstance().currentUser = null;
+        
+        // Clear all auth-related data from localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
 
-        // Clear local players state
-        LocalPlayerService.getInstance().clearAllPlayers();
+        try {
+            // Call backend logout to destroy session and clear cookie
+            await Api.post('/api/auth/logout', {});
+        } catch (e) {
+            console.warn('Logout API call failed', e);
+        }
 
-        App.getInstance().currentUser = null;
-        Api.post('/api/auth/logout', {}).catch(e => console.warn('Logout API call failed', e)); // Best effort
+        // Clear local players state - must be AFTER logout call to avoid 
+        // /local-players/clear call potentially re-creating a session
+        LocalPlayerService.getInstance().clearAllPlayers();
+        
+        // Navigate to login page
         App.getInstance().router.navigateTo('/login');
     }
 
@@ -105,6 +116,13 @@ export class AuthService {
                 if (data.token) {
                     localStorage.setItem('token', data.token);
                 }
+                
+                // Hoach added Load campaign progress for the authenticated user
+                const { CampaignService } = await import('./CampaignService');
+                CampaignService.getInstance().loadLevel().catch(err => {
+                    console.warn('Failed to load campaign level after session check:', err);
+                });
+                // Hoach add ended
                 return true;
             }
 
@@ -117,6 +135,13 @@ export class AuthService {
                         const user = JSON.parse(storedUser);
                         console.log("AuthService: Using stored user data for", user.username);
                         App.getInstance().currentUser = user;
+                        //
+                        // Load campaign progress for the authenticated user
+                        const { CampaignService } = await import('./CampaignService');
+                        CampaignService.getInstance().loadLevel().catch(err => {
+                            console.warn('Failed to load campaign level after session check:', err);
+                        });
+                        
                         return true;
                     } catch (e) {
                         console.warn("AuthService: Failed to parse stored user data", e);
@@ -136,20 +161,20 @@ export class AuthService {
 
     public async verifyCredentials(username: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
-            const response = await Api.post('/api/auth/login', { username, password });
-            if (response.success) {
-                const user = response.data?.user || response.user;
-                if (user) {
-                    return {
-                        success: true,
-                        user: {
-                            userId: user.userId || user.id,
-                            username: user.username,
-                            email: user.email
-                        },
-                        token: response.data?.token // Return token if present
-                    };
-                }
+            // Used by LoginModal ("Add Player") — verifies credentials server-side and stores the
+            // added local player in the host's session.
+            const response = await Api.post('/api/auth/local-players/add', { username, password });
+            const data = response.data || response;
+            const player = data.player || data.data?.player;
+            if (response.success && player) {
+                return {
+                    success: true,
+                    user: {
+                        userId: player.userId,
+                        username: player.username,
+                        // email intentionally omitted for local players
+                    } as any
+                };
             }
             return { success: false, error: response.error || response.message || 'Verification failed' };
         } catch (e: any) {
@@ -159,17 +184,18 @@ export class AuthService {
 
     public async registerUserOnly(username: string, email: string, password: string): Promise<{ success: boolean, user?: User, token?: string, error?: string }> {
         try {
-            const response = await Api.post('/api/auth/register', { username, email, password });
-
+            // Used by LoginModal ("Add Player" -> Register) — register user without switching
+            // the host session, and store it as a local player server-side.
+            const response = await Api.post('/api/auth/local-players/register', { username, email, password });
             const data = response.data || response;
-            const user = data.user || response.user;
-            const token = data.token;
-
-            if (response.success) {
+            const player = data.player || data.data?.player;
+            if (response.success && player) {
                 return {
                     success: true,
-                    user: user,
-                    token: token
+                    user: {
+                        userId: player.userId,
+                        username: player.username,
+                    } as any
                 };
             }
             return { success: false, error: response.error || 'Registration failed' };
@@ -200,7 +226,14 @@ export class AuthService {
         try {
             const authData = await this.waitForOAuthPopup(popup);
             if (authData && authData.success) {
-                return { success: true, user: authData.user, token: authData.token }; // Pure data return
+                // Add the OAuth user as a local player in the host session.
+                try {
+                    await Api.post('/api/auth/local-players/add-oauth', { userId: authData.user.userId });
+                } catch {
+                    // If this fails, keep UX simple: surface it as a generic OAuth failure.
+                    return { success: false, error: 'Failed to add OAuth local player' };
+                }
+                return { success: true, user: authData.user, token: authData.token }; // token ignored by local-player flow
             } else {
                 return { success: false, error: authData?.error || "OAuth failed" };
             }
@@ -335,5 +368,11 @@ export class AuthService {
             console.log('AuthService: No sessionId provided, skipping session establishment');
         }
         App.getInstance().currentUser = user;
+        
+        // Load campaign progress for the authenticated user
+        const { CampaignService } = await import('./CampaignService');
+        CampaignService.getInstance().loadLevel().catch(err => {
+            console.warn('Failed to load campaign level after auth:', err);
+        });
     }
 }

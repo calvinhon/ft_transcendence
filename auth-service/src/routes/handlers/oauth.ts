@@ -132,6 +132,10 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 			console.log('Image update for existing user failed');
 		}
 
+		// Mark this OAuth identity as verified for this session (used to add as local player)
+		(request.session as any).oauthLastUserId = Number(user.id);
+		(request.session as any).oauthLastAt = Date.now();
+
 		if (!request.session.authenticated) {
 			request.session.userId = Number(user.userId);
 			request.session.authenticated = true;
@@ -172,6 +176,10 @@ export async function oauthCallbackHandler(request: FastifyRequest<{ Querystring
 		} catch (err: any) {
 			console.log('Something went wrong');
 		}
+
+		// Mark this OAuth identity as verified for this session (used to add as local player)
+		(request.session as any).oauthLastUserId = Number(user.id);
+		(request.session as any).oauthLastAt = Date.now();
 
 		if (!request.session.authenticated) {
 			request.session.userId = Number(user.userId);

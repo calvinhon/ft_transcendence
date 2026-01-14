@@ -12,8 +12,8 @@ export class ParticipantService {
   /**
    * Join a tournament
    */
-  static async joinTournament(tournamentId: number, userId: number): Promise<TournamentParticipant> {
-    logger.info('User joining tournament', { tournamentId, userId });
+  static async joinTournament(tournamentId: number, userId: number, alias?: string, avatarUrl?: string): Promise<TournamentParticipant> {
+    logger.info('User joining tournament', { tournamentId, userId, alias });
 
     // Check if tournament exists and is open
     const tournament = await TournamentService.getTournamentById(tournamentId);
@@ -35,10 +35,10 @@ export class ParticipantService {
       throw new Error('User is already participating in this tournament');
     }
 
-    // Add participant
+    // Add participant with alias and avatar_url
     const result = await dbRun(
-      'INSERT INTO tournament_participants (tournament_id, user_id) VALUES (?, ?)',
-      [tournamentId, userId]
+      'INSERT INTO tournament_participants (tournament_id, user_id, alias, avatar_url) VALUES (?, ?, ?, ?)',
+      [tournamentId, userId, alias || null, avatarUrl || null]
     );
 
     // Update tournament participant count

@@ -18,7 +18,30 @@ export class CampaignService {
     public getCurrentLevel(): number {
         return this.currentLevel;
     }
+// Hoach Added
+    public async loadLevel(): Promise<void> {
+        const user = AuthService.getInstance().getCurrentUser();
+        if (!user) {
+            this.currentLevel = 1;
+            return;
+        }
 
+        try {
+            // Try to load from backend first
+            const response = await Api.get(`/api/user/profile/${user.userId}`);
+            if (response && typeof response.campaign_level === 'number') {
+                this.currentLevel = Math.max(1, Math.min(response.campaign_level, this.MAX_LEVEL + 1));
+                console.log(`Campaign level loaded from database: ${this.currentLevel}`);
+                return;
+            }
+        } catch (e) {
+            console.warn('Failed to load campaign level from backend', e);
+        }
+
+        // Default to level 1 if backend load fails
+        this.currentLevel = 1;
+    }
+// Hoach add ended
     public getMaxLevel(): number {
         return this.MAX_LEVEL;
     }
@@ -30,41 +53,22 @@ export class CampaignService {
     }
 
     public async advanceLevel(): Promise<void> {
-        if (this.currentLevel < this.MAX_LEVEL) {
+        if (this.currentLevel <= this.MAX_LEVEL) {
             await this.saveLevel(this.currentLevel + 1);
-        } else {
-            // Already maxed out
-            console.log("Campaign completed!");
-            this.setCompleted();
         }
     }
 
     public isCompleted(): boolean {
-        // If current level is max AND we have flagged it as done (OR imply it if we want strict level > max)
-        // For simplicity, let's say if level == MAX_LEVEL and we've beaten it? 
-        // Actually, user asked for "Campaign Mastered".
-        // Let's add a persisted flag or just check if level > MAX_LEVEL? 
-        // But logic caps at MAX_LEVEL. 
-        // Let's add a separate flag in localStorage.
-        return localStorage.getItem('campaign_mastered') === 'true';
-    }
-
-    private setCompleted(): void {
-        localStorage.setItem('campaign_mastered', 'true');
+        return this.currentLevel > this.MAX_LEVEL;
     }
 
     public async saveLevel(level: number): Promise<void> {
-        if (level < 1 || level > this.MAX_LEVEL) return;
+        if (level < 1 || level > this.MAX_LEVEL + 1) return;
 
         this.currentLevel = level;
 
-        // Save locally
-        const user = AuthService.getInstance().getCurrentUser();
-        if (user) {
-            localStorage.setItem(`campaign_level_${user.userId}`, level.toString());
-        }
-
         // Sync to backend
+        const user = AuthService.getInstance().getCurrentUser();
         try {
             // We use the profile update endpoint or a specific campaign endpoint if it existed.
             // Legacy used 'updateProfiler' which likely hit /api/user/profile/:id (PATCH).

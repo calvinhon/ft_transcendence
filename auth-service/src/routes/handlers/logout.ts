@@ -5,22 +5,31 @@ import { sendError, sendSuccess, createLogger } from '@ft-transcendence/common';
 const logger = createLogger('AUTH-SERVICE');
 
 export async function logoutHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  if (!request.session || !request.session.userId)
-    return console.log('ProfileHandler'),sendError(reply, "Unauthorized", 401);
-
   try {
-    // Clear the session cookie
+    // Clear the session cookie first before destroying
+    // Must match the exact cookie configuration from session.ts
     reply.clearCookie('sessionId', {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/'
     });
-    await request.session.destroy();
+
+    // Destroy the session in Redis if it exists
+    if (request.session) {
+      await request.session.destroy();
+    }
 
     sendSuccess(reply, {}, 'Logged out successfully');
   } catch (error: any) {
     logger.error('Logout error:', error);
+    // Clear cookie even if session destroy fails
+    reply.clearCookie('sessionId', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/'
+    });
     sendSuccess(reply, {}, 'Logged out successfully'); // Always succeed on logout
   }
 }

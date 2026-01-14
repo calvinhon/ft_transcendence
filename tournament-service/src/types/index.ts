@@ -17,6 +17,8 @@ export interface TournamentParticipant {
   id: number;
   tournament_id: number;
   user_id: number;
+  alias?: string | null;
+  avatar_url?: string | null;
   joined_at: string;
   eliminated_at: string | null;
   final_rank?: number;
@@ -44,6 +46,8 @@ export interface CreateTournamentBody {
 export interface JoinTournamentBody {
   tournamentId: number;
   userId: number;
+  alias?: string;
+  avatarUrl?: string;
 }
 
 export interface MatchResultBody {
@@ -51,12 +55,6 @@ export interface MatchResultBody {
   winnerId: number;
   player1Score: number;
   player2Score: number;
-}
-
-export interface TournamentQuery {
-  status?: string;
-  limit?: string;
-  page?: string;
 }
 
 export interface TournamentDetails {
@@ -97,40 +95,9 @@ export interface MatchToCreate {
   matchNumber: number;
 }
 
-export interface BlockchainRanking {
-  userId: number;
-  rank: number;
-  address?: string;
-}
-
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
-}
-
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface TournamentStats {
-  totalTournaments: number;
-  activeTournaments: number;
-  completedTournaments: number;
-  totalParticipants: number;
-}
-
-export interface LeaderboardEntry {
-  userId: number;
-  username?: string;
-  tournamentsWon: number;
-  totalMatches: number;
-  winRate: number;
-  currentRank: number;
 }

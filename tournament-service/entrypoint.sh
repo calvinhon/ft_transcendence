@@ -2,7 +2,7 @@
 set -e
 
 mkdir -p /app/database
-DB=/app/database/tournament.db
+DB=/app/database/tournaments.db
 [ -f "$DB" ] || touch "$DB"
 chown -R node:node /app/database 2>/dev/null || true
 chmod 0755 /app/database 2>/dev/null || true

@@ -1,5 +1,3 @@
-#
-./learn
 # Logs
 logs
 *.log
@@ -73,6 +71,7 @@ web_modules/
 # dotenv environment variable files
 .env
 .env.*
+.env_old
 !.env.example
 
 # parcel-bundler cache (https://parceljs.org/)

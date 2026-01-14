@@ -17,7 +17,11 @@ export default async function tournamentUserRoutes(fastify: FastifyInstance): Pr
     if (!request.session || !request.session.userId)
         return console.log('Tournaments Creation'),sendError(reply, "Unauthorized", 401);
     try {
-      const tournament = await TournamentService.createTournament(request.body);
+      // Never trust client-provided createdBy; bind to authenticated session.
+      const tournament = await TournamentService.createTournament({
+        name: request.body?.name,
+        createdBy: request.session.userId,
+      });
       logger.info('Tournament created via legacy API', { id: tournament.id, name: tournament.name });
       return sendSuccess(reply, tournament, 'Tournament created successfully');
     } catch (error) {
