@@ -1,12 +1,13 @@
 # FT_TRANSCENDENCE - Multiplayer Pong Platform
 
-**Status:** 105/125 Points ✅ | 120/120 Tests Passing ✅ | Production Ready
+**Status:** 125/125 Points ✅ | 120/120 Tests Passing ✅ | Production Ready
 
 A full-stack multiplayer Pong game platform built with microservices architecture, featuring campaign progression, tournaments, leaderboards, and blockchain integration.
 
 ## 🎮 Game Features
 
 ### Core Gameplay
+- **3D Pong Rendering**: Immersive 3D game environment with Babylon.js
 - **Real-time Pong**: Smooth, responsive multiplayer Pong with WebSocket synchronization
 - **Multiple Game Modes**: Campaign, Quick Match, Tournament, and Bot training
 - **Cross-platform**: Web-based with responsive design for desktop and mobile
@@ -48,16 +49,16 @@ A full-stack multiplayer Pong game platform built with microservices architectur
 The platform consists of 8 independent microservices, each handling specific business domains:
 
 #### Frontend Service (`/frontend`)
-- **Port**: 80 (Nginx reverse proxy)
-- **Technology**: TypeScript, HTML5 Canvas, WebSockets
+- **Ports**: 8200 (HTTP), 8443 (HTTPS)
+- **Technology**: TypeScript, HTML5 Canvas, WebSockets, Babylon.js 3D
 - **Features**:
-  - Responsive web interface
-  - Real-time game rendering
+  - Responsive web interface with 3D Pong rendering
+  - Real-time game rendering with Babylon.js
   - Client-side routing
   - WebSocket communication
 
 #### Auth Service (`/auth-service`)
-- **Port**: 3001
+- **Port**: 3000
 - **Database**: SQLite (`auth.db`)
 - **Features**:
   - User authentication and registration
@@ -66,7 +67,7 @@ The platform consists of 8 independent microservices, each handling specific bus
   - Profile management
 
 #### Game Service (`/game-service`)
-- **Port**: 3002
+- **Port**: 3000
 - **Database**: SQLite (`games.db`)
 - **Features**:
   - Real-time match hosting and management
@@ -75,7 +76,7 @@ The platform consists of 8 independent microservices, each handling specific bus
   - Match result recording and statistics
 
 #### User Service (`/user-service`)
-- **Port**: 3003
+- **Port**: 3000
 - **Database**: SQLite (`users.db`)
 - **Features**:
   - Extended user profiles and avatars
@@ -84,7 +85,7 @@ The platform consists of 8 independent microservices, each handling specific bus
   - Comprehensive statistics and leaderboards
 
 #### Tournament Service (`/tournament-service`)
-- **Port**: 3004
+- **Port**: 3000
 - **Database**: SQLite (`tournaments.db`)
 - **Features**:
   - Tournament creation and management
@@ -92,18 +93,19 @@ The platform consists of 8 independent microservices, each handling specific bus
   - Match result processing
   - Blockchain integration for result verification
 
-#### SSR Service (`/ssr-service`)
-- **Port**: 3005
-- **Technology**: Node.js, Fastify, Handlebars
+#### Blockchain Service (`/blockchain-service`)
+- **Port**: 3000
+- **Technology**: Node.js, ethers.js
 - **Features**:
-  - Server-side rendering for SEO
-  - Dynamic page generation
-  - Performance optimization
+  - Smart contract interaction
+  - Tournament result verification
+  - Blockchain transaction handling
 
-#### Blockchain Service (`/blockchain`)
+#### Blockchain Network (`/blockchain`)
 - **Port**: 8545 (Hardhat network)
 - **Technology**: Solidity, Hardhat, ethers.js
 - **Features**:
+  - Local Ethereum development network
   - Smart contract deployment
   - Tournament result verification
   - Immutable record keeping
@@ -113,13 +115,25 @@ The platform consists of 8 independent microservices, each handling specific bus
 - **Technology**: HashiCorp Vault
 - **Features**:
   - Centralized secrets management
+  - PKI certificate generation
   - Secure credential storage
   - Dynamic secret generation
 
+#### Redis Service (`/redis`)
+- **Port**: 6379
+- **Technology**: Redis
+- **Features**:
+  - Session storage and caching
+  - Real-time data synchronization
+  - Message queuing
+
 ### Infrastructure Components
-- **Nginx Reverse Proxy**: Load balancing and request routing with WAF protection
+- **Nginx Reverse Proxy**: Load balancing and request routing with ModSecurity WAF protection
 - **WebSocket Proxy**: Real-time communication handling
 - **Docker Compose**: Container orchestration and service management
+- **HashiCorp Vault**: Secrets management and PKI certificate generation
+- **Redis**: Caching and session storage
+- **SQLite Databases**: Lightweight, file-based database for each service
 
 ### Shared Utilities Package (`/packages/common`)
 - **Package**: `@ft-transcendence/common`
@@ -159,14 +173,14 @@ make start
 
 # Wait 2-3 minutes for services to initialize
 # Then verify with:
-curl https://localhost  # Should show web interface
+curl https://localhost:8443  # Should show web interface
 docker compose ps     # All containers should show "Up (healthy)"
 ```
 
 ### Verify Services Are Running
 ```bash
 # Quick health check
-curl https://localhost/api/auth/health
+curl https://localhost:8443/api/auth/health
 
 # Expected: {"status":"ok"}
 ```
@@ -269,7 +283,7 @@ This command:
 
 ### Common Issues
 
-- **Port conflicts**: Ensure ports 8080, 8443, and 8200 are available
+- **Port conflicts**: Ensure ports 8200, 8443, and 8545 are available
 - **Docker issues**: Run `make clean-start` for a complete reset
 - **SSL certificate errors**: The project uses self-signed certificates for development
 - **Service startup failures**: Check logs with `make logs`
@@ -288,4 +302,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Built with**: TypeScript, Node.js, Fastify, SQLite, Docker, WebSockets, HTML5 Canvas, Solidity, Hardhat
+**Built with**: TypeScript, Node.js, Fastify, SQLite, Docker, WebSockets, HTML5 Canvas, Babylon.js, Solidity, Hardhat, HashiCorp Vault
