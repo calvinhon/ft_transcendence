@@ -1,0 +1,374 @@
+\documentclass{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{fancybox}
+\usepackage{framed}
+\usepackage[table]{xcolor}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{tikz}
+
+\graphicspath{{figures/}}
+
+\title{ft\_transcendence: Full-Stack Multiplayer Pong Platform}
+\subtitle{Capstone Project Presentation}
+\author{Calvin Hon, Muhammad Ali Danish, Mahad Abdullah, Nguyen The Hoach}
+\institute{42 School}
+\date{January 20, 2026}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Project Overview}
+\begin{itemize}
+\item \textbf{ft\_transcendence}: Production-ready, full-stack multiplayer Pong platform
+\item Real-time WebSocket gameplay at 60 FPS
+\item Microservices architecture with blockchain-integrated tournaments
+\item Comprehensive security (WAF + Vault)
+\item Supports AI opponents, campaign progression, achievements, leaderboards
+\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{42_logo.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Project Objectives}
+\begin{itemize}
+\item Implement server-authoritative Pong with real-time synchronization
+\item Secure, scalable microservices supporting concurrent sessions
+\item Tournament management with blockchain immutability
+\item Production-grade security with WAF and secrets management
+\item Web-based access with extensible architecture
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Quality Metrics}
+\begin{itemize}
+\item \textbf{Functional Completeness:} 100\% subject compliance
+\item \textbf{Security:} Zero critical vulnerabilities, WAF active
+\item \textbf{Code Quality:} TypeScript strict mode, ESLint, consistent standards
+\end{itemize}
+\end{frame}
+
+\section{Software Development Life Cycle (SDLC)}
+
+\begin{frame}{SDLC Approach}
+\begin{itemize}
+\item Iterative, incremental model with 5 phases
+\item Planning \& Requirements Analysis
+\item Architectural Design
+\item Implementation (Iterative)
+\item Deployment \& Evolution
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Project Timeline}
+\begin{itemize}
+\item \textbf{Phase 1 (Weeks 1-2):} Planning, requirements analysis, architecture design
+\item \textbf{Phase 2 (Weeks 3-8):} Core service development, game logic
+\item \textbf{Phase 3 (Weeks 9-10):} Security hardening, WAF, Vault, blockchain
+\item \textbf{Phase 4 (Week 11):} Deployment, production readiness
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Gantt Chart}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{gantt.png}
+\caption{Project Gantt Chart: Phases, milestones, and timeline}
+\end{figure}
+\end{frame}
+
+\section{Requirements Analysis}
+
+\begin{frame}{High-Level Requirements}
+\begin{itemize}
+\item Functional: User management, gameplay, social features, tournaments
+\item Technical: Microservices, technology stack, security, performance
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Functional Requirements}
+\begin{itemize}
+\item FR-1: User registration and authentication
+\item FR-6: 60 FPS server-authoritative Pong
+\item FR-11: Friend system and leaderboards
+\item FR-15: Tournament creation and management
+\item FR-17: Blockchain-recorded tournament results
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Technical Requirements}
+\begin{itemize}
+\item TR-1: 4 microservices (auth, user, game, tournament)
+\item TR-6: Node.js 20+ with Fastify v4 and TypeScript
+\item TR-11: HTTPS with TLS 1.2+, WAF protection
+\item TR-21: 60 FPS game loop, <200ms API response
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Risk Register}
+\begin{table}[h!]
+\centering
+\caption{Risk Register}
+\begin{tabular}{p{0.5cm} p{2cm} c c c}
+\toprule
+ID & Description & Likelihood & Impact & Severity \\
+\midrule
+1 & Server downtime & 2 & 4 & 8 \\
+2 & SQL injection & 1 & 5 & 5 \\
+3 & Data leak & 2 & 4 & 8 \\
+4 & OAuth downtime & 3 & 3 & 9 \\
+5 & Blockchain failure & 1 & 4 & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{frame}
+
+\section{Design}
+
+\begin{frame}{System Architecture}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{architecture_diagram.png}
+\caption{High-level System Architecture with Microservices}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Deployment Topology}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{deployment_topology.png}
+\caption{Docker Compose Deployment Topology}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Microservices Overview}
+\begin{longtable}[h]{p{2cm}p{6cm}p{1.5cm}}
+\hline
+\textbf{Service} & \textbf{Responsibilities} & \textbf{Port} \\
+\hline
+Auth Service & Registration, login, password reset & 3001 \\
+User Service & Profiles, friends, achievements & 3002 \\
+Game Service & Real-time Pong, WebSocket & 3003 \\
+Tournament Service & Tournament management, blockchain & 3004 \\
+Nginx Gateway & TLS, routing, WAF & 80/443 \\
+Vault & Secret storage & 8200 \\
+Hardhat & Local blockchain & 8545 \\
+\hline
+\end{longtable}
+\end{frame}
+
+\begin{frame}{Data Model}
+\begin{itemize}
+\item Auth DB: users, sessions
+\item User DB: profiles, friendships, achievements, statistics
+\item Game DB: matches, game sessions, match events
+\item Tournament DB: tournaments, participants, bracket matches, blockchain records
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Security Design}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{security_layers.png}
+\caption{Defense-in-Depth Security Architecture}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Security Layers}
+\begin{itemize}
+\item Layer 1: Network Security (HTTPS, WAF, Rate Limiting)
+\item Layer 2: Transport Security (mTLS, Session Security)
+\item Layer 3: Application Security (Input Validation, SQL Injection Prevention)
+\item Layer 4: Authentication \& Authorization (Password Security, RBAC)
+\item Layer 5: Data Protection (Vault, Database Security)
+\item Layer 6: Monitoring \& Logging
+\item Layer 7: Incident Response
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Blockchain Integration}
+\begin{itemize}
+\item Hardhat local network for development/testing
+\item Solidity smart contracts for tournament rankings
+\item Immutable result recording
+\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{12_blockchain_record.png}
+\caption{Blockchain Record Verification}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Smart Contract}
+\begin{verbatim}
+contract TournamentRankings {
+    mapping(uint256 => mapping(uint256 => uint256)) 
+        public tournamentRankings;
+    
+    function recordRank(uint256 tournamentId, 
+        uint256 playerId, uint256 rank) public {
+        tournamentRankings[tournamentId][playerId] = rank;
+    }
+}
+\end{verbatim}
+\end{frame}
+
+\begin{frame}{3D Frontend Implementation}
+\begin{itemize}
+\item Babylon.js for immersive 3D rendering
+\item Singleton pattern with conditional initialization
+\item Real-time 3D synchronization with WebSocket
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Wireframes and UI}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{3_Main_Menu.png}
+\caption{Main Menu Interface}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{2_login_UI.png}
+\caption{Login Interface}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Gameplay Interfaces}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{multiplayer_arcade.png}
+\caption{Arcade Multiplayer Mode}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{gamemode_tournament.png}
+\caption{Tournament Mode}
+\end{figure}
+\end{frame}
+
+\section{Implementation}
+
+\begin{frame}{Technology Stack}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Component} & \textbf{Technology} & \textbf{Version} \\
+\hline
+Backend & Fastify + Node.js + TypeScript & 4.29.1 / 20.19.20 / 5.9.3 \\
+Database & SQLite 3 & 5.1.6 \\
+Frontend Build & Vite & 5.0.8 \\
+Real-Time & WebSocket & (Fastify plugin) \\
+Blockchain & Hardhat + Solidity & 2.22.17 \\
+Secrets & HashiCorp Vault & 1.15+ \\
+\hline
+\end{tabular}
+\end{table}
+\end{frame}
+
+\begin{frame}{Backend Framework}
+\begin{itemize}
+\item Fastify v4 with TypeScript strict mode
+\item 4 microservices: auth, user, game, tournament
+\item REST APIs and WebSocket support
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Frontend Architecture}
+\begin{itemize}
+\item TypeScript SPA with component-based architecture
+\item Service layer separation
+\item Client-side routing for SPA navigation
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Blockchain Implementation}
+\begin{itemize}
+\item Avalanche blockchain integration
+\item Solidity smart contracts for tournament results
+\item Hardhat for development and testing
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Security Implementation}
+\begin{itemize}
+\item WAF/ModSecurity with OWASP CRS
+\item HashiCorp Vault for secrets management
+\item HTTPS with TLS 1.2+, mTLS between services
+\end{itemize}
+\end{frame}
+
+\begin{frame}{DevOps Implementation}
+\begin{itemize}
+\item Docker Compose orchestration (21 containers)
+\item Nginx reverse proxy with load balancing
+\item Health checks and monitoring
+\end{itemize}
+\end{frame}
+
+\section{Testing}
+
+\begin{frame}{Test Results Summary}
+\begin{itemize}
+\item Comprehensive manual testing completed
+\item All modules validated (100\% coverage)
+\item Security, blockchain, microservices tested
+\end{itemize}
+\begin{itemize}
+\item Authentication: registration, login, password reset
+\item Gameplay: real-time synchronization, AI opponents
+\item Security: WAF rules, Vault integration
+\item Performance: responsiveness, concurrent users
+\end{itemize}
+\end{frame}
+
+\section{Evolution and Conclusion}
+
+\begin{frame}{Current State and Conclusion}
+\begin{itemize}
+\item Fully implemented and production-ready
+\item All subject requirements achieved
+\item Comprehensive manual testing completed
+\end{itemize}
+\begin{itemize}
+\item 100\% subject compliance
+\item Modern software engineering practices
+\item Production-grade security and scalability
+\item Innovative 3D frontend with Babylon.js
+\end{itemize}
+\begin{itemize}
+\item ft\_transcendence demonstrates mastery of modern software engineering
+\item Ready for production deployment
+\item Extensible architecture for future enhancements
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Q\&A}
+\begin{center}
+Thank you for your attention!
+
+Questions?
+\end{center}
+\end{frame}
+
+\end{document}
