@@ -1140,10 +1140,24 @@ The application features a unique "Immersive Office" concept where the user inte
 
 The 3D environment serves as more than just a background; it is the primary container for the application. When the user navigates the application, they are effectively looking at the screen of the virtual monitor.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/3D_monitor_main_menu.png}
+\caption{Immersive Office: Main Menu displayed on the Virtual Monitor}
+\label{fig:3d_monitor_main_menu}
+\end{figure}
+
 \subsection{Story and Lore Integration}
 Upon the first launch, the user is presented with a narrative sequence that establishes the setting. The camera acts as the user's viewpoint, capable of panning dynamically between different points of interest, such as the monitor (for gameplay and UI) and "Lore" items (like newspapers) scattered around the desk.
 
 This seamless transition is managed by the \texttt{BabylonWrapper}, which interpolates camera positions to create smooth, cinematic movements between these interaction points, making the UI feel like an integrated part of the story.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/3D_newspaper_view.png}
+\caption{Story Integration: Interactive Newspaper providing Narrative Context}
+\label{fig:3d_newspaper_view}
+\end{figure}
 
 \subsection{Babylon.js Integration Architecture}
 
@@ -1194,6 +1208,13 @@ The 3D Pong game is not an isolated overlay but plays out physically within the 
 
 \subsubsection{Environmental Lighting Interaction}
 A key feature of the 3D mode is the interplay between game elements and the environment. The ball and paddles are equipped with dynamic light sources. As the ball moves across the field, it casts real-time light onto the surrounding office desk and objects, creating a grounded and realistic effect. The virtual monitors also emit a glow that reflects off the desk surface.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/3D_TV_arcade_game.png}
+\caption{3D Arcade Mode: Rendering "Inside" the Virtual TV Screen}
+\label{fig:3d_tv_arcade_game}
+\end{figure}
 
 \begin{lstlisting}
 export class ThreeDGameRenderer {
@@ -1444,7 +1465,7 @@ Campaign progression system was tested for:
 \subsection{Tournament System}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.55\textwidth]{gamemode_tournament.png}
+\includegraphics[width=0.55\textwidth]{tournament_bracket_matches.png}
 \caption{Tournament Mode: Bracket-Based Competition with Multiple Players}
 \label{fig:tournament_mode}
 \end{figure}
