@@ -1,0 +1,55 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=2cm, auto,
+    screen/.style={rectangle, draw, fill=blue!10, text width=2.5cm, text centered, minimum height=1.5cm, font=\small},
+    arrow/.style={->, thick, >=stealth}]
+
+    % Login and Registration
+    \node[screen] (login) {Login Interface};
+    \node[screen, right=of login] (register) {Registration Interface};
+
+    % Main Menu
+    \node[screen, below=of login] (mainmenu) {Main Menu Interface};
+
+    % Game Modes
+    \node[screen, below=of mainmenu] (gamemode) {Game Mode Selection};
+    \node[screen, right=of gamemode] (gameplay) {Gameplay Interface};
+    \node[screen, right=of gameplay] (multiplayer) {Multiplayer Arcade};
+
+    % Tournament
+    \node[screen, below=of gamemode] (tournamentmode) {Tournament Mode Selection};
+    \node[screen, right=of tournamentmode] (tournamentbracket) {Tournament Bracket View};
+
+    % Profile/Dashboard
+    \node[screen, below=of tournamentmode] (dashboard) {Dashboard \& Profile};
+
+    % 3D Environment
+    \node[screen, right=of dashboard] (3dmonitor) {3D Monitor Interface};
+    \node[screen, right=of 3dmonitor] (3darcade) {3D Arcade Mode};
+    \node[screen, right=of 3darcade] (3dnewspaper) {3D Newspaper View};
+
+    % Connections
+    \draw[arrow] (login) -- (mainmenu);
+    \draw[arrow] (register) -- (mainmenu);
+    \draw[arrow] (mainmenu) -- (gamemode);
+    \draw[arrow] (mainmenu) -- (tournamentmode);
+    \draw[arrow] (mainmenu) -- (dashboard);
+    \draw[arrow] (gamemode) -- (gameplay);
+    \draw[arrow] (gamemode) -- (multiplayer);
+    \draw[arrow] (tournamentmode) -- (tournamentbracket);
+    \draw[arrow] (dashboard) -- (3dmonitor);
+    \draw[arrow] (3dmonitor) -- (3darcade);
+    \draw[arrow] (3dmonitor) -- (3dnewspaper);
+
+    % Labels for sections
+    \node[above=of login, font=\bfseries] {Authentication};
+    \node[above=of mainmenu, font=\bfseries] {Navigation};
+    \node[above=of gamemode, font=\bfseries] {Game Modes};
+    \node[above=of tournamentmode, font=\bfseries] {Tournament System};
+    \node[above=of dashboard, font=\bfseries] {User Profile};
+    \node[above=of 3dmonitor, font=\bfseries] {3D Environment};
+
+\end{tikzpicture}
+\caption{Overall Application Wireframe Flow: Complete user journey through all UI screens}
+\label{fig:overall_wireframe_flow}
+\end{figure}
