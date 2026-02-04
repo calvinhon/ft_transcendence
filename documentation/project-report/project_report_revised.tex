@@ -217,7 +217,7 @@ The project followed an iterative, incremental SDLC model with five phases:
 
 The following flowchart illustrates the Software Development Life Cycle process:
 
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[node distance=2cm]
 
@@ -232,9 +232,9 @@ The following flowchart illustrates the Software Development Life Cycle process:
 \node (implement) [process, right of=decision1, xshift=3cm] {Implementation};
 \node (test) [process, below of=implement] {Testing};
 \node (deploy) [process, below of=test] {Deployment};
-\node (decision2) [decision, below of=deploy] {Complete?};
+\node (decision2) [decision, below of=deploy, yshift=-1.0cm] {Complete?};
 \node (evolution) [process, right of=decision2, xshift=3cm] {Evolution};
-\node (end) [process, below of=decision2] {Closure};
+\node (end) [process, below of=decision2, yshift=-1cm] {Closure};
 
 \draw [arrow] (start) -- (planning);
 \draw [arrow] (planning) -- (design);
@@ -349,11 +349,6 @@ Risk levels: Low (1-5), Medium (6-12), High (13-20), Critical (21-25).
 \chapter{Requirement Analysis}
 \label{ch:requirements}
 
-
-\section{High-Level Overview of Requirements}
-\label{sec:req_overview}
-
-The system requirements are divided into functional and technical requirements. This chapter provides only a high-level summary; all detailed UI, wireframes, and architecture figures are presented in the Design chapter.
 
 \section{Requirements}
 \label{sec:req}
@@ -1896,17 +1891,17 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     % Nodes
     \node[startend] (start) {User Access};
     \node[process, below of=start] (homepage) {Homepage};
-    \node[decision, below of=homepage] (auth_check) {Authenticated?};
-    \node[process, left of=auth_check, xshift=-2cm] (login) {Login/Register};
-    \node[process, right of=auth_check, xshift=2cm] (main_menu) {Main Menu};
+    \node[decision, below of=homepage, yshift=-1.0cm] (auth_check) {Authenticated?};
+    \node[process, left of=auth_check, xshift=-2.5cm] (login) {Login/Register};
+    \node[process, right of=auth_check, xshift=2.5cm] (main_menu) {Main Menu};
     \node[process, below of=main_menu] (game_modes) {Game Modes};
-    \node[decision, below of=game_modes] (mode_select) {Select Mode};
+    \node[decision, below of=game_modes, yshift=-0.5cm] (mode_select) {Select Mode};
     \node[process, left of=mode_select, xshift=-3cm] (campaign) {Campaign (AI)};
     \node[process, below of=campaign] (campaign_game) {Game Session};
     \node[process, right of=mode_select, xshift=3cm] (multiplayer) {Multiplayer};
     \node[process, below of=multiplayer] (matchmaking) {Matchmaking};
     \node[process, below of=matchmaking] (multiplayer_game) {Game Session};
-    \node[process, below of=mode_select, yshift=-2cm] (tournament) {Tournament};
+    \node[process, below of=mode_select, yshift=-1cm] (tournament) {Tournament};
     \node[process, below of=tournament] (tournament_setup) {Tournament Setup};
     \node[process, below of=tournament_setup] (tournament_game) {Tournament Matches};
     \node[data, below of=campaign_game] (stats) {Update Statistics};
@@ -1935,8 +1930,8 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \draw[->] (tournament_setup) -- (tournament_game);
     \draw[->] (tournament_game) -- (stats3);
     \draw[->] (stats) -- (leaderboard);
-    \draw[->] (stats2) -- (leaderboard);
-    \draw[->] (stats3) -- (leaderboard);
+    %\draw[->] (stats2) |- (leaderboard);
+    %\draw[->] (stats3) |- (leaderboard);
     \draw[->] (leaderboard) -- (end);
 \end{tikzpicture}
 \caption{System Workflow: Complete user journey from access to gameplay completion}
@@ -1945,7 +1940,7 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 
 \subsection{User Authentication Flow}
 
-\begin{figure}[H]
+\begin{figure}[tbp]
 \centering
 \begin{tikzpicture}[node distance=1.5cm, auto]
     % Define styles
@@ -1956,19 +1951,18 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 
     % Nodes
     \node[startend] (start) {Access Site};
-    \node[decision, below of=start] (has_account) {Has Account?};
-    \node[process, left of=has_account, xshift=-2cm] (register) {Registration Form};
+    \node[decision, below of=start, yshift=-1.0cm] (has_account) {Has Account?};
+    \node[process, left of=has_account, xshift=-3cm] (register) {Registration Form};
     \node[data, below of=register] (validate_reg) {Validate Input};
     \node[decision, below of=validate_reg] (reg_valid) {Valid?};
-    \node[process, left of=reg_valid, xshift=-1.5cm] (reg_error) {Show Errors};
-    \node[process, right of=reg_valid, xshift=1.5cm] (create_account) {Create Account};
+    \node[process, left of=reg_valid, xshift=-1.5cm, yshift=-1cm] (reg_error) {Show Errors};
+    \node[process, right of=reg_valid, xshift=1.5cm, yshift=-1cm] (create_account) {Create Account};
     \node[data, below of=create_account] (store_user) {Store User Data};
-    \node[process, below of=store_user] (send_welcome) {Send Welcome Email};
-    \node[process, right of=has_account, xshift=2cm] (login) {Login Form};
+    \node[process, right of=has_account, xshift=3cm] (login) {Login Form};
     \node[data, below of=login] (validate_login) {Validate Credentials};
     \node[decision, below of=validate_login] (login_valid) {Valid?};
-    \node[process, left of=login_valid, xshift=-1.5cm] (login_error) {Show Error};
-    \node[process, right of=login_valid, xshift=1.5cm] (generate_token) {Generate JWT Token};
+    \node[process, left of=login_valid, xshift=-1.5cm, yshift=-1cm] (login_error) {Show Error};
+    \node[process, right of=login_valid, xshift=1.5cm, yshift=-1cm] (generate_token) {Generate JWT Token};
     \node[data, below of=generate_token] (store_session) {Store Session};
     \node[process, below of=store_session] (redirect) {Redirect to Dashboard};
     \node[startend, below of=redirect] (authenticated) {Authenticated};
@@ -1982,14 +1976,13 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \draw[->] (reg_error) -- (register);
     \draw[->] (reg_valid) -- node[right] {Yes} (create_account);
     \draw[->] (create_account) -- (store_user);
-    \draw[->] (store_user) -- (send_welcome);
-    \draw[->] (send_welcome) -- (authenticated);
+    \draw[->] (store_user) -- (authenticated);
     \draw[->] (has_account) -- node[right] {Yes} (login);
     \draw[->] (login) -- (validate_login);
     \draw[->] (validate_login) -- (login_valid);
-    \draw[->] (login_valid) -- node[left] {No} (login_error);
+    \draw[->] (login_valid) |- node[left] {No} (login_error);
     \draw[->] (login_error) -- (login);
-    \draw[->] (login_valid) -- node[right] {Yes} (generate_token);
+    \draw[->] (login_valid) |- node[right] {Yes} (generate_token);
     \draw[->] (generate_token) -- (store_session);
     \draw[->] (store_session) -- (redirect);
     \draw[->] (redirect) -- (authenticated);
@@ -1999,8 +1992,7 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 \end{figure}
 
 \subsection{Game Session Flow}
-
-\begin{figure}[H]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[node distance=1.5cm, auto]
     % Define styles
@@ -2013,22 +2005,22 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \node[startend] (start) {Start Game};
     \node[process, below of=start] (init_game) {Initialize Game State};
     \node[process, below of=init_game] (connect_ws) {Establish WebSocket};
-    \node[decision, below of=connect_ws] (ws_connected) {Connected?};
-    \node[process, left of=ws_connected, xshift=-2cm] (retry_ws) {Retry Connection};
-    \node[process, right of=ws_connected, xshift=2cm] (load_assets) {Load Game Assets};
+    \node[decision, below of=connect_ws, yshift=-1cm] (ws_connected) {Connected?};
+    \node[process, left of=ws_connected, xshift=-3.5cm] (retry_ws) {Retry Connection};
+    \node[process, right of=ws_connected, xshift=3.5cm] (load_assets) {Load Game Assets};
     \node[process, below of=load_assets] (setup_players) {Setup Player Controls};
     \node[process, below of=setup_players] (start_physics) {Start Physics Engine};
     \node[process, below of=start_physics] (game_loop) {Game Loop};
-    \node[decision, below of=game_loop] (game_end) {Game Over?};
-    \node[process, left of=game_end, xshift=-2cm] (continue_loop) {Continue Loop};
-    \node[process, right of=game_end, xshift=2cm] (calculate_score) {Calculate Final Score};
+    \node[decision, below of=game_loop, yshift=-1.5cm] (game_end) {Game Over?};
+    \node[process, left of=game_end, xshift=-3cm] (continue_loop) {Continue Loop};
+    \node[process, right of=game_end, xshift=3cm] (calculate_score) {Calculate Final Score};
     \node[data, below of=calculate_score] (save_results) {Save Match Results};
-    \node[process, below of=save_results] (update_stats) {Update Player Stats};
-    \node[decision, below of=update_stats] (tournament) {Tournament Match?};
-    \node[process, left of=tournament, xshift=-2cm] (regular_end) {End Regular Game};
-    \node[process, right of=tournament, xshift=2cm] (record_blockchain) {Record on Blockchain};
-    \node[process, below of=record_blockchain] (update_bracket) {Update Tournament Bracket};
-    \node[startend, below of=regular_end] (end) {Game Complete};
+    \node[process, below of=save_results, xshift=-8cm] (update_stats) {Update Player Stats};
+    \node[decision, below of=update_stats, yshift=-1.5cm] (tournament) {Tournament Match?};
+    \node[process, left of=tournament, xshift=-4cm] (regular_end) {End Regular Game};
+    \node[process, right of=tournament, xshift=4cm] (record_blockchain) {Record on Blockchain};
+    \node[process, below of=record_blockchain, yshift=-1cm] (update_bracket) {Update Tournament Bracket};
+    \node[startend, below of=regular_end, yshift=-1cm] (end) {Game Complete};
 
     % Connections
     \draw[->] (start) -- (init_game);
@@ -2056,62 +2048,6 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 \caption{Game Session Flow: Complete game lifecycle from initialization to completion}
 \label{fig:game_flow}
 \end{figure}
-
-\subsection{Data Flow Architecture}
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=2cm, auto]
-    % Define styles
-    \tikzstyle{service} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
-    \tikzstyle{database} = [cylinder, minimum width=2cm, minimum height=1cm, text centered, draw=black, fill=green!30, shape border rotate=90]
-    \tikzstyle{external} = [rectangle, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=orange!30]
-    \tikzstyle{flow} = [->, thick]
-
-    % Frontend
-    \node[service] (frontend) {Frontend (React/Three.js)};
-    
-    % Services
-    \node[service, below of=frontend, xshift=-4cm] (auth_service) {Auth Service};
-    \node[service, right of=auth_service, xshift=4cm] (user_service) {User Service};
-    \node[service, below of=auth_service, xshift=4cm] (game_service) {Game Service};
-    \node[service, left of=game_service, xshift=-4cm] (tournament_service) {Tournament Service};
-    
-    % Databases
-    \node[database, below of=auth_service] (auth_db) {Auth DB};
-    \node[database, below of=user_service] (user_db) {User DB};
-    \node[database, below of=game_service] (game_db) {Game DB};
-    \node[database, below of=tournament_service] (tournament_db) {Tournament DB};
-    
-    % External Services
-    \node[external, right of=user_service, xshift=3cm] (blockchain) {Blockchain Service};
-    \node[external, below of=blockchain] (redis) {Redis Cache};
-    \node[external, below of=redis] (vault) {HashiCorp Vault};
-    
-    % Connections
-    \draw[flow] (frontend) -- (auth_service);
-    \draw[flow] (frontend) -- (user_service);
-    \draw[flow] (frontend) -- (game_service);
-    \draw[flow] (frontend) -- (tournament_service);
-    
-    \draw[flow] (auth_service) -- (auth_db);
-    \draw[flow] (user_service) -- (user_db);
-    \draw[flow] (game_service) -- (game_db);
-    \draw[flow] (tournament_service) -- (tournament_db);
-    
-    \draw[flow] (tournament_service) -- (blockchain);
-    \draw[flow] (user_service) -- (redis);
-    \draw[flow] (auth_service) -- (vault);
-    
-    % Cross-service communication
-    \draw[flow, dashed] (auth_service) -- (user_service);
-    \draw[flow, dashed] (user_service) -- (game_service);
-    \draw[flow, dashed] (game_service) -- (tournament_service);
-\end{tikzpicture}
-\caption{Data Flow Architecture: Service interactions and data persistence layers}
-\label{fig:data_flow}
-\end{figure}
-
 % ============================================================================
 \chapter{Implementation}
 \label{ch:implementation}
@@ -3348,7 +3284,7 @@ The ft\_transcendence project successfully demonstrates the application of moder
 \centering
 \includegraphics[width=0.95\textwidth]{data_flow_diagram.png}
 \caption{Game Match Data Flow: From Player Input to Rendering and Persistence}
-\label{fig:data_flow}
+\label{fig:game_data_flow}
 \end{figure}
 
 \chapter{Code Repository Structure}
