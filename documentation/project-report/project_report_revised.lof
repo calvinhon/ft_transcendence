@@ -1,46 +1,50 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces SDLC Flowchart: Complete development process for ft\_transcendence project}}{11}{figure.caption.5}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Project Gantt Chart: Phases, milestones, timeline, and resource allocation}}{14}{figure.caption.7}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces SDLC Flowchart: Development process overview}}{3}{figure.caption.5}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Project Gantt Chart: Timeline and resource allocation}}{5}{figure.caption.7}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Persistent Storage}}{21}{figure.caption.27}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{22}{figure.caption.28}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Six Protective Layers}}{24}{figure.caption.29}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{24}{figure.caption.31}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{25}{figure.caption.32}%
-\contentsline {figure}{\numberline {4.6}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{31}{figure.caption.58}%
-\contentsline {figure}{\numberline {4.7}{\ignorespaces Microservices Architecture: Service Dependencies and Communication Flow}}{37}{figure.caption.76}%
-\contentsline {figure}{\numberline {4.8}{\ignorespaces Immersive Office: Main Menu displayed on the Virtual Monitor}}{41}{figure.caption.77}%
-\contentsline {figure}{\numberline {4.9}{\ignorespaces Story Integration: Interactive Newspaper providing Narrative Context}}{42}{figure.caption.78}%
-\contentsline {figure}{\numberline {4.10}{\ignorespaces 3D Arcade Mode: Rendering "Inside" the Virtual TV Screen}}{43}{figure.caption.80}%
-\contentsline {figure}{\numberline {4.11}{\ignorespaces Login Interface: Email/password authentication with Google OAuth option}}{46}{figure.caption.82}%
-\contentsline {figure}{\numberline {4.12}{\ignorespaces Registration Interface: New user account creation form}}{47}{figure.caption.84}%
-\contentsline {figure}{\numberline {4.13}{\ignorespaces Main Menu: Game mode selection and navigation hub}}{48}{figure.caption.86}%
-\contentsline {figure}{\numberline {4.14}{\ignorespaces Game Mode Selection: Difficulty and settings configuration}}{50}{figure.caption.88}%
-\contentsline {figure}{\numberline {4.15}{\ignorespaces Gameplay Interface: Real-time Pong match with score display}}{51}{figure.caption.90}%
-\contentsline {figure}{\numberline {4.16}{\ignorespaces Multiplayer Arcade: Real-time competitive gameplay}}{52}{figure.caption.92}%
-\contentsline {figure}{\numberline {4.17}{\ignorespaces Tournament Bracket: Match scheduling and progression visualization}}{53}{figure.caption.94}%
-\contentsline {figure}{\numberline {4.18}{\ignorespaces Tournament Mode Selection: Tournament creation and joining interface}}{54}{figure.caption.96}%
-\contentsline {figure}{\numberline {4.19}{\ignorespaces User Dashboard: Profile statistics and achievements}}{55}{figure.caption.98}%
-\contentsline {figure}{\numberline {4.20}{\ignorespaces 3D Monitor Interface: Main menu projected on virtual screen}}{56}{figure.caption.100}%
-\contentsline {figure}{\numberline {4.21}{\ignorespaces 3D Arcade Mode: Game rendering within virtual TV screen}}{57}{figure.caption.102}%
-\contentsline {figure}{\numberline {4.22}{\ignorespaces 3D Newspaper View: Interactive environmental storytelling}}{58}{figure.caption.104}%
-\contentsline {figure}{\numberline {4.23}{\ignorespaces Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}}{59}{figure.caption.108}%
-\contentsline {figure}{\numberline {4.24}{\ignorespaces Available Game Modes: Campaign, Arcade, Tournament}}{60}{figure.caption.109}%
-\contentsline {figure}{\numberline {4.25}{\ignorespaces Login User Interface: Email/Password Authentication}}{61}{figure.caption.111}%
-\contentsline {figure}{\numberline {4.26}{\ignorespaces Account Registration UI: New Account Creation}}{61}{figure.caption.113}%
-\contentsline {figure}{\numberline {4.27}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{62}{figure.caption.114}%
-\contentsline {figure}{\numberline {4.28}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{63}{figure.caption.115}%
-\contentsline {figure}{\numberline {4.29}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{64}{figure.caption.116}%
-\contentsline {figure}{\numberline {4.30}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{64}{figure.caption.117}%
-\contentsline {figure}{\numberline {4.31}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{65}{figure.caption.118}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces High-level System Architecture with Microservices, API Gateway, and Persistent Storage}}{11}{figure.caption.24}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Docker Compose Deployment Topology with All Services and Persistent Volumes}}{12}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Defense-in-Depth Security Architecture with Six Protective Layers}}{14}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}}{14}{figure.caption.28}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}}{15}{figure.caption.29}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Blockchain Record: Tournament Result Verification on Immutable Ledger}}{21}{figure.caption.55}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Microservices Architecture: Service Dependencies and Communication Flow}}{27}{figure.caption.73}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Immersive Office: Main Menu displayed on the Virtual Monitor}}{31}{figure.caption.74}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Story Integration: Interactive Newspaper providing Narrative Context}}{32}{figure.caption.75}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces 3D Arcade Mode: Rendering "Inside" the Virtual TV Screen}}{33}{figure.caption.77}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces Login Interface: Email/password authentication with Google OAuth option}}{36}{figure.caption.79}%
+\contentsline {figure}{\numberline {4.12}{\ignorespaces Registration Interface: New user account creation form}}{37}{figure.caption.81}%
+\contentsline {figure}{\numberline {4.13}{\ignorespaces Main Menu: Game mode selection and navigation hub}}{38}{figure.caption.83}%
+\contentsline {figure}{\numberline {4.14}{\ignorespaces Game Mode Selection: Difficulty and settings configuration}}{40}{figure.caption.85}%
+\contentsline {figure}{\numberline {4.15}{\ignorespaces Gameplay Interface: Real-time Pong match with score display}}{41}{figure.caption.87}%
+\contentsline {figure}{\numberline {4.16}{\ignorespaces Multiplayer Arcade: Real-time competitive gameplay}}{42}{figure.caption.89}%
+\contentsline {figure}{\numberline {4.17}{\ignorespaces Tournament Bracket: Match scheduling and progression visualization}}{43}{figure.caption.91}%
+\contentsline {figure}{\numberline {4.18}{\ignorespaces Tournament Mode Selection: Tournament creation and joining interface}}{44}{figure.caption.93}%
+\contentsline {figure}{\numberline {4.19}{\ignorespaces User Dashboard: Profile statistics and achievements}}{45}{figure.caption.95}%
+\contentsline {figure}{\numberline {4.20}{\ignorespaces 3D Monitor Interface: Main menu projected on virtual screen}}{46}{figure.caption.97}%
+\contentsline {figure}{\numberline {4.21}{\ignorespaces 3D Arcade Mode: Game rendering within virtual TV screen}}{47}{figure.caption.99}%
+\contentsline {figure}{\numberline {4.22}{\ignorespaces 3D Newspaper View: Interactive environmental storytelling}}{48}{figure.caption.101}%
+\contentsline {figure}{\numberline {4.23}{\ignorespaces Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}}{49}{figure.caption.105}%
+\contentsline {figure}{\numberline {4.24}{\ignorespaces Available Game Modes: Campaign, Arcade, Tournament}}{50}{figure.caption.106}%
+\contentsline {figure}{\numberline {4.25}{\ignorespaces Login User Interface: Email/Password Authentication}}{51}{figure.caption.108}%
+\contentsline {figure}{\numberline {4.26}{\ignorespaces Account Registration UI: New Account Creation}}{51}{figure.caption.110}%
+\contentsline {figure}{\numberline {4.27}{\ignorespaces Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}}{52}{figure.caption.111}%
+\contentsline {figure}{\numberline {4.28}{\ignorespaces Game Settings: Difficulty, Ball Speed, Paddle Size Customization}}{53}{figure.caption.112}%
+\contentsline {figure}{\numberline {4.29}{\ignorespaces Campaign Mode: Single-Player Progression Against AI Opponent}}{54}{figure.caption.113}%
+\contentsline {figure}{\numberline {4.30}{\ignorespaces Tournament Mode: Bracket-Based Competition with Multiple Players}}{54}{figure.caption.114}%
+\contentsline {figure}{\numberline {4.31}{\ignorespaces User Dashboard: Profile Information, Statistics Overview, Recent Activity}}{55}{figure.caption.115}%
+\contentsline {figure}{\numberline {4.32}{\ignorespaces System Workflow: Complete user journey from access to gameplay completion}}{56}{figure.caption.116}%
+\contentsline {figure}{\numberline {4.33}{\ignorespaces Authentication Flow: User registration and login process with validation}}{57}{figure.caption.117}%
+\contentsline {figure}{\numberline {4.34}{\ignorespaces Game Session Flow: Complete game lifecycle from initialization to completion}}{58}{figure.caption.118}%
+\contentsline {figure}{\numberline {4.35}{\ignorespaces Data Flow Architecture: Service interactions and data persistence layers}}{59}{figure.caption.119}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {A.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{94}{figure.caption.169}%
+\contentsline {figure}{\numberline {A.1}{\ignorespaces Game Match Data Flow: From Player Input to Rendering and Persistence}}{86}{figure.caption.170}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

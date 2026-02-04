@@ -1,326 +1,318 @@
-\contentsline {chapter}{List of Figures}{6}{chapter*.2}%
-\contentsline {chapter}{List of Tables}{7}{chapter*.3}%
-\contentsline {chapter}{List of Abbreviations}{8}{chapter*.4}%
-\contentsline {chapter}{\numberline {1}Introduction}{9}{chapter.1}%
-\contentsline {section}{\numberline {1.1}Project Overview}{9}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Project Objectives}{9}{section.1.2}%
-\contentsline {subsection}{\numberline {1.2.1}Primary Objectives}{9}{subsection.1.2.1}%
-\contentsline {subsection}{\numberline {1.2.2}Quality Metrics}{9}{subsection.1.2.2}%
-\contentsline {chapter}{\numberline {2}Software Development Life Cycle (SDLC)}{10}{chapter.2}%
-\contentsline {section}{\numberline {2.1}SDLC Approach}{10}{section.2.1}%
-\contentsline {subsection}{\numberline {2.1.1}Planning \& Requirements Analysis}{10}{subsection.2.1.1}%
-\contentsline {subsection}{\numberline {2.1.2}Architectural Design}{10}{subsection.2.1.2}%
-\contentsline {subsection}{\numberline {2.1.3}Implementation (Iterative)}{10}{subsection.2.1.3}%
-\contentsline {subsection}{\numberline {2.1.4}Deployment \& Evolution}{10}{subsection.2.1.4}%
-\contentsline {section}{\numberline {2.2}SDLC Flowchart}{11}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Project Timeline and Gantt Chart}{11}{section.2.3}%
-\contentsline {subsection}{\numberline {2.3.1}Gantt Chart Validation}{12}{subsection.2.3.1}%
-\contentsline {subsection}{\numberline {2.3.2}Detailed Task Assignment}{13}{subsection.2.3.2}%
-\contentsline {section}{\numberline {2.4}Risk Management}{14}{section.2.4}%
-\contentsline {subsection}{\numberline {2.4.1}Risk Matrix}{14}{subsection.2.4.1}%
-\contentsline {subsubsection}{Risk Level Definitions}{15}{section*.9}%
-\contentsline {subsection}{\numberline {2.4.2}Risk Register}{15}{subsection.2.4.2}%
-\contentsline {subsubsection}{Key Risk Categories}{15}{section*.10}%
-\contentsline {subsubsection}{Detailed Risk Register}{15}{section*.11}%
-\contentsline {subsection}{\numberline {2.4.3}Risk Mitigation Integration in SDLC}{15}{subsection.2.4.3}%
-\contentsline {chapter}{\numberline {3}Requirement Analysis}{17}{chapter.3}%
-\contentsline {section}{\numberline {3.1}High-Level Overview of Requirements}{17}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Requirements}{17}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Functional Requirements}{17}{subsection.3.2.1}%
-\contentsline {subsubsection}{User Management \& Authentication}{17}{section*.13}%
-\contentsline {subsubsection}{Gameplay \& Real-Time Features}{17}{section*.14}%
-\contentsline {subsubsection}{Social \& Leaderboard Features}{18}{section*.15}%
-\contentsline {subsubsection}{Tournament Management}{18}{section*.16}%
-\contentsline {subsection}{\numberline {3.2.2}Technical Requirements}{18}{subsection.3.2.2}%
-\contentsline {subsubsection}{Architecture \& Infrastructure}{18}{section*.17}%
-\contentsline {subsubsection}{Technology Stack}{18}{section*.18}%
-\contentsline {subsubsection}{Security Requirements}{19}{section*.19}%
-\contentsline {subsubsection}{Performance Requirements}{19}{section*.20}%
-\contentsline {subsection}{\numberline {3.2.3}Non-Functional Requirements}{19}{subsection.3.2.3}%
-\contentsline {subsubsection}{Performance Requirements}{19}{section*.21}%
-\contentsline {subsubsection}{Security Requirements}{19}{section*.22}%
-\contentsline {subsubsection}{Reliability Requirements}{20}{section*.23}%
-\contentsline {subsubsection}{Usability Requirements}{20}{section*.24}%
-\contentsline {subsubsection}{Maintainability Requirements}{20}{section*.25}%
-\contentsline {subsubsection}{Scalability Requirements}{20}{section*.26}%
-\contentsline {chapter}{\numberline {4}Design}{21}{chapter.4}%
-\contentsline {section}{\numberline {4.1}System Architecture}{21}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{21}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Deployment Topology}{22}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}Service Responsibilities}{22}{subsection.4.1.3}%
-\contentsline {section}{\numberline {4.2}Data Model}{23}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}Auth Service Database (auth.db)}{23}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{23}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{23}{subsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.2.4}Tournament Service Database (tournaments.db)}{23}{subsection.4.2.4}%
-\contentsline {section}{\numberline {4.3}Security Design}{24}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}Layer 1: Network Security}{24}{subsection.4.3.1}%
-\contentsline {subsubsection}{HTTPS and TLS Implementation}{24}{section*.30}%
-\contentsline {subsubsection}{Web Application Firewall (WAF)}{25}{section*.33}%
-\contentsline {subsubsection}{Rate Limiting and DDoS Protection}{25}{section*.34}%
-\contentsline {subsection}{\numberline {4.3.2}Layer 2: Transport Security}{26}{subsection.4.3.2}%
-\contentsline {subsubsection}{Mutual TLS (mTLS) Between Services}{26}{section*.35}%
-\contentsline {subsubsection}{Session Security}{26}{section*.36}%
-\contentsline {subsection}{\numberline {4.3.3}Layer 3: Application Security}{26}{subsection.4.3.3}%
-\contentsline {subsubsection}{Input Validation and Sanitization}{26}{section*.37}%
-\contentsline {subsubsection}{SQL Injection Prevention}{26}{section*.38}%
-\contentsline {subsubsection}{Cross-Site Scripting (XSS) Protection}{26}{section*.39}%
-\contentsline {subsubsection}{Cross-Site Request Forgery (CSRF) Protection}{26}{section*.40}%
-\contentsline {subsection}{\numberline {4.3.4}Layer 4: Authentication \& Authorization}{27}{subsection.4.3.4}%
-\contentsline {subsubsection}{Password Security}{27}{section*.41}%
-\contentsline {subsubsection}{Multi-Factor Authentication (MFA)}{27}{section*.42}%
-\contentsline {subsection}{\numberline {4.3.5}Layer 5: Data Protection}{27}{subsection.4.3.5}%
-\contentsline {subsubsection}{Secrets Management with HashiCorp Vault}{27}{section*.43}%
-\contentsline {subsubsection}{Database Security}{27}{section*.44}%
-\contentsline {subsection}{\numberline {4.3.6}Layer 6: Monitoring \& Logging}{28}{subsection.4.3.6}%
-\contentsline {subsubsection}{Security Event Logging}{28}{section*.45}%
-\contentsline {subsubsection}{Health Monitoring}{28}{section*.46}%
-\contentsline {subsection}{\numberline {4.3.7}Layer 7: Incident Response}{28}{subsection.4.3.7}%
-\contentsline {subsubsection}{Security Headers Implementation}{28}{section*.47}%
-\contentsline {subsubsection}{Container Security}{28}{section*.48}%
-\contentsline {subsection}{\numberline {4.3.8}Security Testing and Validation}{28}{subsection.4.3.8}%
-\contentsline {subsubsection}{WAF Effectiveness Testing}{28}{section*.49}%
-\contentsline {subsubsection}{Vault Integration Testing}{29}{section*.50}%
-\contentsline {subsubsection}{HTTPS/TLS Testing}{29}{section*.51}%
-\contentsline {subsection}{\numberline {4.3.9}Security Compliance}{29}{subsection.4.3.9}%
-\contentsline {subsubsection}{OWASP Top 10 Coverage}{29}{section*.52}%
-\contentsline {subsubsection}{Industry Best Practices}{29}{section*.53}%
-\contentsline {subsection}{\numberline {4.3.10}Security Implementation Details}{29}{subsection.4.3.10}%
-\contentsline {subsubsection}{SQL Injection Prevention}{29}{section*.54}%
-\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{29}{section*.55}%
-\contentsline {subsubsection}{Vault PKI Integration}{30}{section*.56}%
-\contentsline {subsubsection}{Redis TLS Configuration}{30}{section*.57}%
-\contentsline {section}{\numberline {4.4}Blockchain Integration}{30}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}Blockchain Architecture}{30}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}Smart Contract Implementation}{31}{subsection.4.4.2}%
-\contentsline {subsubsection}{Contract Features}{32}{section*.59}%
-\contentsline {subsection}{\numberline {4.4.3}Hardhat Development Environment}{32}{subsection.4.4.3}%
-\contentsline {subsubsection}{Hardhat Configuration}{32}{section*.60}%
-\contentsline {subsubsection}{Deployment Automation}{32}{section*.61}%
-\contentsline {subsection}{\numberline {4.4.4}Blockchain Service Architecture}{32}{subsection.4.4.4}%
-\contentsline {subsubsection}{Service Components}{32}{section*.62}%
-\contentsline {subsubsection}{Blockchain Service Implementation}{33}{section*.63}%
-\contentsline {subsection}{\numberline {4.4.5}Tournament Integration}{33}{subsection.4.4.5}%
-\contentsline {subsubsection}{Integration Flow}{33}{section*.64}%
-\contentsline {subsubsection}{Blockchain Notifier Service}{34}{section*.65}%
-\contentsline {subsection}{\numberline {4.4.6}Blockchain Security Measures}{34}{subsection.4.4.6}%
-\contentsline {subsubsection}{Private Key Management}{34}{section*.66}%
-\contentsline {subsubsection}{Transaction Security}{34}{section*.67}%
-\contentsline {subsection}{\numberline {4.4.7}Blockchain Testing and Validation}{34}{subsection.4.4.7}%
-\contentsline {subsubsection}{Contract Testing}{35}{section*.68}%
-\contentsline {subsubsection}{Service Testing}{35}{section*.69}%
-\contentsline {subsection}{\numberline {4.4.8}Blockchain Performance Optimization}{35}{subsection.4.4.8}%
-\contentsline {subsubsection}{Gas Optimization}{35}{section*.70}%
-\contentsline {subsubsection}{Network Efficiency}{35}{section*.71}%
-\contentsline {subsection}{\numberline {4.4.9}Blockchain Monitoring and Observability}{35}{subsection.4.4.9}%
-\contentsline {subsubsection}{Transaction Monitoring}{35}{section*.72}%
-\contentsline {subsubsection}{Health Checks}{35}{section*.73}%
-\contentsline {subsection}{\numberline {4.4.10}Blockchain Deployment and Operations}{36}{subsection.4.4.10}%
-\contentsline {subsubsection}{Docker Integration}{36}{section*.74}%
-\contentsline {subsubsection}{Production Considerations}{36}{section*.75}%
-\contentsline {section}{\numberline {4.5}Microservices Architecture}{36}{section.4.5}%
-\contentsline {subsection}{\numberline {4.5.1}Service Architecture Overview}{37}{subsection.4.5.1}%
-\contentsline {subsection}{\numberline {4.5.2}Service Communication Patterns}{38}{subsection.4.5.2}%
-\contentsline {subsection}{\numberline {4.5.3}Docker Compose Orchestration}{38}{subsection.4.5.3}%
-\contentsline {subsection}{\numberline {4.5.4}Service Health Monitoring}{40}{subsection.4.5.4}%
-\contentsline {subsection}{\numberline {4.5.5}Database Architecture}{40}{subsection.4.5.5}%
-\contentsline {subsection}{\numberline {4.5.6}Production Deployment Considerations}{40}{subsection.4.5.6}%
-\contentsline {section}{\numberline {4.6}3D Frontend Implementation}{41}{section.4.6}%
-\contentsline {subsection}{\numberline {4.6.1}Immersive Office Environment}{41}{subsection.4.6.1}%
-\contentsline {subsection}{\numberline {4.6.2}Story and Lore Integration}{41}{subsection.4.6.2}%
-\contentsline {subsection}{\numberline {4.6.3}Babylon.js Integration Architecture}{42}{subsection.4.6.3}%
-\contentsline {subsection}{\numberline {4.6.4}3D Game Rendering and Environmental Effects}{43}{subsection.4.6.4}%
-\contentsline {subsubsection}{Environmental Lighting Interaction}{43}{section*.79}%
-\contentsline {subsection}{\numberline {4.6.5}Real-time 3D Synchronization}{44}{subsection.4.6.5}%
-\contentsline {subsection}{\numberline {4.6.6}HTML Mesh Integration}{44}{subsection.4.6.6}%
-\contentsline {subsection}{\numberline {4.6.7}Post-Processing Effects}{45}{subsection.4.6.7}%
-\contentsline {subsection}{\numberline {4.6.8}Performance Optimizations}{45}{subsection.4.6.8}%
-\contentsline {section}{\numberline {4.7}Wireframes and User Interface Design}{46}{section.4.7}%
-\contentsline {subsection}{\numberline {4.7.1}Authentication Flow Wireframes}{46}{subsection.4.7.1}%
-\contentsline {subsubsection}{Login Interface}{46}{section*.81}%
-\contentsline {subsubsection}{Registration Interface}{47}{section*.83}%
-\contentsline {subsection}{\numberline {4.7.2}Main Navigation and Menu Wireframes}{48}{subsection.4.7.2}%
-\contentsline {subsubsection}{Main Menu Interface}{48}{section*.85}%
-\contentsline {subsection}{\numberline {4.7.3}Game Interface Wireframes}{50}{subsection.4.7.3}%
-\contentsline {subsubsection}{Game Mode Selection}{50}{section*.87}%
-\contentsline {subsubsection}{Gameplay Interface}{51}{section*.89}%
-\contentsline {subsubsection}{Multiplayer Arcade Mode}{52}{section*.91}%
-\contentsline {subsection}{\numberline {4.7.4}Tournament Interface Wireframes}{53}{subsection.4.7.4}%
-\contentsline {subsubsection}{Tournament Bracket View}{53}{section*.93}%
-\contentsline {subsubsection}{Tournament Mode Selection}{54}{section*.95}%
-\contentsline {subsection}{\numberline {4.7.5}User Profile and Social Features}{55}{subsection.4.7.5}%
-\contentsline {subsubsection}{Dashboard and Profile}{55}{section*.97}%
-\contentsline {subsection}{\numberline {4.7.6}3D Environment Integration}{56}{subsection.4.7.6}%
-\contentsline {subsubsection}{3D Monitor Interface}{56}{section*.99}%
-\contentsline {subsubsection}{3D Arcade Game Mode}{57}{section*.101}%
-\contentsline {subsubsection}{3D Newspaper/Lore View}{58}{section*.103}%
-\contentsline {subsection}{\numberline {4.7.7}Wireframe Design Principles}{58}{subsection.4.7.7}%
-\contentsline {subsubsection}{Responsive Design Considerations}{58}{section*.105}%
-\contentsline {subsubsection}{User Experience Guidelines}{59}{section*.106}%
-\contentsline {subsubsection}{3D Integration Principles}{59}{section*.107}%
-\contentsline {subsection}{\numberline {4.7.8}Main Menu Interface}{59}{subsection.4.7.8}%
-\contentsline {subsection}{\numberline {4.7.9}Game Mode Selection}{60}{subsection.4.7.9}%
-\contentsline {subsection}{\numberline {4.7.10}Authentication UI Implementation}{60}{subsection.4.7.10}%
-\contentsline {subsubsection}{Login Interface}{61}{section*.110}%
-\contentsline {subsubsection}{Registration Interface}{61}{section*.112}%
-\contentsline {subsection}{\numberline {4.7.11}Gameplay Interface}{62}{subsection.4.7.11}%
-\contentsline {subsection}{\numberline {4.7.12}Game Settings}{63}{subsection.4.7.12}%
-\contentsline {subsection}{\numberline {4.7.13}Campaign Mode}{64}{subsection.4.7.13}%
-\contentsline {subsection}{\numberline {4.7.14}Tournament System}{64}{subsection.4.7.14}%
-\contentsline {subsection}{\numberline {4.7.15}User Profile and Statistics}{65}{subsection.4.7.15}%
-\contentsline {chapter}{\numberline {5}Implementation}{66}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Mandatory Implementation}{66}{section.5.1}%
-\contentsline {subsection}{\numberline {5.1.1}Technology Stack Summary}{66}{subsection.5.1.1}%
-\contentsline {subsection}{\numberline {5.1.2}Backend Framework}{66}{subsection.5.1.2}%
-\contentsline {subsubsection}{Frontend Architecture}{67}{section*.119}%
-\contentsline {subsubsection}{Single-Page Application (SPA)}{67}{section*.120}%
-\contentsline {section}{\numberline {5.2}Web Implementation}{67}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}Backend Framework}{67}{subsection.5.2.1}%
-\contentsline {subsection}{\numberline {5.2.2}Blockchain Integration}{68}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}Frontend Framework}{68}{subsection.5.2.3}%
-\contentsline {subsection}{\numberline {5.2.4}Database}{68}{subsection.5.2.4}%
-\contentsline {section}{\numberline {5.3}User Management Implementation}{68}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Standard User Management}{68}{subsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.3.2}Remote Authentication}{68}{subsection.5.3.2}%
-\contentsline {section}{\numberline {5.4}Gameplay and User Experience Implementation}{68}{section.5.4}%
-\contentsline {subsection}{\numberline {5.4.1}Multiplayer (more than 2 players)}{68}{subsection.5.4.1}%
-\contentsline {section}{\numberline {5.5}AI-Algo Implementation}{68}{section.5.5}%
-\contentsline {subsection}{\numberline {5.5.1}AI Opponent}{68}{subsection.5.5.1}%
-\contentsline {subsection}{\numberline {5.5.2}User and Game Stats Dashboards}{68}{subsection.5.5.2}%
-\contentsline {section}{\numberline {5.6}Cybersecurity Implementation}{68}{section.5.6}%
-\contentsline {subsection}{\numberline {5.6.1}WAF/ModSecurity with Vault}{68}{subsection.5.6.1}%
-\contentsline {section}{\numberline {5.7}Devops Implementation}{69}{section.5.7}%
-\contentsline {subsection}{\numberline {5.7.1}Microservices Architecture}{69}{subsection.5.7.1}%
-\contentsline {subsection}{\numberline {5.7.2}Docker Containerization}{69}{subsection.5.7.2}%
-\contentsline {subsubsection}{Dockerfile Structure}{69}{section*.121}%
-\contentsline {subsubsection}{Docker Compose Orchestration}{69}{section*.122}%
-\contentsline {subsection}{\numberline {5.7.3}Development Workflow}{70}{subsection.5.7.3}%
-\contentsline {subsubsection}{Local Development Setup}{70}{section*.123}%
-\contentsline {subsubsection}{Code Quality Tools}{70}{section*.124}%
-\contentsline {section}{\numberline {5.8}Implementation Patterns and Practices}{70}{section.5.8}%
-\contentsline {subsection}{\numberline {5.8.1}Service Architecture Patterns}{70}{subsection.5.8.1}%
-\contentsline {subsubsection}{Repository Pattern}{70}{section*.125}%
-\contentsline {subsubsection}{Service Layer Pattern}{70}{section*.126}%
-\contentsline {subsubsection}{Controller Pattern}{71}{section*.127}%
-\contentsline {subsection}{\numberline {5.8.2}Error Handling and Logging}{71}{subsection.5.8.2}%
-\contentsline {subsubsection}{Structured Logging}{71}{section*.128}%
-\contentsline {subsubsection}{Error Boundary Pattern}{72}{section*.129}%
-\contentsline {subsection}{\numberline {5.8.3}Security Implementation Patterns}{72}{subsection.5.8.3}%
-\contentsline {subsubsection}{Input Validation and Sanitization}{72}{section*.130}%
-\contentsline {subsubsection}{Authentication Middleware}{73}{section*.131}%
-\contentsline {subsection}{\numberline {5.8.4}Real-Time Communication Patterns}{73}{subsection.5.8.4}%
-\contentsline {subsubsection}{WebSocket Connection Management}{73}{section*.132}%
-\contentsline {subsubsection}{Message Routing and Handling}{74}{section*.133}%
-\contentsline {subsection}{\numberline {5.8.5}Database Design Patterns}{74}{subsection.5.8.5}%
-\contentsline {subsubsection}{Migration System}{74}{section*.134}%
-\contentsline {subsubsection}{Connection Pooling}{75}{section*.135}%
-\contentsline {subsection}{\numberline {5.8.6}Testing Implementation Patterns}{75}{subsection.5.8.6}%
-\contentsline {subsubsection}{Unit Test Structure}{75}{section*.136}%
-\contentsline {subsubsection}{Integration Test Setup}{76}{section*.137}%
-\contentsline {section}{\numberline {5.9}Performance Optimization}{76}{section.5.9}%
-\contentsline {subsection}{\numberline {5.9.1}Code Optimization Techniques}{76}{subsection.5.9.1}%
-\contentsline {subsubsection}{Bundle Optimization}{76}{section*.138}%
-\contentsline {subsubsection}{Database Optimization}{76}{section*.139}%
-\contentsline {subsection}{\numberline {5.9.2}Memory Management}{77}{subsection.5.9.2}%
-\contentsline {subsubsection}{Garbage Collection Optimization}{77}{section*.140}%
-\contentsline {subsubsection}{Cache Management}{77}{section*.141}%
-\contentsline {subsection}{\numberline {5.9.3}Network Optimization}{77}{subsection.5.9.3}%
-\contentsline {subsubsection}{API Optimization}{77}{section*.142}%
-\contentsline {subsubsection}{WebSocket Optimization}{77}{section*.143}%
-\contentsline {chapter}{\numberline {6}Testing}{78}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Test Results Summary}{78}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Manual Testing Procedures}{78}{section.6.2}%
-\contentsline {subsection}{\numberline {6.2.1}User Workflow Testing}{78}{subsection.6.2.1}%
-\contentsline {subsection}{\numberline {6.2.2}Manual Test Categories}{79}{subsection.6.2.2}%
-\contentsline {section}{\numberline {6.3}Manual Verification Procedures}{79}{section.6.3}%
-\contentsline {subsection}{\numberline {6.3.1}Service Health Checks}{79}{subsection.6.3.1}%
-\contentsline {subsection}{\numberline {6.3.2}Module-Specific Verification}{79}{subsection.6.3.2}%
-\contentsline {subsection}{\numberline {6.3.3}Integration Testing}{79}{subsection.6.3.3}%
-\contentsline {section}{\numberline {6.4}Manual User Acceptance Testing}{79}{section.6.4}%
-\contentsline {subsection}{\numberline {6.4.1}Test Scenarios}{80}{subsection.6.4.1}%
-\contentsline {section}{\numberline {6.5}Automated Testing Framework}{80}{section.6.5}%
-\contentsline {subsection}{\numberline {6.5.1}Unit Testing Infrastructure}{80}{subsection.6.5.1}%
-\contentsline {subsection}{\numberline {6.5.2}API Testing}{80}{subsection.6.5.2}%
-\contentsline {subsubsection}{Service Endpoint Testing}{80}{section*.145}%
-\contentsline {subsubsection}{Integration Testing}{80}{section*.146}%
-\contentsline {subsection}{\numberline {6.5.3}Blockchain Testing}{81}{subsection.6.5.3}%
-\contentsline {subsubsection}{Smart Contract Testing}{81}{section*.147}%
-\contentsline {subsubsection}{Integration Testing}{81}{section*.148}%
-\contentsline {section}{\numberline {6.6}Performance Testing}{81}{section.6.6}%
-\contentsline {subsection}{\numberline {6.6.1}Load Testing}{81}{subsection.6.6.1}%
-\contentsline {subsubsection}{Concurrent User Testing}{81}{section*.149}%
-\contentsline {subsubsection}{Stress Testing}{82}{section*.150}%
-\contentsline {subsection}{\numberline {6.6.2}Security Testing}{82}{subsection.6.6.2}%
-\contentsline {subsubsection}{Penetration Testing}{82}{section*.151}%
-\contentsline {subsubsection}{Vault Security Testing}{82}{section*.152}%
-\contentsline {section}{\numberline {6.7}Test Case Documentation}{82}{section.6.7}%
-\contentsline {subsection}{\numberline {6.7.1}Functional Test Cases}{82}{subsection.6.7.1}%
-\contentsline {subsubsection}{Authentication Module}{82}{section*.153}%
-\contentsline {subsubsection}{Game Module}{83}{section*.155}%
-\contentsline {subsubsection}{Tournament Module}{83}{section*.157}%
-\contentsline {subsection}{\numberline {6.7.2}Integration Test Cases}{83}{subsection.6.7.2}%
-\contentsline {subsubsection}{End-to-End Scenarios}{83}{section*.159}%
-\contentsline {subsubsection}{Cross-Service Integration}{83}{section*.160}%
-\contentsline {section}{\numberline {6.8}Test Results and Metrics}{84}{section.6.8}%
-\contentsline {subsection}{\numberline {6.8.1}Test Execution Summary}{84}{subsection.6.8.1}%
-\contentsline {subsection}{\numberline {6.8.2}Performance Benchmarks}{84}{subsection.6.8.2}%
-\contentsline {subsubsection}{Response Times}{84}{section*.162}%
-\contentsline {subsubsection}{Resource Utilization}{84}{section*.163}%
-\contentsline {subsection}{\numberline {6.8.3}Defect Tracking}{84}{subsection.6.8.3}%
-\contentsline {subsubsection}{Bug Classification}{84}{section*.164}%
-\contentsline {subsubsection}{Common Issue Categories}{85}{section*.166}%
-\contentsline {section}{\numberline {6.9}Quality Assurance}{85}{section.6.9}%
-\contentsline {subsection}{\numberline {6.9.1}Code Quality Standards}{85}{subsection.6.9.1}%
-\contentsline {subsection}{\numberline {6.9.2}Documentation Standards}{85}{subsection.6.9.2}%
-\contentsline {subsection}{\numberline {6.9.3}Deployment Validation}{85}{subsection.6.9.3}%
-\contentsline {subsubsection}{Container Testing}{85}{section*.167}%
-\contentsline {subsubsection}{Production Readiness}{85}{section*.168}%
-\contentsline {chapter}{\numberline {7}Evolution}{86}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Current State}{86}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Future Enhancements}{86}{section.7.2}%
-\contentsline {subsection}{\numberline {7.2.1}Advanced Game Features}{86}{subsection.7.2.1}%
-\contentsline {subsection}{\numberline {7.2.2}Platform Expansion}{86}{subsection.7.2.2}%
-\contentsline {subsection}{\numberline {7.2.3}Technical Improvements}{87}{subsection.7.2.3}%
-\contentsline {section}{\numberline {7.3}Limitations and Constraints}{87}{section.7.3}%
-\contentsline {subsection}{\numberline {7.3.1}Current Limitations}{87}{subsection.7.3.1}%
-\contentsline {subsection}{\numberline {7.3.2}Technical Debt Considerations}{87}{subsection.7.3.2}%
-\contentsline {section}{\numberline {7.4}Roadmap and Deployment Strategy}{87}{section.7.4}%
-\contentsline {subsection}{\numberline {7.4.1}Phase 1: Production Deployment (Immediate)}{87}{subsection.7.4.1}%
-\contentsline {subsection}{\numberline {7.4.2}Phase 2: Feature Expansion (3-6 Months)}{88}{subsection.7.4.2}%
-\contentsline {subsection}{\numberline {7.4.3}Phase 3: Enterprise Features (6-12 Months)}{88}{subsection.7.4.3}%
-\contentsline {subsection}{\numberline {7.4.4}Phase 4: Global Scale (12+ Months)}{88}{subsection.7.4.4}%
-\contentsline {section}{\numberline {7.5}Technology Evolution}{88}{section.7.5}%
-\contentsline {subsection}{\numberline {7.5.1}Architecture Maturity}{88}{subsection.7.5.1}%
-\contentsline {subsection}{\numberline {7.5.2}Security Enhancements}{88}{subsection.7.5.2}%
-\contentsline {subsection}{\numberline {7.5.3}Developer Experience}{89}{subsection.7.5.3}%
-\contentsline {section}{\numberline {7.6}Community and Ecosystem}{89}{section.7.6}%
-\contentsline {subsection}{\numberline {7.6.1}Open Source Contributions}{89}{subsection.7.6.1}%
-\contentsline {subsection}{\numberline {7.6.2}Industry Impact}{89}{subsection.7.6.2}%
-\contentsline {section}{\numberline {7.7}Conclusion}{89}{section.7.7}%
-\contentsline {chapter}{\numberline {8}Conclusion}{90}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Restatement of Main Purpose}{90}{section.8.1}%
-\contentsline {section}{\numberline {8.2}Summary of Key Findings}{90}{section.8.2}%
-\contentsline {section}{\numberline {8.3}Interpretation and Significance of Findings}{90}{section.8.3}%
-\contentsline {section}{\numberline {8.4}Implications}{91}{section.8.4}%
-\contentsline {subsection}{\numberline {8.4.1}Technical Implications}{91}{subsection.8.4.1}%
-\contentsline {subsection}{\numberline {8.4.2}Practical Implications}{91}{subsection.8.4.2}%
-\contentsline {subsection}{\numberline {8.4.3}Educational Implications}{91}{subsection.8.4.3}%
-\contentsline {section}{\numberline {8.5}Limitations of the Study}{91}{section.8.5}%
-\contentsline {subsection}{\numberline {8.5.1}Technical Limitations}{92}{subsection.8.5.1}%
-\contentsline {subsection}{\numberline {8.5.2}Development Scope Limitations}{92}{subsection.8.5.2}%
-\contentsline {subsection}{\numberline {8.5.3}Project Constraints}{92}{subsection.8.5.3}%
-\contentsline {section}{\numberline {8.6}Recommendations for Future Research}{92}{section.8.6}%
-\contentsline {subsection}{\numberline {8.6.1}Technical Research Directions}{92}{subsection.8.6.1}%
-\contentsline {subsection}{\numberline {8.6.2}Methodology Research}{93}{subsection.8.6.2}%
-\contentsline {subsection}{\numberline {8.6.3}Application Areas}{93}{subsection.8.6.3}%
-\contentsline {subsection}{\numberline {8.6.4}Technology Evolution}{93}{subsection.8.6.4}%
-\contentsline {section}{\numberline {8.7}Final Closing Statement}{93}{section.8.7}%
-\contentsline {chapter}{\numberline {A}Data Flow and System Diagrams}{94}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Game Match Data Flow}{94}{section.A.1}%
-\contentsline {chapter}{\numberline {B}Code Repository Structure}{95}{appendix.B}%
-\contentsline {chapter}{\numberline {C}Deployment \& Operations}{97}{appendix.C}%
-\contentsline {section}{\numberline {C.1}Quick Start}{97}{section.C.1}%
-\contentsline {section}{\numberline {C.2}Service URLs}{97}{section.C.2}%
-\contentsline {section}{\numberline {C.3}Stopping Services}{97}{section.C.3}%
-\contentsline {chapter}{\numberline {D}Glossary}{98}{appendix.D}%
-\contentsline {chapter}{\numberline {E}References}{99}{appendix.E}%
+\contentsline {chapter}{List of Figures}{vi}{chapter*.2}%
+\contentsline {chapter}{List of Tables}{vii}{chapter*.3}%
+\contentsline {chapter}{List of Abbreviations}{viii}{chapter*.4}%
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Project Overview}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Project Objectives}{1}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Primary Objectives}{1}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Quality Metrics}{1}{subsection.1.2.2}%
+\contentsline {chapter}{\numberline {2}Software Development Life Cycle (SDLC)}{2}{chapter.2}%
+\contentsline {section}{\numberline {2.1}SDLC Approach}{2}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Planning \& Requirements Analysis}{2}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Architectural Design}{2}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}Implementation (Iterative)}{2}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}Deployment \& Evolution}{2}{subsection.2.1.4}%
+\contentsline {section}{\numberline {2.2}SDLC Flowchart}{3}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Project Timeline and Gantt Chart}{3}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Gantt Chart Validation}{4}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Detailed Task Assignment}{4}{subsection.2.3.2}%
+\contentsline {section}{\numberline {2.4}Risk Management}{5}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Risk Matrix}{5}{subsection.2.4.1}%
+\contentsline {chapter}{\numberline {3}Requirement Analysis}{7}{chapter.3}%
+\contentsline {section}{\numberline {3.1}High-Level Overview of Requirements}{7}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Requirements}{7}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Functional Requirements}{7}{subsection.3.2.1}%
+\contentsline {subsubsection}{User Management \& Authentication}{7}{section*.10}%
+\contentsline {subsubsection}{Gameplay \& Real-Time Features}{7}{section*.11}%
+\contentsline {subsubsection}{Social \& Leaderboard Features}{8}{section*.12}%
+\contentsline {subsubsection}{Tournament Management}{8}{section*.13}%
+\contentsline {subsection}{\numberline {3.2.2}Technical Requirements}{8}{subsection.3.2.2}%
+\contentsline {subsubsection}{Architecture \& Infrastructure}{8}{section*.14}%
+\contentsline {subsubsection}{Technology Stack}{8}{section*.15}%
+\contentsline {subsubsection}{Security Requirements}{9}{section*.16}%
+\contentsline {subsubsection}{Performance Requirements}{9}{section*.17}%
+\contentsline {subsection}{\numberline {3.2.3}Non-Functional Requirements}{9}{subsection.3.2.3}%
+\contentsline {subsubsection}{Performance Requirements}{9}{section*.18}%
+\contentsline {subsubsection}{Security Requirements}{9}{section*.19}%
+\contentsline {subsubsection}{Reliability Requirements}{10}{section*.20}%
+\contentsline {subsubsection}{Usability Requirements}{10}{section*.21}%
+\contentsline {subsubsection}{Maintainability Requirements}{10}{section*.22}%
+\contentsline {subsubsection}{Scalability Requirements}{10}{section*.23}%
+\contentsline {chapter}{\numberline {4}Design}{11}{chapter.4}%
+\contentsline {section}{\numberline {4.1}System Architecture}{11}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}High-Level Architecture}{11}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Deployment Topology}{12}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Service Responsibilities}{12}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Data Model}{13}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Auth Service Database (auth.db)}{13}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}User Service Database (users.db)}{13}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Game Service Database (games.db)}{13}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Tournament Service Database (tournaments.db)}{13}{subsection.4.2.4}%
+\contentsline {section}{\numberline {4.3}Security Design}{14}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Layer 1: Network Security}{14}{subsection.4.3.1}%
+\contentsline {subsubsection}{HTTPS and TLS Implementation}{14}{section*.27}%
+\contentsline {subsubsection}{Web Application Firewall (WAF)}{15}{section*.30}%
+\contentsline {subsubsection}{Rate Limiting and DDoS Protection}{15}{section*.31}%
+\contentsline {subsection}{\numberline {4.3.2}Layer 2: Transport Security}{16}{subsection.4.3.2}%
+\contentsline {subsubsection}{Mutual TLS (mTLS) Between Services}{16}{section*.32}%
+\contentsline {subsubsection}{Session Security}{16}{section*.33}%
+\contentsline {subsection}{\numberline {4.3.3}Layer 3: Application Security}{16}{subsection.4.3.3}%
+\contentsline {subsubsection}{Input Validation and Sanitization}{16}{section*.34}%
+\contentsline {subsubsection}{SQL Injection Prevention}{16}{section*.35}%
+\contentsline {subsubsection}{Cross-Site Scripting (XSS) Protection}{16}{section*.36}%
+\contentsline {subsubsection}{Cross-Site Request Forgery (CSRF) Protection}{16}{section*.37}%
+\contentsline {subsection}{\numberline {4.3.4}Layer 4: Authentication \& Authorization}{17}{subsection.4.3.4}%
+\contentsline {subsubsection}{Password Security}{17}{section*.38}%
+\contentsline {subsubsection}{Multi-Factor Authentication (MFA)}{17}{section*.39}%
+\contentsline {subsection}{\numberline {4.3.5}Layer 5: Data Protection}{17}{subsection.4.3.5}%
+\contentsline {subsubsection}{Secrets Management with HashiCorp Vault}{17}{section*.40}%
+\contentsline {subsubsection}{Database Security}{17}{section*.41}%
+\contentsline {subsection}{\numberline {4.3.6}Layer 6: Monitoring \& Logging}{18}{subsection.4.3.6}%
+\contentsline {subsubsection}{Security Event Logging}{18}{section*.42}%
+\contentsline {subsubsection}{Health Monitoring}{18}{section*.43}%
+\contentsline {subsection}{\numberline {4.3.7}Layer 7: Incident Response}{18}{subsection.4.3.7}%
+\contentsline {subsubsection}{Security Headers Implementation}{18}{section*.44}%
+\contentsline {subsubsection}{Container Security}{18}{section*.45}%
+\contentsline {subsection}{\numberline {4.3.8}Security Testing and Validation}{18}{subsection.4.3.8}%
+\contentsline {subsubsection}{WAF Effectiveness Testing}{18}{section*.46}%
+\contentsline {subsubsection}{Vault Integration Testing}{19}{section*.47}%
+\contentsline {subsubsection}{HTTPS/TLS Testing}{19}{section*.48}%
+\contentsline {subsection}{\numberline {4.3.9}Security Compliance}{19}{subsection.4.3.9}%
+\contentsline {subsubsection}{OWASP Top 10 Coverage}{19}{section*.49}%
+\contentsline {subsubsection}{Industry Best Practices}{19}{section*.50}%
+\contentsline {subsection}{\numberline {4.3.10}Security Implementation Details}{19}{subsection.4.3.10}%
+\contentsline {subsubsection}{SQL Injection Prevention}{19}{section*.51}%
+\contentsline {subsubsection}{WAF Configuration (ModSecurity)}{19}{section*.52}%
+\contentsline {subsubsection}{Vault PKI Integration}{20}{section*.53}%
+\contentsline {subsubsection}{Redis TLS Configuration}{20}{section*.54}%
+\contentsline {section}{\numberline {4.4}Blockchain Integration}{20}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Blockchain Architecture}{20}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Smart Contract Implementation}{21}{subsection.4.4.2}%
+\contentsline {subsubsection}{Contract Features}{22}{section*.56}%
+\contentsline {subsection}{\numberline {4.4.3}Hardhat Development Environment}{22}{subsection.4.4.3}%
+\contentsline {subsubsection}{Hardhat Configuration}{22}{section*.57}%
+\contentsline {subsubsection}{Deployment Automation}{22}{section*.58}%
+\contentsline {subsection}{\numberline {4.4.4}Blockchain Service Architecture}{22}{subsection.4.4.4}%
+\contentsline {subsubsection}{Service Components}{22}{section*.59}%
+\contentsline {subsubsection}{Blockchain Service Implementation}{23}{section*.60}%
+\contentsline {subsection}{\numberline {4.4.5}Tournament Integration}{23}{subsection.4.4.5}%
+\contentsline {subsubsection}{Integration Flow}{23}{section*.61}%
+\contentsline {subsubsection}{Blockchain Notifier Service}{24}{section*.62}%
+\contentsline {subsection}{\numberline {4.4.6}Blockchain Security Measures}{24}{subsection.4.4.6}%
+\contentsline {subsubsection}{Private Key Management}{24}{section*.63}%
+\contentsline {subsubsection}{Transaction Security}{24}{section*.64}%
+\contentsline {subsection}{\numberline {4.4.7}Blockchain Testing and Validation}{24}{subsection.4.4.7}%
+\contentsline {subsubsection}{Contract Testing}{25}{section*.65}%
+\contentsline {subsubsection}{Service Testing}{25}{section*.66}%
+\contentsline {subsection}{\numberline {4.4.8}Blockchain Performance Optimization}{25}{subsection.4.4.8}%
+\contentsline {subsubsection}{Gas Optimization}{25}{section*.67}%
+\contentsline {subsubsection}{Network Efficiency}{25}{section*.68}%
+\contentsline {subsection}{\numberline {4.4.9}Blockchain Monitoring and Observability}{25}{subsection.4.4.9}%
+\contentsline {subsubsection}{Transaction Monitoring}{25}{section*.69}%
+\contentsline {subsubsection}{Health Checks}{25}{section*.70}%
+\contentsline {subsection}{\numberline {4.4.10}Blockchain Deployment and Operations}{26}{subsection.4.4.10}%
+\contentsline {subsubsection}{Docker Integration}{26}{section*.71}%
+\contentsline {subsubsection}{Production Considerations}{26}{section*.72}%
+\contentsline {section}{\numberline {4.5}Microservices Architecture}{26}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}Service Architecture Overview}{27}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}Service Communication Patterns}{28}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}Docker Compose Orchestration}{28}{subsection.4.5.3}%
+\contentsline {subsection}{\numberline {4.5.4}Service Health Monitoring}{30}{subsection.4.5.4}%
+\contentsline {subsection}{\numberline {4.5.5}Database Architecture}{30}{subsection.4.5.5}%
+\contentsline {subsection}{\numberline {4.5.6}Production Deployment Considerations}{30}{subsection.4.5.6}%
+\contentsline {section}{\numberline {4.6}3D Frontend Implementation}{31}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}Immersive Office Environment}{31}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}Story and Lore Integration}{31}{subsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.6.3}Babylon.js Integration Architecture}{32}{subsection.4.6.3}%
+\contentsline {subsection}{\numberline {4.6.4}3D Game Rendering and Environmental Effects}{33}{subsection.4.6.4}%
+\contentsline {subsubsection}{Environmental Lighting Interaction}{33}{section*.76}%
+\contentsline {subsection}{\numberline {4.6.5}Real-time 3D Synchronization}{34}{subsection.4.6.5}%
+\contentsline {subsection}{\numberline {4.6.6}HTML Mesh Integration}{34}{subsection.4.6.6}%
+\contentsline {subsection}{\numberline {4.6.7}Post-Processing Effects}{35}{subsection.4.6.7}%
+\contentsline {subsection}{\numberline {4.6.8}Performance Optimizations}{35}{subsection.4.6.8}%
+\contentsline {section}{\numberline {4.7}Wireframes and User Interface Design}{36}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}Authentication Flow Wireframes}{36}{subsection.4.7.1}%
+\contentsline {subsubsection}{Login Interface}{36}{section*.78}%
+\contentsline {subsubsection}{Registration Interface}{37}{section*.80}%
+\contentsline {subsection}{\numberline {4.7.2}Main Navigation and Menu Wireframes}{38}{subsection.4.7.2}%
+\contentsline {subsubsection}{Main Menu Interface}{38}{section*.82}%
+\contentsline {subsection}{\numberline {4.7.3}Game Interface Wireframes}{40}{subsection.4.7.3}%
+\contentsline {subsubsection}{Game Mode Selection}{40}{section*.84}%
+\contentsline {subsubsection}{Gameplay Interface}{41}{section*.86}%
+\contentsline {subsubsection}{Multiplayer Arcade Mode}{42}{section*.88}%
+\contentsline {subsection}{\numberline {4.7.4}Tournament Interface Wireframes}{43}{subsection.4.7.4}%
+\contentsline {subsubsection}{Tournament Bracket View}{43}{section*.90}%
+\contentsline {subsubsection}{Tournament Mode Selection}{44}{section*.92}%
+\contentsline {subsection}{\numberline {4.7.5}User Profile and Social Features}{45}{subsection.4.7.5}%
+\contentsline {subsubsection}{Dashboard and Profile}{45}{section*.94}%
+\contentsline {subsection}{\numberline {4.7.6}3D Environment Integration}{46}{subsection.4.7.6}%
+\contentsline {subsubsection}{3D Monitor Interface}{46}{section*.96}%
+\contentsline {subsubsection}{3D Arcade Game Mode}{47}{section*.98}%
+\contentsline {subsubsection}{3D Newspaper/Lore View}{48}{section*.100}%
+\contentsline {subsection}{\numberline {4.7.7}Wireframe Design Principles}{48}{subsection.4.7.7}%
+\contentsline {subsubsection}{Responsive Design Considerations}{48}{section*.102}%
+\contentsline {subsubsection}{User Experience Guidelines}{49}{section*.103}%
+\contentsline {subsubsection}{3D Integration Principles}{49}{section*.104}%
+\contentsline {subsection}{\numberline {4.7.8}Main Menu Interface}{49}{subsection.4.7.8}%
+\contentsline {subsection}{\numberline {4.7.9}Game Mode Selection}{50}{subsection.4.7.9}%
+\contentsline {subsection}{\numberline {4.7.10}Authentication UI Implementation}{50}{subsection.4.7.10}%
+\contentsline {subsubsection}{Login Interface}{51}{section*.107}%
+\contentsline {subsubsection}{Registration Interface}{51}{section*.109}%
+\contentsline {subsection}{\numberline {4.7.11}Gameplay Interface}{52}{subsection.4.7.11}%
+\contentsline {subsection}{\numberline {4.7.12}Game Settings}{53}{subsection.4.7.12}%
+\contentsline {subsection}{\numberline {4.7.13}Campaign Mode}{54}{subsection.4.7.13}%
+\contentsline {subsection}{\numberline {4.7.14}Tournament System}{54}{subsection.4.7.14}%
+\contentsline {subsection}{\numberline {4.7.15}User Profile and Statistics}{55}{subsection.4.7.15}%
+\contentsline {section}{\numberline {4.8}Flowcharts}{55}{section.4.8}%
+\contentsline {subsection}{\numberline {4.8.1}System Workflow Overview}{56}{subsection.4.8.1}%
+\contentsline {subsection}{\numberline {4.8.2}User Authentication Flow}{57}{subsection.4.8.2}%
+\contentsline {subsection}{\numberline {4.8.3}Game Session Flow}{58}{subsection.4.8.3}%
+\contentsline {subsection}{\numberline {4.8.4}Data Flow Architecture}{59}{subsection.4.8.4}%
+\contentsline {chapter}{\numberline {5}Implementation}{60}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Mandatory Implementation}{60}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Technology Stack Summary}{60}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Backend Framework}{60}{subsection.5.1.2}%
+\contentsline {subsubsection}{Frontend Architecture}{61}{section*.120}%
+\contentsline {subsubsection}{Single-Page Application (SPA)}{61}{section*.121}%
+\contentsline {section}{\numberline {5.2}Web Implementation}{61}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Backend Framework}{61}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Blockchain Integration}{62}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Frontend Framework}{62}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Database}{62}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}User Management Implementation}{62}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Standard User Management}{62}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Remote Authentication}{62}{subsection.5.3.2}%
+\contentsline {section}{\numberline {5.4}Gameplay and User Experience Implementation}{62}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Multiplayer (more than 2 players)}{62}{subsection.5.4.1}%
+\contentsline {section}{\numberline {5.5}AI-Algo Implementation}{62}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}AI Opponent}{62}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}User and Game Stats Dashboards}{62}{subsection.5.5.2}%
+\contentsline {section}{\numberline {5.6}Cybersecurity Implementation}{62}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}WAF/ModSecurity with Vault}{62}{subsection.5.6.1}%
+\contentsline {section}{\numberline {5.7}Devops Implementation}{63}{section.5.7}%
+\contentsline {subsection}{\numberline {5.7.1}Microservices Architecture}{63}{subsection.5.7.1}%
+\contentsline {subsection}{\numberline {5.7.2}Docker Containerization}{63}{subsection.5.7.2}%
+\contentsline {subsubsection}{Dockerfile Structure}{63}{section*.122}%
+\contentsline {subsubsection}{Docker Compose Orchestration}{63}{section*.123}%
+\contentsline {subsection}{\numberline {5.7.3}Development Workflow}{64}{subsection.5.7.3}%
+\contentsline {subsubsection}{Local Development Setup}{64}{section*.124}%
+\contentsline {subsubsection}{Code Quality Tools}{64}{section*.125}%
+\contentsline {section}{\numberline {5.8}Implementation Patterns and Practices}{64}{section.5.8}%
+\contentsline {subsection}{\numberline {5.8.1}Service Architecture Patterns}{64}{subsection.5.8.1}%
+\contentsline {subsubsection}{Repository Pattern}{64}{section*.126}%
+\contentsline {subsubsection}{Service Layer Pattern}{64}{section*.127}%
+\contentsline {subsubsection}{Controller Pattern}{65}{section*.128}%
+\contentsline {subsection}{\numberline {5.8.2}Error Handling and Logging}{65}{subsection.5.8.2}%
+\contentsline {subsubsection}{Structured Logging}{65}{section*.129}%
+\contentsline {subsubsection}{Error Boundary Pattern}{66}{section*.130}%
+\contentsline {subsection}{\numberline {5.8.3}Security Implementation Patterns}{66}{subsection.5.8.3}%
+\contentsline {subsubsection}{Input Validation and Sanitization}{66}{section*.131}%
+\contentsline {subsubsection}{Authentication Middleware}{67}{section*.132}%
+\contentsline {subsection}{\numberline {5.8.4}Real-Time Communication Patterns}{67}{subsection.5.8.4}%
+\contentsline {subsubsection}{WebSocket Connection Management}{67}{section*.133}%
+\contentsline {subsubsection}{Message Routing and Handling}{68}{section*.134}%
+\contentsline {subsection}{\numberline {5.8.5}Database Design Patterns}{68}{subsection.5.8.5}%
+\contentsline {subsubsection}{Migration System}{68}{section*.135}%
+\contentsline {subsubsection}{Connection Pooling}{69}{section*.136}%
+\contentsline {subsection}{\numberline {5.8.6}Testing Implementation Patterns}{69}{subsection.5.8.6}%
+\contentsline {subsubsection}{Unit Test Structure}{69}{section*.137}%
+\contentsline {subsubsection}{Integration Test Setup}{70}{section*.138}%
+\contentsline {section}{\numberline {5.9}Performance Optimization}{70}{section.5.9}%
+\contentsline {subsection}{\numberline {5.9.1}Code Optimization Techniques}{70}{subsection.5.9.1}%
+\contentsline {subsubsection}{Bundle Optimization}{70}{section*.139}%
+\contentsline {subsubsection}{Database Optimization}{70}{section*.140}%
+\contentsline {subsection}{\numberline {5.9.2}Memory Management}{71}{subsection.5.9.2}%
+\contentsline {subsubsection}{Garbage Collection Optimization}{71}{section*.141}%
+\contentsline {subsubsection}{Cache Management}{71}{section*.142}%
+\contentsline {subsection}{\numberline {5.9.3}Network Optimization}{71}{subsection.5.9.3}%
+\contentsline {subsubsection}{API Optimization}{71}{section*.143}%
+\contentsline {subsubsection}{WebSocket Optimization}{71}{section*.144}%
+\contentsline {chapter}{\numberline {6}Testing}{72}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Test Results Summary}{72}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Manual Testing Procedures}{72}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}User Workflow Testing}{72}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Manual Test Categories}{73}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Manual Verification Procedures}{73}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Service Health Checks}{73}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Module-Specific Verification}{73}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Integration Testing}{73}{subsection.6.3.3}%
+\contentsline {section}{\numberline {6.4}Manual User Acceptance Testing}{73}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Test Scenarios}{74}{subsection.6.4.1}%
+\contentsline {section}{\numberline {6.5}Automated Testing Framework}{74}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}Unit Testing Infrastructure}{74}{subsection.6.5.1}%
+\contentsline {subsection}{\numberline {6.5.2}API Testing}{74}{subsection.6.5.2}%
+\contentsline {subsubsection}{Service Endpoint Testing}{74}{section*.146}%
+\contentsline {subsubsection}{Integration Testing}{74}{section*.147}%
+\contentsline {subsection}{\numberline {6.5.3}Blockchain Testing}{75}{subsection.6.5.3}%
+\contentsline {subsubsection}{Smart Contract Testing}{75}{section*.148}%
+\contentsline {subsubsection}{Integration Testing}{75}{section*.149}%
+\contentsline {section}{\numberline {6.6}Performance Testing}{75}{section.6.6}%
+\contentsline {subsection}{\numberline {6.6.1}Load Testing}{75}{subsection.6.6.1}%
+\contentsline {subsubsection}{Concurrent User Testing}{75}{section*.150}%
+\contentsline {subsubsection}{Stress Testing}{76}{section*.151}%
+\contentsline {subsection}{\numberline {6.6.2}Security Testing}{76}{subsection.6.6.2}%
+\contentsline {subsubsection}{Penetration Testing}{76}{section*.152}%
+\contentsline {subsubsection}{Vault Security Testing}{76}{section*.153}%
+\contentsline {section}{\numberline {6.7}Test Case Documentation}{76}{section.6.7}%
+\contentsline {subsection}{\numberline {6.7.1}Functional Test Cases}{76}{subsection.6.7.1}%
+\contentsline {subsubsection}{Authentication Module}{76}{section*.154}%
+\contentsline {subsubsection}{Game Module}{77}{section*.156}%
+\contentsline {subsubsection}{Tournament Module}{77}{section*.158}%
+\contentsline {subsection}{\numberline {6.7.2}Integration Test Cases}{77}{subsection.6.7.2}%
+\contentsline {subsubsection}{End-to-End Scenarios}{77}{section*.160}%
+\contentsline {subsubsection}{Cross-Service Integration}{77}{section*.161}%
+\contentsline {section}{\numberline {6.8}Test Results and Metrics}{78}{section.6.8}%
+\contentsline {subsection}{\numberline {6.8.1}Test Execution Summary}{78}{subsection.6.8.1}%
+\contentsline {subsection}{\numberline {6.8.2}Performance Benchmarks}{78}{subsection.6.8.2}%
+\contentsline {subsubsection}{Response Times}{78}{section*.163}%
+\contentsline {subsubsection}{Resource Utilization}{78}{section*.164}%
+\contentsline {subsection}{\numberline {6.8.3}Defect Tracking}{78}{subsection.6.8.3}%
+\contentsline {subsubsection}{Bug Classification}{78}{section*.165}%
+\contentsline {subsubsection}{Common Issue Categories}{79}{section*.167}%
+\contentsline {section}{\numberline {6.9}Quality Assurance}{79}{section.6.9}%
+\contentsline {subsection}{\numberline {6.9.1}Code Quality Standards}{79}{subsection.6.9.1}%
+\contentsline {subsection}{\numberline {6.9.2}Documentation Standards}{79}{subsection.6.9.2}%
+\contentsline {subsection}{\numberline {6.9.3}Deployment Validation}{79}{subsection.6.9.3}%
+\contentsline {subsubsection}{Container Testing}{79}{section*.168}%
+\contentsline {subsubsection}{Production Readiness}{79}{section*.169}%
+\contentsline {chapter}{\numberline {7}Evolution}{80}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Current State}{80}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Future Enhancements}{80}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Advanced Game Features}{80}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Platform Expansion}{80}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Technical Improvements}{81}{subsection.7.2.3}%
+\contentsline {section}{\numberline {7.3}Limitations and Constraints}{81}{section.7.3}%
+\contentsline {subsection}{\numberline {7.3.1}Current Limitations}{81}{subsection.7.3.1}%
+\contentsline {subsection}{\numberline {7.3.2}Technical Debt Considerations}{81}{subsection.7.3.2}%
+\contentsline {section}{\numberline {7.4}Roadmap and Deployment Strategy}{81}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Phase 1: Production Deployment (Immediate)}{81}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Phase 2: Feature Expansion (3-6 Months)}{82}{subsection.7.4.2}%
+\contentsline {subsection}{\numberline {7.4.3}Phase 3: Enterprise Features (6-12 Months)}{82}{subsection.7.4.3}%
+\contentsline {subsection}{\numberline {7.4.4}Phase 4: Global Scale (12+ Months)}{82}{subsection.7.4.4}%
+\contentsline {section}{\numberline {7.5}Technology Evolution}{82}{section.7.5}%
+\contentsline {subsection}{\numberline {7.5.1}Architecture Maturity}{82}{subsection.7.5.1}%
+\contentsline {subsection}{\numberline {7.5.2}Security Enhancements}{82}{subsection.7.5.2}%
+\contentsline {subsection}{\numberline {7.5.3}Developer Experience}{83}{subsection.7.5.3}%
+\contentsline {section}{\numberline {7.6}Community and Ecosystem}{83}{section.7.6}%
+\contentsline {subsection}{\numberline {7.6.1}Open Source Contributions}{83}{subsection.7.6.1}%
+\contentsline {subsection}{\numberline {7.6.2}Industry Impact}{83}{subsection.7.6.2}%
+\contentsline {section}{\numberline {7.7}Conclusion}{83}{section.7.7}%
+\contentsline {chapter}{\numberline {8}Conclusion}{84}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Restatement of Main Purpose}{84}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Summary of Key Findings}{84}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Interpretation and Significance}{84}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Implications}{84}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Technical Implications}{84}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Practical Implications}{85}{subsection.8.4.2}%
+\contentsline {section}{\numberline {8.5}Limitations}{85}{section.8.5}%
+\contentsline {section}{\numberline {8.6}Recommendations for Future Research}{85}{section.8.6}%
+\contentsline {section}{\numberline {8.7}Final Closing Statement}{85}{section.8.7}%
+\contentsline {chapter}{\numberline {A}Data Flow and System Diagrams}{86}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Game Match Data Flow}{86}{section.A.1}%
+\contentsline {chapter}{\numberline {B}Code Repository Structure}{87}{appendix.B}%
+\contentsline {chapter}{\numberline {C}Deployment \& Operations}{89}{appendix.C}%
+\contentsline {section}{\numberline {C.1}Quick Start}{89}{section.C.1}%
+\contentsline {section}{\numberline {C.2}Service URLs}{89}{section.C.2}%
+\contentsline {section}{\numberline {C.3}Stopping Services}{89}{section.C.3}%
+\contentsline {chapter}{\numberline {D}Glossary}{90}{appendix.D}%
+\contentsline {chapter}{\numberline {E}References}{91}{appendix.E}%

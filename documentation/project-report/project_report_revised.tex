@@ -11,7 +11,7 @@
 \usepackage{array}
 \usepackage{caption}
 % \usepackage{fancybox} % Removed dependency
-% \usepackage{framed} % Removed dependency
+\usepackage{framed} % Removed dependency
 \usepackage[table]{xcolor}
 \usepackage{float}
 % \usepackage{multirow} % Removed dependency
@@ -61,8 +61,9 @@
 
 % Custom Cover Page (Updated)
 \begin{titlepage}
-% \setlength{\FrameRule}{2pt}
-% \begin{framed}
+\thispagestyle{empty}
+\setlength{\FrameRule}{2pt}
+\begin{framed}
   \centering
   % 42 logo at the top
   {\fboxrule=1pt \fbox{\includegraphics[width=0.8\textwidth]{figures/42_logo.png}}}\\[4 cm]
@@ -85,8 +86,11 @@
 
 
   Date of Submission: February 2, 2026\\[1cm]
-% \end{framed}
+\end{framed}
 \end{titlepage}
+
+% Start front matter with roman page numbering
+\pagenumbering{roman}
 
 
 % Abstract
@@ -136,6 +140,9 @@
   \item[SQLi] SQL Injection
 \end{description}
 \clearpage
+
+% Switch to arabic page numbering for main content
+\pagenumbering{arabic}
 
 % ============================================================================
 \chapter{Introduction}
@@ -208,30 +215,27 @@ The project followed an iterative, incremental SDLC model with five phases:
 \section{SDLC Flowchart}
 \label{sec:sdlc_flowchart}
 
-The following flowchart illustrates the complete Software Development Life Cycle process followed for the ft\_transcendence project:
+The following flowchart illustrates the Software Development Life Cycle process:
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=2cm]
 
-% Define styles
 \tikzstyle{process} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
 \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 
-% Nodes
 \node (start) [process] {Project Initiation};
-\node (planning) [process, below of=start] {Planning \& Requirements Analysis};
-\node (design) [process, below of=planning] {Architectural Design};
-\node (decision1) [decision, below of=design] {Requirements Complete?};
-\node (implement) [process, right of=decision1, xshift=3cm] {Implementation (Iterative)};
-\node (test) [process, below of=implement] {Testing \& Validation};
+\node (planning) [process, below of=start] {Planning \& Requirements};
+\node (design) [process, below of=planning] {Design};
+\node (decision1) [decision, below of=design, yshift=-1.5cm] {Requirements Complete?};
+\node (implement) [process, right of=decision1, xshift=3cm] {Implementation};
+\node (test) [process, below of=implement] {Testing};
 \node (deploy) [process, below of=test] {Deployment};
-\node (decision2) [decision, below of=deploy] {Project Complete?};
-\node (evolution) [process, right of=decision2, xshift=3cm] {Evolution \& Maintenance};
-\node (end) [process, below of=decision2] {Project Closure};
+\node (decision2) [decision, below of=deploy] {Complete?};
+\node (evolution) [process, right of=decision2, xshift=3cm] {Evolution};
+\node (end) [process, below of=decision2] {Closure};
 
-% Arrows
 \draw [arrow] (start) -- (planning);
 \draw [arrow] (planning) -- (design);
 \draw [arrow] (design) -- (decision1);
@@ -242,93 +246,60 @@ The following flowchart illustrates the complete Software Development Life Cycle
 \draw [arrow] (deploy) -- (decision2);
 \draw [arrow] (decision2) -- node[anchor=east] {Yes} (end);
 \draw [arrow] (decision2) -- node[anchor=south] {No} (evolution);
-\draw [arrow] (evolution) |- (decision1);
-
-% Phase details
-\node [below=0.5cm of planning, text width=6cm, align=center] {\scriptsize Requirements gathering, stakeholder analysis, resource planning};
-\node [below=0.5cm of design, text width=6cm, align=center] {\scriptsize System architecture, technology selection, risk assessment};
-\node [below=0.5cm of implement, text width=6cm, align=center] {\scriptsize Code development, integration, iterative refinement};
-\node [below=0.5cm of test, text width=6cm, align=center] {\scriptsize Unit testing, integration testing, user acceptance};
-\node [below=0.5cm of deploy, text width=6cm, align=center] {\scriptsize Production deployment, monitoring setup};
-\node [below=0.5cm of evolution, text width=6cm, align=center] {\scriptsize Feature enhancements, bug fixes, performance optimization};
+\draw [arrow] (evolution) |- (implement);
 
 \end{tikzpicture}
-\caption{SDLC Flowchart: Complete development process for ft\_transcendence project}
+\caption{SDLC Flowchart: Development process overview}
 \label{fig:sdlc_flowchart}
 \end{figure}
-
-The flowchart demonstrates the iterative nature of the development process, with feedback loops for requirements refinement and continuous evolution post-deployment.
 
 \section{Project Timeline and Gantt Chart}
 \label{sec:gantt}
 
-The project was executed according to the following timeline:
+The project was executed in 4 phases over 11 weeks with assigned leads:
 
 \begin{itemize}
-  \item \textbf{Phase 1 (Planning \& Design):} 2 weeks - Led by Danish (Project Manager)
-  \item \textbf{Phase 2 (Core Development):} 6 weeks - Led by Calvin (Lead Developer)
-  \item \textbf{Phase 3 (Security Hardening):} 2 weeks - Led by Danish (Security Lead)
-  \item \textbf{Phase 4 (Deployment \& Evolution):} 1 week - Led by Hoach (DevOps Engineer)
+  \item \textbf{Phase 1 (Planning):} 2 weeks - Led by Hoach
+  \item \textbf{Phase 2 (Development):} 6 weeks - Led by Calvin  
+  \item \textbf{Phase 3 (Security):} 2 weeks - Led by Danish
+  \item \textbf{Phase 4 (Deployment):} 1 week - Led by Hoach
 \end{itemize}
-
-The Gantt Chart includes project milestones, tasks, sub-tasks, owner, duration, dependencies, and the overall project timeline.
 
 \subsection{Gantt Chart Validation}
 
-The Gantt chart format has been validated and approved by the project supervisor. The following email correspondence confirms the acceptability of the Gantt chart format:
-
-\begin{quote}
-\textbf{From:} Project Supervisor \\
-\textbf{To:} Team Lead (Danish) \\
-\textbf{Subject:} Approval of Gantt Chart Format \\
-\textbf{Date:} [Project Start Date]
-
-Dear Team,
-
-I have reviewed the submitted Gantt chart for the ft\_transcendence project. The format is acceptable and meets the required standards for project planning documentation. The chart clearly shows:
-
-- Task breakdown and dependencies
-- Timeline and milestones
-- Resource allocation (person in charge for each task)
-- Critical path identification
-
-Please proceed with the implementation according to this plan.
-
-Best regards, \\
-Project Supervisor
-\end{quote}
+The Gantt chart format was validated and approved by the project supervisor via email confirmation.
 
 \subsection{Detailed Task Assignment}
 
 \begin{table}[H]
 \centering
-\caption{Detailed Task Assignments and Responsibilities}
-\begin{tabular}{|l|l|l|p{4cm}|}
+\caption{Task Assignments and Responsibilities}
+\begin{tabular}{|l|l|l|p{3cm}|}
 \hline
-\textbf{Phase} & \textbf{Task} & \textbf{Person in Charge} & \textbf{Key Responsibilities} \\
+\textbf{Phase} & \textbf{Task} & \textbf{Person in Charge} & \textbf{Responsibilities} \\
 \hline
-Planning & Requirements Analysis & Danish & Review subject requirements, define user stories \\
-Planning & Architecture Design & Calvin & Design microservices, select technology stack \\
-Planning & Risk Assessment & Danish & Identify risks, create mitigation plans \\
+Planning & Requirements Analysis & Hoach & Review requirements, define stories \\
+Planning & Architecture Design & Hoach & Design microservices, tech stack \\
+Planning & Risk Assessment & Danish & Identify risks, mitigation plans \\
 \hline
-Development & Auth Service & Hoach & User registration, authentication, OAuth \\
-Development & User Service & Calvin & Profiles, friendships, leaderboards \\
-Development & Game Service & Calvin & Real-time Pong logic, WebSocket implementation \\
-Development & Tournament Service & Danish & Tournament management, bracket system \\
-Development & Blockchain Integration & Danish & Smart contracts, tournament recording \\
-Development & Frontend Development & Hoach & React components, 3D rendering, UI/UX \\
+Development & Auth Service & Hoach & Registration, authentication \\
+Development & User Service & Calvin & Profiles, friendships \\
+Development & Game Service & Calvin & Real-time Pong logic \\
+Development & Tournament Service & Danish & Tournament management \\
+Development & Blockchain & Danish & Smart contracts \\
+Development & Frontend & Hoach & React, 3D rendering \\
 \hline
-Security & WAF Implementation & Danish & ModSecurity rules, attack prevention \\
-Security & Vault Integration & Hoach & Secret management, certificate issuance \\
-Security & HTTPS Configuration & Calvin & SSL/TLS setup, security headers \\
+Security & WAF Implementation & Danish & ModSecurity rules \\
+Security & Vault Integration & Hoach & Secret management \\
+Security & HTTPS Setup & Calvin & SSL/TLS configuration \\
 \hline
-Testing & Manual Testing & All Team & End-to-end validation, bug fixes \\
-Testing & Security Testing & Danish & Penetration testing, vulnerability assessment \\
-Testing & Performance Testing & Calvin & Load testing, optimization \\
+Testing & Manual Testing & All Team & End-to-end validation \\
+Testing & Security Testing & Danish & Penetration testing \\
+Testing & Performance Testing & Calvin & Load testing \\
 \hline
-Deployment & Docker Setup & Hoach & Containerization, orchestration \\
-Deployment & Production Deployment & All Team & CI/CD, monitoring setup \\
-Deployment & Documentation & Danish & Final report, user guides \\
+Deployment & Docker Setup & Hoach & Containerization \\
+Deployment & Production & All Team & CI/CD, monitoring \\
+Deployment & Documentation & Danish & Final report \\
 \hline
 \end{tabular}
 \label{tab:task_assignments}
@@ -337,18 +308,9 @@ Deployment & Documentation & Danish & Final report, user guides \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{gantt.png}
-\caption{Project Gantt Chart: Phases, milestones, timeline, and resource allocation}
+\caption{Project Gantt Chart: Timeline and resource allocation}
 \label{fig:gantt_chart}
 \end{figure}
-
-Project executed in 4 major phases over 11 weeks:
-
-\begin{itemize}
-  \item \textbf{Phase 1 (Weeks 1-2):} Planning, requirements analysis, architecture design - \textit{Led by Danish}
-  \item \textbf{Phase 2 (Weeks 3-8):} Core service development, game logic - \textit{Led by Calvin}
-  \item \textbf{Phase 3 (Weeks 9-10):} Security hardening, WAF, Vault, blockchain - \textit{Led by Danish}
-  \item \textbf{Phase 4 (Week 11):} Deployment, production readiness - \textit{Led by Hoach}
-\end{itemize}
 
 \section{Risk Management}
 \label{sec:risk_management}
@@ -356,77 +318,32 @@ Project executed in 4 major phases over 11 weeks:
 \subsection{Risk Matrix}
 \label{sec:risk_matrix}
 
-The risk matrix provides a visual representation of risks based on their likelihood and impact. Risks are categorized and prioritized according to their severity score (Likelihood × Impact).
+Risks are assessed using a 5×5 matrix based on likelihood and impact:
+
+\input{risk_register.tex}
 
 \begin{table}[H]
 \centering
 \caption{Risk Assessment Matrix}
 \begin{tabular}{|c|c|c|c|c|c|}
 \hline
-\textbf{Impact $\rightarrow$} & \textbf{Trivial (1)} & \textbf{Minor (2)} & \textbf{Moderate (3)} & \textbf{Major (4)} & \textbf{Critical (5)} \\
+\textbf{Impact $\rightarrow$} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} \\
 \hline
-\textbf{Rare (1)} & Low (1) & Low (2) & Low (3) & Medium (4) & Medium (5) \\
+\textbf{1} & \cellcolor{green!30}Low (1) & \cellcolor{green!30}Low (2) & \cellcolor{green!30}Low (3) & \cellcolor{yellow!30}Med (4) & \cellcolor{yellow!30}Med (5) \\
 \hline
-\textbf{Unlikely (2)} & Low (2) & Low (4) & Medium (6) & Medium (8) & High (10) \\
+\textbf{2} & \cellcolor{green!30}Low (2) & \cellcolor{green!30}Low (4) & \cellcolor{yellow!30}Med (6) & \cellcolor{yellow!30}Med (8) & \cellcolor{orange!30}High (10) \\
 \hline
-\textbf{Possible (3)} & Low (3) & Medium (6) & Medium (9) & High (12) & High (15) \\
+\textbf{3} & \cellcolor{green!30}Low (3) & \cellcolor{yellow!30}Med (6) & \cellcolor{yellow!30}Med (9) & \cellcolor{orange!30}High (12) & \cellcolor{orange!30}High (15) \\
 \hline
-\textbf{Likely (4)} & Medium (4) & Medium (8) & High (12) & High (16) & Critical (20) \\
+\textbf{4} & \cellcolor{yellow!30}Med (4) & \cellcolor{yellow!30}Med (8) & \cellcolor{orange!30}High (12) & \cellcolor{red!30}High (16) & \cellcolor{red!50}Crit (20) \\
 \hline
-\textbf{Almost Certain (5)} & Medium (5) & High (10) & High (15) & Critical (20) & Critical (25) \\
+\textbf{5} & \cellcolor{yellow!30}Med (5) & \cellcolor{orange!30}High (10) & \cellcolor{orange!30}High (15) & \cellcolor{red!50}Crit (20) & \cellcolor{red!50}Crit (25) \\
 \hline
 \end{tabular}
 \label{tab:risk_matrix}
 \end{table}
 
-\subsubsection{Risk Level Definitions}
-\begin{itemize}
-  \item \textbf{Low (1-5):} Acceptable risk, monitor but no specific action required
-  \item \textbf{Medium (6-12):} Moderate risk, develop contingency plans
-  \item \textbf{High (13-20):} Significant risk, implement mitigation strategies
-  \item \textbf{Critical (21-25):} Severe risk, immediate action and senior management attention required
-\end{itemize}
-
-\subsection{Risk Register}
-\label{sec:risk_register}
-
-The project identified and managed significant risks throughout the SDLC.
-
-\subsubsection{Key Risk Categories}
-\begin{itemize}
-  \item \textbf{Technical Risks:} Technology stack complexity, integration challenges, performance bottlenecks
-  \item \textbf{Schedule Risks:} Timeline constraints, dependency management, resource allocation
-  \item \textbf{Security Risks:} Authentication vulnerabilities, data protection compliance, attack vectors
-  \item \textbf{Operational Risks:} Deployment complexity, monitoring requirements, scalability concerns
-\end{itemize}
-
-\subsubsection{Detailed Risk Register}
-
-\begin{table}[h!]
-\centering
-\caption{Comprehensive Risk Register}
-\begin{tabular}{p{0.8cm} p{3.5cm} c c c p{3.0cm} p{3.5cm}}
-\toprule
-ID & Description & Likelihood & Impact & Severity & Owner & Mitigation \\
-\midrule
-1 & Server downtime during peak testing & 2 & 4 & High (8) & DevOps (Mahad \& Hoach) & Monitoring, alerts, automated restarts \\
-2 & SQL injection attempt in legacy code & 1 & 5 & Medium (5) & Security Team (Danish \& Calvin) & Parameterized queries + WAF rules \\
-3 & Data leak via misconfigured logs & 2 & 4 & High (8) & Development Team (Hoach \& Calvin) & Redact PII in logs \\
-4 & OAuth provider downtime & 3 & 3 & Medium (9) & QA Team (Calvin \& Danish) & Alternative login methods (email) \\
-5 & Blockchain hardhat node failure & 1 & 4 & Medium (4) & Project Manager (Danish \& Calvin) & Automated backup and local fallback \\
-6 & WebSocket connection instability & 3 & 3 & Medium (9) & Development Team (Calvin) & Connection pooling, heartbeat monitoring \\
-7 & Database performance degradation & 2 & 4 & High (8) & DevOps (Hoach) & Query optimization, indexing strategy \\
-8 & Third-party library vulnerabilities & 2 & 5 & High (10) & Security Team (Danish) & Regular dependency audits, security updates \\
-9 & Scope creep in feature development & 3 & 3 & Medium (9) & Project Manager (Danish) & Strict requirements management, change control \\
-10 & Team member unavailability & 2 & 3 & Medium (6) & Project Manager (Danish) & Cross-training, knowledge sharing \\
-\bottomrule
-\end{tabular}
-\label{tab:risk_register}
-\end{table}
-
-\subsection{Risk Mitigation Integration in SDLC}
-
-Risk mitigation was integrated throughout all SDLC phases:
+Risk levels: Low (1-5), Medium (6-12), High (13-20), Critical (21-25).
 
 % ============================================================================
 \chapter{Requirement Analysis}
@@ -1960,6 +1877,242 @@ User profile features were tested for:
 \end{itemize}
 
 % ============================================================================
+\section{Flowcharts}
+\label{sec:flowcharts}
+
+Flowcharts illustrate the primary user interactions, system processes, and data flow across key components such as the homepage, settings, player profile, chat, and game sections, providing a comprehensive overview of the project's functional workflow.
+
+\subsection{System Workflow Overview}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2cm, auto]
+    % Define styles
+    \tikzstyle{process} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!20]
+    \tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!20]
+    \tikzstyle{data} = [rectangle, minimum width=2cm, minimum height=0.8cm, text centered, draw=black, fill=green!20]
+    \tikzstyle{startend} = [ellipse, minimum width=2cm, minimum height=0.8cm, text centered, draw=black, fill=red!20]
+
+    % Nodes
+    \node[startend] (start) {User Access};
+    \node[process, below of=start] (homepage) {Homepage};
+    \node[decision, below of=homepage] (auth_check) {Authenticated?};
+    \node[process, left of=auth_check, xshift=-2cm] (login) {Login/Register};
+    \node[process, right of=auth_check, xshift=2cm] (main_menu) {Main Menu};
+    \node[process, below of=main_menu] (game_modes) {Game Modes};
+    \node[decision, below of=game_modes] (mode_select) {Select Mode};
+    \node[process, left of=mode_select, xshift=-3cm] (campaign) {Campaign (AI)};
+    \node[process, below of=campaign] (campaign_game) {Game Session};
+    \node[process, right of=mode_select, xshift=3cm] (multiplayer) {Multiplayer};
+    \node[process, below of=multiplayer] (matchmaking) {Matchmaking};
+    \node[process, below of=matchmaking] (multiplayer_game) {Game Session};
+    \node[process, below of=mode_select, yshift=-2cm] (tournament) {Tournament};
+    \node[process, below of=tournament] (tournament_setup) {Tournament Setup};
+    \node[process, below of=tournament_setup] (tournament_game) {Tournament Matches};
+    \node[data, below of=campaign_game] (stats) {Update Statistics};
+    \node[data, below of=multiplayer_game] (stats2) {Update Statistics};
+    \node[data, below of=tournament_game] (stats3) {Update Statistics};
+    \node[process, below of=stats] (leaderboard) {Update Leaderboards};
+    \node[startend, below of=leaderboard] (end) {Session Complete};
+
+    % Connections
+    \draw[->] (start) -- (homepage);
+    \draw[->] (homepage) -- (auth_check);
+    \draw[->] (auth_check) -- node[left] {No} (login);
+    \draw[->] (login) -- (auth_check);
+    \draw[->] (auth_check) -- node[right] {Yes} (main_menu);
+    \draw[->] (main_menu) -- (game_modes);
+    \draw[->] (game_modes) -- (mode_select);
+    \draw[->] (mode_select) -- node[left] {Campaign} (campaign);
+    \draw[->] (campaign) -- (campaign_game);
+    \draw[->] (campaign_game) -- (stats);
+    \draw[->] (mode_select) -- node[above right] {Arcade} (multiplayer);
+    \draw[->] (multiplayer) -- (matchmaking);
+    \draw[->] (matchmaking) -- (multiplayer_game);
+    \draw[->] (multiplayer_game) -- (stats2);
+    \draw[->] (mode_select) -- node[right] {Tournament} (tournament);
+    \draw[->] (tournament) -- (tournament_setup);
+    \draw[->] (tournament_setup) -- (tournament_game);
+    \draw[->] (tournament_game) -- (stats3);
+    \draw[->] (stats) -- (leaderboard);
+    \draw[->] (stats2) -- (leaderboard);
+    \draw[->] (stats3) -- (leaderboard);
+    \draw[->] (leaderboard) -- (end);
+\end{tikzpicture}
+\caption{System Workflow: Complete user journey from access to gameplay completion}
+\label{fig:system_workflow}
+\end{figure}
+
+\subsection{User Authentication Flow}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto]
+    % Define styles
+    \tikzstyle{process} = [rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=blue!20]
+    \tikzstyle{decision} = [diamond, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=orange!20]
+    \tikzstyle{data} = [rectangle, minimum width=2cm, minimum height=0.6cm, text centered, draw=black, fill=green!20]
+    \tikzstyle{startend} = [ellipse, minimum width=2cm, minimum height=0.6cm, text centered, draw=black, fill=red!20]
+
+    % Nodes
+    \node[startend] (start) {Access Site};
+    \node[decision, below of=start] (has_account) {Has Account?};
+    \node[process, left of=has_account, xshift=-2cm] (register) {Registration Form};
+    \node[data, below of=register] (validate_reg) {Validate Input};
+    \node[decision, below of=validate_reg] (reg_valid) {Valid?};
+    \node[process, left of=reg_valid, xshift=-1.5cm] (reg_error) {Show Errors};
+    \node[process, right of=reg_valid, xshift=1.5cm] (create_account) {Create Account};
+    \node[data, below of=create_account] (store_user) {Store User Data};
+    \node[process, below of=store_user] (send_welcome) {Send Welcome Email};
+    \node[process, right of=has_account, xshift=2cm] (login) {Login Form};
+    \node[data, below of=login] (validate_login) {Validate Credentials};
+    \node[decision, below of=validate_login] (login_valid) {Valid?};
+    \node[process, left of=login_valid, xshift=-1.5cm] (login_error) {Show Error};
+    \node[process, right of=login_valid, xshift=1.5cm] (generate_token) {Generate JWT Token};
+    \node[data, below of=generate_token] (store_session) {Store Session};
+    \node[process, below of=store_session] (redirect) {Redirect to Dashboard};
+    \node[startend, below of=redirect] (authenticated) {Authenticated};
+
+    % Connections
+    \draw[->] (start) -- (has_account);
+    \draw[->] (has_account) -- node[left] {No} (register);
+    \draw[->] (register) -- (validate_reg);
+    \draw[->] (validate_reg) -- (reg_valid);
+    \draw[->] (reg_valid) -- node[left] {No} (reg_error);
+    \draw[->] (reg_error) -- (register);
+    \draw[->] (reg_valid) -- node[right] {Yes} (create_account);
+    \draw[->] (create_account) -- (store_user);
+    \draw[->] (store_user) -- (send_welcome);
+    \draw[->] (send_welcome) -- (authenticated);
+    \draw[->] (has_account) -- node[right] {Yes} (login);
+    \draw[->] (login) -- (validate_login);
+    \draw[->] (validate_login) -- (login_valid);
+    \draw[->] (login_valid) -- node[left] {No} (login_error);
+    \draw[->] (login_error) -- (login);
+    \draw[->] (login_valid) -- node[right] {Yes} (generate_token);
+    \draw[->] (generate_token) -- (store_session);
+    \draw[->] (store_session) -- (redirect);
+    \draw[->] (redirect) -- (authenticated);
+\end{tikzpicture}
+\caption{Authentication Flow: User registration and login process with validation}
+\label{fig:auth_flow}
+\end{figure}
+
+\subsection{Game Session Flow}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.5cm, auto]
+    % Define styles
+    \tikzstyle{process} = [rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=blue!20]
+    \tikzstyle{decision} = [diamond, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=orange!20]
+    \tikzstyle{data} = [rectangle, minimum width=2cm, minimum height=0.6cm, text centered, draw=black, fill=green!20]
+    \tikzstyle{startend} = [ellipse, minimum width=2cm, minimum height=0.6cm, text centered, draw=black, fill=red!20]
+
+    % Nodes
+    \node[startend] (start) {Start Game};
+    \node[process, below of=start] (init_game) {Initialize Game State};
+    \node[process, below of=init_game] (connect_ws) {Establish WebSocket};
+    \node[decision, below of=connect_ws] (ws_connected) {Connected?};
+    \node[process, left of=ws_connected, xshift=-2cm] (retry_ws) {Retry Connection};
+    \node[process, right of=ws_connected, xshift=2cm] (load_assets) {Load Game Assets};
+    \node[process, below of=load_assets] (setup_players) {Setup Player Controls};
+    \node[process, below of=setup_players] (start_physics) {Start Physics Engine};
+    \node[process, below of=start_physics] (game_loop) {Game Loop};
+    \node[decision, below of=game_loop] (game_end) {Game Over?};
+    \node[process, left of=game_end, xshift=-2cm] (continue_loop) {Continue Loop};
+    \node[process, right of=game_end, xshift=2cm] (calculate_score) {Calculate Final Score};
+    \node[data, below of=calculate_score] (save_results) {Save Match Results};
+    \node[process, below of=save_results] (update_stats) {Update Player Stats};
+    \node[decision, below of=update_stats] (tournament) {Tournament Match?};
+    \node[process, left of=tournament, xshift=-2cm] (regular_end) {End Regular Game};
+    \node[process, right of=tournament, xshift=2cm] (record_blockchain) {Record on Blockchain};
+    \node[process, below of=record_blockchain] (update_bracket) {Update Tournament Bracket};
+    \node[startend, below of=regular_end] (end) {Game Complete};
+
+    % Connections
+    \draw[->] (start) -- (init_game);
+    \draw[->] (init_game) -- (connect_ws);
+    \draw[->] (connect_ws) -- (ws_connected);
+    \draw[->] (ws_connected) -- node[left] {No} (retry_ws);
+    \draw[->] (retry_ws) -- (connect_ws);
+    \draw[->] (ws_connected) -- node[right] {Yes} (load_assets);
+    \draw[->] (load_assets) -- (setup_players);
+    \draw[->] (setup_players) -- (start_physics);
+    \draw[->] (start_physics) -- (game_loop);
+    \draw[->] (game_loop) -- (game_end);
+    \draw[->] (game_end) -- node[left] {No} (continue_loop);
+    \draw[->] (continue_loop) -- (game_loop);
+    \draw[->] (game_end) -- node[right] {Yes} (calculate_score);
+    \draw[->] (calculate_score) -- (save_results);
+    \draw[->] (save_results) -- (update_stats);
+    \draw[->] (update_stats) -- (tournament);
+    \draw[->] (tournament) -- node[left] {No} (regular_end);
+    \draw[->] (regular_end) -- (end);
+    \draw[->] (tournament) -- node[right] {Yes} (record_blockchain);
+    \draw[->] (record_blockchain) -- (update_bracket);
+    \draw[->] (update_bracket) -- (end);
+\end{tikzpicture}
+\caption{Game Session Flow: Complete game lifecycle from initialization to completion}
+\label{fig:game_flow}
+\end{figure}
+
+\subsection{Data Flow Architecture}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2cm, auto]
+    % Define styles
+    \tikzstyle{service} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30]
+    \tikzstyle{database} = [cylinder, minimum width=2cm, minimum height=1cm, text centered, draw=black, fill=green!30, shape border rotate=90]
+    \tikzstyle{external} = [rectangle, minimum width=2.5cm, minimum height=0.8cm, text centered, draw=black, fill=orange!30]
+    \tikzstyle{flow} = [->, thick]
+
+    % Frontend
+    \node[service] (frontend) {Frontend (React/Three.js)};
+    
+    % Services
+    \node[service, below of=frontend, xshift=-4cm] (auth_service) {Auth Service};
+    \node[service, right of=auth_service, xshift=4cm] (user_service) {User Service};
+    \node[service, below of=auth_service, xshift=4cm] (game_service) {Game Service};
+    \node[service, left of=game_service, xshift=-4cm] (tournament_service) {Tournament Service};
+    
+    % Databases
+    \node[database, below of=auth_service] (auth_db) {Auth DB};
+    \node[database, below of=user_service] (user_db) {User DB};
+    \node[database, below of=game_service] (game_db) {Game DB};
+    \node[database, below of=tournament_service] (tournament_db) {Tournament DB};
+    
+    % External Services
+    \node[external, right of=user_service, xshift=3cm] (blockchain) {Blockchain Service};
+    \node[external, below of=blockchain] (redis) {Redis Cache};
+    \node[external, below of=redis] (vault) {HashiCorp Vault};
+    
+    % Connections
+    \draw[flow] (frontend) -- (auth_service);
+    \draw[flow] (frontend) -- (user_service);
+    \draw[flow] (frontend) -- (game_service);
+    \draw[flow] (frontend) -- (tournament_service);
+    
+    \draw[flow] (auth_service) -- (auth_db);
+    \draw[flow] (user_service) -- (user_db);
+    \draw[flow] (game_service) -- (game_db);
+    \draw[flow] (tournament_service) -- (tournament_db);
+    
+    \draw[flow] (tournament_service) -- (blockchain);
+    \draw[flow] (user_service) -- (redis);
+    \draw[flow] (auth_service) -- (vault);
+    
+    % Cross-service communication
+    \draw[flow, dashed] (auth_service) -- (user_service);
+    \draw[flow, dashed] (user_service) -- (game_service);
+    \draw[flow, dashed] (game_service) -- (tournament_service);
+\end{tikzpicture}
+\caption{Data Flow Architecture: Service interactions and data persistence layers}
+\label{fig:data_flow}
+\end{figure}
+
+% ============================================================================
 \chapter{Implementation}
 \label{ch:implementation}
 
@@ -3126,121 +3279,60 @@ The roadmap outlined above provides a clear path for scaling from a sophisticate
 
 \section{Restatement of Main Purpose}
 
-The primary objective of the ft\_transcendence project was to develop a comprehensive, production-ready multiplayer Pong platform that demonstrates mastery of modern software engineering practices. The project aimed to implement all mandatory subject requirements while incorporating advanced features such as real-time WebSocket communication, blockchain-based tournament integrity, enterprise-grade security with WAF and HashiCorp Vault, and microservices architecture for scalability.
+The ft\_transcendence project aimed to develop a production-ready multiplayer Pong platform demonstrating modern software engineering practices, achieving 100\% subject compliance with advanced features including real-time WebSocket gaming, blockchain tournament integrity, and enterprise security.
 
 \section{Summary of Key Findings}
 
-The project successfully achieved 100\% compliance with all subject requirements, implementing nine major modules and four minor modules. Key technical accomplishments include:
-
+The project successfully delivered:
 \begin{itemize}
-  \item \textbf{Complete Microservices Architecture:} Six independent services (auth, user, game, tournament, blockchain, vault) with REST API and WebSocket communication
-  \item \textbf{Real-Time Gaming:} Server-authoritative Pong game logic with 60 FPS rendering and WebSocket synchronization supporting 100+ concurrent connections
-  \item \textbf{Advanced Security Implementation:} Multi-layered defense with ModSecurity WAF, HashiCorp Vault for secrets management, and comprehensive HTTPS/TLS configuration
-  \item \textbf{Blockchain Integration:} Immutable tournament result recording using Solidity smart contracts on Hardhat network
-  \item \textbf{Modern Technology Stack:} TypeScript strict mode, Fastify framework, SQLite databases, Docker containerization, and comprehensive testing
-  \item \textbf{Production Readiness:} Full container orchestration with Docker Compose, automated deployment, and monitoring capabilities
+  \item Complete microservices architecture with 6 services
+  \item Real-time 60 FPS Pong with WebSocket synchronization
+  \item Multi-layered security (WAF, Vault, HTTPS/TLS)
+  \item Blockchain tournament recording
+  \item TypeScript strict mode, Docker containerization
 \end{itemize}
 
-\section{Interpretation and Significance of Findings}
+\section{Interpretation and Significance}
 
-The successful implementation demonstrates that modern software engineering practices can effectively address complex system requirements while maintaining code quality, security, and scalability. The project's significance lies in its comprehensive approach to full-stack development, integrating cutting-edge technologies (blockchain, WebSocket real-time communication, microservices) with proven enterprise patterns (security hardening, containerization, automated testing).
-
-The significance extends beyond technical implementation to educational value, showcasing how theoretical software engineering concepts translate to practical, production-grade systems. The project validates the effectiveness of iterative development, risk management, and quality assurance processes in delivering complex software systems.
+The implementation validates modern software engineering approaches for complex gaming platforms, demonstrating effective integration of real-time communication, security hardening, and blockchain technology.
 
 \section{Implications}
 
-The ft\_transcendence project has several important implications for software development practice and gaming platform architecture:
-
 \subsection{Technical Implications}
 \begin{itemize}
-  \item \textbf{Microservices Validation:} Confirms the effectiveness of microservices for real-time gaming applications, providing better scalability and maintainability than monolithic approaches
-  \item \textbf{Security Integration:} Demonstrates that comprehensive security can be integrated from project inception without compromising functionality or performance
-  \item \textbf{Blockchain Applicability:} Validates blockchain technology for gaming applications, particularly for tournament integrity and result immutability
-  \item \textbf{Real-Time Architecture:} Establishes patterns for WebSocket-based real-time applications with server-authoritative game logic
+  \item Validates microservices for real-time gaming applications
+  \item Confirms comprehensive security integration without compromising performance
+  \item Demonstrates blockchain applicability for tournament integrity
 \end{itemize}
 
 \subsection{Practical Implications}
 \begin{itemize}
-  \item \textbf{Development Methodology:} Provides a template for iterative, risk-managed software development with comprehensive testing
-  \item \textbf{Technology Selection:} Offers guidance on selecting appropriate technologies for gaming platforms with real-time and security requirements
-  \item \textbf{Deployment Strategy:} Demonstrates production-ready deployment practices using containerization and orchestration
+  \item Provides template for iterative, risk-managed development
+  \item Guides technology selection for gaming platforms
+  \item Demonstrates production deployment practices
 \end{itemize}
 
-\subsection{Educational Implications}
+\section{Limitations}
+
 \begin{itemize}
-  \item \textbf{Learning Outcomes:} Serves as a comprehensive case study for software engineering education, covering SDLC, architecture design, security, and testing
-  \item \textbf{Best Practices:} Illustrates the application of industry best practices in a real-world project context
-\end{itemize}
-
-\section{Limitations of the Study}
-
-While the project achieved its objectives, several limitations should be acknowledged:
-
-\subsection{Technical Limitations}
-\begin{itemize}
-  \item \textbf{Scalability Constraints:} Current architecture supports hundreds of concurrent users but may require optimization for thousands
-  \item \textbf{Database Choice:} SQLite provides simplicity but may not be suitable for high-traffic production environments requiring PostgreSQL or similar
-  \item \textbf{3D Performance:} Advanced 3D rendering requires significant client-side computing power and may not be accessible on all devices
-  \item \textbf{Browser Compatibility:} Some advanced WebGL features may not be supported on older browsers or low-end devices
-\end{itemize}
-
-\subsection{Development Scope Limitations}
-\begin{itemize}
-  \item \textbf{Testing Coverage:} While comprehensive manual testing was completed, automated test coverage could be expanded for regression prevention
-  \item \textbf{Performance Benchmarking:} Load testing was conducted manually; automated performance testing would provide more comprehensive metrics
-  \item \textbf{Security Auditing:} Manual security review was conducted; professional penetration testing would identify additional vulnerabilities
-\end{itemize}
-
-\subsection{Project Constraints}
-\begin{itemize}
-  \item \textbf{Time Limitations:} The 11-week timeline constrained the exploration of alternative architectural approaches
-  \item \textbf{Resource Constraints:} Development was conducted by a small team, limiting parallel development streams
-  \item \textbf{Technology Maturity:} Some chosen technologies (particularly blockchain integration) are still evolving
+  \item Scalability constraints for thousands of concurrent users
+  \item SQLite limitations for high-traffic environments
+  \item 3D performance requirements for lower-end devices
+  \item Manual testing coverage (automated testing could be expanded)
 \end{itemize}
 
 \section{Recommendations for Future Research}
 
-Based on the project experience and limitations identified, several areas warrant further investigation:
-
-\subsection{Technical Research Directions}
 \begin{itemize}
-  \item \textbf{Scalability Research:} Investigate horizontal scaling strategies for gaming platforms supporting thousands of concurrent users
-  \item \textbf{Database Optimization:} Compare performance characteristics of different database solutions for real-time gaming applications
-  \item \textbf{3D Accessibility:} Research techniques for making advanced 3D interfaces accessible to users with lower-end devices
-  \item \textbf{Blockchain Scalability:} Explore layer-2 solutions and alternative consensus mechanisms for gaming applications
-\end{itemize}
-
-\subsection{Methodology Research}
-\begin{itemize}
-  \item \textbf{Automated Testing:} Develop comprehensive automated testing frameworks for real-time gaming applications
-  \item \textbf{Performance Engineering:} Establish performance benchmarking standards for WebSocket-based applications
-  \item \textbf{Security Automation:} Research automated security testing and vulnerability assessment for microservices architectures
-\end{itemize}
-
-\subsection{Application Areas}
-\begin{itemize}
-  \item \textbf{Mobile Gaming:} Extend the platform to native mobile applications with touch-optimized controls
-  \item \textbf{Esports Integration:} Develop professional tournament management features and prize distribution systems
-  \item \textbf{Social Gaming:} Implement advanced social features including guilds, tournaments, and community management
-  \item \textbf{Cross-Platform Play:} Enable seamless gaming across different devices and platforms
-\end{itemize}
-
-\subsection{Technology Evolution}
-\begin{itemize}
-  \item \textbf{AI Integration:} Implement machine learning for matchmaking, anti-cheat systems, and dynamic difficulty adjustment
-  \item \textbf{Cloud Native:} Migrate to Kubernetes orchestration and cloud-native services for improved scalability
-  \item \textbf{Edge Computing:} Explore edge computing for reduced latency in global gaming scenarios
+  \item Scalability research for large-scale gaming platforms
+  \item Automated testing frameworks for real-time applications
+  \item AI integration for matchmaking and anti-cheat systems
+  \item Mobile gaming and cross-platform play extensions
 \end{itemize}
 
 \section{Final Closing Statement}
 
-The ft\_transcendence project represents a successful culmination of modern software engineering principles applied to a complex, real-world gaming platform. By achieving 100\% compliance with all subject requirements while implementing advanced features like blockchain integration, enterprise security, and real-time multiplayer gaming, the project demonstrates the practical application of theoretical concepts in software development.
-
-The comprehensive approach—from initial planning through deployment—validates the effectiveness of iterative development methodologies, risk management strategies, and quality assurance practices. While certain limitations exist regarding scalability and testing automation, these provide valuable insights for future improvements and research directions.
-
-Ultimately, the project serves as both a technical achievement and an educational milestone, offering a complete case study for students and practitioners seeking to understand the complexities of modern software engineering. The successful delivery of a production-ready gaming platform within the project constraints confirms that with proper planning, execution, and attention to quality, complex software systems can be developed efficiently and effectively.
-
-The ft\_transcendence platform stands ready for production deployment and future evolution, embodying the principles of scalable, secure, and maintainable software development that will guide the next generation of digital gaming experiences.
+The ft\_transcendence project successfully demonstrates the application of modern software engineering principles to deliver a complex, production-ready gaming platform. Achieving 100\% compliance while implementing advanced features validates the effectiveness of iterative development, comprehensive security, and quality assurance practices. The platform serves as both a technical achievement and educational case study for scalable software development.
 
 % ============================================================================
 % Appendices
@@ -3380,19 +3472,12 @@ make full-clean        # Remove containers and volumes
 
 \begin{thebibliography}{99}
 
-% Subject Requirements and Specifications
 \bibitem{ft_transcendence_req}
 ft\_transcendence Project Requirements (v16.1). 42 School Subject Documentation, 2024.
 
-% Security Standards and Frameworks
 \bibitem{owasp_top10}
 OWASP Foundation. \textit{OWASP Top 10 Web Application Security Risks}. Available at: https://owasp.org/www-project-top-ten/ (Accessed: February 2024).
 
-% Technical Standards
-\bibitem{rfc6238}
-M'Raihi, D., Machani, S., Pei, M., and Rydell, J. \textit{RFC 6238: TOTP: Time-Based One-Time Password Algorithm}. Internet Engineering Task Force, 2011.
-
-% Framework Documentation
 \bibitem{fastify_docs}
 Fastify Team. \textit{Fastify Documentation}. Available at: https://www.fastify.io/docs/latest/ (Accessed: December 2023).
 
@@ -3402,64 +3487,29 @@ HashiCorp. \textit{Vault Documentation}. Available at: https://developer.hashico
 \bibitem{hardhat_docs}
 Nomic Labs. \textit{Hardhat Documentation}. Available at: https://hardhat.org/docs (Accessed: December 2023).
 
-% Security Tools
 \bibitem{modsecurity}
 Trustwave. \textit{ModSecurity Reference Manual}. Available at: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual (Accessed: January 2024).
 
-% Development Tools and Libraries
 \bibitem{typescript_docs}
 Microsoft. \textit{TypeScript Documentation}. Available at: https://www.typescriptlang.org/docs/ (Accessed: November 2023).
 
 \bibitem{nodejs_docs}
 OpenJS Foundation. \textit{Node.js Documentation}. Available at: https://nodejs.org/en/docs/ (Accessed: November 2023).
 
-% Database Documentation
 \bibitem{sqlite_docs}
 SQLite Consortium. \textit{SQLite Documentation}. Available at: https://www.sqlite.org/docs.html (Accessed: December 2023).
 
-% Containerization
 \bibitem{docker_docs}
 Docker Inc. \textit{Docker Documentation}. Available at: https://docs.docker.com/ (Accessed: December 2023).
 
-% Web Standards
 \bibitem{websocket_rfc}
 Fette, I., and Melnikov, A. \textit{RFC 6455: The WebSocket Protocol}. Internet Engineering Task Force, 2011.
 
-% Security Protocols
 \bibitem{tls_rfc}
 Dierks, T., and Rescorla, E. \textit{RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2}. Internet Engineering Task Force, 2008.
 
-% Blockchain Standards
-\bibitem{ethereum_yellow}
-Wood, G. \textit{Ethereum: A Secure Decentralised Generalised Transaction Ledger}. Ethereum Project, 2014.
-
-% Development Methodologies
-\bibitem{agile_manifesto}
-Beck, K., Beedle, M., van Bennekum, A., Cockburn, A., Cunningham, W., Fowler, M., Grenning, J., Highsmith, J., Hunt, A., Jeffries, R., Kern, J., Marick, B., Martin, R.C., Mellor, S., Schwaber, K., Sutherland, J., and Thomas, D. \textit{Manifesto for Agile Software Development}. 2001.
-
-% Software Engineering References
 \bibitem{pressman_se}
 Pressman, R.S., and Maxim, B.R. \textit{Software Engineering: A Practitioner's Approach}. 9th Edition. McGraw-Hill Education, 2020.
-
-% Web Application Security
-\bibitem{web_app_hacker}
-Stuttard, D., and Pinto, M. \textit{The Web Application Hacker's Handbook: Finding and Exploiting Security Flaws}. 2nd Edition. Wiley, 2011.
-
-% Real-Time Systems
-\bibitem{real_time_systems}
-Kopetz, H. \textit{Real-Time Systems: Design Principles for Distributed Embedded Applications}. Springer, 2011.
-
-% Microservices Architecture
-\bibitem{microservices_book}
-Newman, S. \textit{Building Microservices: Designing Fine-Grained Systems}. O'Reilly Media, 2015.
-
-% Game Development
-\bibitem{real_time_collision}
-Ericson, C. \textit{Real-Time Collision Detection}. Morgan Kaufmann, 2004.
-
-% Testing Methodologies
-\bibitem{testing_computer_software}
-Myers, G.J., Sandler, C., and Badgett, T. \textit{The Art of Software Testing}. 3rd Edition. Wiley, 2011.
 
 \end{thebibliography}
 
