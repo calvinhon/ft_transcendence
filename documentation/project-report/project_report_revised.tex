@@ -1,4 +1,4 @@
-% ! TEX root = /home/danish/Documents/Coding/ft_transcendence/documentation/project-report/project_report.tex
+% ! TEX root = /home/danish/Documents/Coding/ft_transcendence/documentation/project-report/project_repor.tex
   % ft_transcendence Project Report - LaTeX
 \documentclass[11pt,a4paper]{report}
 \usepackage[utf8]{inputenc}
@@ -99,15 +99,11 @@
 \emergencystretch=10pt
 \hyphenpenalty=5000 % High penalty, but not a total ban
 
-\textbf{Statement of the Problem:} In the evolving landscape of online gaming, there is a growing demand for secure, scalable, and feature-rich multiplayer platforms that support real-time gameplay, social interactions, and immutable record-keeping for competitive tournaments, while addressing security vulnerabilities and performance challenges inherent in distributed systems.
+The evolution of online gaming has created a demand for platforms that provide seamless real-time interaction while maintaining high standards for security and data integrity. This report presents \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform engineered to resolve the performance and security challenges inherent in distributed systems. The system employs a microservices architecture consisting of seven specialized containers - Auth, User, Frontend, Game, Tournament, Blockchain, and Vault - orchestrated via Docker Compose for production-grade scalability.
 
-\textbf{Goals:} The primary objectives of the ft\_transcendence project were to develop a full-stack multiplayer Pong platform that achieves 100\% compliance with subject requirements, implements all mandatory and optional modules, ensures production-grade security and scalability, and provides an innovative user experience through real-time WebSocket gameplay and blockchain-integrated tournaments.
+Methodologically, the project leverages WebSockets for authoritative 60 FPS gameplay, Babylon.js for 3D rendering, and Solidity smart contracts on a Hardhat node to ensure immutable tournament record-keeping. Security is achieved through a "Defense-in-Depth" strategy, utilizing Nginx with ModSecurity WAF for network protection and HashiCorp Vault for centralized secret management.
 
-\textbf{Methods Used:} The project employed a microservices architecture with six independent services (auth, user, game, tournament, blockchain, vault) built using Node.js, Fastify, and TypeScript. Real-time communication was implemented via WebSocket, security through WAF/ModSecurity and HashiCorp Vault, blockchain integration using Solidity smart contracts on Hardhat, and frontend with Babylon.js for 3D rendering. Docker Compose was used for container orchestration, and comprehensive manual testing validated all functionalities.
-
-\textbf{Findings and Results:} The implementation successfully delivered all required features including real-time multiplayer Pong at 60 FPS, tournament management with blockchain immutability, comprehensive security hardening, and production-ready deployment. All manual tests were completed with 100\% coverage, demonstrating full compliance and operational readiness.
-
-\textbf{Significance:} This project demonstrates mastery of modern software engineering practices, providing a robust, secure, and scalable platform for competitive gaming that advances the field through innovative 3D interfaces and blockchain integration, serving as a foundation for future enhancements in distributed gaming systems.
+Final implementation results confirm 100\% compliance with all subject requirements, validated through comprehensive manual testing. This project demonstrates the effective synthesis of modern web technologies and rigorous engineering practices, serving as a secure, high-fidelity foundation for competitive distributed gaming.
 
 \end{abstract}
 
@@ -217,7 +213,9 @@ The project followed an iterative, incremental SDLC model with five phases:
 
 The following flowchart illustrates the Software Development Life Cycle process:
 
-\begin{figure}[htbp]
+\vspace{1cm}
+
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=2cm]
 
@@ -239,8 +237,8 @@ The following flowchart illustrates the Software Development Life Cycle process:
 \draw [arrow] (start) -- (planning);
 \draw [arrow] (planning) -- (design);
 \draw [arrow] (design) -- (decision1);
-\draw [arrow] (decision1) -- node[anchor=east] {Yes} (implement);
-\draw [arrow] (decision1) -- node[anchor=south] {No} ++(-3cm,0) |- (design);
+\draw [arrow] (decision1) -- node[pos=0.3, above] {Yes} (implement);
+\draw [arrow] (decision1) -- node[anchor=south] {No} ++(-4cm,0) |- (design);
 \draw [arrow] (implement) -- (test);
 \draw [arrow] (test) -- (deploy);
 \draw [arrow] (deploy) -- (decision2);
@@ -252,6 +250,8 @@ The following flowchart illustrates the Software Development Life Cycle process:
 \caption{SDLC Flowchart: Development process overview}
 \label{fig:sdlc_flowchart}
 \end{figure}
+
+\pagebreak
 
 \section{Project Timeline and Gantt Chart}
 \label{sec:gantt}
@@ -274,7 +274,7 @@ The Gantt chart format was validated and approved by the project supervisor via 
 \begin{table}[H]
 \centering
 \caption{Task Assignments and Responsibilities}
-\begin{tabular}{|l|l|l|p{3cm}|}
+\begin{tabular}{|l|l|l|p{6.5cm}|}
 \hline
 \textbf{Phase} & \textbf{Task} & \textbf{Person in Charge} & \textbf{Responsibilities} \\
 \hline
@@ -446,9 +446,9 @@ Non-functional requirements specify quality attributes and constraints that the 
 
 \subsubsection{Performance Requirements}
 \begin{itemize}
-  \item NFR-PERF-1: System shall maintain 60 FPS gameplay with <16ms frame time
-  \item NFR-PERF-2: WebSocket latency shall be <50ms for real-time synchronization
-  \item NFR-PERF-3: API response times shall be <200ms for 95\% of requests
+  \item NFR-PERF-1: System shall maintain 60 FPS gameplay with $<$16ms frame time
+  \item NFR-PERF-2: WebSocket latency shall be $<$50ms for real-time synchronization
+  \item NFR-PERF-3: API response times shall be $<$200ms for 95\% of requests
   \item NFR-PERF-4: System shall support 100+ concurrent users per instance
   \item NFR-PERF-5: Database queries shall complete within 100ms under normal load
 \end{itemize}
@@ -474,7 +474,7 @@ Non-functional requirements specify quality attributes and constraints that the 
 \begin{itemize}
   \item NFR-USAB-1: Interface shall be responsive across desktop and mobile devices
   \item NFR-USAB-2: 3D mode shall gracefully degrade to 2D rendering
-  \item NFR-USAB-3: User onboarding shall take <5 minutes for new users
+  \item NFR-USAB-3: User onboarding shall take $<$5 minutes for new users
   \item NFR-USAB-4: Error messages shall be clear and actionable
 \end{itemize}
 
@@ -708,7 +708,7 @@ const validatePassword = (password: string): string | null => {
 \end{verbatim}
 
 \subsubsection{Multi-Factor Authentication (MFA)}
-OAuth 2.0 integration with external providers for enhanced authentication.
+OAuth 2.0 integration with Google OAuth for enhanced authentication.
 
 \subsection{Layer 5: Data Protection}
 
@@ -777,9 +777,11 @@ Docker security best practices implementation:
   \item \textbf{Resource Limits:} Memory and CPU limits to prevent resource exhaustion
 \end{itemize}
 
+\pagebreak
+
 \subsection{Security Testing and Validation}
 
-The security implementation is validated through comprehensive automated testing:
+The security implementation is validated through comprehensive testing:
 
 \subsubsection{WAF Effectiveness Testing}
 Tests verify ModSecurity rule effectiveness:
@@ -828,7 +830,7 @@ The implementation achieves compliance with multiple security standards:
 \subsection{Security Implementation Details}
 
 \subsubsection{SQL Injection Prevention}
-All SQL queries use parameterized statements with \`?\` placeholders:
+All SQL queries use parameterized statements with $`?`$ placeholders:
 
 \begin{verbatim}
 const query = `SELECT * FROM users WHERE email = ?`;
@@ -868,7 +870,9 @@ redisClient = new Redis({
 });
 \end{verbatim}
 
-This comprehensive security implementation ensures the ft\_transcendence platform maintains high security standards while providing a seamless user experience. The layered approach provides multiple lines of defense against various attack vectors, with automated testing ensuring continued security effectiveness.
+This comprehensive security implementation ensures the ft\_transcendence platform maintains high security standards while providing a seamless user experience. The layered approach provides multiple lines of defense against various attack vectors, with thorough testing ensuring continued security effectiveness.
+
+\pagebreak
 
 \section{Blockchain Integration}
 \label{sec:blockchain}
