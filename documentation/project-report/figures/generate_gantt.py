@@ -2,8 +2,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from datetime import datetime
 
+
 # Simplified Gantt chart with clean text positioning
 start_date = datetime(2025, 9, 1)
+
+# Scale factor for fonts (30% increase)
+scale = 1.3
 
 # Main phases with modules - simplified
 phases = [
@@ -20,22 +24,22 @@ phases = [
         'start': 14,
         'duration': 35,
         'modules': [
+            ('Frontend', 14, 35),
             ('Auth Service', 14, 8),
-            ('User Service', 18, 8),
+            ('User Service', 22, 12),
             ('Game Service', 22, 10),
-            ('Tournament Service', 26, 8),
-            ('Frontend', 30, 12)
+            ('Tournament Service', 26, 8)
         ]
     },
     {
         'name': 'Security & Blockchain',
         'color': '#FF6B6B',
-        'start': 49,
-        'duration': 14,
+        'start': 22,
+        'duration': 41,
         'modules': [
-            ('Blockchain', 49, 6),
-            ('Vault', 51, 4),
-            ('WAF', 53, 6)
+            ('Vault', 22, 10),
+            ('WAF', 32, 10),
+            ('Blockchain', 49, 6)
         ]
     },
     {
@@ -45,93 +49,117 @@ phases = [
         'duration': 21,
         'modules': []
     },
-    {
-        'name': 'Deployment & Launch',
-        'color': '#9B59B6',
-        'start': 84,
-        'duration': 14,
-        'modules': []
-    }
 ]
 
 # Create figure with clean layout - increased height for better spacing
 fig, ax = plt.subplots(figsize=(16, 14))
+# Give room on the left for the Party Assigned column
+left_margin = 0.32
+fig.subplots_adjust(left=left_margin)
 
 # Plot main phases and modules with clean text positioning
 y_pos = 0
+plotted_items = []  # collect items for party labels and horizontal lines
 
-for phase_idx, phase in enumerate(phases):
+for phase in phases:
+    # skip Deployment if present
+
     phase_y = y_pos
 
+    # compute shifted start to avoid left overlap with party column
+    start = phase['start']
+
     # Main phase bar
-    ax.broken_barh([(phase['start'], phase['duration'])], (phase_y-0.3, 0.6),
-                   facecolors=phase['color'], edgecolors='black', linewidth=1.5, alpha=0.8)
+    ax.broken_barh([(start, phase['duration'])], (phase_y-0.3, 0.6),
+           facecolors=phase['color'], edgecolors='black', linewidth=1.5, alpha=0.8, zorder=2)
 
-    # Phase label - positioned above the bar with larger font and more separation
-    ax.text(phase['start'] + phase['duration']/2, phase_y + 1.0, phase['name'],
-            ha='center', va='bottom', fontsize=14, fontweight='bold')
+    # Phase label - left-aligned to the start of the bar
+    ax.text(start + 0.2, phase_y + 1.0, phase['name'],
+        ha='left', va='bottom', fontsize=int(14*scale), fontweight='bold', zorder=3)
 
-    # Add modules with increased vertical spacing
+    # record phase for party labeling and horizontal line
+    plotted_items.append({'label': phase['name'], 'y': phase_y})
+
+    # Add modules with increased vertical spacing and ensure they don't overlap next phase
     if phase['modules']:
-        module_y = phase_y - 1.5  # Position modules further below the phase bar
+        module_y = phase_y - 1.8  # more separation to avoid overlap
 
         for module_idx, (module_name, module_start, module_duration) in enumerate(phase['modules']):
-            # Calculate x position to avoid overlap - distribute evenly in available space
-            available_width = phase['duration']
-            module_spacing = available_width / (len(phase['modules']) + 1)
-            module_x = phase['start'] + module_spacing * (module_idx + 1) - module_duration/2
-
-            # Ensure module stays within phase boundaries
-            module_x = max(phase['start'], min(module_x, phase['start'] + phase['duration'] - module_duration))
+            # (service, x, y) => service starts at day x and lasts y days
+            module_x = module_start
 
             # Module bar
             ax.broken_barh([(module_x, module_duration)], (module_y-0.2, 0.4),
-                           facecolors=phase['color'], edgecolors='black', linewidth=1, alpha=0.9)
+                           facecolors=phase['color'], edgecolors='black', linewidth=1, alpha=0.9, zorder=2)
 
             # Module label - positioned above the module bar with larger 12pt font and separation
-            ax.text(module_x + module_duration/2, module_y + 0.4, module_name,
-                    ha='center', va='bottom', fontsize=12, fontweight='medium')
+            ax.text(module_x, module_y + 0.4, module_name,
+                    ha='left', va='bottom', fontsize=int(12*scale), fontweight='medium', zorder=3)
+
+            # record module for party labeling and horizontal line
+            plotted_items.append({'label': module_name, 'y': module_y})
 
             # Increase vertical spacing between modules
-            module_y -= 1.2
+            module_y -= 1.25
 
-        y_pos -= 4.0  # More space between phases with modules due to increased spacing
+        # leave extra space after modules before next phase
+        y_pos = module_y - 1.2
     else:
-        y_pos -= 1.5  # Normal spacing for phases without modules
+        y_pos -= 2.2
 
-# Add current progress indicator with larger font
-current_date = datetime(2025, 12, 18)
-days_elapsed = (current_date - start_date).days
-if days_elapsed > 0:
-    ax.axvline(x=days_elapsed, color='red', linewidth=2, alpha=0.8)
-    ax.text(days_elapsed, 1.5, 'Today', ha='center', va='bottom',
-            fontsize=13, color='red', fontweight='bold')
+# Styling and axes
+# Extend xlim to include the Party Assigned column at x=-20, but do NOT show negative tick labels.
+ax.set_xlim(-22, 110)
+ax.set_ylim(y_pos - 0.4, 4)  # Reduce whitespace above x-axis
+ax.set_xlabel('Days from Project Start (2025-09-01)', fontsize=int(13*scale))
 
-# Styling with adjusted limits for new spacing
-ax.set_xlim(-5, 110)
-ax.set_ylim(y_pos - 2, 4)  # Adjust y limits for increased text separation
-ax.set_xlabel('Days from Project Start (2025-09-01)', fontsize=13)
-ax.set_title('ft_transcendence Project Timeline - Phases & Modules', fontsize=16, fontweight='bold', pad=20)
+# Force x ticks to be non-negative only
+xticks = list(range(0, 111, 10))
+ax.set_xticks(xticks)
 
 # Add grid
 ax.grid(True, alpha=0.3, axis='x')
 ax.set_axisbelow(True)
 
-# Clean legend
 legend_elements = [
     patches.Patch(facecolor='#4A90E2', label='Planning & Design'),
     patches.Patch(facecolor='#50C878', label='Core Development'),
     patches.Patch(facecolor='#FF6B6B', label='Security & Blockchain'),
     patches.Patch(facecolor='#FFA500', label='Testing & QA'),
-    patches.Patch(facecolor='#9B59B6', label='Deployment & Launch'),
-    plt.Line2D([0], [0], color='red', linewidth=2, label='Current Progress')
 ]
-ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
+ax.legend(handles=legend_elements, loc='upper right', fontsize=int(10*scale))
 
-# Add week markers with adjusted positioning
-for week in range(0, 101, 14):  # Every 2 weeks
-    ax.axvline(x=week, color='gray', alpha=0.2, linewidth=0.5)
-    ax.text(week, y_pos - 1, f'W{week//7}', ha='center', va='top', fontsize=11, color='gray')
+# Remove y-axis ticks/markers for a cleaner look
+ax.set_yticks([])
+ax.yaxis.set_visible(False)
+
+# Party Assigned column values
+party_map = {
+    'Planning & Design': 'Team',
+    'Testing & QA': 'Team',
+    'Auth Service': 'Danish',
+    'User Service': 'Hoach',
+    'Game Service': 'Hoach, Calvin',
+    'Tournament Service': 'Calvin',
+    'Frontend': 'Mahad',
+    'Blockchain': 'Calvin',
+    'Vault': 'Danish',
+    'WAF': 'Danish'
+}
+
+party_x = -20
+
+# Party Assigned header in true data coords (x=-20)
+ax.text(party_x, 2.5, 'Party Assigned', fontsize=int(12*scale), fontweight='bold', ha='left', va='center', clip_on=False)
+
+# Draw horizontal guide lines and party labels for each plotted item
+for item in plotted_items:
+    y = item['y']
+    # horizontal guide line across plotting area
+    ax.hlines(y, xmin=0, xmax=110, color='gray', linewidth=0.6, alpha=0.25, zorder=1)
+    party = party_map.get(item['label'], '')
+    if party:
+        ax.text(party_x, y, party, fontsize=int(11*scale), ha='left', va='center', clip_on=False)
 
 plt.tight_layout()
 plt.savefig('gantt.png', dpi=150, bbox_inches='tight')

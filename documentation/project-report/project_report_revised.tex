@@ -259,51 +259,11 @@ The following flowchart illustrates the Software Development Life Cycle process:
 The project was executed in 4 phases over 11 weeks with assigned leads:
 
 \begin{itemize}
-  \item \textbf{Phase 1 (Planning):} 2 weeks - Led by Hoach
-  \item \textbf{Phase 2 (Development):} 6 weeks - Led by Calvin  
-  \item \textbf{Phase 3 (Security):} 2 weeks - Led by Danish
-  \item \textbf{Phase 4 (Deployment):} 1 week - Led by Hoach
+  \item \textbf{Phase 1 (Planning):} 2 weeks
+  \item \textbf{Phase 2 (Development):} 6 weeks
+  \item \textbf{Phase 3 (Security):} 2 weeks
+  \item \textbf{Phase 4 (Deployment):} 1 week
 \end{itemize}
-
-\subsection{Gantt Chart Validation}
-
-The Gantt chart format was validated and approved by the project supervisor via email confirmation.
-
-\subsection{Detailed Task Assignment}
-
-\begin{table}[H]
-\centering
-\caption{Task Assignments and Responsibilities}
-\begin{tabular}{|l|l|l|p{3cm}|}
-\hline
-\textbf{Phase} & \textbf{Task} & \textbf{Person in Charge} & \textbf{Responsibilities} \\
-\hline
-Planning & Requirements Analysis & Hoach & Review requirements, define stories \\
-Planning & Architecture Design & Hoach & Design microservices, tech stack \\
-Planning & Risk Assessment & Danish & Identify risks, mitigation plans \\
-\hline
-Development & Auth Service & Hoach & Registration, authentication \\
-Development & User Service & Calvin & Profiles, friendships \\
-Development & Game Service & Calvin & Real-time Pong logic \\
-Development & Tournament Service & Danish & Tournament management \\
-Development & Blockchain & Danish & Smart contracts \\
-Development & Frontend & Hoach & React, 3D rendering \\
-\hline
-Security & WAF Implementation & Danish & ModSecurity rules \\
-Security & Vault Integration & Hoach & Secret management \\
-Security & HTTPS Setup & Calvin & SSL/TLS configuration \\
-\hline
-Testing & Manual Testing & All Team & End-to-end validation \\
-Testing & Security Testing & Danish & Penetration testing \\
-Testing & Performance Testing & Calvin & Load testing \\
-\hline
-Deployment & Docker Setup & Hoach & Containerization \\
-Deployment & Production & All Team & CI/CD, monitoring \\
-Deployment & Documentation & Danish & Final report \\
-\hline
-\end{tabular}
-\label{tab:task_assignments}
-\end{table}
 
 \begin{figure}[H]
 \centering
@@ -318,32 +278,23 @@ Deployment & Documentation & Danish & Final report \\
 \subsection{Risk Matrix}
 \label{sec:risk_matrix}
 
-Risks are assessed using a 5×5 matrix based on likelihood and impact:
+The risk matrix below provides a framework for assessing the level of risk for potential project setbacks based on the product of likelihood and impact. This enabled the team to prioritize solutions for higher risk issues.
+\begin{table}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/risk_matrix.png}
+\caption{Risk Matrix}
+\label{fig:risk_matrix}
+\end{table}
 
-\input{risk_register.tex}
+\subsection{Risk Register}
+\label{sec:risk_Register}
 
 \begin{table}[H]
 \centering
+\includegraphics[width=0.85\textwidth]{figures/risk_register.png}
 \caption{Risk Assessment Matrix}
-\begin{tabular}{|c|c|c|c|c|c|}
-\hline
-\textbf{Impact $\rightarrow$} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} \\
-\hline
-\textbf{1} & \cellcolor{green!30}Low (1) & \cellcolor{green!30}Low (2) & \cellcolor{green!30}Low (3) & \cellcolor{yellow!30}Med (4) & \cellcolor{yellow!30}Med (5) \\
-\hline
-\textbf{2} & \cellcolor{green!30}Low (2) & \cellcolor{green!30}Low (4) & \cellcolor{yellow!30}Med (6) & \cellcolor{yellow!30}Med (8) & \cellcolor{orange!30}High (10) \\
-\hline
-\textbf{3} & \cellcolor{green!30}Low (3) & \cellcolor{yellow!30}Med (6) & \cellcolor{yellow!30}Med (9) & \cellcolor{orange!30}High (12) & \cellcolor{orange!30}High (15) \\
-\hline
-\textbf{4} & \cellcolor{yellow!30}Med (4) & \cellcolor{yellow!30}Med (8) & \cellcolor{orange!30}High (12) & \cellcolor{red!30}High (16) & \cellcolor{red!50}Crit (20) \\
-\hline
-\textbf{5} & \cellcolor{yellow!30}Med (5) & \cellcolor{orange!30}High (10) & \cellcolor{orange!30}High (15) & \cellcolor{red!50}Crit (20) & \cellcolor{red!50}Crit (25) \\
-\hline
-\end{tabular}
-\label{tab:risk_matrix}
+\label{fig:risk_register}
 \end{table}
-
-Risk levels: Low (1-5), Medium (6-12), High (13-20), Critical (21-25).
 
 % ============================================================================
 \chapter{Requirement Analysis}
