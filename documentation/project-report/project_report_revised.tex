@@ -828,16 +828,17 @@ This comprehensive security implementation ensures the ft\_transcendence platfor
 \section{Blockchain Integration}
 \label{sec:blockchain}
 
-The ft\_transcendence platform implements blockchain technology to provide immutable tournament result recording, ensuring transparency and preventing result manipulation. The blockchain integration uses Solidity smart contracts deployed on a local Hardhat network, with comprehensive testing and production-ready deployment.
+The ft\_transcendence platform uses blockchain technology to provide immutable tournament result recording, improving transparency and reducing the risk of result manipulation. The implementation runs on a local Hardhat network inside Docker and is suitable for development, testing, and staging demonstrations.
 
 \subsection{Blockchain Architecture}
 
-The blockchain implementation consists of three main components:
+The blockchain implementation consists of four coordinated components:
 
 \begin{enumerate}
-  \item \textbf{Hardhat Local Network:} Local Ethereum-compatible blockchain for development and testing
-  \item \textbf{Solidity Smart Contract:} Tournament ranking storage with immutable data recording
-  \item \textbf{Blockchain Service:} REST API interface for tournament result submission
+  \item \textbf{Hardhat Local Network:} Dockerized Ethereum-compatible network used for local execution.
+  \item \textbf{Solidity Smart Contract:} On-chain tournament ranking storage with owner-restricted write access.
+  \item \textbf{Deployment Step:} Automated contract deployment that persists the deployed address for service startup.
+  \item \textbf{Blockchain Service:} Internal API that receives rankings and submits transactions to the smart contract.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -849,126 +850,39 @@ The blockchain implementation consists of three main components:
 
 \subsection{Smart Contract Implementation}
 
-The \texttt{TournamentRankings} smart contract provides immutable tournament result storage:
-
-\begin{verbatim}
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
-
-contract TournamentRankings {
-    mapping(uint256 tournamentId => mapping(uint256 player => uint256 rank)) 
-        public tournamentRankings;
-
-    address public immutable owner;
-    event RankRecorded(uint256 indexed tournamentId, 
-                      uint256 indexed player, uint256 rank);
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not authorized");
-        _;
-    }
-
-    function recordRanks(uint256 tournamentId, uint256[] calldata players, 
-                        uint256[] calldata ranks) external onlyOwner {
-        require(players.length == ranks.length, "Players and ranks length mismatch");
-        for (uint256 i = 0; i < players.length; i++) {
-            uint256 player = players[i];
-            uint256 rank = ranks[i];
-            tournamentRankings[tournamentId][player] = rank;
-            emit RankRecorded(tournamentId, player, rank);
-        }
-    }
-}
-\end{verbatim}
+The smart contract stores tournament rankings by tournament identifier and player identifier. Writes are restricted to the contract owner, and each recorded rank emits an event for traceability.
 
 \pagebreak
 
 \subsubsection{Contract Features}
 \begin{itemize}
   \item \textbf{Immutability:} Tournament results cannot be altered once recorded
-  \item \textbf{Access Control:} Only authorized addresses can record results
-  \item \textbf{Efficient Storage:} Gas-optimized mapping structure for rank storage
+  \item \textbf{Access Control:} Only the authorized owner account can record results
+  \item \textbf{Batch Submission:} Multiple player ranks can be recorded in a single transaction
   \item \textbf{Event Logging:} Transparent event emission for result verification
 \end{itemize}
 
 \subsection{Hardhat Development Environment}
 
-The project uses Hardhat for comprehensive blockchain development and testing:
-
-\subsubsection{Hardhat Configuration}
-\begin{verbatim}
-require('@nomicfoundation/hardhat-toolbox');
-
-const config = {
-  solidity: "0.8.20",
-  defaultNetwork: "docker",
-  networks: {
-    docker: { 
-      url: "http://blockchain:8545", 
-      chainId: 31337
-    }
-  }
-};
-\end{verbatim}
+The project uses Hardhat as its local blockchain runtime for development and validation. The runtime is configured for an internal Docker network and deterministic local chain ID behavior.
 
 \subsubsection{Deployment Automation}
-Automated contract deployment with address persistence:
-
-\begin{verbatim}
-const TournamentRankings = await ethers.getContractFactory('TournamentRankings');
-const contract = await TournamentRankings.deploy();
-await contract.waitForDeployment();
-const address = await contract.getAddress();
-
-// Save deployment address for service integration
-fs.writeFileSync('deployments/contract-address.json', 
-                JSON.stringify({ address }, null, 2));
-\end{verbatim}
+Contract deployment is automated during container startup. The deployed contract address is persisted and consumed by the blockchain service, preventing manual copy/paste steps and reducing integration drift.
 
 \subsection{Blockchain Service Architecture}
 
-The blockchain service provides a secure REST API interface for tournament result recording:
+The blockchain service exposes an internal API for tournament result recording.
 
 \subsubsection{Service Components}
 \begin{itemize}
-  \item \textbf{Provider Integration:} ethers.js connection to Hardhat network
-  \item \textbf{Wallet Management:} Secure private key handling via HashiCorp Vault
-  \item \textbf{Contract Interaction:} Type-safe smart contract method calls
-  \item \textbf{Transaction Monitoring:} Gas estimation and transaction confirmation
+  \item \textbf{Network Connectivity:} Connection to the local Hardhat node over the internal Docker network
+  \item \textbf{Key Management:} Runtime retrieval of signing key material from HashiCorp Vault
+  \item \textbf{Contract Binding:} Initialization from deployed address and compiled contract artifact
+  \item \textbf{Transaction Confirmation:} Return of mined transaction hash for traceability
 \end{itemize}
 
-\subsubsection{Blockchain Service Implementation}
-\begin{verbatim}
-export class BlockchainService {
-    private provider!: ethers.JsonRpcProvider;
-    private signer!: ethers.Wallet;
-    private contract!: ethers.Contract;
-
-    constructor(rpc: string, pk: string, contractAddress: string, abiPath: string) {}
-
-    async init(): Promise<void> {
-        this.provider = new ethers.JsonRpcProvider(this.rpc);
-        this.signer = new ethers.Wallet(this.pk, this.provider);
-        
-        const abi = JSON.parse(fs.readFileSync(this.abiPath, 'utf8')).abi;
-        this.contract = new ethers.Contract(this.contractAddress, abi, this.signer);
-    }
-
-    async recordRanks(tournamentId: number, userIds: number[], ranks: number[]): Promise<string | null> {
-        const tx = await this.contract.recordRanks(
-            BigInt(tournamentId), 
-            userIds.map(p => BigInt(p)), 
-            ranks.map(r => BigInt(r))
-        );
-        const receipt = await tx.wait();
-        return receipt.hash;
-    }
-}
-\end{verbatim}
+\subsubsection{Service Behavior}
+At startup, the service validates required blockchain artifacts and deployment metadata, then initializes contract access. During requests, payloads are validated, rankings are submitted in batch, and transaction hashes are returned to upstream services.
 
 \subsection{Tournament Integration}
 
@@ -985,31 +899,6 @@ Tournament results are automatically recorded to blockchain upon completion:
 
 \pagebreak
 
-\subsubsection{Blockchain Notifier Service}
-\begin{verbatim}
-export async function notifyBlockchainRecordRanks(
-  tournamentId: number,
-  players: number[],
-  ranks: number[]
-): Promise<void> {
-  const secret = await getServerSecret();
-  const res = await fetch('https://blockchain-service:3000/record', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Microservice-Secret': secret
-    },
-    body: JSON.stringify({ tournamentId, players, ranks })
-  });
-
-  const json = await res.json();
-  logger.info('Blockchain ranks recorded', { 
-    tournamentId, 
-    txHash: json?.txHash 
-  });
-}
-\end{verbatim}
-
 \subsection{Blockchain Security Measures}
 
 \subsubsection{Private Key Management}
@@ -1022,43 +911,43 @@ export async function notifyBlockchainRecordRanks(
 
 \subsubsection{Transaction Security}
 \begin{itemize}
-  \item \textbf{Gas Estimation:} Automatic gas limit calculation for transaction success
-  \item \textbf{Transaction Confirmation:} Wait for block confirmation before returning
-  \item \textbf{Error Handling:} Comprehensive error handling with retry logic
-  \item \textbf{Input Validation:} Strict validation of tournament data before submission
+  \item \textbf{Authorization Checks:} Requests are accepted only from authenticated sessions or trusted internal callers
+  \item \textbf{Transaction Confirmation:} Responses include mined transaction hashes for verification
+  \item \textbf{Input Validation:} Tournament identifier and ranking payloads are validated before submission
+  \item \textbf{Failure Signaling:} Failed submissions return explicit error responses for upstream handling
 \end{itemize}
 
 \subsection{Blockchain Testing and Validation}
 
-Comprehensive testing ensures blockchain functionality and integration.
+Validation activities cover contract deployment, transaction submission, and end-to-end integration from tournament completion to recorded on-chain result.
 
 \pagebreak
 
 \subsubsection{Contract Testing}
 \begin{itemize}
-  \item \textbf{Unit Tests:} Smart contract function testing with various scenarios
-  \item \textbf{Integration Tests:} End-to-end tournament to blockchain recording
-  \item \textbf{Gas Optimization:} Contract deployment and execution cost analysis
-  \item \textbf{Security Audits:} Manual review of contract logic and access controls
+  \item \textbf{Compilation and Deployment Checks:} Validation that contract artifacts and deployment metadata are generated
+  \item \textbf{Functional Validation:} Verification of rank recording and retrieval behavior
+  \item \textbf{Integration Validation:} End-to-end checks from tournament flow to on-chain transaction
+  \item \textbf{Security Review:} Manual review of access control and input assumptions
 \end{itemize}
 
 \subsubsection{Service Testing}
-Testing validate the complete blockchain integration.
+Service tests validate API authorization, payload validation, and transaction result handling.
 
 \subsection{Blockchain Performance Optimization}
 
 \subsubsection{Gas Optimization}
 \begin{itemize}
   \item \textbf{Batch Operations:} Multiple rankings recorded in single transaction
-  \item \textbf{Efficient Storage:} Optimized mapping structure for data access
+  \item \textbf{Efficient Storage:} Mapping-based storage for straightforward lookup
   \item \textbf{Minimal Computation:} Simple ranking storage without complex logic
 \end{itemize}
 
 \subsubsection{Network Efficiency}
 \begin{itemize}
-  \item \textbf{Local Network:} Hardhat provides fast local blockchain operations
+  \item \textbf{Local Network:} Hardhat provides fast local blockchain operations for development and testing
   \item \textbf{Async Processing:} Non-blocking blockchain operations in tournament flow
-  \item \textbf{Caching:} Contract addresses and ABIs cached for performance
+  \item \textbf{Preloaded Metadata:} Contract address and artifact data loaded at service startup
 \end{itemize}
 
 \subsection{Blockchain Monitoring and Observability}
@@ -1076,43 +965,23 @@ Automated health monitoring for blockchain components:
 \begin{itemize}
   \item \textbf{Network Connectivity:} Hardhat node availability monitoring
   \item \textbf{Contract Accessibility:} Smart contract address validation
-  \item \textbf{Wallet Balance:} Sufficient funds for transaction fees
   \item \textbf{Service Health:} Blockchain service API responsiveness
 \end{itemize}
 
 \subsection{Blockchain Deployment and Operations}
 
 \subsubsection{Docker Integration}
-The blockchain components are fully containerized for production deployment:
-
-\begin{verbatim}
-# Docker Compose blockchain services
-services:
-  blockchain:
-    build: ./blockchain
-    container_name: blockchain
-    expose:
-      - "8545"
-    command: npx hardhat node
-
-  blockchain-service:
-    build: ./blockchain-service
-    container_name: blockchain-service
-    environment:
-      - HOST=Blockchain
-    env_file:
-      - .env
-\end{verbatim}
+The blockchain node, deployment step, and blockchain service are containerized and orchestrated together. Service startup is dependency-aware: the node becomes healthy first, contract deployment completes, then the API service starts with mounted artifacts and deployment metadata.
 
 \subsubsection{Production Considerations}
 \begin{itemize}
-  \item \textbf{Network Selection:} Configurable for different Ethereum networks
-  \item \textbf{Gas Management:} Automatic gas price adjustment for network conditions
-  \item \textbf{Backup and Recovery:} Contract deployment scripts for redeployment
-  \item \textbf{Monitoring Integration:} Integration with application monitoring systems
+  \item \textbf{Current Scope:} Local-chain deployment focused on development, testing, and subject validation
+  \item \textbf{Public-Network Migration:} Requires external RPC providers, secure key lifecycle controls, and chain-specific gas policies
+  \item \textbf{Operational Hardening:} Requires enhanced observability, alerting, and incident procedures for sustained production use
+  \item \textbf{Resilience Planning:} Requires deployment/versioning strategy for contract upgrades and rollback-safe service releases
 \end{itemize}
 
-This blockchain integration provides tournament result immutability and transparency, ensuring that competitive outcomes cannot be disputed or altered. The implementation demonstrates modern blockchain development practices with comprehensive testing, security measures, and production-ready deployment capabilities.
+This blockchain integration provides tournament result immutability and transparency, ensuring competitive outcomes can be independently verified. The implementation demonstrates practical blockchain integration for a microservice system in development and staging contexts, with a clear path to additional production hardening.
 
 \section{Microservices Architecture}
 \label{sec:microservices}
