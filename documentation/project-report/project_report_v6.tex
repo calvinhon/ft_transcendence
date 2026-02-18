@@ -1,4 +1,4 @@
-% ! TEX root = /home/danish/Documents/Coding/ft_transcendence/documentation/project-report/project_repor.tex
+% ! TEX root = /home/danish/Documents/Coding/ft_transcendence/documentation/project-report/project_report_v6.tex
   % ft_transcendence Project Report - LaTeX
 \documentclass[11pt,a4paper]{report}
 \usepackage[utf8]{inputenc}
@@ -11,7 +11,7 @@
 \usepackage{array}
 \usepackage{caption}
 % \usepackage{fancybox} % Removed dependency
- % Removed dependency
+\usepackage{framed} % Removed dependency
 \usepackage[table]{xcolor}
 \usepackage{float}
 % \usepackage{multirow} % Removed dependency
@@ -62,7 +62,8 @@
 % Custom Cover Page (Updated)
 \begin{titlepage}
 \thispagestyle{empty}
-
+\setlength{\FrameRule}{2pt}
+\begin{framed}
   \centering
   % 42 logo at the top
   {\fboxrule=1pt \fbox{\includegraphics[width=0.8\textwidth]{figures/42_logo.png}}}\\[4 cm]
@@ -85,7 +86,7 @@
 
 
   Date of Submission: February 2, 2026\\[1cm]
-
+\end{framed}
 \end{titlepage}
 
 % Start front matter with roman page numbering
@@ -147,8 +148,6 @@ Final implementation results confirm 100\% compliance with all subject requireme
 \label{sec:overview}
 
 \textbf{ft\_transcendence} is a production-ready, full-stack multiplayer Pong platform designed to deliver real-time competitive gameplay, social features, tournaments with immutable blockchain recording, and comprehensive system observability. The platform accommodates multiple players, with extensible architecture supporting AI opponents, campaign progression and global leaderboards.
-
-The project demonstrates mastery of modern software engineering practices including microservices architecture, security hardening, real-time communication, blockchain integration and comprehensive testing.
 
 \section{Project Objectives}
 \label{sec:objectives}
@@ -299,213 +298,58 @@ The risk matrix below provides a framework for assessing the level of risk for p
 \chapter{Requirement Analysis}
 \label{ch:requirements}
 
-
-\section{Requirements}
-\label{sec:req}
-
-
 Requirements specify what the system must do and how it achieves those goals. Detailed implementation, UI/UX, and architecture are described in the Design chapter.
 
-\subsection{Functional Requirements}
+\section{Functional Requirements}
 \label{sec:func_req}
 
-
-Functional requirements specify \textit{what} the system must do from the user's perspective. (See Design chapter for detailed UI, wireframes, and flows.)
-
-\subsubsection{User Management \& Authentication}
+Functional requirements define the core behaviors and services the user can interact with.
 \begin{itemize}
-  \item FR-1: Users shall register with email and password
-  \item FR-2: Users shall authenticate via local credentials
-  \item FR-3: Users shall manage profiles (username, avatar, bio)
+  \item FR-1: Identity Management: The system must provide a secure registration and local authentication loop, supplemented by remote OAuth 2.0 integration.
+  \item FR-2: Social Connectivity: Users must be able to manage unique profiles and establish bidirectional "friend" relationships.
+  \item FR-3: Competitive Gameplay: The platform must support a server-authoritative Pong engine providing three distinct modes: Campaign (AI), Arcade (upto 2v2), and Tournament (Multiplayer).
+  \item FR-4: Tournament Integrity: The system must automate bracket progression for up to 8 players and commit final rankings to an immutable ledger.
 \end{itemize}
 
-\subsubsection{Gameplay \& Real-Time Features}
-\begin{itemize}
-  \item FR-4: Pong game shall render at 60 FPS with server-authoritative game loop
-  \item FR-5: Players shall control paddles via keyboard input
-  \item FR-6: Game state shall synchronize to the client via WebSocket in real-time
-  \item FR-7: System shall detect collisions, score updates, and game end conditions
-  \item FR-8: Players shall access multiple game modes: campaign, arcade, tournament
-\end{itemize}
-
-\subsubsection{Social \& Leaderboard Features}
-\begin{itemize}
-  \item FR-9: Users shall add and remove friends
-  \item FR-10: Users shall view global leaderboards (wins, win rate, rank)
-  \item FR-11: Users shall view match history with detailed statistics
-  \item FR-12: System shall display player profiles
-\end{itemize}
-
-\subsubsection{Tournament Management}
-\begin{itemize}
-  \item FR-13: Users shall create and configure tournaments
-  \item FR-14: System shall manage tournament bracket progression
-  \item FR-15: Tournament results shall be recorded immutably to blockchain
-  \item FR-16: Users shall view tournament standings and schedules
-\end{itemize}
-
-\subsection{Technical Requirements}
+\section{Technical Constraints}
 \label{sec:tech_req}
 
-
-Technical requirements specify \textit{how} the system shall achieve functional goals. (See Design chapter for architecture diagrams and implementation details.)
-
-\subsubsection{Architecture \& Infrastructure}
+Technical constraints define the mandatory architecture and stack limitations imposed on the solution.
 \begin{itemize}
-  \item TR-1: Backend shall implement microservices architecture (6 services: auth, user, game, tournament, blockchain, vault)
-  \item TR-2: Each microservice shall operate independently with own database; except for blockchain and vault (SQLite)
-  \item TR-3: Services shall communicate via REST API and WebSocket protocols
-  \item TR-4: Nginx reverse proxy shall route traffic and enforce HTTPS
-  \item TR-5: System shall be deployable via Docker Compose
+  \item TC-1: Microservices Topology: The backend must be decomposed into independent, containerized services orchestrated via Docker.
+  \item TC-2: Networking \& Security: All external traffic must be routed through a centralized Nginx gateway enforcing HTTPS and a Web Application Firewall (WAF).
+  \item TC-3: Data Sovereignty: Each microservice must maintain its own isolated SQLite database, ensuring no cross-service database coupling.
+  \item TC-4: Performance Baseline: The game loop must maintain a server-side execution rate of 60 FPS with state synchronization sent at approx. 16ms intervals.
 \end{itemize}
 
-\subsubsection{Technology Stack}
-\begin{itemize}
-  \item TR-6: Backend: Node.js 18+ with Fastify v4 framework
-  \item TR-7: Language: TypeScript with strict mode enabled
-  \item TR-8: Frontend: Vite + TypeScript with vanilla DOM APIs
-  \item TR-9: Database: SQLite 3 (optimized with prepared statements)
-  \item TR-10: Real-time communication: WebSocket protocol
-  \item TR-11: Blockchain: Solidity with Hardhat framework
-  \item TR-12: 3D Graphics: Babylon.js for game rendering
-\end{itemize}
-
-\subsubsection{Security Requirements}
-\begin{itemize}
-  \item TR-11: All HTTP traffic shall enforce HTTPS with TLS 1.2+
-  \item TR-13: Sensitive headers shall include Secure and HttpOnly flags
-  \item TR-14: Web Application Firewall (ModSecurity) shall block OWASP Top 10 attacks
-  \item TR-15: All SQL queries shall use parameterized statements
-  \item TR-16: Passwords shall be hashed with bcrypt (cost factor 10+)
-  \item TR-17: Secrets shall be managed via HashiCorp Vault
-  \item TR-18: Input validation shall enforce type and length constraints
-\end{itemize}
-
-\subsubsection{Performance Requirements}
-\begin{itemize}
-  \item TR-21: Game loop shall execute at 60 FPS
-  \item TR-22: WebSocket messages shall be sent at 16 ms intervals (approx. 60Hz)
-  \item TR-23: API response time shall be smaller than 200 ms for 95th percentile
-  \item TR-24: System shall support 100+ concurrent WebSocket connections per instance
-\end{itemize}
-
-\subsection{Non-Functional Requirements}
+\section{Non-Functional Requirements}
 \label{sec:non_func_req}
 
-Non-functional requirements specify quality attributes and constraints that the system must meet, ensuring reliability, usability, and maintainability.
-
-\subsubsection{Performance Requirements}
+Non-functional requirements specify the quality attributes and environmental constraints of the system.
 \begin{itemize}
-  \item NFR-PERF-1: System shall maintain 60 FPS gameplay with $<$16ms frame time
-  \item NFR-PERF-2: WebSocket latency shall be $<$50ms for real-time synchronization
-  \item NFR-PERF-3: API response times shall be $<$200ms for 95\% of requests
-  \item NFR-PERF-4: System shall support 100+ concurrent users per instance
-  \item NFR-PERF-5: Database queries shall complete within 100ms under normal load
-\end{itemize}
-
-\subsubsection{Security Requirements}
-\begin{itemize}
-  \item NFR-SEC-1: All data in transit shall be encrypted with TLS 1.2+
-  \item NFR-SEC-2: Passwords shall be hashed with bcrypt (cost factor 10+)
-  \item NFR-SEC-3: System shall implement defense-in-depth security layers
-  \item NFR-SEC-4: WAF shall block OWASP Top 10 vulnerabilities
-  \item NFR-SEC-5: Secrets shall be managed via HashiCorp Vault
-\end{itemize}
-
-\subsubsection{Reliability Requirements}
-\begin{itemize}
-  \item NFR-REL-1: System uptime shall be 99.9\% during operational hours
-  \item NFR-REL-2: Services shall implement automatic restart on failure
-  \item NFR-REL-3: Database transactions shall maintain ACID properties
-  \item NFR-REL-4: Blockchain records shall be immutable and verifiable
-\end{itemize}
-
-\subsubsection{Usability Requirements}
-\begin{itemize}
-  \item NFR-USAB-1: Interface shall be responsive across desktop and mobile devices
-  \item NFR-USAB-2: 3D mode shall gracefully degrade to 2D rendering
-  \item NFR-USAB-3: User onboarding shall take $<$5 minutes for new users
-  \item NFR-USAB-4: Error messages shall be clear and actionable
-\end{itemize}
-
-\subsubsection{Maintainability Requirements}
-\begin{itemize}
-  \item NFR-MAINT-1: Code shall follow TypeScript strict mode standards
-  \item NFR-MAINT-2: Services shall be independently deployable
-  \item NFR-MAINT-3: Documentation shall be comprehensive and up-to-date
-  \item NFR-MAINT-4: Logging shall provide sufficient debugging information
-\end{itemize}
-
-\subsubsection{Scalability Requirements}
-\begin{itemize}
-  \item NFR-SCAL-1: Architecture shall support horizontal scaling
-  \item NFR-SCAL-2: Database shall handle 1000+ concurrent connections
-  \item NFR-SCAL-3: Load balancing shall distribute traffic efficiently
+  \item NFR-1: Security (Defense-in-Depth): The system must implement six protective layers, including bcrypt password hashing (cost factor 10+), parameterized SQL to prevent injection, and centralized secrets management via HashiCorp Vault.
+  \item NFR-2: Availability \& Resilience: Services must implement health checks and automatic restart policies to maintain a 99.9\% uptime target during operation.
+  \item NFR-3: Frontend Responsiveness: The Single-Page Application (SPA) must provide a high-fidelity 3D experience using Babylon.js while maintaining a graceful 2D fallback for lower-end hardware.
+  \item NFR-4: Scalability: The architecture must support horizontal scaling and handle at least 100+ concurrent WebSocket connections per instance without latency degradation.
 \end{itemize}
 
 % ============================================================================
 \chapter{Design}
 \label{ch:design}
-\vspace{-20pt}
+\vspace{-25pt}
 
 \section{System Architecture}
 \label{sec:architecture}
 
-\subsection{High-Level Architecture}
-
-The system employs a microservices architecture with the following topology:
+The system employs a microservices architecture and the complete deployment consists of 9 Docker containers orchestrated via Docker Compose:
 
 \begin{figure}[H]
 \centering
-\vspace{-13pt}
+\vspace{-8pt}
 \includegraphics[width=0.85\textwidth]{architecture_diagram.png}
-\caption{High-level System Architecture with Microservices, API Gateway, and Persistent Storage}
+\caption{System Architecture with Microservices, API Gateway, and Persistent Storage}
 \label{fig:architecture_diagram}
 \end{figure}
-
-\pagebreak
-
-\subsection{Deployment Topology}
-
-The complete deployment consists of 9 Docker containers orchestrated via Docker Compose:
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{deployment_topology.png}
-\caption{Docker Compose Deployment Topology with All Services and Persistent Volumes}
-\label{fig:deployment_topology}
-\end{figure}
-
-\subsection{Service Responsibilities}
-
-\begin{longtable}[h]{p{2.8cm}p{10cm}p{2cm}}
-\hline
-\textbf{Service} & \textbf{Responsibilities} & \textbf{Port} \\
-\hline
-\endhead
-\hline
-\endfoot
-\textbf{Auth Service} & Registration, login & 3000 \\
-\hline
-\textbf{User Service} & Profiles, friends, leaderboards & 3000 \\
-\hline
-\textbf{Game Service} & Real-time Pong, WebSocket, game state, match recording & 3000 \\
-\hline
-\textbf{Tournament Service} & Tournament management, blockchain integration & 3000 \\
-\hline
-\textbf{Blockchain Service} & Tournament result recording & 3000 \\
-\hline
-\textbf{Nginx Gateway} & TLS, routing, WAF filtering, rate limiting & 8443/8200 \\
-\hline
-\textbf{Vault} & Secret storage (API keys, SSL Certificates) & 8200 \\
-\hline
-\textbf{Hardhat} & Local blockchain, smart contracts & 8545 \\
-\hline
-\caption{Microservices Overview}
-\label{tab:services}
-\end{longtable}
-
-\pagebreak
 
 \section{Data Model}
 \label{sec:data_model}
@@ -554,38 +398,16 @@ The system implements a comprehensive, defense-in-depth security architecture fo
 \subsection{Layer 1: Network Security}
 
 \subsubsection{HTTPS and TLS Implementation}
-All communication channels are secured with HTTPS using TLS 1.2+ protocols:
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.65\textwidth]{1_https_evidence.png}
-\caption{HTTPS Connection Evidence: Secure SSL/TLS Certificate Verification in Browser}
-\label{fig:https_evidence}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.65\textwidth]{2_PEM_certificate_https.png}
-\caption{PEM Certificate Configuration: HTTPS Certificate and Private Key Setup}
-\label{fig:https_certificate}
-\end{figure}
-
+All communication channels are secured with HTTPS using TLS 1.2+ protocols.
 The system implements:
 \begin{itemize}
   \item \textbf{TLS 1.2/1.3 Enforcement:} Nginx configured to reject TLS 1.1 and lower
-  \item \textbf{Strong Cipher Suites:} ECDHE-RSA-AES256-GCM-SHA384, ECDHE-RSA-AES128-GCM-SHA256
   \item \textbf{HSTS Headers:} Strict-Transport-Security with max-age=31536000
   \item \textbf{Certificate Validation:} Mutual TLS authentication between services
 \end{itemize}
 
 \subsubsection{Web Application Firewall (WAF)}
-ModSecurity v3 engine is integrated as an inline module within the Nginx reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection:
-
-\begin{verbatim}
-# ModSecurity Configuration in nginx.conf
-modsecurity on;
-modsecurity_rules_file /etc/nginx/modsec/main.conf;
-\end{verbatim}
+ModSecurity v3 engine is integrated as an inline module within the Nginx reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection to block common attacks.
 
 \subsubsection{Rate Limiting and DDoS Protection}
 Nginx implements distributed rate limiting:
@@ -595,19 +417,10 @@ Nginx implements distributed rate limiting:
   \item \textbf{Distributed State:} Redis-backed rate limiting across multiple instances
 \end{itemize}
 
-\pagebreak
-
 \subsection{Layer 2: Transport Security}
 
 \subsubsection{Mutual TLS (mTLS) Between Services}
-All inter-service communication uses mutual TLS authentication:
-
-\begin{verbatim}
-# Service-to-service calls with certificate validation
-proxy_ssl_verify on;
-proxy_ssl_trusted_certificate /etc/nginx/certs/ca.crt;
-proxy_ssl_verify_depth 2;
-\end{verbatim}
+All inter-service communication uses mutual TLS authentication.
 
 \subsubsection{Session Security}
 Redis-backed session storage with TLS encryption:
@@ -623,12 +436,7 @@ Redis-backed session storage with TLS encryption:
 Comprehensive input validation using manual checks and sanitization.
 
 \subsubsection{SQL Injection Prevention}
-All database queries use parameterized statements:
-
-\begin{verbatim}
-const query = `SELECT * FROM users WHERE email = ?`;
-const result = await db.get(query, [userEmail]);
-\end{verbatim}
+All SQL queries use parameterized statements with $`?`$ placeholders.
 
 \subsubsection{Cross-Site Scripting (XSS) Protection}
 Multiple layers of XSS prevention:
@@ -644,18 +452,7 @@ CSRF protection via SameSite cookie attributes and origin validation.
 \subsection{Layer 4: Authentication \& Authorization}
 
 \subsubsection{Password Security}
-Industry-standard password hashing and validation:
-
-\begin{verbatim}
-// bcrypt with cost factor 10
-const hashedPassword = await bcrypt.hash(password, 10);
-
-// Password validation rules
-const validatePassword = (password: string): string | null => {
-  if (password.length < 6) return 'Password must be at least 6 characters';
-  return null;
-};
-\end{verbatim}
+Industry-standard password hashing and validation.
 
 \subsubsection{Multi-Factor Authentication (MFA)}
 OAuth 2.0 integration with Google OAuth for enhanced authentication.
@@ -663,18 +460,7 @@ OAuth 2.0 integration with Google OAuth for enhanced authentication.
 \subsection{Layer 5: Data Protection}
 
 \subsubsection{Secrets Management with HashiCorp Vault}
-Centralized secrets management for all sensitive data:
-
-\begin{verbatim}
-# Vault PKI for certificate management
-vault write -format=json pki/issue/$VAULT_ROLE \
-  common_name="$HOST" \
-  alt_names="$HOST,localhost" \
-  ip_sans="127.0.0.1" \
-  ttl=87600h
-\end{verbatim}
-
-Key secrets managed in Vault:
+Centralized secrets management for all sensitive data. Key secrets managed in Vault:
 \begin{itemize}
   \item \textbf{API Keys:} OAuth provider secrets and external service keys
   \item \textbf{Session Secrets:} Cryptographically secure session signing keys
@@ -689,12 +475,10 @@ SQLite databases with additional security measures:
   \item \textbf{Access Control:} Database files with restricted permissions
 \end{itemize}
 
-\pagebreak
-
 \subsection{Layer 6: Monitoring \& Logging}
 
 \subsubsection{Security Event Logging}
-Comprehensive logging of security-relevant events:
+Comprehensive logging of security-relevant events.
 
 \subsubsection{Health Monitoring}
 Automated health checks for all security components:
@@ -707,16 +491,7 @@ Automated health checks for all security components:
 \subsection{Layer 7: Incident Response}
 
 \subsubsection{Security Headers Implementation}
-Comprehensive security headers configuration:
-
-\begin{verbatim}
-# Nginx security headers
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-add_header X-Content-Type-Options "nosniff" always;
-add_header X-Frame-Options "SAMEORIGIN" always;
-add_header X-XSS-Protection "1; mode=block" always;
-add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-\end{verbatim}
+Comprehensive security headers configuration implemented within the \texttt{nginx.conf} file.
 
 \subsubsection{Container Security}
 Docker security best practices implementation:
@@ -777,53 +552,6 @@ The implementation achieves compliance with multiple security standards:
   \item \textbf{Defense in Depth:} Multiple security layers for redundancy
 \end{itemize}
 
-\subsection{Security Implementation Details}
-
-\subsubsection{SQL Injection Prevention}
-All SQL queries use parameterized statements with $`?`$ placeholders:
-
-\begin{verbatim}
-const query = `SELECT * FROM users WHERE email = ?`;
-const result = await db.get(query, [userEmail]);
-\end{verbatim}
-
-\subsubsection{WAF Configuration (ModSecurity)}
-The Nginx ModSecurity module blocks common attacks via OWASP CRS rules:
-
-\begin{verbatim}
-# Blocks: SQLi, XSS, CSRF, Command Injection, etc.
-SecRule REQUEST_URI "@rx (?:unionselectinsert)" "id:1001,phase:2,deny,status:403"
-\end{verbatim}
-
-\subsubsection{Vault PKI Integration}
-Automated certificate management through Vault's PKI secrets engine:
-
-\begin{verbatim}
-# Certificate issuance and renewal
-vault write pki/issue/service-role common_name="auth-service" ttl="720h"
-\end{verbatim}
-
-\subsubsection{Redis TLS Configuration}
-Session storage with TLS encryption for data in transit:
-
-\begin{verbatim}
-# Redis TLS configuration
-redisClient = new Redis({
-  host: 'redis',
-  port: 6379,
-  tls: {
-    ca: fs.readFileSync(process.env.HTTPS_CA_PATH!),
-    cert: fs.readFileSync(process.env.HTTPS_CERT_PATH!),
-    key: fs.readFileSync(process.env.HTTPS_KEY_PATH!),
-    rejectUnauthorized: true
-  }
-});
-\end{verbatim}
-
-This comprehensive security implementation ensures the ft\_transcendence platform maintains high security standards while providing a seamless user experience. The layered approach provides multiple lines of defense against various attack vectors, with thorough testing ensuring continued security effectiveness.
-
-\pagebreak
-
 \section{Blockchain Integration}
 \label{sec:blockchain}
 
@@ -850,8 +578,6 @@ The blockchain implementation consists of four coordinated components:
 \subsection{Smart Contract Implementation}
 
 The smart contract stores tournament rankings by tournament identifier and player identifier. Writes are restricted to the contract owner, and each recorded rank emits an event for traceability.
-
-\pagebreak
 
 \subsubsection{Contract Features}
 \begin{itemize}
@@ -896,8 +622,6 @@ Tournament results are automatically recorded to blockchain upon completion:
   \item Results become immutable and verifiable on blockchain
 \end{enumerate}
 
-\pagebreak
-
 \subsection{Blockchain Security Measures}
 
 \subsubsection{Private Key Management}
@@ -919,8 +643,6 @@ Tournament results are automatically recorded to blockchain upon completion:
 \subsection{Blockchain Testing and Validation}
 
 Validation activities cover contract deployment, transaction submission, and end-to-end integration from tournament completion to recorded on-chain result.
-
-\pagebreak
 
 \subsubsection{Contract Testing}
 \begin{itemize}
@@ -985,16 +707,14 @@ This blockchain integration provides tournament result immutability and transpar
 \section{Microservices Architecture}
 \label{sec:microservices}
 
-The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 8 containerized services orchestrated through Docker Compose, with each service handling specific business domains and communicating through well-defined APIs.
+The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 8 containerized services orchestrated through Docker Compose using a \texttt{docker-compose.yml} file, with each service handling specific business domains and communicating through well-defined APIs.
 
-\pagebreak
-
-\subsection{Service Architecture Overview}
+\subsection{Deployment Topology}
 
 The microservices architecture follows domain-driven design principles with clear separation of concerns:
 
 \begin{enumerate}
-  \item \textbf{Vault Service:} HashiCorp Vault for secrets management and encryption
+  \item \textbf{Vault Service:} HashiCorp Vault for secrets management and certificate management
   \item \textbf{Redis Service:} In-memory data store for session management and caching
   \item \textbf{Auth Service:} User authentication and authorization with session tokens
   \item \textbf{User Service:} User profile management and social features
@@ -1006,8 +726,8 @@ The microservices architecture follows domain-driven design principles with clea
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{architecture_diagram.png}
-\caption{Microservices Architecture: Service Dependencies and Communication Flow}
+\includegraphics[width=0.8\textwidth]{deployment_topology.png}
+\caption{Deployment Topology: Service Dependencies and Communication Flow}
 \label{fig:microservices_architecture}
 \end{figure}
 
@@ -1022,57 +742,6 @@ Services communicate through multiple protocols optimized for different use case
   \item \textbf{Shared Volumes:} Persistent data storage with bind mounts
   \item \textbf{Environment Variables:} Configuration management through .env files
 \end{itemize}
-
-\subsection{Docker Compose Orchestration}
-
-The complete service orchestration is defined in \texttt{docker-compose.yml}:
-
-\begin{verbatim}
-version: '3.8'
-services:
-  vault:
-    build: ./vault
-    container_name: vault
-    ports:
-      - "8200:8200"
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=root
-    volumes:
-      - vault-db:/vault/data
-    networks:
-      - transcendence-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    expose:
-      - "6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    networks:
-      - transcendence-network
-
-  auth-service:
-    build:
-      context: .
-      dockerfile: ./auth-service/Dockerfile
-    container_name: auth
-    expose:
-      - "3000"
-    volumes:
-      - auth-db:/app/database
-    environment:
-      - HOST=auth
-    env_file:
-      - .env
-    depends_on:
-      - redis
-    networks:
-      - transcendence-network
-\end{verbatim}
-
-\pagebreak
 
 \subsection{Service Health Monitoring}
 
@@ -1092,7 +761,7 @@ The platform uses SQLite databases with service-specific schemas and cross-servi
 
 \begin{itemize}
   \item \textbf{Auth Database:} User credentials and session tokens
-  \item \textbf{User Database:} Profile data with shared access to auth database
+  \item \textbf{User Database:} Profile and social data
   \item \textbf{Game Database:} Match history and game statistics
   \item \textbf{Tournament Database:} Tournament brackets and results
   \item \textbf{Vault Database:} Encrypted secrets and certificates
@@ -1138,7 +807,7 @@ This seamless transition is managed by the \texttt{BabylonWrapper}, which interp
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/3D_newspaper_view.png}
+\includegraphics[width=0.6\textwidth]{figures/3D_newspaper_view.png}
 \caption{Story Integration: Interactive Newspaper providing Narrative Context}
 \label{fig:3d_newspaper_view}
 \end{figure}
@@ -1147,44 +816,6 @@ This seamless transition is managed by the \texttt{BabylonWrapper}, which interp
 
 The 3D frontend implementation uses a singleton pattern with conditional initialization to manage the scene, camera, and post-processing effects. The helper methods \texttt{panToLore()} and \texttt{panToMonitor()} handle the cinematic transitions.
 
-\begin{lstlisting}
-export class BabylonWrapper {
-    // ... singleton instance and properties ...
-
-    private constructor() {
-        // ... engine and scene initialization ...
-        
-        // Post Processing Effects (SSAO, Lens, Fog)
-        if (WebGLService.getInstance().isPostProcessingEnabled()) {
-             // ... rendering pipeline setup ...
-        }
-    }
-
-    // ... getInstance logic ...
-
-    public async panToLore(): Promise<void> {
-        const newspaper = this.scene.getMeshByName("NEWS_NEWS_0");
-        // ... validation ...
-
-        this.isLoreView = true;
-        // ... target position calculation ...
-
-        this.animateCameraTo(targetRadius, targetPos, targetFov, ...);
-    }
-
-    public async panToMonitor(): Promise<void> {
-        // ... check state ...
-        this.isLoreView = false;
-        this.animateCameraTo(
-            this.defaultCameraState.radius,
-            this.defaultCameraState.target,
-            // ... restore default camera state ...
-        );
-    }
-
-    // ... other methods ...
-}
-\end{lstlisting}
 
 \subsection{3D Game Rendering and Environmental Effects}
 
@@ -1200,42 +831,6 @@ A key feature of the 3D mode is the interplay between game elements and the envi
 \label{fig:3d_tv_arcade_game}
 \end{figure}
 
-\begin{lstlisting}
-export class ThreeDGameRenderer {
-    // ... properties ...
-
-    constructor() {
-        const wrapper = BabylonWrapper.getInstance();
-        wrapper.enterGameMode(); // Triggers camera transition to TV
-        // ... setup ...
-        
-        // Attach game root to the virtual TV mesh
-        const tvMesh = wrapper.getTVMesh();
-        if (tvMesh) {
-            this.gameRoot.parent = tvMesh;
-            // ... scaling and positioning to fit screen ...
-            tvMesh.isVisible = false; // "Enter" the screen
-        }
-        
-        this.createBall();
-        // ...
-    }
-
-    private createBall(): void {
-        this.ballMesh = MeshBuilder.CreateSphere("game_ball", { diameter: BALL_SIZE_3D }, this.scene);
-        // ... material setup ...
-
-        // Dynamic Light attached to ball
-        const light = new PointLight("game_ballLight", new Vector3(0, 0.5, 0), this.scene);
-        light.parent = this.ballMesh;
-        light.intensity = 2; 
-        light.range = 4; // Illuminates grid and surrounding environment
-    }
-    
-    // ... render loop updates ...
-}
-\end{lstlisting}
-
 \subsection{Real-time 3D Synchronization}
 
 The 3D renderer synchronizes with WebSocket game state updates:
@@ -1250,39 +845,6 @@ The 3D renderer synchronizes with WebSocket game state updates:
 
 To achieve the "game within a monitor" effect for standard UI pages, the system employs Babylon.js's \texttt{HtmlMesh}. This allows the existing DOM-based interface (React/Vanilla JS) to be projected onto a 3D plane within the scene, maintaining full interactivity (clicking, scrolling) while undergoing 3D perspective transformations.
 
-\begin{lstlisting}
-private async loadModel(): Promise<void> {
-    try {
-        await AppendSceneAsync("/assets/models/low_poly_90s_office_cubicle.glb", this.scene);
-
-        // Find the virtual monitor mesh in the 3D model
-        const screenMesh = this.scene.meshes.find(m => m.name.toLowerCase().includes("monitor_mesh"));
-
-        if (screenMesh) {
-            // Project the HTML App onto the 3D Monitor
-            this.createHtmlMesh(screenMesh);
-        }
-    } catch (error) {
-        // ... error handling ...
-    }
-}
-
-private createHtmlMesh(parentMesh: AbstractMesh | null): void {
-    // ... HtmlMesh initialization ...
-    
-    if (parentMesh) {
-        // ... CSS transform fixes for browser compatibility ...
-        
-        this.htmlMesh.setContent(appElement, 4.38, 3.395);
-        this.htmlMesh.parent = parentMesh;
-        
-        // Add screen glow spill light for realism
-        this.screenLight = new PointLight("screenLight", new Vector3(0, 0, -4), this.scene);
-        this.screenLight.parent = this.htmlMesh;
-        this.screenLight.intensity = 0.8;
-    }
-}
-\end{lstlisting}
 
 \subsection{Post-Processing Effects}
 
@@ -1379,7 +941,7 @@ Key elements:
 \subsubsection{Game Mode Selection}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/4_playemode_game_settings.png}
+\includegraphics[width=0.7\textwidth]{figures/4_playemode_game_settings.png}
 \caption{Game Mode Selection: Difficulty and settings configuration}
 \label{fig:game_settings_wireframe}
 \end{figure}
@@ -1554,9 +1116,6 @@ Key elements:
   \item \textbf{Performance Fallback:} Automatic degradation to 2D rendering when needed
   \item \textbf{Contextual Immersion:} 3D environment enhances rather than complicates gameplay
   \item \textbf{Technical Stability:} WebGL detection and error handling
-  \item Friend system interface for player connections
-  \item Leaderboard rankings and achievement showcase
-  \item Tournament history and result tracking
 \end{itemize}
 
 \subsection{Main Menu Interface}
@@ -1690,6 +1249,8 @@ User profile features were tested for:
   \item Social features integration
 \end{itemize}
 
+\pagebreak
+
 % ============================================================================
 \section{Flowcharts}
 \label{sec:flowcharts}
@@ -1726,21 +1287,19 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \node[data, below of=campaign_game] (stats) {Update Statistics};
     \node[data, below of=multiplayer_game] (stats2) {Update Statistics};
     \node[data, below of=tournament_game] (stats3) {Update Statistics};
-    \node[process, below of=stats] (leaderboard) {Update Leaderboards};
-    \node[startend, below of=leaderboard] (end) {Session Complete};
 
     % Connections
     \draw[->] (start) -- (homepage);
     \draw[->] (homepage) -- (auth_check);
-    \draw[->] (auth_check) -- node[left] {No} (login);
+    \draw[->] (auth_check) -- node[above] {No} (login);
     \draw[->] (login) -- (auth_check);
-    \draw[->] (auth_check) -- node[right] {Yes} (main_menu);
+    \draw[->] (auth_check) -- node[above] {Yes} (main_menu);
     \draw[->] (main_menu) -- (game_modes);
     \draw[->] (game_modes) -- (mode_select);
-    \draw[->] (mode_select) -- node[left] {Campaign} (campaign);
+    \draw[->] (mode_select) -- node[above] {Campaign} (campaign);
     \draw[->] (campaign) -- (campaign_game);
     \draw[->] (campaign_game) -- (stats);
-    \draw[->] (mode_select) -- node[above right] {Arcade} (multiplayer);
+    \draw[->] (mode_select) -- node[above] {Arcade} (multiplayer);
     \draw[->] (multiplayer) -- (matchmaking);
     \draw[->] (matchmaking) -- (multiplayer_game);
     \draw[->] (multiplayer_game) -- (stats2);
@@ -1748,10 +1307,6 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \draw[->] (tournament) -- (tournament_setup);
     \draw[->] (tournament_setup) -- (tournament_game);
     \draw[->] (tournament_game) -- (stats3);
-    \draw[->] (stats) -- (leaderboard);
-    %\draw[->] (stats2) |- (leaderboard);
-    %\draw[->] (stats3) |- (leaderboard);
-    \draw[->] (leaderboard) -- (end);
 \end{tikzpicture}
 \caption{System Workflow: Complete user journey from access to gameplay completion}
 \label{fig:system_workflow}
@@ -1759,7 +1314,7 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 
 \subsection{User Authentication Flow}
 
-\begin{figure}[tbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=1.5cm, auto]
     % Define styles
@@ -1774,33 +1329,33 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \node[process, left of=has_account, xshift=-3cm] (register) {Registration Form};
     \node[data, below of=register] (validate_reg) {Validate Input};
     \node[decision, below of=validate_reg] (reg_valid) {Valid?};
-    \node[process, left of=reg_valid, xshift=-1.5cm, yshift=-1cm] (reg_error) {Show Errors};
-    \node[process, right of=reg_valid, xshift=1.5cm, yshift=-1cm] (create_account) {Create Account};
-    \node[data, below of=create_account] (store_user) {Store User Data};
-    \node[process, right of=has_account, xshift=3cm] (login) {Login Form};
+    \node[process, left of=reg_valid, xshift=-2cm] (reg_error) {Show Error};
+    \node[process, below of=reg_valid, yshift=-0.5cm] (create_account) {Create Account};
+    \node[data, right of=create_account, xshift=3cm] (store_user) {Store User Data};
+    \node[process, right of=has_account, xshift=2.5cm] (login) {Login Form};
     \node[data, below of=login] (validate_login) {Validate Credentials};
     \node[decision, below of=validate_login] (login_valid) {Valid?};
-    \node[process, left of=login_valid, xshift=-1.5cm, yshift=-1cm] (login_error) {Show Error};
-    \node[process, right of=login_valid, xshift=1.5cm, yshift=-1cm] (generate_token) {Generate JWT Token};
+    \node[process, right of=login_valid, xshift=2cm] (login_error) {Show Error};
+    \node[process, below of=login_valid, xshift=-4cm, yshift=-2cm] (generate_token) {Generate Session Token};
     \node[data, below of=generate_token] (store_session) {Store Session};
     \node[process, below of=store_session] (redirect) {Redirect to Dashboard};
     \node[startend, below of=redirect] (authenticated) {Authenticated};
 
     % Connections
     \draw[->] (start) -- (has_account);
-    \draw[->] (has_account) -- node[left] {No} (register);
+    \draw[->] (has_account) -- node[above] {No} (register);
     \draw[->] (register) -- (validate_reg);
     \draw[->] (validate_reg) -- (reg_valid);
-    \draw[->] (reg_valid) -- node[left] {No} (reg_error);
-    \draw[->] (reg_error) -- (register);
+    \draw[->] (reg_valid) -- node[above] {No} (reg_error);
+    \draw[->] (reg_error) |- (register);
     \draw[->] (reg_valid) -- node[right] {Yes} (create_account);
     \draw[->] (create_account) -- (store_user);
-    \draw[->] (store_user) -- (authenticated);
-    \draw[->] (has_account) -- node[right] {Yes} (login);
+    \draw[->] (store_user) -- (generate_token);
+    \draw[->] (has_account) -- node[above] {Yes} (login);
     \draw[->] (login) -- (validate_login);
     \draw[->] (validate_login) -- (login_valid);
-    \draw[->] (login_valid) |- node[left] {No} (login_error);
-    \draw[->] (login_error) -- (login);
+    \draw[->] (login_valid) -- node[above] {No} (login_error);
+    \draw[->] (login_error) |- (login);
     \draw[->] (login_valid) |- node[right] {Yes} (generate_token);
     \draw[->] (generate_token) -- (store_session);
     \draw[->] (store_session) -- (redirect);
@@ -1811,7 +1366,7 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 \end{figure}
 
 \subsection{Game Session Flow}
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=1.5cm, auto]
     % Define styles
@@ -1825,16 +1380,16 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \node[process, below of=start] (init_game) {Initialize Game State};
     \node[process, below of=init_game] (connect_ws) {Establish WebSocket};
     \node[decision, below of=connect_ws, yshift=-1cm] (ws_connected) {Connected?};
-    \node[process, left of=ws_connected, xshift=-3.5cm] (retry_ws) {Retry Connection};
+    \node[process, left of=ws_connected, xshift=-2.5cm] (retry_ws) {Retry Connection};
     \node[process, right of=ws_connected, xshift=3.5cm] (load_assets) {Load Game Assets};
     \node[process, below of=load_assets] (setup_players) {Setup Player Controls};
     \node[process, below of=setup_players] (start_physics) {Start Physics Engine};
     \node[process, below of=start_physics] (game_loop) {Game Loop};
     \node[decision, below of=game_loop, yshift=-1.5cm] (game_end) {Game Over?};
-    \node[process, left of=game_end, xshift=-3cm] (continue_loop) {Continue Loop};
+    \node[process, left of=game_end, xshift=-2.5cm] (continue_loop) {Continue Loop};
     \node[process, right of=game_end, xshift=3cm] (calculate_score) {Calculate Final Score};
-    \node[data, below of=calculate_score] (save_results) {Save Match Results};
-    \node[process, below of=save_results, xshift=-8cm] (update_stats) {Update Player Stats};
+    \node[data, below of=calculate_score, yshift=-1cm] (save_results) {Save Match Results};
+    \node[process, left of=save_results, xshift=-6cm] (update_stats) {Update Player Stats};
     \node[decision, below of=update_stats, yshift=-1.5cm] (tournament) {Tournament Match?};
     \node[process, left of=tournament, xshift=-4cm] (regular_end) {End Regular Game};
     \node[process, right of=tournament, xshift=4cm] (record_blockchain) {Record on Blockchain};
@@ -1845,22 +1400,22 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
     \draw[->] (start) -- (init_game);
     \draw[->] (init_game) -- (connect_ws);
     \draw[->] (connect_ws) -- (ws_connected);
-    \draw[->] (ws_connected) -- node[left] {No} (retry_ws);
-    \draw[->] (retry_ws) -- (connect_ws);
-    \draw[->] (ws_connected) -- node[right] {Yes} (load_assets);
+    \draw[->] (ws_connected) -- node[above] {No} (retry_ws);
+    \draw[->] (retry_ws) |- (connect_ws);
+    \draw[->] (ws_connected) -- node[above] {Yes} (load_assets);
     \draw[->] (load_assets) -- (setup_players);
     \draw[->] (setup_players) -- (start_physics);
     \draw[->] (start_physics) -- (game_loop);
     \draw[->] (game_loop) -- (game_end);
-    \draw[->] (game_end) -- node[left] {No} (continue_loop);
-    \draw[->] (continue_loop) -- (game_loop);
-    \draw[->] (game_end) -- node[right] {Yes} (calculate_score);
+    \draw[->] (game_end) -- node[above] {No} (continue_loop);
+    \draw[->] (continue_loop) |- (game_loop);
+    \draw[->] (game_end) -- node[above] {Yes} (calculate_score);
     \draw[->] (calculate_score) -- (save_results);
     \draw[->] (save_results) -- (update_stats);
     \draw[->] (update_stats) -- (tournament);
-    \draw[->] (tournament) -- node[left] {No} (regular_end);
+    \draw[->] (tournament) -- node[above] {No} (regular_end);
     \draw[->] (regular_end) -- (end);
-    \draw[->] (tournament) -- node[right] {Yes} (record_blockchain);
+    \draw[->] (tournament) -- node[above] {Yes} (record_blockchain);
     \draw[->] (record_blockchain) -- (update_bracket);
     \draw[->] (update_bracket) -- (end);
 \end{tikzpicture}
@@ -1967,6 +1522,7 @@ SQLite 3 with connection pooling and parameterized queries for data persistence 
 
 \section{User Management Implementation}
 
+\vspace{-6pt}
 \subsection{Standard User Management}
 Standard user management with registration, authentication, profiles, friendships, match history, and stats.
 
@@ -1975,11 +1531,13 @@ Google OAuth integration for secure remote authentication.
 
 \section{Gameplay and User Experience Implementation}
 
+\vspace{-6pt}
 \subsection{Multiplayer (more than 2 players)}
 Tournament system supporting more than 2 players with live controls.
 
 \section{AI-Algo Implementation}
 
+\vspace{-6pt}
 \subsection{AI Opponent}
 AI opponent with keyboard input simulation and adaptive difficulty.
 
@@ -1988,492 +1546,15 @@ Comprehensive statistics dashboards for user profiles and game sessions.
 
 \section{Cybersecurity Implementation}
 
+\vspace{-6pt}
 \subsection{WAF/ModSecurity with Vault}
 Web Application Firewall with ModSecurity and OWASP CRS rules, integrated with HashiCorp Vault for secrets management.
 
 \section{Devops Implementation}
 
+\vspace{-6pt}
 \subsection{Microservices Architecture}
 Backend designed as independent microservices with REST API communication.
-
-\subsection{Docker Containerization}
-All services fully containerized with multi-stage builds for optimized images:
-
-\subsubsection{Dockerfile Structure}
-\begin{verbatim}
-# Multi-stage build for Node.js services
-FROM node:18-alpine AS base
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-FROM base AS build
-COPY . .
-RUN npm run build
-
-FROM base AS production
-COPY --from=build /app/dist ./dist
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-\end{verbatim}
-
-\subsubsection{Docker Compose Orchestration}
-Complete orchestration with service dependencies and networking:
-
-\begin{verbatim}
-version: '3.8'
-services:
-  auth-service:
-    build: ./auth-service
-    depends_on:
-      - vault
-      - redis
-    networks:
-      - ft_transcendence
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "8443:443"
-    depends_on:
-      - auth-service
-      - game-service
-    networks:
-      - ft_transcendence
-\end{verbatim}
-
-\subsection{Development Workflow}
-\label{sec:dev_workflow}
-
-\subsubsection{Local Development Setup}
-\begin{enumerate}
-  \item \textbf{Environment Setup:} \texttt{make setup} initializes development environment
-  \item \textbf{Service Startup:} \texttt{make dev} starts all services with hot reload
-  \item \textbf{Database Migration:} Automatic schema creation on service startup
-  \item \textbf{Certificate Generation:} Self-signed certificates for local HTTPS development
-\end{enumerate}
-
-\subsubsection{Code Quality Tools}
-\begin{itemize}
-  \item \textbf{ESLint:} Code linting with TypeScript-specific rules
-  \item \textbf{Prettier:} Automated code formatting for consistency
-  \item \textbf{Husky:} Git hooks for pre-commit quality checks
-  \item \textbf{TypeScript Compiler:} Strict mode compilation with no implicit any
-\end{itemize}
-
-\section{Implementation Patterns and Practices}
-\label{sec:implementation_patterns}
-
-\subsection{Service Architecture Patterns}
-
-\subsubsection{Repository Pattern}
-Data access layer abstraction for database operations:
-
-\begin{verbatim}
-// Repository interface
-export interface IUserRepository {
-  create(user: User): Promise<User>;
-  findById(id: number): Promise<User | null>;
-  findByEmail(email: string): Promise<User | null>;
-  update(id: number, user: Partial<User>): Promise<User>;
-}
-
-// SQLite implementation
-export class SQLiteUserRepository implements IUserRepository {
-  async create(user: User): Promise<User> {
-    const result = await this.db.run(
-      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-      [user.username, user.email, user.passwordHash]
-    );
-    return { ...user, id: result.lastID };
-  }
-}
-\end{verbatim}
-
-\subsubsection{Service Layer Pattern}
-Business logic encapsulation with dependency injection:
-
-\begin{verbatim}
-// Service interface
-export interface IAuthService {
-  register(userData: RegisterRequest): Promise<User>;
-  login(credentials: LoginRequest): Promise<AuthToken>;
-  validateToken(token: string): Promise<User>;
-}
-
-// Implementation with repository injection
-export class AuthService implements IAuthService {
-  constructor(
-    private userRepo: IUserRepository,
-    private tokenService: ITokenService
-  ) {}
-
-  async register(userData: RegisterRequest): Promise<User> {
-    // Business logic implementation
-  }
-}
-\end{verbatim}
-
-\subsubsection{Controller Pattern}
-HTTP request handling with validation and error management:
-
-\begin{verbatim}
-// Fastify route handler with validation
-export async function registerHandler(
-  request: FastifyRequest<{ Body: RegisterRequest }>,
-  reply: FastifyReply
-): Promise<void> {
-  try {
-    const user = await authService.register(request.body);
-    reply.code(201).send({ user });
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      reply.code(400).send({ error: error.message });
-    } else {
-      reply.code(500).send({ error: 'Internal server error' });
-    }
-  }
-}
-\end{verbatim}
-
-\subsection{Error Handling and Logging}
-
-\subsubsection{Structured Logging}
-Comprehensive logging with correlation IDs and structured data:
-
-\begin{verbatim}
-// Logger configuration
-import pino from 'pino';
-
-export const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  formatters: {
-    level: (label) => ({ level: label }),
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-});
-
-// Usage with context
-logger.info({
-  userId: 123,
-  action: 'login',
-  ip: request.ip,
-  userAgent: request.headers['user-agent']
-}, 'User login successful');
-\end{verbatim}
-
-\subsubsection{Error Boundary Pattern}
-Graceful error handling with appropriate HTTP status codes:
-
-\begin{verbatim}
-// Global error handler
-export function errorHandler(
-  error: Error,
-  request: FastifyRequest,
-  reply: FastifyReply
-): void {
-  logger.error({
-    error: error.message,
-    stack: error.stack,
-    url: request.url,
-    method: request.method
-  }, 'Unhandled error');
-
-  if (error instanceof AuthenticationError) {
-    reply.code(401).send({ error: 'Authentication required' });
-  } else if (error instanceof ValidationError) {
-    reply.code(400).send({ error: 'Invalid request data' });
-  } else {
-    reply.code(500).send({ error: 'Internal server error' });
-  }
-}
-\end{verbatim}
-
-\subsection{Security Implementation Patterns}
-
-\subsubsection{Input Validation and Sanitization}
-Comprehensive input validation using Zod schemas:
-
-\begin{verbatim}
-// Validation schema
-export const registerSchema = z.object({
-  username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/),
-  email: z.string().email(),
-  password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
-});
-
-// Route with validation
-fastify.post('/register', {
-  schema: {
-    body: registerSchema
-  }
-}, registerHandler);
-\end{verbatim}
-
-\subsubsection{Authentication Middleware}
-JWT-based authentication with refresh token rotation:
-
-\begin{verbatim}
-// Authentication middleware
-export async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply
-): Promise<void> {
-  const token = request.headers.authorization?.replace('Bearer ', '');
-  
-  if (!token) {
-    throw new AuthenticationError('No token provided');
-  }
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
-    request.user = payload;
-  } catch (error) {
-    throw new AuthenticationError('Invalid token');
-  }
-}
-\end{verbatim}
-
-\subsection{Real-Time Communication Patterns}
-
-\subsubsection{WebSocket Connection Management}
-Connection lifecycle management with heartbeat monitoring:
-
-\begin{verbatim}
-// WebSocket server setup
-export function setupWebSocketServer(fastify: FastifyInstance): void {
-  fastify.register(fastifyWebsocket);
-
-  fastify.get('/ws', { websocket: true }, (connection, request) => {
-    const ws = new GameWebSocket(connection, request.user);
-    
-    // Connection established
-    logger.info({ userId: request.user.id }, 'WebSocket connection established');
-    
-    // Handle disconnection
-    connection.on('close', () => {
-      ws.cleanup();
-      logger.info({ userId: request.user.id }, 'WebSocket connection closed');
-    });
-  });
-}
-\end{verbatim}
-
-\subsubsection{Message Routing and Handling}
-Typed message handling with validation:
-
-\begin{verbatim}
-// Message types
-export type GameMessage =
-  | { type: 'join_game'; gameId: string }
-  | { type: 'move_paddle'; position: number }
-  | { type: 'leave_game' };
-
-// Message handler
-export class GameWebSocket {
-  handleMessage(message: GameMessage): void {
-    switch (message.type) {
-      case 'join_game':
-        this.handleJoinGame(message.gameId);
-        break;
-      case 'move_paddle':
-        this.handleMovePaddle(message.position);
-        break;
-      case 'leave_game':
-        this.handleLeaveGame();
-        break;
-    }
-  }
-}
-\end{verbatim}
-
-\subsection{Database Design Patterns}
-
-\subsubsection{Migration System}
-Version-controlled database schema evolution:
-
-\begin{verbatim}
-// Migration file structure
-export const migrations = [
-  {
-    version: 1,
-    up: async (db: Database) => {
-      await db.exec(`
-        CREATE TABLE users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT UNIQUE NOT NULL,
-          email TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-    },
-    down: async (db: Database) => {
-      await db.exec('DROP TABLE users');
-    }
-  }
-];
-\end{verbatim}
-
-\subsubsection{Connection Pooling}
-Efficient database connection management:
-
-\begin{verbatim}
-// Database connection manager
-export class DatabaseManager {
-  private pool: Database[] = [];
-  
-  async getConnection(): Promise<Database> {
-    if (this.pool.length > 0) {
-      return this.pool.pop()!;
-    }
-    return sqlite.open('./database.db');
-  }
-  
-  releaseConnection(db: Database): void {
-    this.pool.push(db);
-  }
-}
-\end{verbatim}
-
-\subsection{Testing Implementation Patterns}
-
-\subsubsection{Unit Test Structure}
-Comprehensive unit testing with mocking:
-
-\begin{verbatim}
-// Service unit test
-describe('AuthService', () => {
-  let authService: AuthService;
-  let mockUserRepo: jest.Mocked<IUserRepository>;
-  let mockTokenService: jest.Mocked<ITokenService>;
-
-  beforeEach(() => {
-    mockUserRepo = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findByEmail: jest.fn(),
-    };
-    
-    mockTokenService = {
-      generate: jest.fn(),
-      verify: jest.fn(),
-    };
-
-    authService = new AuthService(mockUserRepo, mockTokenService);
-  });
-
-  describe('register', () => {
-    it('should create user and return token', async () => {
-      // Test implementation
-    });
-  });
-});
-\end{verbatim}
-
-\subsubsection{Integration Test Setup}
-End-to-end service testing with test containers:
-
-\begin{verbatim}
-// Integration test with test database
-describe('Auth API Integration', () => {
-  let app: FastifyInstance;
-  let testDb: Database;
-
-  beforeAll(async () => {
-    testDb = await createTestDatabase();
-    app = await buildApp({ database: testDb });
-  });
-
-  afterAll(async () => {
-    await testDb.close();
-    await app.close();
-  });
-
-  it('should register user successfully', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/register',
-      payload: {
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'password123'
-      }
-    });
-
-    expect(response.statusCode).toBe(201);
-  });
-});
-\end{verbatim}
-
-\section{Performance Optimization}
-\label{sec:performance_optimization}
-
-\subsection{Code Optimization Techniques}
-
-\subsubsection{Bundle Optimization}
-Frontend bundle size optimization for faster loading:
-
-\begin{itemize}
-  \item \textbf{Code Splitting:} Route-based code splitting with dynamic imports
-  \item \textbf{Tree Shaking:} Removal of unused code through static analysis
-  \item \textbf{Asset Optimization:} Image compression and font subsetting
-  \item \textbf{Caching Strategy:} Aggressive caching with content hashing
-\end{itemize}
-
-\subsubsection{Database Optimization}
-Query performance optimization for high-throughput scenarios:
-
-\begin{itemize}
-  \item \textbf{Indexing Strategy:} Strategic indexes on frequently queried columns
-  \item \textbf{Query Optimization:} Efficient query patterns with proper joins
-  \item \textbf{Connection Pooling:} Reusable database connections to reduce overhead
-  \item \textbf{Caching Layer:} Redis integration for frequently accessed data
-\end{itemize}
-
-\subsection{Memory Management}
-
-\subsubsection{Garbage Collection Optimization}
-Memory-efficient patterns for long-running Node.js processes:
-
-\begin{itemize}
-  \item \textbf{Object Pooling:} Reuse of expensive objects to reduce GC pressure
-  \item \textbf{Stream Processing:} Memory-efficient data processing with streams
-  \item \textbf{Weak References:} Appropriate use of WeakMap and WeakSet for caching
-  \item \textbf{Memory Monitoring:} Heap dump analysis and memory leak detection
-\end{itemize}
-
-\subsubsection{Cache Management}
-Intelligent caching strategies for improved performance:
-
-\begin{itemize}
-  \item \textbf{Multi-Level Caching:} Browser, CDN, and server-side caching layers
-  \item \textbf{Cache Invalidation:} Time-based and event-driven cache invalidation
-  \item \textbf{Cache Compression:} Gzip compression for cached responses
-  \item \textbf{Distributed Caching:} Redis cluster for horizontal scaling
-\end{itemize}
-
-\subsection{Network Optimization}
-
-\subsubsection{API Optimization}
-Efficient API design and communication patterns:
-
-\begin{itemize}
-  \item \textbf{Payload Compression:} Gzip compression for API responses
-  \item \textbf{Pagination:} Cursor-based pagination for large datasets
-  \item \textbf{HTTP/2:} Multiplexed connections for reduced latency
-  \item \textbf{GraphQL Integration:} Efficient data fetching with GraphQL (future enhancement)
-\end{itemize}
-
-\subsubsection{WebSocket Optimization}
-Real-time communication efficiency improvements:
-
-\begin{itemize}
-  \item \textbf{Message Batching:} Grouped message sending to reduce packet overhead
-  \item \textbf{Connection Pooling:} Efficient WebSocket connection management
-  \item \textbf{Heartbeat Optimization:} Adaptive heartbeat intervals based on activity
-  \item \textbf{Compression:} WebSocket message compression for bandwidth efficiency
-\end{itemize}
 
 % ============================================================================
 \chapter{Testing}
@@ -2580,304 +1661,6 @@ Manual testing validates user workflows and experience:
   \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
   \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
 \end{enumerate}
-
-\section{Automated Testing Framework}
-\label{sec:automated_testing}
-
-While the project focuses on comprehensive manual testing to meet subject requirements, the architecture supports automated testing implementation:
-
-\subsection{Unit Testing Infrastructure}
-\begin{itemize}
-  \item \textbf{Test Framework:} Jest with TypeScript support configured in each service
-  \item \textbf{Mocking:} Mock implementations for external dependencies (database, WebSocket)
-  \item \textbf{Coverage:} Istanbul coverage reporting for code quality metrics
-  \item \textbf{CI Integration:} GitHub Actions workflow for automated test execution
-\end{itemize}
-
-\subsection{API Testing}
-Automated API testing validates service endpoints and integration:
-
-\subsubsection{Service Endpoint Testing}
-\begin{verbatim}
-// Example API test structure
-describe('Auth Service API', () => {
-  test('POST /register - successful registration', async () => {
-    const response = await request(app)
-      .post('/register')
-      .send({
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'password123'
-      });
-    expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('userId');
-  });
-});
-\end{verbatim}
-
-\subsubsection{Integration Testing}
-End-to-end API testing validates inter-service communication:
-\begin{itemize}
-  \item \textbf{Authentication Flow:} Registration → Login → Protected resource access
-  \item \textbf{Game Session:} User authentication → Game creation → WebSocket connection
-  \item \textbf{Tournament Flow:} Tournament creation → Player registration → Match completion
-\end{itemize}
-
-\subsection{Blockchain Testing}
-Comprehensive blockchain testing ensures smart contract reliability:
-
-\subsubsection{Smart Contract Testing}
-\begin{verbatim}
-// Hardhat test example
-describe("TournamentRankings", function () {
-  it("Should record tournament rankings", async function () {
-    const [owner, player1, player2] = await ethers.getSigners();
-    
-    await contract.recordTournamentRankings(1, [player1.address, player2.address], [1, 2]);
-    
-    expect(await contract.getPlayerRank(1, player1.address)).to.equal(1);
-    expect(await contract.getPlayerRank(1, player2.address)).to.equal(2);
-  });
-});
-\end{verbatim}
-
-\subsubsection{Integration Testing}
-Blockchain service integration testing validates end-to-end functionality:
-\begin{itemize}
-  \item \textbf{Contract Deployment:} Automated deployment and address recording
-  \item \textbf{Transaction Submission:} Tournament result recording and confirmation
-  \item \textbf{Data Retrieval:} Ranking queries and tournament history access
-\end{itemize}
-
-\section{Performance Testing}
-\label{sec:performance_testing}
-
-Performance testing validates system responsiveness and scalability:
-
-\subsection{Load Testing}
-Manual load testing simulates concurrent user scenarios:
-
-\subsubsection{Concurrent User Testing}
-\begin{itemize}
-  \item \textbf{WebSocket Connections:} 100+ simultaneous real-time game sessions
-  \item \textbf{API Load:} Sustained API request rates during peak usage
-  \item \textbf{Database Performance:} Query performance under concurrent access
-  \item \textbf{Memory Usage:} Service memory consumption monitoring during extended operation
-\end{itemize}
-
-\subsubsection{Stress Testing}
-System limits tested through extreme load conditions:
-\begin{itemize}
-  \item \textbf{Connection Limits:} Maximum WebSocket connections before degradation
-  \item \textbf{Database Load:} High-frequency database operations
-  \item \textbf{Network Latency:} Performance under simulated network delays
-\end{itemize}
-
-\subsection{Security Testing}
-Comprehensive security validation ensures system protection:
-
-\subsubsection{Penetration Testing}
-Manual security testing validates defense mechanisms:
-\begin{itemize}
-  \item \textbf{WAF Effectiveness:} XSS, SQL injection, and other attack vector testing
-  \item \textbf{Authentication Bypass:} Attempted unauthorized access scenarios
-  \item \textbf{Data Exposure:} Sensitive data protection verification
-  \item \textbf{Certificate Validation:} HTTPS/TLS configuration testing
-\end{itemize}
-
-\subsubsection{Vault Security Testing}
-Secret management system validation:
-\begin{itemize}
-  \item \textbf{Secret Access:} Authorized and unauthorized access attempts
-  \item \textbf{Certificate Issuance:} PKI certificate lifecycle testing
-  \item \textbf{Encryption:} Data encryption and decryption verification
-\end{itemize}
-
-\section{Test Case Documentation}
-\label{sec:test_cases}
-
-Comprehensive test case documentation ensures systematic validation:
-
-\subsection{Functional Test Cases}
-
-\subsubsection{Authentication Module}
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Test Case ID} & \textbf{Description} & \textbf{Expected Result} \\
-\hline
-AUTH-001 & User registration with valid data & Account created successfully \\
-AUTH-002 & User login with correct credentials & Authentication successful \\
-AUTH-003 & Google OAuth login flow & User authenticated via Google \\
-AUTH-004 & Invalid password attempt & Authentication failed \\
-AUTH-005 & Password reset request & Reset email sent \\
-\hline
-\end{tabular}
-\caption{Authentication Test Cases}
-\end{table}
-
-\subsubsection{Game Module}
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Test Case ID} & \textbf{Description} & \textbf{Expected Result} \\
-\hline
-GAME-001 & Quick match creation & Game session established \\
-GAME-002 & Real-time paddle movement & Position synchronized \\
-GAME-003 & Ball physics calculation & Correct trajectory maintained \\
-GAME-004 & Scoring system & Points awarded correctly \\
-GAME-005 & Game completion & Winner declared and recorded \\
-\hline
-\end{tabular}
-\caption{Game Module Test Cases}
-\end{table}
-
-\subsubsection{Tournament Module}
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Test Case ID} & \textbf{Description} & \textbf{Expected Result} \\
-\hline
-TOUR-001 & Tournament creation & Tournament initialized \\
-TOUR-002 & Player registration & Players added to bracket \\
-TOUR-003 & Match scheduling & Games created automatically \\
-TOUR-004 & Bracket progression & Winners advance correctly \\
-TOUR-005 & Blockchain recording & Results recorded immutably \\
-\hline
-\end{tabular}
-\caption{Tournament Test Cases}
-\end{table}
-
-\subsection{Integration Test Cases}
-
-\subsubsection{End-to-End Scenarios}
-\begin{enumerate}
-  \item \textbf{Complete User Journey:} Registration → Profile setup → Game participation → Tournament entry
-  \item \textbf{Multiplayer Session:} Player matching → Real-time gameplay → Result recording
-  \item \textbf{Tournament Lifecycle:} Creation → Registration → Matches → Blockchain recording
-  \item \textbf{Social Features:} Friend addition → Private messaging → Leaderboard viewing
-\end{enumerate}
-
-\subsubsection{Cross-Service Integration}
-\begin{itemize}
-  \item \textbf{Auth Integration:} User authentication across all services
-  \item \textbf{Game Integration:} Real-time sync between game service and frontend
-  \item \textbf{Blockchain Integration:} Tournament results recorded to smart contracts
-  \item \textbf{Vault Integration:} Secure secret access for all services
-\end{itemize}
-
-\section{Test Results and Metrics}
-\label{sec:test_metrics}
-
-\subsection{Test Execution Summary}
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|c|c|c|}
-\hline
-\textbf{Module} & \textbf{Total Tests} & \textbf{Passed} & \textbf{Failed} \\
-\hline
-Authentication & 15 & 15 & 0 \\
-User Management & 12 & 12 & 0 \\
-Game Logic & 20 & 20 & 0 \\
-Tournament System & 18 & 18 & 0 \\
-Blockchain Integration & 10 & 10 & 0 \\
-Security Features & 14 & 14 & 0 \\
-Frontend Components & 16 & 16 & 0 \\
-\hline
-\textbf{Total} & \textbf{105} & \textbf{105} & \textbf{0} \\
-\hline
-\end{tabular}
-\caption{Test Execution Results}
-\end{table}
-
-\subsection{Performance Benchmarks}
-System performance validated through manual testing:
-
-\subsubsection{Response Times}
-\begin{itemize}
-  \item \textbf{API Response:} <200ms average for all endpoints
-  \item \textbf{WebSocket Latency:} <50ms for real-time synchronization
-  \item \textbf{Page Load:} <3 seconds for initial application load
-  \item \textbf{Game Start:} <1 second for match initialization
-\end{itemize}
-
-\subsubsection{Resource Utilization}
-\begin{itemize}
-  \item \textbf{CPU Usage:} <60\% average during peak load
-  \item \textbf{Memory Usage:} <512MB per service instance
-  \item \textbf{Network I/O:} <10MB/s during concurrent gameplay
-  \item \textbf{Disk I/O:} <50MB/s for database operations
-\end{itemize}
-
-\subsection{Defect Tracking}
-All identified issues resolved during development:
-
-\subsubsection{Bug Classification}
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|c|c|}
-\hline
-\textbf{Severity} & \textbf{Count} & \textbf{Resolution Time} \\
-\hline
-Critical & 0 & N/A \\
-High & 2 & <4 hours \\
-Medium & 5 & <24 hours \\
-Low & 8 & <1 week \\
-\hline
-\textbf{Total} & \textbf{15} & \textbf{All Resolved} \\
-\hline
-\end{tabular}
-\caption{Defect Resolution Metrics}
-\end{table}
-
-\subsubsection{Common Issue Categories}
-\begin{itemize}
-  \item \textbf{UI Adaptability:} Viewport resizing and layout scaling
-  \item \textbf{WebSocket Stability:} Connection handling improvements
-  \item \textbf{Database Performance:} Query optimization for concurrent access
-  \item \textbf{Error Handling:} Comprehensive error message implementation
-\end{itemize}
-
-\section{Quality Assurance}
-\label{sec:qa}
-
-\subsection{Code Quality Standards}
-\begin{itemize}
-  \item \textbf{TypeScript Strict Mode:} All services use strict type checking
-  \item \textbf{ESLint Configuration:} Consistent code formatting and style enforcement
-  \item \textbf{Prettier Integration:} Automated code formatting for consistency
-  \item \textbf{Type Definitions:} Comprehensive TypeScript interfaces for all data structures
-\end{itemize}
-
-\subsection{Documentation Standards}
-\begin{itemize}
-  \item \textbf{API Documentation:} OpenAPI/Swagger specifications for all endpoints
-  \item \textbf{Code Comments:} Comprehensive inline documentation for complex logic
-  \item \textbf{README Files:} Setup and deployment instructions for each service
-  \item \textbf{Architecture Diagrams:} Visual documentation of system components
-\end{itemize}
-
-\subsection{Deployment Validation}
-Production deployment validated through comprehensive testing:
-
-\subsubsection{Container Testing}
-\begin{itemize}
-  \item \textbf{Docker Build:} All services build successfully without errors
-  \item \textbf{Compose Orchestration:} Service dependencies and networking verified
-  \item \textbf{Volume Mounting:} Persistent data storage configuration tested
-  \item \textbf{Environment Variables:} Configuration injection validated
-\end{itemize}
-
-\subsubsection{Production Readiness}
-\begin{itemize}
-  \item \textbf{Health Checks:} All services implement proper health endpoints
-  \item \textbf{Logging:} Comprehensive logging for debugging and monitoring
-  \item \textbf{Monitoring:} Basic metrics collection for system observability
-  \item \textbf{Backup Procedures:} Database backup and recovery procedures documented
-\end{itemize}
 
 % ============================================================================
 \chapter{Evolution}
@@ -3106,91 +1889,13 @@ The ft\_transcendence project successfully demonstrates the application of moder
 \label{fig:game_data_flow}
 \end{figure}
 
-\chapter{Code Repository Structure}
-\label{app:codebase}
-
-\begin{verbatim}
-ft_transcendence/
-|-- auth-service/              # Authentication & user sessions
-|   |-- src/
-|   |   |-- server.ts          # Fastify server setup
-|   |   |-- routes/            # API endpoints
-|   |   |-- services/          # Business logic
-|   |   |-- types/             # TypeScript interfaces
-|   |   -- utils/              # Helper functions
-|   |-- database/              # SQLite schema & migrations
-|   |-- Dockerfile             # Container configuration
-|   |-- package.json           # Node.js dependencies
-|   -- tsconfig.json           # TypeScript configuration
-|-- user-service/              # User profiles, friends, achievements
-|   |-- src/
-|   |-- database/
-|   |-- Dockerfile
-|   |-- package.json
-|   -- tsconfig.json
-|-- game-service/              # Real-time Pong gameplay
-|   |-- src/
-|   |-- database/
-|   |-- Dockerfile
-|   |-- package.json
-|   -- tsconfig.json
-|-- tournament-service/        # Tournament management & blockchain integration
-|   |-- src/
-|   |-- database/
-|   |-- Dockerfile
-|   |-- package.json
-|   |-- tsconfig.json
-|   -- tsconfig.test.json
-|-- blockchain/                # Smart contracts for tournament rankings
-|   |-- contracts/             # Solidity contracts
-|   |-- scripts/               # Deployment scripts
-|   |-- deployments/           # Recorded addresses of deployed contracts
-|   |-- artifacts/             # Compiled contracts
-|   |-- hardhat.config.cjs     # Hardhat configuration
-|   |-- package.json
-|-- blockchain-service/        # Blockchain service integration
-|   |-- src/
-|   |-- Dockerfile
-|   |-- package.json
-|   -- tsconfig.json
-|-- frontend/                  # TypeScript SPA with Component Architecture
-|   |-- src/
-|   |   |-- components/        # Reusable UI components
-|   |   |-- core/              # Application infrastructure
-|   |   |-- pages/             # Page-level components
-|   |   |-- services/          # Business logic services
-|   |   -- types/              # TypeScript definitions
-|   |-- css/
-|   |-- nginx/
-|   |-- public/
-|   |-- index.html
-|   |-- vite.config.js
-|   |-- postcss.config.js
-|   |-- tailwind.config.js
-|   |-- package.json
-|   -- tsconfig.json
-|-- packages/                  # Shared packages
-|   -- common/                 # Common utilities and types
-|-- redis/                     # Redis service
-|   |-- Dockerfile
-|   |-- entrypoint.sh
-|   -- ca.crt
-|-- vault/                     # HashiCorp Vault for secrets
-|   |-- config/
-|   |-- data/
-|   |-- setup.sh
-|   -- Dockerfile
-|-- docker-compose.yml         # Multi-service orchestration
-|-- makefile                   # Build automation
--- README.md                   # Project overview
-\end{verbatim}
 
 \chapter{Deployment \& Operations}
 \label{app:deployment}
 
 \section{Quick Start}
 \begin{verbatim}
-cd /mnt/d/H/42AD/Working_project_42/calvin_ft_transcendence
+cd /mnt/d/H/42AD/ft_transcendence
 make full-start        # Build and start all services
 # Services available at https://localhost
 \end{verbatim}
