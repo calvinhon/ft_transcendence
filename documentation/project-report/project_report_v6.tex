@@ -99,7 +99,7 @@
 \emergencystretch=10pt
 \hyphenpenalty=5000 % High penalty, but not a total ban
 
-The evolution of online gaming has created a demand for platforms that provide seamless real-time interaction while maintaining high standards for security and data integrity. This report presents \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform engineered to resolve the performance and security challenges inherent in distributed systems. The system employs a microservices architecture consisting of seven specialized containers - Auth, User, Frontend, Game, Tournament, Blockchain, and Vault - orchestrated via Docker Compose for production-grade scalability.
+The evolution of online gaming has created a demand for platforms that provide seamless real-time interaction while maintaining high standards for security and data integrity. This report presents \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform engineered to resolve the performance and security challenges inherent in distributed systems. The system employs a microservices architecture consisting of ten Docker containers --- Auth, User, Game, Tournament, Blockchain (Hardhat node), Blockchain-Deploy, Blockchain-Service, Frontend (Nginx), Redis, and Vault --- orchestrated via Docker Compose for production-grade deployment.
 
 Methodologically, the project leverages WebSockets for authoritative 60 FPS gameplay, Babylon.js for 3D rendering, and Solidity smart contracts on a Hardhat node to ensure immutable tournament record-keeping. Security is achieved through a "Defense-in-Depth" strategy, utilizing Nginx with ModSecurity WAF for network protection and HashiCorp Vault for centralized secret management.
 
@@ -165,7 +165,7 @@ Final implementation results confirm 100\% compliance with all subject requireme
 \begin{itemize}
   \item \textbf{Functional Completeness:} 100\% subject compliance
   \item \textbf{Security:} Zero critical vulnerabilities, WAF protection active
-  \item \textbf{Code Quality:} TypeScript strictness enabled, ESLint, consistent standards
+  \item \textbf{Code Quality:} TypeScript strictness enabled, consistent standards
 \end{itemize}
 
 % ============================================================================
@@ -203,7 +203,6 @@ The project followed an iterative, incremental SDLC model with five phases:
 \begin{itemize}
   \item Containerization and Docker Compose orchestration
   \item Production deployment and optimization
-% \item Roadmap for future enhancements (see Conclusion)
 \end{itemize}
 
 \section{SDLC Flowchart}
@@ -254,13 +253,13 @@ The following flowchart illustrates the Software Development Life Cycle process:
 \section{Project Timeline and Gantt Chart}
 \label{sec:gantt}
 
-The project was executed in 4 phases over 11 weeks with assigned leads:
+The project was executed in 4 phases over 14 weeks with assigned leads:
 
 \begin{itemize}
-  \item \textbf{Phase 1 (Planning):} 2 weeks
-  \item \textbf{Phase 2 (Development):} 6 weeks
-  \item \textbf{Phase 3 (Security):} 2 weeks
-  \item \textbf{Phase 4 (Deployment):} 1 week
+  \item \textbf{Phase 1 (Planning & Design):} 3 weeks
+  \item \textbf{Phase 2 (Core Development):} 5 weeks
+  \item \textbf{Phase 3 (Security & Blockchain):} 6 weeks
+  \item \textbf{Phase 4 (Testing & QA):} 7 weeks
 \end{itemize}
 
 \begin{figure}[H]
@@ -300,37 +299,107 @@ The risk matrix below provides a framework for assessing the level of risk for p
 
 Requirements specify what the system must do and how it achieves those goals. Detailed implementation, UI/UX, and architecture are described in the Design chapter.
 
-\section{Functional Requirements}
+\subsection{Functional Requirements}
 \label{sec:func_req}
 
-Functional requirements define the core behaviors and services the user can interact with.
+Functional requirements specify \textit{what} the system must do from the user's perspective. (See Design chapter for detailed UI, wireframes, and flows.)
+
+\subsubsection{User Management \& Authentication}
 \begin{itemize}
-  \item FR-1: Identity Management: The system must provide a secure registration and local authentication loop, supplemented by remote OAuth 2.0 integration.
-  \item FR-2: Social Connectivity: Users must be able to manage unique profiles and establish bidirectional "friend" relationships.
-  \item FR-3: Competitive Gameplay: The platform must support a server-authoritative Pong engine providing three distinct modes: Campaign (AI), Arcade (upto 2v2), and Tournament (Multiplayer).
-  \item FR-4: Tournament Integrity: The system must automate bracket progression for up to 8 players and commit final rankings to an immutable ledger.
+  \item FR-1: Users shall register with email and password
+  \item FR-2: Users shall authenticate via local credentials
+  \item FR-3: Users shall manage profiles (username, avatar, bio)
 \end{itemize}
 
-\section{Technical Constraints}
+\subsubsection{Gameplay \& Real-Time Features}
+\begin{itemize}
+  \item FR-4: System shall provide a real-time Pong game with smooth rendering
+  \item FR-5: Players shall control paddles via keyboard input
+  \item FR-6: Game state shall synchronize across connected clients in real-time
+  \item FR-7: System shall detect collisions, score updates, and game end conditions
+  \item FR-8: Players shall access multiple game modes: campaign, arcade, tournament
+\end{itemize}
+
+\subsubsection{Social \& Leaderboard Features}
+\begin{itemize}
+  \item FR-9: Users shall add and remove friends
+  \item FR-10: Users shall view global leaderboards (wins, win rate, rank)
+  \item FR-11: Users shall view match history with detailed statistics
+  \item FR-12: System shall display player profiles
+\end{itemize}
+
+\subsubsection{Tournament Management}
+\begin{itemize}
+  \item FR-13: Users shall create and configure tournaments
+  \item FR-14: System shall manage tournament bracket progression
+  \item FR-15: Tournament results shall be recorded immutably
+  \item FR-16: Users shall view tournament standings and schedules
+\end{itemize}
+
+\subsubsection{Usability \& User Experience}
+\begin{itemize}
+  \item FR-17: Interface shall be responsive across desktop and mobile devices
+  \item FR-18: 3D mode shall gracefully degrade to 2D rendering
+  \item FR-19: User onboarding shall take $<$5 minutes for new users
+  \item FR-20: Error messages shall be clear and actionable
+\end{itemize}
+
+\subsection{Technical Requirements}
 \label{sec:tech_req}
 
-Technical constraints define the mandatory architecture and stack limitations imposed on the solution.
+Technical requirements specify \textit{how} the system shall achieve functional goals. (See Design chapter for architecture diagrams and implementation details.)
+
+\subsubsection{Architecture \& Infrastructure}
 \begin{itemize}
-  \item TC-1: Microservices Topology: The backend must be decomposed into independent, containerized services orchestrated via Docker.
-  \item TC-2: Networking \& Security: All external traffic must be routed through a centralized Nginx gateway enforcing HTTPS and a Web Application Firewall (WAF).
-  \item TC-3: Data Sovereignty: Each microservice must maintain its own isolated SQLite database, ensuring no cross-service database coupling.
-  \item TC-4: Performance Baseline: The game loop must maintain a server-side execution rate of 60 FPS with state synchronization sent at approx. 16ms intervals.
+  \item TR-1: Backend shall implement microservices architecture (6 services: auth, user, game, tournament, blockchain, vault)
+  \item TR-2: Each microservice shall operate independently with its own database (SQLite)
+  \item TR-3: Services shall communicate via REST API and WebSocket protocols
+  \item TR-4: Nginx reverse proxy shall route traffic and enforce HTTPS
+  \item TR-5: System shall be deployable via Docker Compose
+  \item TR-6: Services shall be independently deployable with automatic restart on failure
+  \item TR-7: Architecture shall support horizontal scaling with load balancing
 \end{itemize}
 
-\section{Non-Functional Requirements}
-\label{sec:non_func_req}
-
-Non-functional requirements specify the quality attributes and environmental constraints of the system.
+\subsubsection{Technology Stack}
 \begin{itemize}
-  \item NFR-1: Security (Defense-in-Depth): The system must implement six protective layers, including bcrypt password hashing (cost factor 10+), parameterized SQL to prevent injection, and centralized secrets management via HashiCorp Vault.
-  \item NFR-2: Availability \& Resilience: Services must implement health checks and automatic restart policies to maintain a 99.9\% uptime target during operation.
-  \item NFR-3: Frontend Responsiveness: The Single-Page Application (SPA) must provide a high-fidelity 3D experience using Babylon.js while maintaining a graceful 2D fallback for lower-end hardware.
-  \item NFR-4: Scalability: The architecture must support horizontal scaling and handle at least 100+ concurrent WebSocket connections per instance without latency degradation.
+  \item TR-8: Backend: Node.js 18+ with Fastify v4 framework
+  \item TR-9: Language: TypeScript with strict mode enabled
+  \item TR-10: Frontend: Vite + TypeScript with vanilla DOM APIs
+  \item TR-11: Database: SQLite 3 (optimized with prepared statements)
+  \item TR-12: Real-time communication: WebSocket protocol
+  \item TR-13: Blockchain: Solidity with Hardhat framework
+  \item TR-14: 3D Graphics: Babylon.js for game rendering
+\end{itemize}
+
+\subsubsection{Security Requirements}
+\begin{itemize}
+  \item TR-15: All HTTP traffic shall enforce HTTPS with TLS 1.2+
+  \item TR-16: Sensitive headers shall include Secure and HttpOnly flags
+  \item TR-17: Web Application Firewall (ModSecurity) shall block OWASP Top 10 attacks
+  \item TR-18: All SQL queries shall use parameterized statements
+  \item TR-19: Passwords shall be hashed with bcrypt (cost factor 10+)
+  \item TR-20: Secrets shall be managed via HashiCorp Vault
+  \item TR-21: Input validation shall enforce type and length constraints
+  \item TR-22: System shall implement defense-in-depth security layers
+\end{itemize}
+
+\subsubsection{Performance \& Reliability}
+\begin{itemize}
+  \item TR-23: Game loop shall execute at 60 FPS with server-authoritative architecture
+  \item TR-24: WebSocket messages shall be sent at 50 ms intervals
+  \item TR-25: API response time shall be smaller than 200 ms for 95th percentile
+  \item TR-26: System shall support 100+ concurrent WebSocket connections per instance
+  \item TR-27: Database queries shall complete within 100ms under normal load
+  \item TR-28: Database shall handle 1000+ concurrent connections
+  \item TR-29: System uptime shall be 99.9\% during operational hours
+  \item TR-30: Database transactions shall maintain ACID properties
+  \item TR-31: Blockchain records shall be immutable and verifiable
+\end{itemize}
+
+\subsubsection{Code Quality \& Maintainability}
+\begin{itemize}
+  \item TR-32: Documentation shall be comprehensive and up-to-date
+  \item TR-33: Logging shall provide sufficient debugging information
 \end{itemize}
 
 % ============================================================================
@@ -341,7 +410,7 @@ Non-functional requirements specify the quality attributes and environmental con
 \section{System Architecture}
 \label{sec:architecture}
 
-The system employs a microservices architecture and the complete deployment consists of 9 Docker containers orchestrated via Docker Compose:
+The system employs a microservices architecture and the complete deployment consists of 10 Docker containers orchestrated via Docker Compose:
 
 \begin{figure}[H]
 \centering
@@ -409,13 +478,8 @@ The system implements:
 \subsubsection{Web Application Firewall (WAF)}
 ModSecurity v3 engine is integrated as an inline module within the Nginx reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection to block common attacks.
 
-\subsubsection{Rate Limiting and DDoS Protection}
-Nginx implements distributed rate limiting:
-\begin{itemize}
-  \item \textbf{Request Rate Limiting:} 100 requests per minute per IP
-  \item \textbf{Burst Protection:} Queue-based rate limiting with burst allowance
-  \item \textbf{Distributed State:} Redis-backed rate limiting across multiple instances
-\end{itemize}
+\subsubsection{DDoS Mitigation}
+Nginx provides basic DDoS mitigation through connection management and upstream health monitoring.
 
 \subsection{Layer 2: Transport Security}
 
@@ -454,8 +518,8 @@ CSRF protection via SameSite cookie attributes and origin validation.
 \subsubsection{Password Security}
 Industry-standard password hashing and validation.
 
-\subsubsection{Multi-Factor Authentication (MFA)}
-OAuth 2.0 integration with Google OAuth for enhanced authentication.
+\subsubsection{Remote Authentication (OAuth)}
+OAuth 2.0 integration with Google for alternative authentication.
 
 \subsection{Layer 5: Data Protection}
 
@@ -471,7 +535,7 @@ Centralized secrets management for all sensitive data. Key secrets managed in Va
 SQLite databases with additional security measures:
 \begin{itemize}
   \item \textbf{Prepared Statements:} All queries use parameterized execution
-  \item \textbf{Connection Pooling:} Efficient resource management
+  \item \textbf{Single Connection Per Service:} Each service maintains one SQLite connection via the shared common package
   \item \textbf{Access Control:} Database files with restricted permissions
 \end{itemize}
 
@@ -496,10 +560,9 @@ Comprehensive security headers configuration implemented within the \texttt{ngin
 \subsubsection{Container Security}
 Docker security best practices implementation:
 \begin{itemize}
-  \item \textbf{Non-root Users:} All containers run as non-privileged users
   \item \textbf{Minimal Images:} Alpine Linux base images for reduced attack surface
   \item \textbf{Secret Management:} Environment variables and Vault retrievals for sensitive configuration
-  \item \textbf{Resource Limits:} Memory and CPU limits to prevent resource exhaustion
+  \item \textbf{Resource Limits:} Memory limits per service to prevent resource exhaustion
 \end{itemize}
 
 \pagebreak
@@ -707,21 +770,23 @@ This blockchain integration provides tournament result immutability and transpar
 \section{Microservices Architecture}
 \label{sec:microservices}
 
-The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 8 containerized services orchestrated through Docker Compose using a \texttt{docker-compose.yml} file, with each service handling specific business domains and communicating through well-defined APIs.
+The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 10 containerized services orchestrated through Docker Compose using a \texttt{docker-compose.yml} file, with each service handling specific business domains and communicating through well-defined APIs.
 
 \subsection{Deployment Topology}
 
 The microservices architecture follows domain-driven design principles with clear separation of concerns:
 
 \begin{enumerate}
-  \item \textbf{Vault Service:} HashiCorp Vault for secrets management and certificate management
-  \item \textbf{Redis Service:} In-memory data store for session management and caching
-  \item \textbf{Auth Service:} User authentication and authorization with session tokens
+  \item \textbf{Vault Service:} HashiCorp Vault for secrets management and TLS certificate issuance
+  \item \textbf{Redis Service:} In-memory data store for session management with mutual TLS
+  \item \textbf{Auth Service:} User authentication and authorization with Redis-backed sessions
   \item \textbf{User Service:} User profile management and social features
   \item \textbf{Game Service:} Real-time game logic and WebSocket communication
   \item \textbf{Tournament Service:} Tournament management and bracket generation
-  \item \textbf{Blockchain Service:} Smart contract interaction and transaction management
-  \item \textbf{Frontend Service:} React-based SPA with 3D Babylon.js rendering
+  \item \textbf{Blockchain (Hardhat):} Local Ethereum-compatible blockchain node
+  \item \textbf{Blockchain-Deploy:} One-shot container that deploys smart contracts on startup
+  \item \textbf{Blockchain Service:} Smart contract interaction API for tournament result recording
+  \item \textbf{Frontend (Nginx):} Vanilla TypeScript SPA with Babylon.js 3D rendering, served via Nginx with ModSecurity WAF
 \end{enumerate}
 
 \begin{figure}[H]
@@ -749,22 +814,9 @@ Each service implements comprehensive health checks with automatic restart polic
 
 \begin{itemize}
   \item \textbf{Health Endpoints:} HTTP health checks on service-specific ports
-  \item \textbf{Dependency Validation:} Services wait for dependencies before starting
-  \item \textbf{Resource Limits:} Memory and CPU constraints per service (256MB limit)
-  \item \textbf{Startup Probes:} Extended startup periods for complex services
-  \item \textbf{Retry Logic:} Automatic restart on failure with exponential backoff
-\end{itemize}
-
-\subsection{Database Architecture}
-
-The platform uses SQLite databases with service-specific schemas and cross-service data sharing:
-
-\begin{itemize}
-  \item \textbf{Auth Database:} User credentials and session tokens
-  \item \textbf{User Database:} Profile and social data
-  \item \textbf{Game Database:} Match history and game statistics
-  \item \textbf{Tournament Database:} Tournament brackets and results
-  \item \textbf{Vault Database:} Encrypted secrets and certificates
+  \item \textbf{Dependency Validation:} Services use \texttt{depends\_on} with health check conditions before starting
+  \item \textbf{Resource Limits:} Memory constraints per service (256MB for backend services, 128MB for frontend)
+  \item \textbf{Startup Probes:} Extended startup periods for complex services (Vault, Blockchain)
 \end{itemize}
 
 \subsection{Production Deployment Considerations}
@@ -843,7 +895,7 @@ The 3D renderer synchronizes with WebSocket game state updates:
 
 \subsection{HTML Mesh Integration}
 
-To achieve the "game within a monitor" effect for standard UI pages, the system employs Babylon.js's \texttt{HtmlMesh}. This allows the existing DOM-based interface (React/Vanilla JS) to be projected onto a 3D plane within the scene, maintaining full interactivity (clicking, scrolling) while undergoing 3D perspective transformations.
+To achieve the "game within a monitor" effect for standard UI pages, the system employs Babylon.js's \texttt{HtmlMesh}. This allows the existing DOM-based interface to be projected onto a 3D plane within the scene, maintaining full interactivity (clicking, scrolling) while undergoing 3D perspective transformations.
 
 
 \subsection{Post-Processing Effects}
@@ -1118,144 +1170,13 @@ Key elements:
   \item \textbf{Technical Stability:} WebGL detection and error handling
 \end{itemize}
 
-\subsection{Main Menu Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{3_Main_Menu.png}
-\caption{Main Menu: Game Mode Selection (Campaign, Arcade, Tournament)}
-\label{fig:main_menu}
-\end{figure}
-
-The main menu interface was tested for:
-\begin{itemize}
-  \item Responsive layout across different screen sizes
-  \item Navigation to all game modes
-  \item Visual consistency with design specifications
-  \item Clear navigation structure
-\end{itemize}
-
-\subsection{Game Mode Selection}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{game_modes.png}
-\caption{Available Game Modes: Campaign, Arcade, Tournament}
-\label{fig:game_modes}
-\end{figure}
-
-Game mode selection functionality was validated through:
-\begin{itemize}
-  \item End-to-end user workflow testing
-  \item Integration with backend game services
-  \item Error handling for invalid selections
-  \item Performance under concurrent user load
-\end{itemize}
-
-\subsection{Authentication UI Implementation}
-
-The application provides comprehensive authentication screens capturing user credentials securely:
-
-\subsubsection{Login Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.50\textwidth]{2_login_UI.png}
-\caption{Login User Interface: Email/Password Authentication}
-\label{fig:login_ui}
-\end{figure}
-
-\subsubsection{Registration Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.50\textwidth]{3_create_new_account_UI.png}
-\caption{Account Registration UI: New Account Creation}
-\label{fig:register_ui}
-\end{figure}
-
-\subsection{Gameplay Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{multiplayer_arcade.png}
-\caption{Arcade Multiplayer Mode: Real-Time 1v1 Pong Match with Live Score Display}
-\label{fig:arcade_gameplay}
-\end{figure}
-
-Real-time gameplay interfaces were tested for:
-\begin{itemize}
-  \item WebSocket connection stability
-  \item Real-time score updates
-  \item Input responsiveness (keyboard/mouse)
-  \item Visual feedback during gameplay
-\end{itemize}
-
-\subsection{Game Settings}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{4_playemode_game_settings.png}
-\caption{Game Settings: Difficulty, Ball Speed, Paddle Size Customization}
-\label{fig:game_settings}
-\end{figure}
-
-Game customization settings were validated for:
-\begin{itemize}
-  \item Parameter validation and bounds checking
-  \item Real-time application of settings
-  \item Persistence across game sessions
-  \item Impact on game physics and AI behavior
-\end{itemize}
-
-\subsection{Campaign Mode}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{Campaign_game_running.png}
-\caption{Campaign Mode: Single-Player Progression Against AI Opponent}
-\label{fig:campaign_gameplay}
-\end{figure}
-
-Campaign progression system was tested for:
-\begin{itemize}
-  \item Level advancement logic
-  \item AI difficulty scaling
-  \item Progress persistence and recovery
-\end{itemize}
-
-\subsection{Tournament System}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{tournament_bracket_matches.png}
-\caption{Tournament Mode: Bracket-Based Competition with Multiple Players}
-\label{fig:tournament_mode}
-\end{figure}
-
-Tournament functionality was validated through:
-\begin{itemize}
-  \item Bracket generation algorithms
-  \item Multi-player synchronization
-  \item Match scheduling and results tracking
-  \item Blockchain integration for result verification
-\end{itemize}
-
-\subsection{User Profile and Statistics}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.55\textwidth]{13_dashboard_profile.png}
-\caption{User Dashboard: Profile Information, Statistics Overview, Recent Activity}
-\label{fig:user_dashboard}
-\end{figure}
-
-User profile features were tested for:
-\begin{itemize}
-  \item Data privacy and compliance
-  \item Statistics calculation accuracy
-  \item Profile update functionality
-  \item Social features integration
-\end{itemize}
-
 \pagebreak
 
 % ============================================================================
 \section{Flowcharts}
 \label{sec:flowcharts}
 
-Flowcharts illustrate the primary user interactions, system processes, and data flow across key components such as the homepage, settings, player profile, chat, and game sections, providing a comprehensive overview of the project's functional workflow.
+Flowcharts illustrate the primary user interactions, system processes, and data flow across key components such as the homepage, settings, player profile, and game sections, providing a comprehensive overview of the project's functional workflow.
 
 \subsection{System Workflow Overview}
 
@@ -1426,7 +1347,7 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 \chapter{Implementation}
 \label{ch:implementation}
 
-The implementation follows a microservices architecture with four independent services communicating via REST APIs and WebSocket connections. The system achieves full compliance with all subject requirements, implementing 9 major modules and 4 minor modules. All services are containerized using Docker and orchestrated via Docker Compose for production deployment.
+The implementation follows a microservices architecture with five backend services communicating via REST APIs and WebSocket connections, supported by infrastructure containers (Vault, Redis, Nginx, Hardhat). The system achieves full compliance with all subject requirements, implementing 9 major modules and 4 minor modules. All 10 containers are orchestrated via Docker Compose for production deployment.
 
 \section{Mandatory Implementation}
 
@@ -1453,18 +1374,34 @@ The implementation follows a microservices architecture with four independent se
 \end{longtable}
 
 \subsection{Backend Framework}
-All four microservices use Fastify v4 with TypeScript strict mode:
+All five backend microservices use Fastify v4 with TypeScript strict mode:
 \begin{itemize}
   \item \texttt{auth-service}: User registration, login
   \item \texttt{user-service}: Profiles, friendships, leaderboards
   \item \texttt{game-service}: Server-authoritative Pong game logic, WebSocket real-time sync
   \item \texttt{tournament-service}: Tournament management, blockchain integration
   \item \texttt{blockchain-service}: Tournament result recording
-  \item \texttt{vault}: Secret management, SSL certificate issuer
 \end{itemize}
 
-\subsubsection{Frontend Architecture}
-Modern TypeScript SPA with component-based architecture and service layer separation:
+\subsection{Infrastructure Services}
+Core infrastructure is provided by dedicated supporting containers:
+\begin{itemize}
+  \item \texttt{vault}: Secret management and TLS certificate issuance
+  \item \texttt{redis}: Session storage backend
+  \item \texttt{frontend} (Nginx + ModSecurity): Reverse proxy, WAF enforcement, and SPA delivery
+  \item \texttt{blockchain} (Hardhat): Local blockchain node for smart contract execution
+  \item \texttt{blockchain-deploy}: One-shot contract deployment container
+\end{itemize}
+
+\subsection{Frontend Architecture}
+Modern TypeScript Single-Page Application (SPA) built with a component-based architecture and a clear service layer. The frontend implements client-side routing and progressive enhancement to provide a responsive, app-like UX while maintaining accessibility and graceful degradation.
+
+Browser back/forward navigation is handled via client-side routing:
+\begin{itemize}
+  \item URL-based state management (\texttt{/game}, \texttt{/profile}, \texttt{/leaderboard})
+  \item No page reloads; state preserved during navigation
+  \item Progressive enhancement for accessibility
+\end{itemize}
 
 \begin{itemize}
   \item \texttt{core/}: Core application infrastructure
@@ -1497,64 +1434,6 @@ Modern TypeScript SPA with component-based architecture and service layer separa
     \end{itemize}
   \item \texttt{types/}: TypeScript type definitions and interfaces
 \end{itemize}
-
-\subsubsection{Single-Page Application (SPA)}
-Browser back/forward navigation via client-side routing:
-\begin{itemize}
-  \item URL-based state management (\texttt{/game}, \texttt{/profile}, \texttt{/leaderboard})
-  \item No page reloads; state preserved during navigation
-  \item Progressive enhancement for accessibility
-\end{itemize}
-
-\section{Web Implementation}
-
-\subsection{Backend Framework}
-Fastify v4 with Node.js and TypeScript for all microservices, providing REST APIs and WebSocket support.
-
-\subsection{Blockchain Integration}
-Avalanche blockchain with Solidity smart contracts for immutable tournament result recording.
-
-\subsection{Frontend Framework}
-Tailwind CSS for responsive UI components and styling.
-
-\subsection{Database}
-SQLite 3 with connection pooling and parameterized queries for data persistence across all services.
-
-\section{User Management Implementation}
-
-\vspace{-6pt}
-\subsection{Standard User Management}
-Standard user management with registration, authentication, profiles, friendships, match history, and stats.
-
-\subsection{Remote Authentication}
-Google OAuth integration for secure remote authentication.
-
-\section{Gameplay and User Experience Implementation}
-
-\vspace{-6pt}
-\subsection{Multiplayer (more than 2 players)}
-Tournament system supporting more than 2 players with live controls.
-
-\section{AI-Algo Implementation}
-
-\vspace{-6pt}
-\subsection{AI Opponent}
-AI opponent with keyboard input simulation and adaptive difficulty.
-
-\subsection{User and Game Stats Dashboards}
-Comprehensive statistics dashboards for user profiles and game sessions.
-
-\section{Cybersecurity Implementation}
-
-\vspace{-6pt}
-\subsection{WAF/ModSecurity with Vault}
-Web Application Firewall with ModSecurity and OWASP CRS rules, integrated with HashiCorp Vault for secrets management.
-
-\section{Devops Implementation}
-
-\vspace{-6pt}
-\subsection{Microservices Architecture}
-Backend designed as independent microservices with REST API communication.
 
 % ============================================================================
 \chapter{Testing}
@@ -1597,7 +1476,7 @@ Frontend Components & Manual Testing Completed \\
 
 Manual testing validates user workflows and system functionality through hands-on verification:
 
-\subsection{User Workflow Testing}
+\subsection{Test Execution}
 \begin{enumerate}
   \item Start all services: \texttt{make full-start}
   \item Access the application at: \texttt{https://localhost:8443}
@@ -1606,21 +1485,6 @@ Manual testing validates user workflows and system functionality through hands-o
   \item Document any issues or deviations from expected behavior
 \end{enumerate}
 
-\subsection{Manual Test Categories}
-\begin{itemize}
-  \item \textbf{Authentication:} Registration, login, Google login flows
-  \item \textbf{Gameplay:} Real-time Pong matches, controls, scoring
-  \item \textbf{Social Features:} Friend management, leaderboards, profiles
-  \item \textbf{Tournaments:} Creation, bracket management, blockchain recording
-  \item \textbf{Security:} WAF protection, HTTPS enforcement, input validation
-  \item \textbf{Performance:} Responsiveness, WebSocket stability, concurrent users
-\end{itemize}
-
-\section{Manual Verification Procedures}
-\label{sec:manual_verification}
-
-Manual verification ensures system components are operational through systematic checks:
-
 \subsection{Service Health Checks}
 \begin{verbatim}
 # Check service availability
@@ -1628,17 +1492,26 @@ curl -k https://localhost:8443    # Frontend
 curl -k https://localhost:8200    # Vault
 \end{verbatim}
 
-\subsection{Module-Specific Verification}
+\subsection{Test Categories}
 \begin{itemize}
-  \item \textbf{Backend Framework:} Verify Fastify services respond to health endpoints
-  \item \textbf{Database:} Confirm SQLite connections and data persistence
-  \item \textbf{Blockchain:} Check Hardhat network and contract deployment
-  \item \textbf{AI Opponent:} Test AI behavior in campaign mode
-  \item \textbf{Stats Dashboards:} Validate user statistics display
-  \item \textbf{Microservices:} Confirm inter-service communication
-  \item \textbf{Game Logic:} Verify server-side Pong calculations
-  \item \textbf{Security:} Test WAF rules and Vault secret access
+  \item \textbf{Authentication:} Registration, login, Google OAuth flows
+  \item \textbf{Gameplay:} Real-time Pong matches, controls, scoring
+  \item \textbf{Social Features:} Friend management, leaderboards, profiles
+  \item \textbf{Tournaments:} Creation, bracket management, blockchain recording
+  \item \textbf{Security:} WAF protection, HTTPS enforcement, input validation
+  \item \textbf{Microservices:} Inter-service communication and health endpoints
+  \item \textbf{AI Opponent:} Campaign mode AI behavior and difficulty scaling
+  \item \textbf{Game Logic:} Server-side Pong calculations and WebSocket stability
 \end{itemize}
+
+\subsection{User Acceptance Test Scenarios}
+\begin{enumerate}
+  \item \textbf{User Registration:} Create account, create account with Google, complete profile
+  \item \textbf{Authentication:} Login with password, login with Google
+  \item \textbf{Gameplay:} Play quick match, verify real-time sync, check scoring
+  \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
+  \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
+\end{enumerate}
 
 \subsection{Integration Testing}
 Manual integration tests verify end-to-end functionality:
@@ -1647,20 +1520,6 @@ Manual integration tests verify end-to-end functionality:
   \item Tournament creation to blockchain recording
   \item Multiplayer session synchronization
 \end{itemize}
-
-\section{Manual User Acceptance Testing}
-\label{sec:uat}
-
-Manual testing validates user workflows and experience:
-
-\subsection{Test Scenarios}
-\begin{enumerate}
-  \item \textbf{User Registration:} Create account, Create account with Google, complete profile
-  \item \textbf{Authentication:} Login with password, Login with Google
-  \item \textbf{Gameplay:} Play quick match, verify real-time sync, check scoring
-  \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
-  \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
-\end{enumerate}
 
 % ============================================================================
 \chapter{Evolution}
@@ -1678,26 +1537,24 @@ While the current implementation meets all specified requirements, several enhan
 
 \subsection{Advanced Game Features}
 \begin{itemize}
-  \item \textbf{Power-ups and Special Abilities:} Implementation of temporary boosts, shields, and special moves to increase gameplay variety
-  \item \textbf{Multiple Game Modes:} Addition of team-based matches, time-limited challenges, and custom rule sets
-  \item \textbf{Advanced AI Opponents:} Enhanced AI algorithms with difficulty scaling and adaptive learning capabilities
-  \item \textbf{Spectator Mode:} Real-time match viewing with commentary and statistics overlay
+  \item \textbf{Spectator Mode:} Real-time match viewing with statistics overlay, allowing users to watch ongoing games without participating
+  \item \textbf{Time-Limited Challenges:} Timed game modes with countdown-based scoring for faster-paced matches
+  \item \textbf{Adaptive AI Learning:} Machine learning-based AI opponents that adapt to individual player strategies over time
 \end{itemize}
 
 \subsection{Platform Expansion}
 \begin{itemize}
-  \item \textbf{Mobile Application:} Native iOS and Android apps with touch-optimized controls
-  \item \textbf{Cross-Platform Support:} WebGL-based browser compatibility for broader device support
-  \item \textbf{Social Features:} Integrated chat systems, friend lists, and community forums
-  \item \textbf{Esports Integration:} Tournament brackets, prize pools, and professional league support
+  \item \textbf{Mobile Application:} Native iOS and Android apps with touch-optimized controls for on-the-go gameplay
+  \item \textbf{In-Game Chat:} Real-time messaging between players during matches and in lobby areas
+  \item \textbf{Esports Features:} Prize pool management, seasonal leagues, and professional tournament scheduling beyond the current bracket system
 \end{itemize}
 
 \subsection{Technical Improvements}
 \begin{itemize}
-  \item \textbf{Performance Optimization:} GPU acceleration for 3D rendering and physics calculations
-  \item \textbf{Global Distribution:} CDN integration and edge computing for reduced latency
-  \item \textbf{Advanced Analytics:} Player behavior tracking and performance metrics dashboard
-  \item \textbf{Machine Learning:} Predictive matchmaking and anti-cheat detection systems
+  \item \textbf{Global Distribution:} CDN integration and edge computing for reduced latency across regions
+  \item \textbf{Advanced Analytics:} Player behavior tracking, heatmaps, and performance trend analysis beyond current win/loss statistics
+  \item \textbf{Automated Testing:} Unit, integration, and end-to-end test suites to supplement current manual testing procedures
+  \item \textbf{Database Migration:} Transition from SQLite to PostgreSQL for improved concurrency and scalability under high load
 \end{itemize}
 
 \section{Limitations and Constraints}
@@ -1719,158 +1576,24 @@ While the current implementation meets all specified requirements, several enhan
   \item \textbf{Dependency Management:} Regular security audits and dependency updates are essential for production stability
 \end{itemize}
 
-\section{Roadmap and Deployment Strategy}
-\label{sec:roadmap}
-
-\subsection{Phase 1: Production Deployment (Immediate)}
-\begin{itemize}
-  \item Container orchestration setup with Kubernetes
-  \item CI/CD pipeline implementation for automated deployments
-  \item Production database migration from SQLite to PostgreSQL
-  \item Monitoring and logging infrastructure (ELK stack)
-  \item SSL certificate configuration and security hardening
-\end{itemize}
-
-\subsection{Phase 2: Feature Expansion (3-6 Months)}
-\begin{itemize}
-  \item Mobile application development
-  \item Advanced tournament features and prize systems
-  \item Social features and community building tools
-  \item Performance optimization and scalability improvements
-\end{itemize}
-
-\subsection{Phase 3: Enterprise Features (6-12 Months)}
-\begin{itemize}
-  \item Multi-tenant architecture for white-label deployments
-  \item Advanced analytics and business intelligence dashboards
-  \item API marketplace for third-party integrations
-  \item Professional esports league management tools
-\end{itemize}
-
-\subsection{Phase 4: Global Scale (12+ Months)}
-\begin{itemize}
-  \item Global CDN deployment and edge computing
-  \item Multi-region database replication
-  \item AI-powered matchmaking and anti-cheat systems
-  \item Blockchain expansion for digital assets and NFTs
-\end{itemize}
-
-\section{Technology Evolution}
-\label{sec:tech_evolution}
-
-\subsection{Architecture Maturity}
-The microservices architecture provides excellent foundations for scaling, but future iterations should consider:
-
-\begin{itemize}
-  \item \textbf{Service Mesh Implementation:} Istio or Linkerd for advanced traffic management and observability
-  \item \textbf{Event-Driven Architecture:} Apache Kafka for decoupling services and enabling real-time data processing
-  \item \textbf{Database Sharding:} Horizontal scaling strategies for handling millions of users
-  \item \textbf{Cache Optimization:} Redis cluster implementation for improved performance
-\end{itemize}
-
-\subsection{Security Enhancements}
-\begin{itemize}
-  \item \textbf{Zero Trust Architecture:} Implementation of continuous authentication and authorization
-  \item \textbf{Advanced Threat Detection:} ML-based anomaly detection and automated response systems
-  \item \textbf{Compliance Automation:} Automated auditing and compliance reporting tools
-  \item \textbf{Privacy by Design:} Enhanced data minimization and user consent management
-\end{itemize}
-
-\subsection{Developer Experience}
-\begin{itemize}
-  \item \textbf{Infrastructure as Code:} Terraform and Ansible for reproducible deployments
-  \item \textbf{Observability Stack:} Comprehensive monitoring with Prometheus and Grafana
-  \item \textbf{Developer Portal:} API documentation, SDKs, and integration guides
-  \item \textbf{Automated Testing:} Expanded unit, integration, and performance test suites
-\end{itemize}
-
-\section{Community and Ecosystem}
-\label{sec:community}
-
-\subsection{Open Source Contributions}
-\begin{itemize}
-  \item \textbf{Modding Support:} Plugin architecture for community-created game modes
-  \item \textbf{API Access:} Public APIs for third-party tool development
-  \item \textbf{Documentation:} Comprehensive guides for custom deployments and integrations
-\end{itemize}
-
-\subsection{Industry Impact}
-The ft\_transcendence project demonstrates several innovative approaches that could influence the gaming industry:
-
-\begin{itemize}
-  \item \textbf{Blockchain Integration:} Immutable tournament records and decentralized ranking systems
-  \item \textbf{Microservices Gaming:} Scalable architecture patterns for real-time multiplayer games
-  \item \textbf{Security-First Design:} Comprehensive security implementation from the ground up
-  \item \textbf{Fair Play Standards:} Anti-cheat measures and authoritative server validation
-\end{itemize}
-
-\section{Conclusion}
-\label{sec:evolution_conclusion}
-
-The ft\_transcendence project represents a solid foundation for a modern gaming platform, successfully demonstrating the integration of cutting-edge technologies with practical software engineering principles. While fully functional and production-ready, the system's modular architecture and comprehensive feature set provide excellent opportunities for future growth and evolution.
-
-The roadmap outlined above provides a clear path for scaling from a sophisticated prototype to a global gaming platform, with each phase building upon the previous while maintaining the core principles of security, scalability, and user experience that have been established in the current implementation.
-
 % ============================================================================
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-\section{Restatement of Main Purpose}
-
 The ft\_transcendence project aimed to develop a production-ready multiplayer Pong platform demonstrating modern software engineering practices, achieving 100\% subject compliance with advanced features including real-time WebSocket gaming, blockchain tournament integrity, and enterprise security.
 
-\section{Summary of Key Findings}
+Working on ft\_transcendence produced both interpersonal and technical growth. On the teamwork side we practiced collaborative planning, asynchronous development coordination, code review discipline, and cross-disciplinary communication between frontend, backend, and blockchain components. Those habits improved estimate accuracy, reduced integration friction, and made feature rollouts predictable. Technically, the project provided hands-on experience with TypeScript and Fastify-based microservices, WebSocket-driven server-authoritative real-time systems, Babylon.js 3D rendering, Solidity/Hardhat smart-contract development, Docker Compose orchestration, HashiCorp Vault for secrets, and practical WAF/HTTPS hardening — plus debugging and profiling techniques for low-latency gameplay.
 
-The project successfully delivered:
-\begin{itemize}
-  \item Complete microservices architecture with 6 services
-  \item Real-time 60 FPS Pong with WebSocket synchronization
-  \item Multi-layered security (WAF, Vault, HTTPS/TLS)
-  \item Blockchain tournament recording
-  \item TypeScript strict mode, Docker containerization
-\end{itemize}
+The three most difficult challenges encountered were:
+\begin{enumerate}
+  \item \textbf{Real-time server-authoritative synchronization:} Achieving smooth, deterministic gameplay under network jitter required careful physics timing, interpolation/extrapolation strategies, and robust reconnection handling.
+  \item \textbf{Blockchain integration and key management:} Automating contract deployment, ensuring deterministic testnet behavior, and securing signing keys via Vault while enabling service automation proved operationally complex.
+  \item \textbf{Secure containerized orchestration:} Combining mutual TLS between services, a ModSecurity-enabled Nginx gateway, and Vault-based secrets in a multi-container Docker Compose environment required careful startup ordering, health checks, and hardened defaults to avoid fragile boot-time or permission failures.
+\end{enumerate}
 
-\section{Interpretation and Significance}
+Planned improvements focus on reliability, scalability, and broader accessibility: add automated unit/integration/end-to-end test suites with CI pipelines to supplement the manual testing workflow; migrate service storage from per-service SQLite to a managed PostgreSQL deployment (or dedicated databases per service) to improve concurrency and operational monitoring; introduce mobile/touch-friendly UI, spectator/chat features, and analytics dashboards; and evolve deployment to multi-host/container orchestration (Kubernetes or managed services) with CDN/edge delivery for global latency reduction.
 
-The implementation validates modern software engineering approaches for complex gaming platforms, demonstrating effective integration of real-time communication, security hardening, and blockchain technology.
-
-\section{Implications}
-
-\subsection{Technical Implications}
-\begin{itemize}
-  \item Validates microservices for real-time gaming applications
-  \item Confirms comprehensive security integration without compromising performance
-  \item Demonstrates blockchain applicability for tournament integrity
-\end{itemize}
-
-\subsection{Practical Implications}
-\begin{itemize}
-  \item Provides template for iterative, risk-managed development
-  \item Guides technology selection for gaming platforms
-  \item Demonstrates production deployment practices
-\end{itemize}
-
-\section{Limitations}
-
-\begin{itemize}
-  \item Scalability constraints for thousands of concurrent users
-  \item SQLite limitations for high-traffic environments
-  \item 3D performance requirements for lower-end devices
-  \item Manual testing coverage (automated testing could be expanded)
-\end{itemize}
-
-\section{Recommendations for Future Research}
-
-\begin{itemize}
-  \item Scalability research for large-scale gaming platforms
-  \item Automated testing frameworks for real-time applications
-  \item AI integration for matchmaking and anti-cheat systems
-  \item Mobile gaming and cross-platform play extensions
-\end{itemize}
-
-\section{Final Closing Statement}
-
-The ft\_transcendence project successfully demonstrates the application of modern software engineering principles to deliver a complex, production-ready gaming platform. Achieving 100\% compliance while implementing advanced features validates the effectiveness of iterative development, comprehensive security, and quality assurance practices. The platform serves as both a technical achievement and educational case study for scalable software development.
+The ft\_transcendence project successfully demonstrates the application of modern software engineering principles to deliver a complex, production-ready gaming platform. The team implemented advanced features that validate the effectiveness of iterative development, comprehensive security, and quality assurance practices. The platform serves as both a technical achievement and educational case study for scalable software development.
 
 % ============================================================================
 % Appendices
@@ -1930,47 +1653,40 @@ make full-clean        # Remove containers and volumes
 \chapter{References}
 \label{app:references}
 
-\begin{thebibliography}{99}
-
 \bibitem{ft_transcendence_req}
-ft\_transcendence Project Requirements (v16.1). 42 School Subject Documentation, 2024.
+42 School (2024) ft_transcendence Project Requirements (v16.1). 42 School Subject Documentation.
 
 \bibitem{owasp_top10}
-OWASP Foundation. \textit{OWASP Top 10 Web Application Security Risks}. Available at: https://owasp.org/www-project-top-ten/ (Accessed: February 2024).
+OWASP Foundation (2024) OWASP Top 10 Web Application Security Risks. Available at: https://owasp.org/www-project-top-ten/ (Accessed: September 2025).
 
 \bibitem{fastify_docs}
-Fastify Team. \textit{Fastify Documentation}. Available at: https://www.fastify.io/docs/latest/ (Accessed: December 2023).
+Fastify Team (2023) Fastify Documentation. Available at: https://www.fastify.io/docs/latest/ (Accessed: September 2025).
 
 \bibitem{hashicorp_vault}
-HashiCorp. \textit{Vault Documentation}. Available at: https://developer.hashicorp.com/vault/docs (Accessed: January 2024).
+HashiCorp (2024) Vault Documentation. Available at: https://developer.hashicorp.com/vault/docs (Accessed: September 2025).
 
 \bibitem{hardhat_docs}
-Nomic Labs. \textit{Hardhat Documentation}. Available at: https://hardhat.org/docs (Accessed: December 2023).
+Nomic Labs (2023) Hardhat Documentation. Available at: https://hardhat.org/docs (Accessed: September 2025).
 
 \bibitem{modsecurity}
-Trustwave. \textit{ModSecurity Reference Manual}. Available at: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual (Accessed: January 2024).
+Trustwave (2024) ModSecurity Reference Manual. Available at: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual (Accessed: September 2025).
 
 \bibitem{typescript_docs}
-Microsoft. \textit{TypeScript Documentation}. Available at: https://www.typescriptlang.org/docs/ (Accessed: November 2023).
+Microsoft (2023) TypeScript Documentation. Available at: https://www.typescriptlang.org/docs/ (Accessed: September 2025).
 
 \bibitem{nodejs_docs}
-OpenJS Foundation. \textit{Node.js Documentation}. Available at: https://nodejs.org/en/docs/ (Accessed: November 2023).
+OpenJS Foundation (2023) Node.js Documentation. Available at: https://nodejs.org/en/docs/ (Accessed: September 2025).
 
 \bibitem{sqlite_docs}
-SQLite Consortium. \textit{SQLite Documentation}. Available at: https://www.sqlite.org/docs.html (Accessed: December 2023).
+SQLite Consortium (2023) SQLite Documentation. Available at: https://www.sqlite.org/docs.html (Accessed: September 2025).
 
 \bibitem{docker_docs}
-Docker Inc. \textit{Docker Documentation}. Available at: https://docs.docker.com/ (Accessed: December 2023).
+Docker Inc. (2023) Docker Documentation. Available at: https://docs.docker.com/ (Accessed: September 2025).
 
 \bibitem{websocket_rfc}
-Fette, I., and Melnikov, A. \textit{RFC 6455: The WebSocket Protocol}. Internet Engineering Task Force, 2011.
+Fette, I. and Melnikov, A. (2011) RFC 6455: The WebSocket Protocol. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc6455 (Accessed: September 2025).
 
 \bibitem{tls_rfc}
-Dierks, T., and Rescorla, E. \textit{RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2}. Internet Engineering Task Force, 2008.
-
-\bibitem{pressman_se}
-Pressman, R.S., and Maxim, B.R. \textit{Software Engineering: A Practitioner's Approach}. 9th Edition. McGraw-Hill Education, 2020.
-
-\end{thebibliography}
+Dierks, T. and Rescorla, E. (2008) RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc5246 (Accessed: September 2025).
 
 \end{document}

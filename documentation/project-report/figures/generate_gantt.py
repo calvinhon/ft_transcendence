@@ -38,10 +38,11 @@ phases = [
         'name': 'Security & Blockchain',
         'color': '#FF6B6B',
         'start': 22,
-        'duration': 39,
+        'duration': 42,
         'modules': [
-            ('Vault', 22, 10),
-            ('ModSecurity', 32, 10),
+            ('Vault', 22, 14),
+            ('ModSecurity', 36, 14),
+            ('Route Safety', 50, 14),
             ('Blockchain', 37, 14)
         ]
     },
@@ -149,7 +150,8 @@ party_map = {
     'Frontend': 'Mahad',
     'Blockchain': 'Calvin',
     'Vault': 'Danish',
-    'WAF': 'Danish'
+    'ModSecurity': 'Danish',
+    'Route Safety': 'Danish'
 }
 
 party_x = -20
