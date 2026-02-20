@@ -1,4 +1,3 @@
-% ! TEX root = /home/danish/Documents/Coding/ft_transcendence/documentation/project-report/project_report_v6.tex
   % ft_transcendence Project Report - LaTeX
 \documentclass[11pt,a4paper]{report}
 \usepackage[utf8]{inputenc}
@@ -99,9 +98,9 @@
 \emergencystretch=10pt
 \hyphenpenalty=5000 % High penalty, but not a total ban
 
-The evolution of online gaming has created a demand for platforms that provide seamless real-time interaction while maintaining high standards for security and data integrity. This report presents \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform engineered to resolve the performance and security challenges inherent in distributed systems. The system employs a microservices architecture consisting of ten Docker containers --- Auth, User, Game, Tournament, Blockchain (Hardhat node), Blockchain-Deploy, Blockchain-Service, Frontend (Nginx), Redis, and Vault --- orchestrated via Docker Compose for production-grade deployment.
+The evolution of online gaming has created a demand for platforms that provide seamless real-time interaction while maintaining high standards for security and data integrity. This report presents \textbf{ft\_transcendence}, a full-stack multiplayer Pong platform engineered to resolve the performance and security challenges inherent in distributed systems. The system employs a microservices architecture consisting of ten Docker containers --- Auth, User, Game, Tournament, Blockchain (Hardhat node), Blockchain-Deploy, Blockchain-Service, Frontend (NGINX), Redis, and Vault --- orchestrated via Docker Compose for production-grade deployment.
 
-Methodologically, the project leverages WebSockets for authoritative 60 FPS gameplay, Babylon.js for 3D rendering, and Solidity smart contracts on a Hardhat node to ensure immutable tournament record-keeping. Security is achieved through a "Defense-in-Depth" strategy, utilizing Nginx with ModSecurity WAF for network protection and HashiCorp Vault for centralized secret management.
+Methodologically, the project leverages WebSockets for authoritative 60 FPS gameplay, Babylon.js for 3D rendering, and Solidity smart contracts on a Hardhat node to ensure immutable tournament record-keeping. Security is achieved through a "Defense-in-Depth" strategy, utilizing NGINX with ModSecurity WAF for network protection and HashiCorp Vault for centralized secret management.
 
 Final implementation results confirm 100\% compliance with all subject requirements, validated through comprehensive manual testing. This project demonstrates the effective synthesis of modern web technologies and rigorous engineering practices, serving as a secure, high-fidelity foundation for competitive distributed gaming.
 
@@ -147,7 +146,7 @@ Final implementation results confirm 100\% compliance with all subject requireme
 \section{Project Overview}
 \label{sec:overview}
 
-\textbf{ft\_transcendence} is a production-ready, full-stack multiplayer Pong platform designed to deliver real-time competitive gameplay, social features, tournaments with immutable blockchain recording, and comprehensive system observability. The platform accommodates multiple players, with extensible architecture supporting AI opponents, campaign progression and global leaderboards.
+\textbf{ft\_transcendence} is a production-ready, full-stack multiplayer Pong platform designed to deliver real-time competitive gameplay, social features, tournaments with immutable blockchain recording, and comprehensive system observability. The platform accommodates multiple players, with extensible architecture supporting AI opponents and campaign progression.
 
 \section{Project Objectives}
 \label{sec:objectives}
@@ -188,7 +187,7 @@ The project followed an iterative, incremental SDLC model with five phases:
 \begin{itemize}
   \item Design microservices topology: auth, user, game, tournament, blockchain and vault services
   \item Select technology stack: Fastify + TypeScript + SQLite
-  \item Plan deployment strategy: Docker Compose with reverse proxy (Nginx)
+  \item Plan deployment strategy: Docker Compose with reverse proxy (NGINX)
   \item Define security architecture: WAF, Vault
 \end{itemize}
 
@@ -256,10 +255,10 @@ The following flowchart illustrates the Software Development Life Cycle process:
 The project was executed in 4 phases over 14 weeks with assigned leads:
 
 \begin{itemize}
-  \item \textbf{Phase 1 (Planning & Design):} 3 weeks
+  \item \textbf{Phase 1 (Planning \& Design):} 3 weeks
   \item \textbf{Phase 2 (Core Development):} 5 weeks
-  \item \textbf{Phase 3 (Security & Blockchain):} 6 weeks
-  \item \textbf{Phase 4 (Testing & QA):} 7 weeks
+  \item \textbf{Phase 3 (Security \& Blockchain):} 6 weeks
+  \item \textbf{Phase 4 (Testing \& QA):} 7 weeks
 \end{itemize}
 
 \begin{figure}[H]
@@ -320,28 +319,27 @@ Functional requirements specify \textit{what} the system must do from the user's
   \item FR-8: Players shall access multiple game modes: campaign, arcade, tournament
 \end{itemize}
 
-\subsubsection{Social \& Leaderboard Features}
+\subsubsection{Social Features}
 \begin{itemize}
   \item FR-9: Users shall add and remove friends
-  \item FR-10: Users shall view global leaderboards (wins, win rate, rank)
-  \item FR-11: Users shall view match history with detailed statistics
-  \item FR-12: System shall display player profiles
+  \item FR-10: Users shall view match history with detailed statistics
+  \item FR-11: System shall display player profiles
 \end{itemize}
 
 \subsubsection{Tournament Management}
 \begin{itemize}
-  \item FR-13: Users shall create and configure tournaments
-  \item FR-14: System shall manage tournament bracket progression
-  \item FR-15: Tournament results shall be recorded immutably
-  \item FR-16: Users shall view tournament standings and schedules
+  \item FR-12: Users shall create and configure tournaments
+  \item FR-13: System shall manage tournament bracket progression
+  \item FR-14: Tournament results shall be recorded immutably
+  \item FR-15: Users shall view tournament standings and schedules
 \end{itemize}
 
 \subsubsection{Usability \& User Experience}
 \begin{itemize}
-  \item FR-17: Interface shall be responsive across desktop and mobile devices
-  \item FR-18: 3D mode shall gracefully degrade to 2D rendering
-  \item FR-19: User onboarding shall take $<$5 minutes for new users
-  \item FR-20: Error messages shall be clear and actionable
+  \item FR-16: Interface shall be responsive across desktop and mobile devices
+  \item FR-17: 3D mode shall gracefully degrade to 2D rendering
+  \item FR-18: User onboarding shall take $<$5 minutes for new users
+  \item FR-19: Error messages shall be clear and actionable
 \end{itemize}
 
 \subsection{Technical Requirements}
@@ -354,7 +352,7 @@ Technical requirements specify \textit{how} the system shall achieve functional 
   \item TR-1: Backend shall implement microservices architecture (6 services: auth, user, game, tournament, blockchain, vault)
   \item TR-2: Each microservice shall operate independently with its own database (SQLite)
   \item TR-3: Services shall communicate via REST API and WebSocket protocols
-  \item TR-4: Nginx reverse proxy shall route traffic and enforce HTTPS
+  \item TR-4: NGINX reverse proxy shall route traffic and enforce HTTPS
   \item TR-5: System shall be deployable via Docker Compose
   \item TR-6: Services shall be independently deployable with automatic restart on failure
   \item TR-7: Architecture shall support horizontal scaling with load balancing
@@ -470,16 +468,16 @@ The system implements a comprehensive, defense-in-depth security architecture fo
 All communication channels are secured with HTTPS using TLS 1.2+ protocols.
 The system implements:
 \begin{itemize}
-  \item \textbf{TLS 1.2/1.3 Enforcement:} Nginx configured to reject TLS 1.1 and lower
+  \item \textbf{TLS 1.2/1.3 Enforcement:} NGINX configured to reject TLS 1.1 and lower
   \item \textbf{HSTS Headers:} Strict-Transport-Security with max-age=31536000
   \item \textbf{Certificate Validation:} Mutual TLS authentication between services
 \end{itemize}
 
 \subsubsection{Web Application Firewall (WAF)}
-ModSecurity v3 engine is integrated as an inline module within the Nginx reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection to block common attacks.
+ModSecurity v3 engine is integrated as an inline module within the NGINX reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection to block common attacks.
 
 \subsubsection{DDoS Mitigation}
-Nginx provides basic DDoS mitigation through connection management and upstream health monitoring.
+NGINX provides basic DDoS mitigation through connection management and upstream health monitoring.
 
 \subsection{Layer 2: Transport Security}
 
@@ -770,7 +768,7 @@ This blockchain integration provides tournament result immutability and transpar
 \section{Microservices Architecture}
 \label{sec:microservices}
 
-The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 10 containerized services orchestrated through Docker Compose using a \texttt{docker-compose.yml} file, with each service handling specific business domains and communicating through well-defined APIs.
+The ft\_transcendence platform implements a comprehensive microservices architecture designed for scalability, maintainability, and fault isolation. The system consists of 10 containerized services orchestrated through Docker Compose using a \texttt{docker-compose.yml} file, with each service handling specific responsibilities and communicating through well-defined APIs.
 
 \subsection{Deployment Topology}
 
@@ -786,12 +784,12 @@ The microservices architecture follows domain-driven design principles with clea
   \item \textbf{Blockchain (Hardhat):} Local Ethereum-compatible blockchain node
   \item \textbf{Blockchain-Deploy:} One-shot container that deploys smart contracts on startup
   \item \textbf{Blockchain Service:} Smart contract interaction API for tournament result recording
-  \item \textbf{Frontend (Nginx):} Vanilla TypeScript SPA with Babylon.js 3D rendering, served via Nginx with ModSecurity WAF
+  \item \textbf{Frontend (NGINX):} Vanilla TypeScript SPA with Babylon.js 3D rendering
 \end{enumerate}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{deployment_topology.png}
+\includegraphics[width=0.7\textwidth]{deployment_topology.png}
 \caption{Deployment Topology: Service Dependencies and Communication Flow}
 \label{fig:microservices_architecture}
 \end{figure}
@@ -824,7 +822,7 @@ Each service implements comprehensive health checks with automatic restart polic
 The microservices architecture supports production deployment with:
 
 \begin{itemize}
-  \item \textbf{Load Balancing:} Nginx reverse proxy for service distribution
+  \item \textbf{Load Balancing:} NGINX reverse proxy for service distribution
   \item \textbf{Service Discovery:} Internal DNS resolution within Docker network
   \item \textbf{Configuration Management:} Environment-based configuration
   \item \textbf{Logging Aggregation:} Centralized logging through Docker Compose
@@ -1347,11 +1345,9 @@ Flowcharts illustrate the primary user interactions, system processes, and data 
 \chapter{Implementation}
 \label{ch:implementation}
 
-The implementation follows a microservices architecture with five backend services communicating via REST APIs and WebSocket connections, supported by infrastructure containers (Vault, Redis, Nginx, Hardhat). The system achieves full compliance with all subject requirements, implementing 9 major modules and 4 minor modules. All 10 containers are orchestrated via Docker Compose for production deployment.
+The implementation follows a microservices architecture with five backend services communicating via REST APIs and WebSocket connections, supported by infrastructure containers (Vault, Redis, NGINX, Hardhat). The system achieves full compliance with all subject requirements, completing the mandatory with bonus -- implementing 9 major and 4 minor modules. All 10 containers are orchestrated via Docker Compose for production deployment.
 
-\section{Mandatory Implementation}
-
-\subsection{Technology Stack Summary}
+\section{Technology Stack Summary}
 
 \begin{longtable}[h]{p{3cm}p{5cm}p{4cm}}
 \hline
@@ -1367,43 +1363,40 @@ The implementation follows a microservices architecture with five backend servic
 \textbf{Auth} & Bcrypt & (npm package) \\
 \textbf{Blockchain} & Hardhat + Solidity & 2.22.17 \\
 \textbf{Secrets} & HashiCorp Vault & 1.21.1 \\
-\textbf{API Gateway} & Nginx + ModSecurity & 1.29.4 \\
+\textbf{API Gateway} & NGINX + ModSecurity & 1.29.4 \\
 \textbf{Containers} & Docker Compose & 5+ \\
 \caption{Technology Stack}
 \label{tab:tech_stack}
 \end{longtable}
 
-\subsection{Backend Framework}
+\section{Backend Framework}
 All five backend microservices use Fastify v4 with TypeScript strict mode:
 \begin{itemize}
   \item \texttt{auth-service}: User registration, login
-  \item \texttt{user-service}: Profiles, friendships, leaderboards
+  \item \texttt{user-service}: Profiles, friendships
   \item \texttt{game-service}: Server-authoritative Pong game logic, WebSocket real-time sync
   \item \texttt{tournament-service}: Tournament management, blockchain integration
   \item \texttt{blockchain-service}: Tournament result recording
 \end{itemize}
 
-\subsection{Infrastructure Services}
+\section{Infrastructure Services}
 Core infrastructure is provided by dedicated supporting containers:
 \begin{itemize}
   \item \texttt{vault}: Secret management and TLS certificate issuance
   \item \texttt{redis}: Session storage backend
-  \item \texttt{frontend} (Nginx + ModSecurity): Reverse proxy, WAF enforcement, and SPA delivery
+  \item \texttt{frontend} (NGINX + ModSecurity): Reverse proxy, WAF enforcement, and SPA delivery
   \item \texttt{blockchain} (Hardhat): Local blockchain node for smart contract execution
   \item \texttt{blockchain-deploy}: One-shot contract deployment container
 \end{itemize}
 
-\subsection{Frontend Architecture}
+\section{Frontend Architecture}
 Modern TypeScript Single-Page Application (SPA) built with a component-based architecture and a clear service layer. The frontend implements client-side routing and progressive enhancement to provide a responsive, app-like UX while maintaining accessibility and graceful degradation.
 
 Browser back/forward navigation is handled via client-side routing:
 \begin{itemize}
-  \item URL-based state management (\texttt{/game}, \texttt{/profile}, \texttt{/leaderboard})
+  \item URL-based state management (\texttt{/game}, \texttt{/profile})
   \item No page reloads; state preserved during navigation
   \item Progressive enhancement for accessibility
-\end{itemize}
-
-\begin{itemize}
   \item \texttt{core/}: Core application infrastructure
     \begin{itemize}
       \item \texttt{Api.ts}: Centralized API client for backend communication
@@ -1496,7 +1489,7 @@ curl -k https://localhost:8200    # Vault
 \begin{itemize}
   \item \textbf{Authentication:} Registration, login, Google OAuth flows
   \item \textbf{Gameplay:} Real-time Pong matches, controls, scoring
-  \item \textbf{Social Features:} Friend management, leaderboards, profiles
+  \item \textbf{Social Features:} Friend management, profiles
   \item \textbf{Tournaments:} Creation, bracket management, blockchain recording
   \item \textbf{Security:} WAF protection, HTTPS enforcement, input validation
   \item \textbf{Microservices:} Inter-service communication and health endpoints
@@ -1510,7 +1503,6 @@ curl -k https://localhost:8200    # Vault
   \item \textbf{Authentication:} Login with password, login with Google
   \item \textbf{Gameplay:} Play quick match, verify real-time sync, check scoring
   \item \textbf{Tournament:} Create tournament, manage bracket, record blockchain result
-  \item \textbf{Leaderboard:} View rankings, verify statistics accuracy
 \end{enumerate}
 
 \subsection{Integration Testing}
@@ -1588,10 +1580,10 @@ The three most difficult challenges encountered were:
 \begin{enumerate}
   \item \textbf{Real-time server-authoritative synchronization:} Achieving smooth, deterministic gameplay under network jitter required careful physics timing, interpolation/extrapolation strategies, and robust reconnection handling.
   \item \textbf{Blockchain integration and key management:} Automating contract deployment, ensuring deterministic testnet behavior, and securing signing keys via Vault while enabling service automation proved operationally complex.
-  \item \textbf{Secure containerized orchestration:} Combining mutual TLS between services, a ModSecurity-enabled Nginx gateway, and Vault-based secrets in a multi-container Docker Compose environment required careful startup ordering, health checks, and hardened defaults to avoid fragile boot-time or permission failures.
+  \item \textbf{Secure containerized orchestration:} Combining mutual TLS between services, a ModSecurity-enabled NGINX gateway, and Vault-based secrets in a multi-container Docker Compose environment required careful startup ordering, health checks, and hardened defaults to avoid fragile boot-time or permission failures.
 \end{enumerate}
 
-Planned improvements focus on reliability, scalability, and broader accessibility: add automated unit/integration/end-to-end test suites with CI pipelines to supplement the manual testing workflow; migrate service storage from per-service SQLite to a managed PostgreSQL deployment (or dedicated databases per service) to improve concurrency and operational monitoring; introduce mobile/touch-friendly UI, spectator/chat features, and analytics dashboards; and evolve deployment to multi-host/container orchestration (Kubernetes or managed services) with CDN/edge delivery for global latency reduction.
+Planned improvements focus on reliability, scalability, and broader accessibility: add automated unit/integration/end-to-end test suites with CI pipelines to supplement the manual testing workflow; migrate service storage from per-service SQLite to a managed PostgreSQL deployment to improve concurrency and operational monitoring; introduce mobile/touch-friendly UI, spectator/chat features, and analytics dashboards; and evolve deployment to multi-host/container orchestration (Kubernetes or managed services) with CDN/edge delivery for global latency reduction.
 
 The ft\_transcendence project successfully demonstrates the application of modern software engineering principles to deliver a complex, production-ready gaming platform. The team implemented advanced features that validate the effectiveness of iterative development, comprehensive security, and quality assurance practices. The platform serves as both a technical achievement and educational case study for scalable software development.
 
@@ -1640,7 +1632,6 @@ make full-clean        # Remove containers and volumes
 
 \begin{description}
   \item[Blockchain] Distributed ledger (Hardhat) for immutable tournament records
-  \item[Leaderboard] Ranked list of players sorted by wins/win rate
   \item[Microservices] Independent services with own databases
   \item[Real-time Sync] WebSocket state synchronization (16 ms intervals)
   \item[Server-Authoritative] Game logic on server; clients send input only
@@ -1653,8 +1644,14 @@ make full-clean        # Remove containers and volumes
 \chapter{References}
 \label{app:references}
 
+\begingroup
+\renewcommand{\chapter}[2]{}
+
+\raggedright
+\begin{thebibliography}{99}
+
 \bibitem{ft_transcendence_req}
-42 School (2024) ft_transcendence Project Requirements (v16.1). 42 School Subject Documentation.
+42 School (2024) ft\_transcendence Project Requirements (v16.1). 42 School Subject Documentation.
 
 \bibitem{owasp_top10}
 OWASP Foundation (2024) OWASP Top 10 Web Application Security Risks. Available at: https://owasp.org/www-project-top-ten/ (Accessed: September 2025).
@@ -1688,5 +1685,9 @@ Fette, I. and Melnikov, A. (2011) RFC 6455: The WebSocket Protocol. Internet Eng
 
 \bibitem{tls_rfc}
 Dierks, T. and Rescorla, E. (2008) RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc5246 (Accessed: September 2025).
+
+\end{thebibliography}
+
+\endgroup
 
 \end{document}
