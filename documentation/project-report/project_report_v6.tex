@@ -464,104 +464,49 @@ The system implements a comprehensive, defense-in-depth security architecture fo
 
 \subsection{Layer 1: Network Security}
 
-\subsubsection{HTTPS and TLS Implementation}
-All communication channels are secured with HTTPS using TLS 1.2+ protocols.
-The system implements:
+The network perimeter enforces HTTPS (TLS 1.2+), NGINX reverse proxying, and ModSecurity WAF inspection (OWASP CRS) for ingress traffic control and attack filtering.
+
+\subsection{Layer 2: Input Validation}
+
+All external payloads are validated before business logic execution using:
 \begin{itemize}
-  \item \textbf{TLS 1.2/1.3 Enforcement:} NGINX configured to reject TLS 1.1 and lower
-  \item \textbf{HSTS Headers:} Strict-Transport-Security with max-age=31536000
-  \item \textbf{Certificate Validation:} Mutual TLS authentication between services
+  \item \textbf{JSON Schema Validation:} Request body and parameter shape enforcement
+  \item \textbf{Type Checking:} Strict TypeScript typing and runtime checks
+  \item \textbf{Length Constraints:} Bounded input sizes for fields and payloads
 \end{itemize}
 
-\subsubsection{Web Application Firewall (WAF)}
-ModSecurity v3 engine is integrated as an inline module within the NGINX reverse proxy, utilizing the OWASP Core Rule Set (CRS) for real-time traffic inspection to block common attacks.
+\subsection{Layer 3: Application Logic}
 
-\subsubsection{DDoS Mitigation}
-NGINX provides basic DDoS mitigation through connection management and upstream health monitoring.
-
-\subsection{Layer 2: Transport Security}
-
-\subsubsection{Mutual TLS (mTLS) Between Services}
-All inter-service communication uses mutual TLS authentication.
-
-\subsubsection{Session Security}
-Redis-backed session storage with TLS encryption:
+Application-level protections address core web attack classes:
 \begin{itemize}
-  \item \textbf{Secure Session Storage:} Sessions stored in Redis with TLS encryption
-  \item \textbf{Session Encryption:} All session data encrypted in transit and at rest
-  \item \textbf{Session Timeout:} Automatic session expiration and cleanup
+  \item \textbf{Parameterized SQL:} Prepared statements with \texttt{?} placeholders to prevent SQL injection
+  \item \textbf{CSRF Protection:} SameSite cookie policies and origin checks
+  \item \textbf{XSS Prevention:} Input sanitization and safe rendering patterns
 \end{itemize}
 
-\subsection{Layer 3: Application Security}
+\subsection{Layer 4: Authentication}
 
-\subsubsection{Input Validation and Sanitization}
-Comprehensive input validation using manual checks and sanitization.
-
-\subsubsection{SQL Injection Prevention}
-All SQL queries use parameterized statements with $`?`$ placeholders.
-
-\subsubsection{Cross-Site Scripting (XSS) Protection}
-Multiple layers of XSS prevention:
+Identity assurance is implemented through:
 \begin{itemize}
-  \item \textbf{Content Security Policy (CSP):} Strict CSP headers enforced
-  \item \textbf{X-XSS-Protection:} Browser-based XSS filtering enabled
-  \item \textbf{Input Sanitization:} All user inputs sanitized before rendering
+  \item \textbf{Bcrypt (cost 10):} Password hashing with computational work factor
+  \item \textbf{OAuth 2.0:} External identity provider integration (Google)
 \end{itemize}
 
-\subsubsection{Cross-Site Request Forgery (CSRF) Protection}
-CSRF protection via SameSite cookie attributes and origin validation.
+\subsection{Layer 5: Authorization}
 
-\subsection{Layer 4: Authentication \& Authorization}
+Resource-level permissions are applied so authenticated users can only access data and operations explicitly permitted by role and ownership rules.
 
-\subsubsection{Password Security}
-Industry-standard password hashing and validation.
+\subsection{Layer 6: Data Protection}
 
-\subsubsection{Remote Authentication (OAuth)}
-OAuth 2.0 integration with Google for alternative authentication.
-
-\subsection{Layer 5: Data Protection}
-
-\subsubsection{Secrets Management with HashiCorp Vault}
-Centralized secrets management for all sensitive data. Key secrets managed in Vault:
+Sensitive data is protected through:
 \begin{itemize}
-  \item \textbf{API Keys:} OAuth provider secrets and external service keys
-  \item \textbf{Session Secrets:} Cryptographically secure session signing keys
-  \item \textbf{TLS Certificates:} Automated certificate lifecycle management
+  \item \textbf{Encryption at Rest:} Storage-level and secret-backed data protection controls
+  \item \textbf{Vault Secrets:} Centralized secret storage and retrieval via HashiCorp Vault
+  \item \textbf{Rotation Policy:} Periodic rotation of keys, tokens, and certificates
 \end{itemize}
 
-\subsubsection{Database Security}
-SQLite databases with additional security measures:
-\begin{itemize}
-  \item \textbf{Prepared Statements:} All queries use parameterized execution
-  \item \textbf{Single Connection Per Service:} Each service maintains one SQLite connection via the shared common package
-  \item \textbf{Access Control:} Database files with restricted permissions
-\end{itemize}
-
-\subsection{Layer 6: Monitoring \& Logging}
-
-\subsubsection{Security Event Logging}
-Comprehensive logging of security-relevant events.
-
-\subsubsection{Health Monitoring}
-Automated health checks for all security components:
-\begin{itemize}
-  \item \textbf{Certificate Expiry Monitoring:} Automatic renewal alerts
-  \item \textbf{Vault Connectivity:} Health checks for secrets management
-  \item \textbf{WAF Status:} ModSecurity rule effectiveness monitoring
-\end{itemize}
-
-\subsection{Layer 7: Incident Response}
-
-\subsubsection{Security Headers Implementation}
-Comprehensive security headers configuration implemented within the \texttt{nginx.conf} file.
-
-\subsubsection{Container Security}
-Docker security best practices implementation:
-\begin{itemize}
-  \item \textbf{Minimal Images:} Alpine Linux base images for reduced attack surface
-  \item \textbf{Secret Management:} Environment variables and Vault retrievals for sensitive configuration
-  \item \textbf{Resource Limits:} Memory limits per service to prevent resource exhaustion
-\end{itemize}
+\subsubsection{Threat Coverage Summary}
+This layered model is designed to prevent \textbf{SQLi}, \textbf{XSS}, \textbf{CSRF}, \textbf{DDoS}, and \textbf{data breaches}.
 
 \pagebreak
 
