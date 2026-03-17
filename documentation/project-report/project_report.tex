@@ -268,6 +268,8 @@ The project was executed in 4 phases over 14 weeks with assigned leads:
 \label{fig:gantt_chart}
 \end{figure}
 
+\pagebreak
+
 \section{Risk Management}
 \label{sec:risk_management}
 
@@ -277,9 +279,9 @@ The project was executed in 4 phases over 14 weeks with assigned leads:
 The risk matrix below provides a framework for assessing the level of risk for potential project setbacks based on the product of likelihood and impact. This enabled the team to prioritize solutions for higher risk issues.
 \begin{table}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/risk_matrix.png}
+\includegraphics[width=0.85\textwidth]{figures/risk_matrix.jpeg}
 \caption{Risk Matrix}
-\label{fig:risk_matrix}
+\label{fig:risk_register}
 \end{table}
 
 \subsection{Risk Register}
@@ -288,7 +290,7 @@ The risk matrix below provides a framework for assessing the level of risk for p
 \begin{table}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/risk_register.png}
-\caption{Risk Assessment Matrix}
+\caption{Risk Register}
 \label{fig:risk_register}
 \end{table}
 
@@ -298,106 +300,37 @@ The risk matrix below provides a framework for assessing the level of risk for p
 
 Requirements specify what the system must do and how it achieves those goals. Detailed implementation, UI/UX, and architecture are described in the Design chapter.
 
-\subsection{Functional Requirements}
+\section{Functional Requirements}
 \label{sec:func_req}
 
-Functional requirements specify \textit{what} the system must do from the user's perspective. (See Design chapter for detailed UI, wireframes, and flows.)
-
-\subsubsection{User Management \& Authentication}
+Functional requirements define the core behaviors and services the user can interact with.
 \begin{itemize}
-  \item FR-1: Users shall register with email and password
-  \item FR-2: Users shall authenticate via local credentials
-  \item FR-3: Users shall manage profiles (username, avatar, bio)
+  \item FR-1: Identity Management: The system must provide a secure registration and local authentication loop, supplemented by remote OAuth 2.0 integration.
+  \item FR-2: Social Connectivity: Users must be able to manage unique profiles and establish bidirectional "friend" relationships.
+  \item FR-3: Competitive Gameplay: The platform must support a server-authoritative Pong engine providing three distinct modes: Campaign (AI), Arcade (upto 2v2), and Tournament (Multiplayer).
+  \item FR-4: Tournament Integrity: The system must automate bracket progression for up to 8 players and commit final rankings to an immutable ledger.
 \end{itemize}
 
-\subsubsection{Gameplay \& Real-Time Features}
-\begin{itemize}
-  \item FR-4: System shall provide a real-time Pong game with smooth rendering
-  \item FR-5: Players shall control paddles via keyboard input
-  \item FR-6: Game state shall synchronize across connected clients in real-time
-  \item FR-7: System shall detect collisions, score updates, and game end conditions
-  \item FR-8: Players shall access multiple game modes: campaign, arcade, tournament
-\end{itemize}
-
-\subsubsection{Social Features}
-\begin{itemize}
-  \item FR-9: Users shall add and remove friends
-  \item FR-10: Users shall view match history with detailed statistics
-  \item FR-11: System shall display player profiles
-\end{itemize}
-
-\subsubsection{Tournament Management}
-\begin{itemize}
-  \item FR-12: Users shall create and configure tournaments
-  \item FR-13: System shall manage tournament bracket progression
-  \item FR-14: Tournament results shall be recorded immutably
-  \item FR-15: Users shall view tournament standings and schedules
-\end{itemize}
-
-\subsubsection{Usability \& User Experience}
-\begin{itemize}
-  \item FR-16: Interface shall be responsive across desktop and mobile devices
-  \item FR-17: 3D mode shall gracefully degrade to 2D rendering
-  \item FR-18: User onboarding shall take $<$5 minutes for new users
-  \item FR-19: Error messages shall be clear and actionable
-\end{itemize}
-
-\subsection{Technical Requirements}
+\section{Technical Constraints}
 \label{sec:tech_req}
 
-Technical requirements specify \textit{how} the system shall achieve functional goals. (See Design chapter for architecture diagrams and implementation details.)
-
-\subsubsection{Architecture \& Infrastructure}
+Technical constraints define the mandatory architecture and stack limitations imposed on the solution.
 \begin{itemize}
-  \item TR-1: Backend shall implement microservices architecture (6 services: auth, user, game, tournament, blockchain, vault)
-  \item TR-2: Each microservice shall operate independently with its own database (SQLite)
-  \item TR-3: Services shall communicate via REST API and WebSocket protocols
-  \item TR-4: NGINX reverse proxy shall route traffic and enforce HTTPS
-  \item TR-5: System shall be deployable via Docker Compose
-  \item TR-6: Services shall be independently deployable with automatic restart on failure
-  \item TR-7: Architecture shall support horizontal scaling with load balancing
+  \item TC-1: Microservices Topology: The backend must be decomposed into independent, containerized services orchestrated via Docker.
+  \item TC-2: Networking \& Security: All external traffic must be routed through a centralized Nginx gateway enforcing HTTPS and a Web Application Firewall (WAF).
+  \item TC-3: Data Sovereignty: Each microservice must maintain its own isolated SQLite database, ensuring no cross-service database coupling.
+  \item TC-4: Performance Baseline: The game loop must maintain a server-side execution rate of 60 FPS with state synchronization sent at approx. 16ms intervals.
 \end{itemize}
 
-\subsubsection{Technology Stack}
-\begin{itemize}
-  \item TR-8: Backend: Node.js 18+ with Fastify v4 framework
-  \item TR-9: Language: TypeScript with strict mode enabled
-  \item TR-10: Frontend: Vite + TypeScript with vanilla DOM APIs
-  \item TR-11: Database: SQLite 3 (optimized with prepared statements)
-  \item TR-12: Real-time communication: WebSocket protocol
-  \item TR-13: Blockchain: Solidity with Hardhat framework
-  \item TR-14: 3D Graphics: Babylon.js for game rendering
-\end{itemize}
+\section{Non-Functional Requirements}
+\label{sec:non_func_req}
 
-\subsubsection{Security Requirements}
+Non-functional requirements specify the quality attributes and environmental constraints of the system.
 \begin{itemize}
-  \item TR-15: All HTTP traffic shall enforce HTTPS with TLS 1.2+
-  \item TR-16: Sensitive headers shall include Secure and HttpOnly flags
-  \item TR-17: Web Application Firewall (ModSecurity) shall block OWASP Top 10 attacks
-  \item TR-18: All SQL queries shall use parameterized statements
-  \item TR-19: Passwords shall be hashed with bcrypt (cost factor 10+)
-  \item TR-20: Secrets shall be managed via HashiCorp Vault
-  \item TR-21: Input validation shall enforce type and length constraints
-  \item TR-22: System shall implement defense-in-depth security layers
-\end{itemize}
-
-\subsubsection{Performance \& Reliability}
-\begin{itemize}
-  \item TR-23: Game loop shall execute at 60 FPS with server-authoritative architecture
-  \item TR-24: WebSocket messages shall be sent at 50 ms intervals
-  \item TR-25: API response time shall be smaller than 200 ms for 95th percentile
-  \item TR-26: System shall support 100+ concurrent WebSocket connections per instance
-  \item TR-27: Database queries shall complete within 100ms under normal load
-  \item TR-28: Database shall handle 1000+ concurrent connections
-  \item TR-29: System uptime shall be 99.9\% during operational hours
-  \item TR-30: Database transactions shall maintain ACID properties
-  \item TR-31: Blockchain records shall be immutable and verifiable
-\end{itemize}
-
-\subsubsection{Code Quality \& Maintainability}
-\begin{itemize}
-  \item TR-32: Documentation shall be comprehensive and up-to-date
-  \item TR-33: Logging shall provide sufficient debugging information
+  \item NFR-1: Security (Defense-in-Depth): The system must implement six protective layers, including bcrypt password hashing (cost factor 10+), parameterized SQL to prevent injection, and centralized secrets management via HashiCorp Vault.
+  \item NFR-2: Availability \& Resilience: Services must implement health checks and automatic restart policies to maintain a 99.9\% uptime target during operation.
+  \item NFR-3: Frontend Responsiveness: The Single-Page Application (SPA) must provide a high-fidelity 3D experience using Babylon.js while maintaining a graceful 2D fallback for lower-end hardware.
+  \item NFR-4: Scalability: The architecture must support horizontal scaling and handle at least 100+ concurrent WebSocket connections per instance without latency degradation.
 \end{itemize}
 
 % ============================================================================
@@ -872,23 +805,15 @@ This 3D frontend implementation provides an innovative, immersive gaming experie
 
 Wireframes provide visual representations of application screens, illustrating layout, functionality, and user navigation flow. The design follows human-computer interaction principles with intuitive navigation and clear visual hierarchy.
 
-\subsection{Authentication Flow Wireframes}
-
-\subsubsection{Login Interface}
+\subsection{Authentication Flow}
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/flow_login.png}
-\caption{Authentication User Flow: Diagram illustrating the user journey through login and registration screens}
-\label{fig:auth_flow_diagram}
-\end{figure}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/wireframe_login.png}
-\caption{Login Interface Wireframe: Email/password authentication layout}
+\includegraphics[width=0.9\textwidth]{figures/login_and_registration_user_flow.jpeg}
+\caption{User Authentication Journey}
 \label{fig:login_wireframe}
 \end{figure}
 
+\subsubsection{Login Interface}
 Key elements:
 \begin{itemize}
   \item "Register" tab for new user registration
@@ -899,13 +824,6 @@ Key elements:
 \end{itemize}
 
 \subsubsection{Registration Interface}
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/wireframe_register.png}
-\caption{Registration Interface Wireframe: New user account creation form layout}
-\label{fig:registration_wireframe}
-\end{figure}
-
 Key elements:
 \begin{itemize}
   \item "Login" tab for existing user authentication
@@ -914,33 +832,16 @@ Key elements:
   \item Error message display area
 \end{itemize}
 
-\subsection{Main Navigation and Menu Wireframes}
+\subsection{Game Flow}
 
-\subsubsection{Main Menu Interface}
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/wireframe_main-menu.png}
-\caption{Main Menu Wireframe: Navigation hub with game modes and profile access}
-\label{fig:main_menu_wireframe}
+\includegraphics[width=0.8\textwidth]{figures/game_flow.jpeg}
+\caption{Match Selection to Gameplay Journey (Arcade Mode)}
+\label{fig:gameplay_wireframe}
 \end{figure}
-
-Key elements:
-\begin{itemize}
-  \item Game mode buttons: Campaign, Arcade, Tournament
-  \item User profile section with avatar and stats
-  \item Settings and logout options
-\end{itemize}
-
-\subsection{Game Interface Wireframes}
 
 \subsubsection{Game Mode Selection}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.7\textwidth]{figures/4_playemode_game_settings.png}
-\caption{Game Mode Selection: Difficulty and settings configuration}
-\label{fig:game_settings_wireframe}
-\end{figure}
-
 Key elements:
 \begin{itemize}
   \item Difficulty level selector (Easy, Medium, Hard)
@@ -951,12 +852,6 @@ Key elements:
 \end{itemize}
 
 \subsubsection{Gameplay Interface}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/wireframe_game.png}
-\caption{Gameplay Interface Wireframe: Pong match layout with HUD elements}
-\label{fig:gameplay_wireframe}
-\end{figure}
 
 Key elements:
 \begin{itemize}
@@ -967,13 +862,6 @@ Key elements:
 \end{itemize}
 
 \subsubsection{Multiplayer Arcade Mode}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/multiplayer_arcade.png}
-\caption{Multiplayer Arcade: Real-time competitive gameplay}
-\label{fig:multiplayer_wireframe}
-\end{figure}
-
 Key elements:
 \begin{itemize}
   \item Player identification (avatars/names)
@@ -983,31 +871,14 @@ Key elements:
 
 \subsection{Tournament Interface Wireframes}
 
-\subsubsection{Tournament Bracket View}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/tournament_bracket_matches.png}
-\caption{Tournament Bracket: Match scheduling and progression visualization}
+\includegraphics[width=0.9\textwidth]{figures/tournament_flow.jpeg}
+\caption{Tournament Set Up to Gameplay Journey}
 \label{fig:tournament_bracket_wireframe}
 \end{figure}
 
-Key elements:
-\begin{itemize}
-  \item Interactive bracket visualization
-  \item Current match highlighting
-  \item Participant status indicators
-  \item Blockchain recording status message
-  \item Player elimination tracking
-\end{itemize}
-
 \subsubsection{Tournament Mode Selection}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/gamemode_tournament.png}
-\caption{Tournament Mode Selection: Tournament creation and joining interface}
-\label{fig:tournament_mode_wireframe}
-\end{figure}
-
 Key elements:
 \begin{itemize}
   \item "Create Tournament" button
@@ -1017,13 +888,23 @@ Key elements:
   \item Tournament rules display
 \end{itemize}
 
+\subsubsection{Tournament Bracket View}
+Key elements:
+\begin{itemize}
+  \item Interactive bracket visualization
+  \item Current match highlighting
+  \item Participant status indicators
+  \item Blockchain recording status message
+  \item Player elimination tracking
+\end{itemize}
+
 \subsection{User Profile and Social Features}
 
-\subsubsection{Dashboard and Profile}
-\begin{figure}[htbp]
+\subsubsection{Dashboard and Profile Interface}
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{figures/13_dashboard_profile.png}
-\caption{User Dashboard: Profile statistics and achievements}
+\includegraphics[width=0.7\textwidth]{figures/social_flow.jpeg}
+\caption{User Profile Flow}
 \label{fig:dashboard_wireframe}
 \end{figure}
 
@@ -1033,84 +914,6 @@ Key elements:
   \item Win/Loss statistics visualization
   \item Match history with expansion details
   \item Friend list and social actions
-\end{itemize}
-
-\subsection{3D Environment Integration}
-
-\subsubsection{3D Monitor Interface}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/3D_monitor_main_menu.png}
-\caption{3D Monitor Interface: Main menu projected on virtual screen}
-\label{fig:3d_monitor_wireframe}
-\end{figure}
-
-Key elements:
-\begin{itemize}
-  \item 3D office environment context
-  \item Virtual monitor displaying UI
-  \item Interactive HTML mesh projection
-  \item Environmental lighting effects
-  \item Camera controls for 3D navigation
-\end{itemize}
-
-\subsubsection{3D Arcade Game Mode}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/3D_TV_arcade_game.png}
-\caption{3D Arcade Mode: Game rendering within virtual TV screen}
-\label{fig:3d_arcade_wireframe}
-\end{figure}
-
-Key elements:
-\begin{itemize}
-  \item Game rendered "inside" virtual monitor
-  \item 3D ball and paddle physics
-  \item Dynamic lighting from game elements
-  \item Environmental interaction effects
-  \item Retro aesthetic with modern 3D effects
-\end{itemize}
-
-\subsubsection{3D Newspaper/Lore View}
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/3D_newspaper_view.png}
-\caption{3D Newspaper View: Interactive environmental storytelling}
-\label{fig:3d_newspaper_wireframe}
-\end{figure}
-
-Key elements:
-\begin{itemize}
-  \item Newspaper mesh in 3D space
-  \item Interactive reading experience
-  \item Camera transitions and animations
-  \item Contextual game information
-  \item Immersive narrative elements
-\end{itemize}
-
-\subsection{Wireframe Design Principles}
-
-\subsubsection{Responsive Design Considerations}
-\begin{itemize}
-  \item \textbf{Desktop-First Design:} Optimized for mouse and keyboard interaction
-  \item \textbf{High-Performance Layout:} Fixed-width canvas for consistent game rendering
-  \item \textbf{Clear Visual Hierarchy:} Prioritized game elements and status indicators
-\end{itemize}
-
-\subsubsection{User Experience Guidelines}
-\begin{itemize}
-  \item \textbf{Intuitive Navigation:} Clear information hierarchy and logical flow
-  \item \textbf{Visual Consistency:} Unified color scheme and typography
-  \item \textbf{Feedback Systems:} Loading states, success/error messages, and progress indicators
-  \item \textbf{Performance Focus:} Optimized for 60 FPS gameplay and responsive interactions
-\end{itemize}
-
-\subsubsection{3D Integration Principles}
-\begin{itemize}
-  \item \textbf{Optional Enhancement:} 3D mode as progressive enhancement over 2D
-  \item \textbf{Performance Fallback:} Automatic degradation to 2D rendering when needed
-  \item \textbf{Contextual Immersion:} 3D environment enhances rather than complicates gameplay
-  \item \textbf{Technical Stability:} WebGL detection and error handling
 \end{itemize}
 
 \pagebreak
@@ -1514,7 +1317,8 @@ While the current implementation meets all specified requirements, several enhan
 \end{itemize}
 
 % ============================================================================
-\chapter{Conclusion}
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
 \label{ch:conclusion}
 
 The ft\_transcendence project aimed to develop a production-ready multiplayer Pong platform demonstrating modern software engineering practices, achieving 100\% subject compliance with advanced features including real-time WebSocket gaming, blockchain tournament integrity, and enterprise security.
@@ -1531,6 +1335,61 @@ The three most difficult challenges encountered were:
 Planned improvements focus on reliability, scalability, and broader accessibility: add automated unit/integration/end-to-end test suites with CI pipelines to supplement the manual testing workflow; migrate service storage from per-service SQLite to a managed PostgreSQL deployment to improve concurrency and operational monitoring; introduce mobile/touch-friendly UI, spectator/chat features, and analytics dashboards; and evolve deployment to multi-host/container orchestration (Kubernetes or managed services) with CDN/edge delivery for global latency reduction.
 
 The ft\_transcendence project successfully demonstrates the application of modern software engineering principles to deliver a complex, production-ready gaming platform. The team implemented advanced features that validate the effectiveness of iterative development, comprehensive security, and quality assurance practices. The platform serves as both a technical achievement and educational case study for scalable software development.
+
+
+% ============================================================================
+\chapter*{References}
+\addcontentsline{toc}{chapter}{Reference}
+\label{app:references}
+
+\begingroup
+\renewcommand{\chapter}[2]{}
+
+\raggedright
+\begin{thebibliography}{99}
+
+\bibitem{ft_transcendence_req}
+42 School (2024) ft\_transcendence Project Requirements (v16.1). 42 School Subject Documentation.
+
+\bibitem{owasp_top10}
+OWASP Foundation (2024) OWASP Top 10 Web Application Security Risks. Available at: https://owasp.org/www-project-top-ten/ (Accessed: September 2025).
+
+\bibitem{hastam_risk_matrix}
+Hastam (2019) Risk Assessment Matrix. Available at: https://i0.wp.com/bizepic.com/wp-content/uploads/2019/12/Risk-Assessment-Matrix-795.jpg (Accessed: March 2026).
+
+\bibitem{fastify_docs}
+Fastify Team (2023) Fastify Documentation. Available at: https://www.fastify.io/docs/latest/ (Accessed: September 2025).
+
+\bibitem{hashicorp_vault}
+HashiCorp (2024) Vault Documentation. Available at: https://developer.hashicorp.com/vault/docs (Accessed: September 2025).
+
+\bibitem{hardhat_docs}
+Nomic Labs (2023) Hardhat Documentation. Available at: https://hardhat.org/docs (Accessed: September 2025).
+
+\bibitem{modsecurity}
+Trustwave (2024) ModSecurity Reference Manual. Available at: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual (Accessed: September 2025).
+
+\bibitem{typescript_docs}
+Microsoft (2023) TypeScript Documentation. Available at: https://www.typescriptlang.org/docs/ (Accessed: September 2025).
+
+\bibitem{nodejs_docs}
+OpenJS Foundation (2023) Node.js Documentation. Available at: https://nodejs.org/en/docs/ (Accessed: September 2025).
+
+\bibitem{sqlite_docs}
+SQLite Consortium (2023) SQLite Documentation. Available at: https://www.sqlite.org/docs.html (Accessed: September 2025).
+
+\bibitem{docker_docs}
+Docker Inc. (2023) Docker Documentation. Available at: https://docs.docker.com/ (Accessed: September 2025).
+
+\bibitem{websocket_rfc}
+Fette, I. and Melnikov, A. (2011) RFC 6455: The WebSocket Protocol. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc6455 (Accessed: September 2025).
+
+\bibitem{tls_rfc}
+Dierks, T. and Rescorla, E. (2008) RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc5246 (Accessed: September 2025).
+
+\end{thebibliography}
+
+\endgroup
 
 % ============================================================================
 % Appendices
@@ -1584,55 +1443,5 @@ make full-clean        # Remove containers and volumes
   \item[WAF] Web Application Firewall (ModSecurity)
   \item[WebSocket] Full-duplex communication protocol
 \end{description}
-
-
-\chapter{References}
-\label{app:references}
-
-\begingroup
-\renewcommand{\chapter}[2]{}
-
-\raggedright
-\begin{thebibliography}{99}
-
-\bibitem{ft_transcendence_req}
-42 School (2024) ft\_transcendence Project Requirements (v16.1). 42 School Subject Documentation.
-
-\bibitem{owasp_top10}
-OWASP Foundation (2024) OWASP Top 10 Web Application Security Risks. Available at: https://owasp.org/www-project-top-ten/ (Accessed: September 2025).
-
-\bibitem{fastify_docs}
-Fastify Team (2023) Fastify Documentation. Available at: https://www.fastify.io/docs/latest/ (Accessed: September 2025).
-
-\bibitem{hashicorp_vault}
-HashiCorp (2024) Vault Documentation. Available at: https://developer.hashicorp.com/vault/docs (Accessed: September 2025).
-
-\bibitem{hardhat_docs}
-Nomic Labs (2023) Hardhat Documentation. Available at: https://hardhat.org/docs (Accessed: September 2025).
-
-\bibitem{modsecurity}
-Trustwave (2024) ModSecurity Reference Manual. Available at: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual (Accessed: September 2025).
-
-\bibitem{typescript_docs}
-Microsoft (2023) TypeScript Documentation. Available at: https://www.typescriptlang.org/docs/ (Accessed: September 2025).
-
-\bibitem{nodejs_docs}
-OpenJS Foundation (2023) Node.js Documentation. Available at: https://nodejs.org/en/docs/ (Accessed: September 2025).
-
-\bibitem{sqlite_docs}
-SQLite Consortium (2023) SQLite Documentation. Available at: https://www.sqlite.org/docs.html (Accessed: September 2025).
-
-\bibitem{docker_docs}
-Docker Inc. (2023) Docker Documentation. Available at: https://docs.docker.com/ (Accessed: September 2025).
-
-\bibitem{websocket_rfc}
-Fette, I. and Melnikov, A. (2011) RFC 6455: The WebSocket Protocol. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc6455 (Accessed: September 2025).
-
-\bibitem{tls_rfc}
-Dierks, T. and Rescorla, E. (2008) RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2. Internet Engineering Task Force. Available at: https://tools.ietf.org/html/rfc5246 (Accessed: September 2025).
-
-\end{thebibliography}
-
-\endgroup
 
 \end{document}
